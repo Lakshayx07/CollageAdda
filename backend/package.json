@@ -1,8 +1,8 @@
 {
-  "name": "collageadda-backend",
+  "name": "collegeadda-backend",
   "version": "1.0.0",
   "type": "module",
-  "description": "Backend for CollageAdda MVP",
+  "description": "Backend for CollegeAdda MVP",
   "main": "server.js",
   "scripts": {
     "start": "node src/server.js",

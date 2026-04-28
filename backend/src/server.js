@@ -34,7 +34,7 @@ app.use(express.json());
 
 // API Routes
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'CollageAdda Backend is running 🚀' });
+  res.json({ status: 'OK', message: 'CollegeAdda Backend is running 🚀' });
 });
 
 app.use('/api/auth', authRoutes);
@@ -126,6 +126,6 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 5001;
 httpServer.listen(PORT, () => {
-  console.log(`\n🚀 CollageAdda server running on http://localhost:${PORT}`);
+  console.log(`\n🚀 CollegeAdda server running on http://localhost:${PORT}`);
   console.log(`   Mode: ${process.env.NODE_ENV || 'development'}\n`);
 });

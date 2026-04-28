@@ -1,4 +1,4 @@
-# CollageAdda 🎓
+# CollegeAdda 🎓
 
 > A student-first social & study collaboration platform — built for Gen-Z, by Gen-Z.
 
@@ -15,7 +15,7 @@
 ## Project Structure
 
 ```
-CollageAdda/
+CollegeAdda/
 ├── frontend/          # Vite + React app
 │   └── src/
 │       ├── context/   # AuthContext
