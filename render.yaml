@@ -7,10 +7,8 @@ services:
     buildCommand: npm install && npm run build
     startCommand: npm run start
     envVars:
-      - key: NEXT_PUBLIC_SUPABASE_URL
-        sync: false # Set this in Render dashboard
-      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
-        sync: false # Set this in Render dashboard
+      - key: NEXT_PUBLIC_API_URL
+        sync: false # Set this to the backend's Render URL in the dashboard
 
   # Node.js/Express Legacy Backend (Optional if migrating entirely to Supabase/Next.js)
   - type: web

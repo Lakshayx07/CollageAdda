@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { supabase } from "@/utils/supabase";
-import { MapPin, Mail, Lock, School } from "lucide-react";
+import { MapPin, Mail, Lock, School, User as UserIcon } from "lucide-react";
 
 const UNIVERSITIES = [
   "Rishihood University, Sonipat",
@@ -22,6 +21,7 @@ export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
   
   // Form State
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [university, setUniversity] = useState("");
@@ -35,27 +35,33 @@ export default function LoginPage() {
 
     try {
       setIsLoading(true);
-      if (isSignUp) {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              university: university
-            }
-          }
-        });
-        if (error) throw error;
-        alert("Check your email for the confirmation link!");
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
-        // In a real app, you would also update/check their university upon login
-        window.location.href = '/';
+      
+      const endpoint = isSignUp ? '/api/auth/register' : '/api/auth/login';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+      
+      const bodyData = isSignUp 
+        ? { name, email, password, university } 
+        : { email, password };
+
+      const res = await fetch(`${apiUrl}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyData)
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Authentication failed');
       }
+
+      // Save token and user info
+      localStorage.setItem('collegeadda_token', data.token);
+      localStorage.setItem('collegeadda_user', JSON.stringify(data));
+      
+      // Redirect to home
+      window.location.href = '/';
+      
     } catch (error) {
       console.error("Auth Error:", error.message);
       alert(error.message);
@@ -64,28 +70,8 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    if (!university) {
-      alert("Please select your university before continuing with Google.");
-      return;
-    }
-    try {
-      setIsLoading(true);
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
-        },
-      });
-      if (error) throw error;
-    } catch (error) {
-      console.error("Login Error:", error.message);
-      setIsLoading(false);
-    }
+  const handleGoogleLogin = () => {
+    alert("Google Login is currently disabled. Please use Email/Password.");
   };
 
   return (
@@ -103,6 +89,23 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleAuth} className="space-y-4 mb-6">
+          {isSignUp && (
+            <div>
+              <label className="block text-xs text-muted mb-1 ml-1">Full Name</label>
+              <div className="relative">
+                <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={18} />
+                <input 
+                  type="text" 
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Rahul Sharma" 
+                  className="w-full bg-surface-hover border border-border/50 rounded-xl py-3 pl-10 pr-4 text-sm text-foreground focus:outline-none focus:border-primary transition-colors"
+                />
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="block text-xs text-muted mb-1 ml-1">Email</label>
             <div className="relative">
