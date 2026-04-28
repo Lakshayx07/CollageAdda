@@ -35,7 +35,13 @@ const userSchema = mongoose.Schema({
   verificationToken: { type: String },
   verificationTokenExpires: { type: Date },
   idPhotoUrl: { type: String, default: '' },
-  adminNotes: { type: String, default: '' }
+  adminNotes: { type: String, default: '' },
+
+  // Growth Hacking Fields
+  referralCode: { type: String, unique: true, sparse: true },
+  referredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  points: { type: Number, default: 0 },
+  inviteCount: { type: Number, default: 0 }
 }, { timestamps: true });
 
 // Hash password before saving

@@ -2,7 +2,8 @@ import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
   Camera, Instagram, Edit3, GraduationCap, Mail,
-  Users, BookOpen, Star, Save, CheckCircle, AtSign
+  Users, BookOpen, Star, Save, CheckCircle, AtSign,
+  Award, Gift, Copy, Share2
 } from 'lucide-react';
 import AppShell from '../components/AppShell';
 import { useToast, ToastContainer } from '../components/Toast';
@@ -271,32 +272,79 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Interests & Goals (Large) */}
-            <div className="md:col-span-2 glass rounded-3xl p-6 border border-white/5">
-              <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-6 flex items-center space-x-2">
-                <Users size={12} className="text-primary" />
-                <span>Vibe Check</span>
-              </h3>
-              <div className="space-y-6">
-                <div>
-                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-3">Interests</p>
-                  <div className="flex flex-wrap gap-2">
-                    {profile.interests.map(i => (
-                      <span key={i} className="px-4 py-1.5 rounded-2xl bg-primary/10 text-primary text-[10px] font-black uppercase border border-primary/20 tracking-wider">
-                        {i}
-                      </span>
-                    ))}
+            {/* Growth Hub - Referrals & Rewards */}
+            <div className="md:col-span-3 glass rounded-3xl p-8 border border-white/5 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 mt-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="space-y-2">
+                  <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-1 flex items-center space-x-2">
+                    <Award size={14} />
+                    <span>Growth Hub</span>
+                  </h3>
+                  <h2 className="text-2xl font-black text-white tracking-tight">Invite friends, earn rewards. 💎</h2>
+                  <p className="text-gray-400 text-sm font-medium">Unlock premium features by bringing your batchmates to CollageAdda.</p>
+                </div>
+                
+                <div className="flex items-center space-x-4">
+                  <div className="glass-dark px-6 py-4 rounded-3xl border border-white/10 text-center flex flex-col min-w-[120px]">
+                    <span className="text-2xl font-black text-white">{stored.points || 50}</span>
+                    <span className="text-[10px] font-black text-primary uppercase tracking-widest mt-1">Adda Points</span>
+                  </div>
+                  <div className="glass-dark px-6 py-4 rounded-3xl border border-white/10 text-center flex flex-col min-w-[120px]">
+                    <span className="text-2xl font-black text-white">{stored.inviteCount || 0}</span>
+                    <span className="text-[10px] font-black text-secondary uppercase tracking-widest mt-1">Invites</span>
                   </div>
                 </div>
-                <div>
-                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-3">Ambitions</p>
-                  <div className="flex flex-wrap gap-2">
-                    {profile.goals.map(g => (
-                      <span key={g} className="px-4 py-1.5 rounded-2xl bg-secondary/10 text-secondary text-[10px] font-black uppercase border border-secondary/20 tracking-wider">
-                        {g}
-                      </span>
-                    ))}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10">
+                {/* Referral Code Card */}
+                <div className="bg-white/5 rounded-3xl p-6 border border-white/5 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <Gift size={80} className="text-white" />
                   </div>
+                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4">Your Referral Code</p>
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-dark/50 border border-white/10 rounded-2xl px-5 py-3 font-black text-xl text-primary tracking-widest uppercase flex-1">
+                      {stored.referralCode || 'ADDA2026'}
+                    </div>
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(stored.referralCode || 'ADDA2026');
+                        showToast('Code copied to clipboard!', 'success');
+                      }}
+                      className="p-4 rounded-2xl bg-primary/20 text-primary hover:bg-primary/30 transition-all"
+                    >
+                      <Copy size={20} />
+                    </button>
+                  </div>
+                  <button className="w-full mt-4 flex items-center justify-center space-x-2 py-3 rounded-2xl bg-white text-black font-black text-xs uppercase tracking-widest hover:scale-105 active:scale-95 transition-all">
+                    <Share2 size={16} />
+                    <span>Share on WhatsApp</span>
+                  </button>
+                </div>
+
+                {/* Milestones Card */}
+                <div className="space-y-4">
+                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Active Milestones</p>
+                  {[
+                    { label: '3 Invites', reward: 'Unlock Profile Viewers', progress: Math.min((stored.inviteCount || 0) / 3 * 100, 100) },
+                    { label: '5 Invites', reward: 'Premium Match Filters', progress: Math.min((stored.inviteCount || 0) / 5 * 100, 100) },
+                    { label: '10 Invites', reward: 'Campus Pioneer Badge', progress: Math.min((stored.inviteCount || 0) / 10 * 100, 100) },
+                  ].map((m, i) => (
+                    <div key={i} className="glass-dark p-4 rounded-2xl border border-white/5 space-y-2">
+                      <div className="flex justify-between items-center text-[10px] font-bold">
+                        <span className="text-white">{m.reward}</span>
+                        <span className="text-gray-500">{m.label}</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${m.progress}%` }}
+                          className="h-full bg-gradient-to-r from-primary to-secondary"
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>

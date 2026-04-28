@@ -4,6 +4,22 @@ import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
+// @route   GET /api/users/leaderboard
+// @desc    Get university leaderboard (ranked by verified users)
+router.get('/leaderboard', protect, async (req, res) => {
+  try {
+    const leaderboard = await User.aggregate([
+      { $match: { isVerified: true } },
+      { $group: { _id: '$university', verifiedCount: { $sum: 1 } } },
+      { $sort: { verifiedCount: -1 } },
+      { $limit: 10 }
+    ]);
+    res.json(leaderboard);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // @route   GET /api/users/profile
 // @desc    Get logged-in user's profile
 router.get('/profile', protect, async (req, res) => {

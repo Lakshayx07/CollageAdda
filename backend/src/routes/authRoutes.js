@@ -11,17 +11,43 @@ const generateToken = (id) => {
 // @route   POST /api/auth/register
 // @desc    Register a new user
 router.post('/register', async (req, res) => {
-  const { name, email, password, university } = req.body;
+  const { name, email, password, university, referralCode: usedCode } = req.body;
   try {
     const userExists = await User.findOne({ email });
     if (userExists) return res.status(400).json({ message: 'User already exists' });
 
-    const user = await User.create({ name, email, password, university });
+    // Generate unique referral code (First name + random string)
+    const genCode = `${name.split(' ')[0].toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+
+    let referredBy = null;
+    if (usedCode) {
+      const inviter = await User.findOne({ referralCode: usedCode.toUpperCase() });
+      if (inviter) {
+        referredBy = inviter._id;
+        // Reward inviter
+        inviter.points += 100;
+        inviter.inviteCount += 1;
+        await inviter.save();
+      }
+    }
+
+    const user = await User.create({ 
+      name, 
+      email, 
+      password, 
+      university, 
+      referralCode: genCode,
+      referredBy,
+      points: 50 // Signup bonus
+    });
+
     res.status(201).json({
       _id: user._id,
       name: user.name,
       email: user.email,
       university: user.university,
+      referralCode: user.referralCode,
+      points: user.points,
       token: generateToken(user._id),
     });
   } catch (error) {
