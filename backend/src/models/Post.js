@@ -11,7 +11,16 @@ const postSchema = mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     text: { type: String, required: true },
     createdAt: { type: Date, default: Date.now }
-  }]
+  }],
+  isAnonymous: { type: Boolean, default: false },
+  hashtags: [{ type: String }],
+  poll: {
+    question: { type: String },
+    options: [{
+      text: { type: String },
+      votes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+    }]
+  }
 }, { timestamps: true });
 
 const Post = mongoose.model('Post', postSchema);

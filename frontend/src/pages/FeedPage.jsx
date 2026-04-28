@@ -1,14 +1,40 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Heart, MessageCircle, Share2, Bookmark, Image, Smile, Plus, Zap } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Bookmark, Image, Smile, Plus, Zap, BarChart2, Globe, Lock, Hash } from 'lucide-react';
 import AppShell from '../components/AppShell';
 import { useToast, ToastContainer } from '../components/Toast';
 
 const DUMMY_POSTS = [
-  { id: 1, author: 'Aarav Sharma', university: 'Rishihood University', time: '2h ago', content: 'Just finished the finals! Finally some peace ✌️', likes: 124, comments: 12, isLiked: false, isBookmarked: false },
-  { id: 2, author: 'Priya Patel', university: 'Rishihood University', time: '5h ago', content: 'Anyone forming a study group for Data Structures? Drop a comment!', likes: 45, comments: 28, isLiked: true, isBookmarked: false },
-  { id: 3, author: 'Rohan Gupta', university: 'Rishihood University', time: '1d ago', content: 'The campus cafe just launched a new menu and it is literally the best thing ever ☕🍕', likes: 210, comments: 45, isLiked: false, isBookmarked: true },
-  { id: 4, author: 'Aditi Verma', university: 'Rishihood University', time: '3h ago', content: "Petition to make the library open 24/7 during exam week 📚 Who's with me?", likes: 389, comments: 67, isLiked: false, isBookmarked: false },
+  { id: 1, author: 'Aarav Sharma', university: 'Rishihood University', time: '2h ago', content: 'Just finished the finals! Finally some peace ✌️ #ExamsDone #CollegeLife', likes: 124, comments: 12, isLiked: false, isBookmarked: false },
+  { 
+    id: 5, 
+    author: 'Campus Anonymous', 
+    university: 'Rishihood University', 
+    time: '1h ago', 
+    content: "Is it just me or is the mess food actually getting better? Don't tell the warden I said this. 😂", 
+    likes: 89, 
+    comments: 42, 
+    isLiked: false, 
+    isAnonymous: true 
+  },
+  { 
+    id: 6, 
+    author: 'Student Council', 
+    university: 'Rishihood University', 
+    time: '30m ago', 
+    content: 'Which artist should we invite for the annual fest? Vote now!', 
+    likes: 567, 
+    comments: 156, 
+    poll: {
+      question: 'Fest Headliner?',
+      options: [
+        { text: 'King', votes: 450, percentage: 45 },
+        { text: 'Ritviz', votes: 350, percentage: 35 },
+        { text: 'Seedhe Maut', votes: 200, percentage: 20 }
+      ]
+    }
+  },
+  { id: 2, author: 'Priya Patel', university: 'Rishihood University', time: '5h ago', content: 'Anyone forming a study group for Data Structures? Drop a comment! #Coding #StudyBuddy', likes: 45, comments: 28, isLiked: true, isBookmarked: false },
 ];
 
 export default function FeedPage() {
@@ -16,6 +42,7 @@ export default function FeedPage() {
   const [newPost, setNewPost] = useState('');
   const [showCommentId, setShowCommentId] = useState(null);
   const [commentText, setCommentText] = useState('');
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const { showToast } = useToast();
 
   const toggleLike = (id) => {
@@ -53,7 +80,7 @@ export default function FeedPage() {
     if (!newPost.trim()) return;
     const post = {
       id: Date.now(),
-      author: 'You',
+      author: isAnonymous ? 'Anonymous' : 'You',
       university: 'Rishihood University',
       time: 'Just now',
       content: newPost.trim(),
@@ -61,10 +88,12 @@ export default function FeedPage() {
       comments: 0,
       isLiked: false,
       isBookmarked: false,
+      isAnonymous
     };
     setPosts([post, ...posts]);
     setNewPost('');
-    showToast('🎉 Post shared to your campus!', 'success');
+    setIsAnonymous(false);
+    showToast(isAnonymous ? '🕵️ Anonymous post shared!' : '🎉 Post shared to your campus!', 'success');
   };
 
   const handleComment = (postId) => {
@@ -97,32 +126,73 @@ export default function FeedPage() {
                 className="w-full bg-transparent border-none focus:ring-0 text-white placeholder-gray-500 text-sm outline-none"
               />
             </div>
-            <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-800/50">
-              <div className="flex space-x-3">
+            <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5">
+              <div className="flex space-x-4">
                 <button
                   onClick={() => showToast('📸 Photo upload coming soon!', 'info')}
-                  className="flex items-center space-x-1.5 text-gray-500 hover:text-primary transition-colors text-xs"
+                  className="flex items-center space-x-1.5 text-gray-400 hover:text-primary transition-all text-xs font-bold"
                 >
-                  <Image size={16} />
-                  <span>Photo</span>
+                  <Image size={14} />
+                  <span>Media</span>
                 </button>
                 <button
-                  onClick={() => showToast('😊 Emoji picker coming soon!', 'info')}
-                  className="flex items-center space-x-1.5 text-gray-500 hover:text-yellow-400 transition-colors text-xs"
+                  onClick={() => showToast('📊 Poll creator coming soon!', 'info')}
+                  className="flex items-center space-x-1.5 text-gray-400 hover:text-secondary transition-all text-xs font-bold"
                 >
-                  <Smile size={16} />
-                  <span>Feeling</span>
+                  <BarChart2 size={14} />
+                  <span>Poll</span>
+                </button>
+                <button
+                  onClick={() => setIsAnonymous(!isAnonymous)}
+                  className={`flex items-center space-x-1.5 transition-all text-xs font-bold
+                    ${isAnonymous ? 'text-secondary glow-secondary' : 'text-gray-400 hover:text-white'}`}
+                >
+                  {isAnonymous ? <Lock size={14} /> : <Globe size={14} />}
+                  <span>{isAnonymous ? 'Anonymous' : 'Public'}</span>
                 </button>
               </div>
               <button
                 onClick={handlePost}
                 disabled={!newPost.trim()}
                 id="post-btn"
-                className="text-sm font-semibold px-5 py-1.5 rounded-full bg-gradient-to-r from-primary to-purple-600 text-white disabled:opacity-40 hover:scale-105 active:scale-95 transition-all"
+                className="text-xs font-black uppercase tracking-widest px-6 py-2 rounded-xl bg-primary text-white disabled:opacity-30 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-indigo-500/20"
               >
-                Post
+                Share
               </button>
             </div>
+          </div>
+
+          {/* Quick Posts - Short Thoughts */}
+          <div className="flex space-x-3 overflow-x-auto pb-2 no-scrollbar">
+            {[
+              { text: "Exam tomorrow, help! 😭", color: "from-pink-500 to-rose-600" },
+              { text: "Best coffee at the cafe? ☕", color: "from-amber-400 to-orange-500" },
+              { text: "Who's up for night football? ⚽", color: "from-emerald-400 to-teal-600" },
+              { text: "Found a lost ID card! 🪪", color: "from-blue-500 to-indigo-600" }
+            ].map((q, i) => (
+              <div 
+                key={i}
+                className={`flex-shrink-0 w-32 h-32 rounded-3xl bg-gradient-to-br ${q.color} p-4 flex flex-col justify-between cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-xl`}
+              >
+                <p className="text-white text-[10px] font-black leading-tight uppercase tracking-tight">{q.text}</p>
+                <div className="w-6 h-6 rounded-lg bg-white/20 backdrop-blur-md flex items-center justify-center">
+                  <Zap size={12} className="text-white fill-white" />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Trending Topics Bar */}
+          <div className="glass p-3 rounded-2xl border border-white/5 flex items-center space-x-4 overflow-x-auto no-scrollbar">
+            <div className="flex items-center space-x-2 text-secondary flex-shrink-0">
+              <Hash size={16} />
+              <span className="text-[10px] font-black uppercase tracking-widest">Trending</span>
+            </div>
+            {['ExamsDone', 'FresherParty', 'Hackathon2026', 'MessFoodDrama', 'TechNews'].map((tag, i) => (
+              <button key={i} className="text-[10px] font-bold text-gray-400 hover:text-white transition-all whitespace-nowrap">
+                #{tag}
+              </button>
+            ))}
           </div>
 
           {/* Top Navigation - Communities (Reddit Style) */}
@@ -176,16 +246,21 @@ export default function FeedPage() {
                 className="glass rounded-2xl border border-gray-800/50 overflow-hidden"
               >
                 <div className="p-4 flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 rounded-2xl overflow-hidden bg-gray-800 border border-white/5 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all shadow-lg">
-                      <img src={`https://i.pravatar.cc/150?u=${post.author}`} alt={post.author} className="w-full h-full object-cover" />
+                  <div className="flex items-center space-x-4">
+                    <div className={`w-12 h-12 rounded-2xl overflow-hidden shadow-2xl border transition-all
+                      ${post.isAnonymous ? 'bg-secondary/20 border-secondary/30 flex items-center justify-center' : 'bg-white/5 border-white/5'}`}>
+                      {post.isAnonymous ? (
+                        <Lock size={20} className="text-secondary" />
+                      ) : (
+                        <img src={`https://i.pravatar.cc/150?u=${post.author}`} alt={post.author} className="w-full h-full object-cover" />
+                      )}
                     </div>
                     <div>
-                      <h3 className="font-bold text-sm tracking-tight cursor-pointer hover:text-primary transition-colors flex items-center space-x-1.5">
-                        <span>{post.author}</span>
-                        {post.id === 1 && <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
+                      <h3 className="font-black text-sm tracking-tight text-white flex items-center space-x-2">
+                        <span>{post.isAnonymous ? 'Anonymous Student' : post.author}</span>
+                        {post.isAnonymous && <span className="text-[8px] bg-secondary/20 text-secondary px-1.5 py-0.5 rounded uppercase tracking-tighter">Verified</span>}
                       </h3>
-                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{post.time} • <span className="text-secondary">{post.university}</span></p>
+                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.1em]">{post.time} • <span className="text-primary">{post.university}</span></p>
                     </div>
                   </div>
                   <button
@@ -196,8 +271,32 @@ export default function FeedPage() {
                   </button>
                 </div>
 
-                <div className="px-4 pb-4">
-                  <p className="text-sm text-gray-200 leading-relaxed">{post.content}</p>
+                <div className="px-5 pb-5">
+                  <p className="text-sm text-gray-200 leading-relaxed font-medium">{post.content}</p>
+                  
+                  {/* Poll UI */}
+                  {post.poll && (
+                    <div className="mt-5 space-y-3">
+                      <h4 className="text-xs font-black text-white/50 uppercase tracking-widest mb-2">{post.poll.question}</h4>
+                      {post.poll.options.map((opt, i) => (
+                        <div 
+                          key={i} 
+                          onClick={() => showToast(`Voted for ${opt.text}!`, 'success')}
+                          className="relative h-10 rounded-xl bg-white/5 border border-white/5 overflow-hidden cursor-pointer group hover:border-primary/30 transition-all"
+                        >
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${opt.percentage}%` }}
+                            className="absolute inset-y-0 left-0 bg-primary/20 transition-all"
+                          />
+                          <div className="absolute inset-0 px-4 flex items-center justify-between text-[10px] font-bold">
+                            <span className="text-white group-hover:text-primary transition-colors">{opt.text}</span>
+                            <span className="text-gray-500">{opt.percentage}%</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="px-4 py-3 border-t border-gray-800/50 flex justify-between items-center text-gray-400">
