@@ -9,6 +9,9 @@ import postRoutes from './routes/postRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import matchRoutes from './routes/matchRoutes.js';
 import verifyRoutes from './routes/verifyRoutes.js';
+import chatRoutes from './routes/chatRoutes.js';
+import Message from './models/Message.js';
+import ChatRoom from './models/ChatRoom.js';
 
 dotenv.config();
 
@@ -39,6 +42,7 @@ app.use('/api/posts', postRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/matches', matchRoutes);
 app.use('/api/verify', verifyRoutes);
+app.use('/api/chat', chatRoutes);
 
 // ── Socket.io Real-time Chat ──────────────────────────────────────────────────
 const onlineUsers = new Map(); // socketId → { userId, name, university }
@@ -62,12 +66,43 @@ io.on('connection', (socket) => {
   });
 
   // Send a message to a room
-  socket.on('send_message', (data) => {
-    // data: { room, senderId, senderName, senderAvatar, text, timestamp }
-    io.to(data.room).emit('receive_message', {
-      ...data,
-      timestamp: new Date().toISOString(),
-    });
+  socket.on('send_message', async (data) => {
+    // data: { room, senderId, senderName, text, mediaUrl, mediaType }
+    try {
+      const message = await Message.create({
+        room: data.room,
+        sender: data.senderId,
+        text: data.text,
+        mediaUrl: data.mediaUrl,
+        mediaType: data.mediaType || 'none'
+      });
+
+      // Update room's last message and timestamps
+      await ChatRoom.findByIdAndUpdate(data.room, { 
+        lastMessage: message._id,
+        $set: { updatedAt: Date.now() }
+      });
+
+      io.to(data.room).emit('receive_message', {
+        ...data,
+        _id: message._id,
+        createdAt: message.createdAt,
+      });
+    } catch (err) {
+      console.error('[WS] Error saving message:', err);
+    }
+  });
+
+  // Seen status
+  socket.on('message_seen', async ({ roomId, userId, messageId }) => {
+    try {
+      await Message.findByIdAndUpdate(messageId, {
+        $addToSet: { seenBy: { user: userId, seenAt: Date.now() } }
+      });
+      socket.to(roomId).emit('user_seen', { messageId, userId });
+    } catch (err) {
+      console.error('[WS] Error updating seen status:', err);
+    }
   });
 
   // Typing indicators

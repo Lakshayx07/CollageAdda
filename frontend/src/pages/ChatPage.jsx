@@ -12,7 +12,14 @@ const UNIVERSITY_ROOMS = [
   { id: 'study-group', name: '📚 Study Groups', emoji: '📚', color: 'from-yellow-500 to-orange-500' },
 ];
 
-const DUMMY_USER = { name: 'You', id: 'me', avatar: 'https://i.pravatar.cc/150?u=me' };
+import { Check, CheckCheck } from 'lucide-react';
+
+const getUser = () => {
+  try { return JSON.parse(localStorage.getItem('collageadda_user') || '{}'); }
+  catch { return {}; }
+};
+
+const DUMMY_USER = getUser();
 
 const SEED_MESSAGES = {
   rishihood: [
@@ -52,99 +59,95 @@ export default function ChatPage() {
   const incomingUser = location.state?.privateChatUser;
   const incomingAvatar = location.state?.privateChatAvatar;
 
-  // Initialize rooms list, merging localStorage persistency with incoming Friend links
-  const [chatRooms, setChatRooms] = useState(() => {
-    let savedPrivate = [];
-    try {
-      savedPrivate = JSON.parse(localStorage.getItem('collageadda_private_chats') || '[]');
-    } catch (e) {
-      savedPrivate = [];
-    }
-
-    if (incomingUser) {
-      const id = `private-${incomingUser.replace(/\s+/g, '-').toLowerCase()}`;
-      // Add if it doesn't already exist in the saved list
-      if (!savedPrivate.find(r => r.id === id)) {
-        savedPrivate.unshift({
-          id,
-          name: incomingUser,
-          avatar: `https://i.pravatar.cc/150?u=${incomingAvatar || incomingUser}`,
-          color: 'from-pink-500 to-rose-500',
-          isPrivate: true
-        });
-        localStorage.setItem('collageadda_private_chats', JSON.stringify(savedPrivate));
-      }
-    }
-    
-    // Add incoming Study Group if it exists
-    const incomingStudyName = location.state?.studyGroupName;
-    const incomingStudySubject = location.state?.studyGroupSubject;
-    if (incomingStudyName) {
-      const id = `study-${incomingStudyName.replace(/\s+/g, '-').toLowerCase()}`;
-      if (!savedPrivate.find(r => r.id === id)) {
-        savedPrivate.push({
-          id,
-          name: incomingStudyName,
-          subject: incomingStudySubject,
-          emoji: '🔥',
-          color: 'from-orange-500 to-amber-500',
-          isStudy: true
-        });
-        localStorage.setItem('collageadda_private_chats', JSON.stringify(savedPrivate));
-      }
-    }
-
-    return [...savedPrivate, ...UNIVERSITY_ROOMS];
-  });
-
-  const initialActiveRoom = (incomingUser || location.state?.studyGroupName)
-    ? chatRooms.find(r => r.name === (incomingUser || location.state?.studyGroupName)) || chatRooms[0] 
-    : chatRooms[0];
-
-  const [activeRoom, setActiveRoom] = useState(initialActiveRoom);
-  const [messages, setMessages] = useState(SEED_MESSAGES[initialActiveRoom.id] || []);
+  const [chatRooms, setChatRooms] = useState([]);
+  const [activeRoom, setActiveRoom] = useState(null);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [connected, setConnected] = useState(false);
   const [onlineCount, setOnlineCount] = useState(0);
+  
   const socketRef = useRef(null);
   const bottomRef = useRef(null);
   const typingTimerRef = useRef(null);
+  const user = DUMMY_USER;
 
+  // 1. Initialize Rooms
   useEffect(() => {
-    // Connect to socket
+    const fetchRooms = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/chat/rooms`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('collageadda_token')}` }
+        });
+        const data = await res.json();
+        setChatRooms(data);
+        if (data.length > 0 && !activeRoom) setActiveRoom(data[0]);
+      } catch (err) {
+        console.error('Failed to fetch rooms:', err);
+      }
+    };
+    fetchRooms();
+  }, []);
+
+  // 2. Socket Connection & Listeners
+  useEffect(() => {
+    if (!activeRoom) return;
+
     const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5001', {
       transports: ['websocket'],
-      reconnectionAttempts: 3,
     });
     socketRef.current = socket;
 
     socket.on('connect', () => {
       setConnected(true);
-      socket.emit('user_online', { userId: 'demo', name: 'You', university: activeRoom.id });
+      socket.emit('user_online', { userId: user._id, name: user.name, university: user.university });
+      socket.emit('join_room', activeRoom._id);
     });
 
-    socket.on('disconnect', () => setConnected(false));
-
     socket.on('receive_message', (data) => {
-      if (data.room === activeRoom.id && !data.isMine) {
-        setMessages((prev) => {
-          const newMessages = [...prev, { ...data, id: Date.now(), isMine: false }];
-          localStorage.setItem(`${STORAGE_PREFIX}${activeRoom.id}`, JSON.stringify(newMessages));
-          return newMessages;
-        });
+      if (data.room === activeRoom._id) {
+        setMessages((prev) => [...prev, data]);
+        // Auto-mark as seen if room is active
+        socket.emit('message_seen', { roomId: activeRoom._id, userId: user._id, messageId: data._id });
       }
+    });
+
+    socket.on('user_seen', ({ messageId, userId }) => {
+      setMessages(prev => prev.map(m => 
+        m._id === messageId ? { ...m, seenBy: [...(m.seenBy || []), { user: userId }] } : m
+      ));
     });
 
     socket.on('user_typing', ({ name }) => {
       setIsTyping(name);
-      setTimeout(() => setIsTyping(false), 2000);
+      setTimeout(() => setIsTyping(false), 3000);
     });
 
-    socket.on('online_users', (users) => setOnlineCount(users.length));
-
     return () => socket.disconnect();
-  }, [activeRoom.id]);
+  }, [activeRoom?._id]);
+
+  // 3. Fetch History
+  useEffect(() => {
+    if (!activeRoom) return;
+    const fetchHistory = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/chat/rooms/${activeRoom._id}/messages`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('collageadda_token')}` }
+        });
+        const data = await res.json();
+        setMessages(data);
+        
+        // Mark room as read on backend
+        await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/chat/rooms/${activeRoom._id}/seen`, {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('collageadda_token')}` }
+        });
+      } catch (err) {
+        console.error('Failed to fetch history:', err);
+      }
+    };
+    fetchHistory();
+  }, [activeRoom?._id]);
 
   useEffect(() => {
     const saved = localStorage.getItem(`${STORAGE_PREFIX}${activeRoom.id}`);
@@ -210,22 +213,18 @@ export default function ChatPage() {
   };
 
   const sendMessage = () => {
-    if (!input.trim()) return;
+    if (!input.trim() || !activeRoom) return;
     const msg = {
-      id: Date.now(),
-      room: activeRoom.id,
-      senderName: DUMMY_USER.name,
+      room: activeRoom._id,
+      senderId: user._id,
+      senderName: user.name,
       text: input.trim(),
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       isMine: true,
+      createdAt: new Date().toISOString(),
     };
     
-    setMessages((prev) => {
-      const newMessages = [...prev, msg];
-      localStorage.setItem(`${STORAGE_PREFIX}${activeRoom.id}`, JSON.stringify(newMessages));
-      return newMessages;
-    });
-    
+    // Optimistic Update
+    setMessages((prev) => [...prev, { ...msg, _id: Date.now().toString(), seenBy: [] }]);
     socketRef.current?.emit('send_message', msg);
     setInput('');
   };
@@ -247,29 +246,34 @@ export default function ChatPage() {
             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" title="Connected" />
           </div>
           <div className="space-y-1 px-3 flex-1 overflow-y-auto no-scrollbar">
-            {chatRooms.map((room) => (
+            {chatRooms.map((room) => {
+              const otherParticipant = room.participants.find(p => p._id !== user._id);
+              const isActive = activeRoom?._id === room._id;
+              
+              return (
               <button
-                key={room.id}
+                key={room._id}
                 onClick={() => handleRoomChange(room)}
                 className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all text-sm font-bold group
-                  ${activeRoom.id === room.id
+                  ${isActive
                     ? 'bg-primary/20 text-white glow-primary'
                     : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
               >
                 <div className="flex items-center space-x-3 truncate">
                   <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm transition-all overflow-hidden
-                    ${activeRoom.id === room.id ? 'bg-primary/30' : 'bg-white/5 group-hover:bg-white/10'}`}>
-                    {room.isPrivate ? (
-                      <img src={room.avatar} alt="DP" className="w-full h-full object-cover" />
+                    ${isActive ? 'bg-primary/30' : 'bg-white/5 group-hover:bg-white/10'}`}>
+                    {room.isGroup ? (
+                      <span>{room.emoji || '💬'}</span>
                     ) : (
-                      <span className={activeRoom.id === room.id ? 'scale-110' : ''}>{room.emoji}</span>
+                      <img src={otherParticipant?.profilePic || `https://i.pravatar.cc/150?u=${room._id}`} alt="DP" className="w-full h-full object-cover" />
                     )}
                   </div>
-                  <span className="truncate tracking-tight">{room.name}</span>
+                  <span className="truncate tracking-tight">{room.isGroup ? room.groupName : otherParticipant?.name}</span>
                 </div>
-                {room.isPrivate && <Lock size={12} className="opacity-40 group-hover:opacity-100 transition-opacity" />}
+                {!room.isGroup && <Lock size={12} className="opacity-40 group-hover:opacity-100 transition-opacity" />}
               </button>
-            ))}
+              );
+            })}
           </div>
           <div className="px-6 pt-6 border-t border-white/5 mt-auto">
             <div className="flex items-center justify-between">
@@ -342,15 +346,28 @@ export default function ChatPage() {
                         {msg.senderName} {msg.isAI && '• TUTOR AI'}
                       </span>
                     )}
-                    <div className={`px-5 py-3.5 rounded-[22px] text-sm leading-relaxed whitespace-pre-wrap shadow-2xl
-                      ${msg.isMine 
+                    <div className={`px-5 py-3.5 rounded-[22px] text-sm leading-relaxed whitespace-pre-wrap shadow-2xl relative
+                      ${msg.senderId === user._id 
                         ? 'bg-primary text-white rounded-tr-none glow-primary' 
                         : msg.isAI 
                           ? 'bg-secondary/10 border border-secondary/20 text-white rounded-tl-none'
                           : 'glass-dark text-gray-200 rounded-tl-none'}`}>
                       {msg.text}
+                      
+                      {/* Seen Status Checkmarks */}
+                      {msg.senderId === user._id && (
+                        <div className="absolute -bottom-1 -right-1.5 flex items-center">
+                          {msg.seenBy?.length > 0 ? (
+                            <CheckCheck size={14} className="text-secondary" />
+                          ) : (
+                            <Check size={14} className="text-white/40" />
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <span className="text-[10px] font-bold text-gray-600 mt-2 mx-2 uppercase tracking-tighter opacity-60">{msg.timestamp}</span>
+                    <span className="text-[10px] font-bold text-gray-600 mt-2 mx-2 uppercase tracking-tighter opacity-60">
+                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
                   </div>
                 </motion.div>
               ))}
