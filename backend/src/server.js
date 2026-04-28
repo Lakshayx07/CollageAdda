@@ -20,16 +20,30 @@ connectDB();
 
 const app = express();
 const httpServer = createServer(app);
-const io = new Server(httpServer, {
-  cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
-    methods: ['GET', 'POST'],
-    credentials: true,
-  }
-});
+// Allow multiple frontend origins (local, Render, Vercel)
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://campus-adda-frontend.onrender.com',
+  'https://collage-adda.vercel.app',
+  process.env.CLIENT_URL,
+].filter(Boolean);
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS blocked for origin: ${origin}`));
+    }
+  },
+  credentials: true,
+};
+
+const io = new Server(httpServer, { cors: corsOptions });
 
 // Middleware
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:3000', credentials: true }));
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // API Routes
