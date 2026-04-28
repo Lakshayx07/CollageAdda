@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Heart, MessageCircle, Share2, Bookmark, Image, Smile } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Bookmark, Image, Smile, Plus, Zap } from 'lucide-react';
 import AppShell from '../components/AppShell';
 import { useToast, ToastContainer } from '../components/Toast';
 
@@ -125,20 +125,43 @@ export default function FeedPage() {
             </div>
           </div>
 
-          {/* Stories */}
-          <div className="flex space-x-4 overflow-x-auto pb-2 scrollbar-hide">
-            {['Aditi', 'Kabir', 'Neha', 'Vihaan', 'Campus Events'].map((name, i) => (
+          {/* Top Navigation - Communities (Reddit Style) */}
+          <div className="flex space-x-2 overflow-x-auto pb-4 no-scrollbar -mx-4 px-4 sticky top-0 z-10 bg-background/80 backdrop-blur-md pt-2">
+            {['All', 'Study Hub', 'Campus Life', 'Tech', 'Music', 'Sports', 'Startup'].map((community, i) => (
+              <button
+                key={i}
+                onClick={() => showToast(`Switching to ${community}...`, 'info')}
+                className={`px-5 py-2 rounded-2xl text-xs font-bold whitespace-nowrap transition-all border
+                  ${i === 0 
+                    ? 'bg-primary text-white border-primary glow-primary scale-105' 
+                    : 'bg-white/5 text-gray-400 border-white/5 hover:border-white/20 hover:text-white'}`}
+              >
+                {community}
+              </button>
+            ))}
+          </div>
+
+          {/* Stories - Premium Look */}
+          <div className="flex space-x-5 overflow-x-auto pb-2 no-scrollbar">
+            {['You', 'Aditi', 'Kabir', 'Neha', 'Vihaan', 'Campus Events'].map((name, i) => (
               <div
                 key={i}
                 onClick={() => showToast(`📖 ${name}'s story`, 'info')}
-                className="flex flex-col items-center space-y-2 flex-shrink-0 cursor-pointer"
+                className="flex flex-col items-center space-y-2 flex-shrink-0 cursor-pointer group"
               >
-                <div className="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-500 hover:scale-105 transition-transform">
-                  <div className="w-full h-full rounded-full border-2 border-background bg-dark overflow-hidden">
-                    <img src={`https://i.pravatar.cc/150?u=${name}`} alt={name} className="w-full h-full object-cover" />
+                <div className={`w-16 h-16 rounded-3xl p-[2px] transition-all group-hover:scale-110 group-active:scale-95
+                  ${i === 0 ? 'bg-gray-800' : 'bg-gradient-to-tr from-primary via-secondary to-accent'}`}>
+                  <div className="w-full h-full rounded-[22px] border-2 border-background bg-dark overflow-hidden flex items-center justify-center">
+                    {i === 0 ? (
+                      <Plus size={24} className="text-gray-500" />
+                    ) : (
+                      <img src={`https://i.pravatar.cc/150?u=${name}`} alt={name} className="w-full h-full object-cover" />
+                    )}
                   </div>
                 </div>
-                <span className="text-xs text-gray-300">{name}</span>
+                <span className={`text-[10px] font-bold uppercase tracking-wider ${i === 0 ? 'text-gray-500' : 'text-gray-300'}`}>
+                  {name}
+                </span>
               </div>
             ))}
           </div>
@@ -154,12 +177,15 @@ export default function FeedPage() {
               >
                 <div className="p-4 flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-800 border border-gray-700 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all">
+                    <div className="w-12 h-12 rounded-2xl overflow-hidden bg-gray-800 border border-white/5 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all shadow-lg">
                       <img src={`https://i.pravatar.cc/150?u=${post.author}`} alt={post.author} className="w-full h-full object-cover" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-sm cursor-pointer hover:text-primary transition-colors">{post.author}</h3>
-                      <p className="text-xs text-gray-500">{post.time} • {post.university}</p>
+                      <h3 className="font-bold text-sm tracking-tight cursor-pointer hover:text-primary transition-colors flex items-center space-x-1.5">
+                        <span>{post.author}</span>
+                        {post.id === 1 && <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
+                      </h3>
+                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{post.time} • <span className="text-secondary">{post.university}</span></p>
                     </div>
                   </div>
                   <button

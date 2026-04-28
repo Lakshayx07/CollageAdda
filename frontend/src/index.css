@@ -3,30 +3,76 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --primary: #6366F1;
+    --secondary: #A855F7;
+    --accent: #FACC15;
+    --background: #0F172A;
+    --surface: #1E293B;
+  }
+
   body {
-    @apply bg-background text-gray-100 font-sans;
+    @apply bg-background text-gray-100 antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', sans-serif;
+    @apply font-bold tracking-tight;
   }
 }
 
-/* Custom Scrollbar for sleek modern look */
-::-webkit-scrollbar {
-  width: 8px;
-}
-::-webkit-scrollbar-track {
-  background: #030712; 
-}
-::-webkit-scrollbar-thumb {
-  background: #374151; 
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #4B5563; 
+@layer components {
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--background);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+  }
+
+  /* Premium Glassmorphism */
+  .glass {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10;
+  }
+
+  .glass-dark {
+    @apply bg-black/40 backdrop-blur-xl border border-white/5;
+  }
+
+  /* Gen Z Neon Glows */
+  .glow-primary {
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+  }
+  
+  .glow-accent {
+    box-shadow: 0 0 20px rgba(250, 204, 21, 0.3);
+  }
+
+  /* No Scrollbar Utility */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
-/* Glassmorphism utility */
-.glass {
-  background: rgba(17, 24, 39, 0.7);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+/* Animations */
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(0.98); }
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 3s infinite ease-in-out;
 }

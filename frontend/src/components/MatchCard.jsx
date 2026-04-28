@@ -15,8 +15,8 @@ export default function MatchCard({ user, onConnect, onSkip }) {
       }}
       initial={{ scale: 0.9, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
-      exit={{ x: 500, opacity: 0 }}
-      className="absolute inset-0 w-full h-[600px] bg-gray-900 rounded-3xl overflow-hidden shadow-2xl border border-gray-800 touch-none"
+      exit={{ x: 500, opacity: 0, rotate: 10 }}
+      className="absolute inset-0 w-full h-[620px] bg-surface rounded-[40px] overflow-hidden shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] border border-white/10 touch-none"
     >
       {/* Profile Image */}
       <div className="relative h-2/3 w-full">
@@ -28,25 +28,28 @@ export default function MatchCard({ user, onConnect, onSkip }) {
         <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent" />
         
         {/* User Info Overlay */}
-        <div className="absolute bottom-6 left-6 right-6">
-          <h2 className="text-3xl font-bold text-white mb-1">{user.name}</h2>
-          <div className="flex items-center text-gray-300 text-sm space-x-2">
-            <GraduationCap size={16} className="text-primary" />
-            <span>{user.university} • {user.year || 'Student'}</span>
+        <div className="absolute bottom-8 left-8 right-8">
+          <h2 className="text-4xl font-black text-white mb-2 tracking-tighter uppercase">{user.name}</h2>
+          <div className="flex items-center text-white/80 text-xs font-black uppercase tracking-[0.2em] space-x-2">
+            <GraduationCap size={14} className="text-primary" />
+            <span>{user.university}</span>
+          </div>
+          <div className="mt-3 inline-block px-3 py-1 rounded-lg bg-white/10 backdrop-blur-md border border-white/10 text-[10px] font-black text-primary uppercase tracking-widest">
+            {user.year || 'Student'}
           </div>
         </div>
       </div>
 
       {/* Details Section */}
-      <div className="p-6 space-y-4">
+      <div className="p-8 space-y-6 bg-surface/50">
         {/* Interests Tags */}
         <div>
-          <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-2 font-bold">Interests</p>
+          <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-3 font-black">Vibe Tags</p>
           <div className="flex flex-wrap gap-2">
             {user.interests.map((interest, idx) => (
               <span 
                 key={idx} 
-                className="px-3 py-1 rounded-full bg-gray-800 text-gray-300 text-xs border border-gray-700"
+                className="px-4 py-1.5 rounded-xl bg-white/5 text-white text-[10px] font-bold uppercase tracking-wider border border-white/5"
               >
                 {interest}
               </span>
@@ -56,12 +59,12 @@ export default function MatchCard({ user, onConnect, onSkip }) {
 
         {/* Goals Section */}
         <div>
-          <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-2 font-bold">Goals</p>
+          <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-3 font-black">Mission</p>
           <div className="flex flex-wrap gap-2">
             {user.goals.map((goal, idx) => (
               <span 
                 key={idx} 
-                className="px-3 py-1 rounded-full bg-indigo-900/40 text-indigo-300 text-xs border border-indigo-800/30"
+                className="px-4 py-1.5 rounded-xl bg-secondary/10 text-secondary text-[10px] font-black uppercase tracking-wider border border-secondary/20"
               >
                 {goal}
               </span>

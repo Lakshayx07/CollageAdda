@@ -7,12 +7,19 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#4F46E5', // Indigo-600
-        dark: '#111827', // Gray-900
-        background: '#030712', // Gray-950 for deep dark mode
+        primary: '#6366F1',
+        secondary: '#A855F7',
+        accent: '#FACC15',
+        background: '#0F172A',
+        surface: '#1E293B',
+        dark: '#020617',
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
+        heading: ['Outfit', 'sans-serif'],
+      },
+      animation: {
+        'spin-slow': 'spin 8s linear infinite',
       }
     },
   },

@@ -120,23 +120,26 @@ export default function PeoplePage() {
             </AnimatePresence>
           ) : (
             <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-center p-8 glass rounded-3xl border border-gray-800"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center p-12 glass rounded-[40px] border border-white/5 shadow-2xl relative overflow-hidden"
             >
-              <div className="w-20 h-20 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Users size={40} className="text-gray-600" />
+              <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 to-secondary/10" />
+              <div className="relative z-10">
+                <div className="w-24 h-24 bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-8 glow-primary border border-white/10">
+                  <Zap size={48} className="text-primary fill-primary" />
+                </div>
+                <h2 className="text-3xl font-black text-white mb-3 tracking-tight">END OF THE VIBE.</h2>
+                <p className="text-gray-500 text-sm mb-10 leading-relaxed font-bold uppercase tracking-widest">
+                  You've reached the end of your campus circle for now.
+                </p>
+                <button 
+                  onClick={fetchMatches}
+                  className="w-full py-5 bg-primary rounded-2xl text-white font-black uppercase tracking-widest shadow-xl shadow-indigo-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                >
+                  Refresh Circle ⚡
+                </button>
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2">No More People!</h2>
-              <p className="text-gray-500 text-sm mb-8 leading-relaxed">
-                You've seen everyone around you for now. Try updating your interests or check back later!
-              </p>
-              <button 
-                onClick={fetchMatches}
-                className="w-full py-4 bg-gradient-to-r from-primary to-indigo-600 rounded-2xl text-white font-bold shadow-lg shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-              >
-                Refresh Search
-              </button>
             </motion.div>
           )}
         </div>

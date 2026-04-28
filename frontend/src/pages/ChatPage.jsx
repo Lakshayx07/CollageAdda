@@ -240,73 +240,77 @@ export default function ChatPage() {
   return (
     <AppShell>
       <div className="flex h-screen overflow-hidden">
-        {/* Chat Rooms Panel */}
-        <aside className="hidden md:flex flex-col w-56 bg-dark border-r border-gray-800 py-6 flex-shrink-0">
-          <div className="px-5 mb-4">
-            <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Chat Rooms</h2>
+        {/* Chat Rooms Panel - Discord Style */}
+        <aside className="hidden md:flex flex-col w-64 bg-dark/95 border-r border-white/5 py-8 flex-shrink-0 backdrop-blur-xl">
+          <div className="px-6 mb-8 flex items-center justify-between">
+            <h2 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Channels</h2>
+            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" title="Connected" />
           </div>
-          <div className="space-y-1 px-3 flex-1">
+          <div className="space-y-1 px-3 flex-1 overflow-y-auto no-scrollbar">
             {chatRooms.map((room) => (
               <button
                 key={room.id}
                 onClick={() => handleRoomChange(room)}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all text-sm font-medium
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all text-sm font-bold group
                   ${activeRoom.id === room.id
-                    ? 'bg-primary/20 text-primary'
-                    : 'text-gray-400 hover:bg-gray-800/60 hover:text-white'}`}
+                    ? 'bg-primary/20 text-white glow-primary'
+                    : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
               >
                 <div className="flex items-center space-x-3 truncate">
-                  {room.isPrivate ? (
-                    <img src={room.avatar} alt="DP" className="w-6 h-6 rounded-full object-cover flex-shrink-0 border border-gray-700" />
-                  ) : (
-                    <span className="text-base">{room.emoji}</span>
-                  )}
-                  <span className="truncate text-xs">{room.name}</span>
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm transition-all overflow-hidden
+                    ${activeRoom.id === room.id ? 'bg-primary/30' : 'bg-white/5 group-hover:bg-white/10'}`}>
+                    {room.isPrivate ? (
+                      <img src={room.avatar} alt="DP" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className={activeRoom.id === room.id ? 'scale-110' : ''}>{room.emoji}</span>
+                    )}
+                  </div>
+                  <span className="truncate tracking-tight">{room.name}</span>
                 </div>
-                {room.isPrivate && <Lock size={10} className="opacity-50 flex-shrink-0 ml-2" />}
+                {room.isPrivate && <Lock size={12} className="opacity-40 group-hover:opacity-100 transition-opacity" />}
               </button>
             ))}
           </div>
-          <div className="px-5 pt-4 border-t border-gray-800">
-            <div className="flex items-center space-x-2 text-xs text-gray-500">
-              <Wifi size={12} className={connected ? 'text-green-400' : 'text-red-400'} />
-              <span>{connected ? `${onlineCount || 1} online` : 'Connecting...'}</span>
+          <div className="px-6 pt-6 border-t border-white/5 mt-auto">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center font-black text-[10px]">YOU</div>
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold text-white">lakshayx07</span>
+                  <span className="text-[10px] text-green-400 font-bold uppercase tracking-widest">Online</span>
+                </div>
+              </div>
             </div>
           </div>
         </aside>
 
         {/* Chat Area */}
         <div className="flex flex-col flex-1 min-w-0">
-          {/* Header */}
-          <header className="glass border-b border-gray-800 px-5 py-3.5 flex items-center justify-between flex-shrink-0">
-            <div className="flex items-center space-x-3">
-              {(() => {
-                const roomIsPrivate = activeRoom.isPrivate;
-                return (
-                  <>
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-base overflow-hidden flex-shrink-0
-                ${roomIsPrivate ? 'border-2 border-pink-500/50' : `bg-gradient-to-br ${activeRoom.color}`}`}
+          {/* Header - Immersive */}
+          <header className="bg-background/80 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex items-center justify-between flex-shrink-0 z-10">
+            <div className="flex items-center space-x-4">
+              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-lg overflow-hidden shadow-2xl
+                ${activeRoom.isPrivate ? 'ring-2 ring-primary/50' : `bg-gradient-to-br ${activeRoom.color}`}`}
               >
-                {roomIsPrivate ? (
+                {activeRoom.isPrivate ? (
                   <img src={activeRoom.avatar} alt="DP" className="w-full h-full object-cover" />
                 ) : (
                   activeRoom.emoji
                 )}
               </div>
               <div>
-                <h2 className="font-semibold text-sm drop-shadow-sm">{activeRoom.name}</h2>
-                <p className="text-xs text-gray-500 flex items-center space-x-1">
-                  {roomIsPrivate ? <Lock size={10} /> : <Users size={10} />}
-                  <span>{roomIsPrivate ? 'End-to-End Encrypted' : 'University Chat Room'}</span>
-                </p>
+                <h2 className="font-black text-sm tracking-tight text-white">{activeRoom.name}</h2>
+                <div className="flex items-center space-x-2">
+                  <span className="text-[10px] font-black text-primary uppercase tracking-[0.15em]">Live Session</span>
+                  <div className="w-1 h-1 rounded-full bg-gray-600" />
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{onlineCount || 1} studying</span>
+                </div>
               </div>
-              </>
-              );
-            })()}
             </div>
-            <div className="flex items-center space-x-2">
-              <span className={`w-2 h-2 rounded-full ${connected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`} />
-              <span className="text-xs text-gray-500">{connected ? 'Live' : 'Offline'}</span>
+            <div className="flex items-center space-x-3">
+              <button className="p-2.5 rounded-xl glass-dark hover:bg-white/10 transition-all text-gray-400 hover:text-white">
+                <Users size={18} />
+              </button>
             </div>
           </header>
 
@@ -332,21 +336,21 @@ export default function ChatPage() {
                       )}
                     </div>
                   )}
-                  <div className={`max-w-[85%] ${msg.isMine ? 'items-end' : 'items-start'} flex flex-col`}>
+                  <div className={`max-w-[80%] ${msg.isMine ? 'items-end' : 'items-start'} flex flex-col`}>
                     {!msg.isMine && (
-                      <span className={`text-[10px] uppercase font-bold mb-1 ml-1 tracking-wider ${msg.isAI ? 'text-indigo-400' : 'text-gray-500'}`}>
-                        {msg.senderName} {msg.isAI && '• AI ASSISTANT'}
+                      <span className={`text-[10px] font-black mb-1.5 ml-1 tracking-widest ${msg.isAI ? 'text-secondary' : 'text-gray-500'}`}>
+                        {msg.senderName} {msg.isAI && '• TUTOR AI'}
                       </span>
                     )}
-                    <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap
+                    <div className={`px-5 py-3.5 rounded-[22px] text-sm leading-relaxed whitespace-pre-wrap shadow-2xl
                       ${msg.isMine 
-                        ? 'bg-gradient-to-r from-primary to-purple-600 text-white rounded-br-sm shadow-lg shadow-indigo-500/10' 
+                        ? 'bg-primary text-white rounded-tr-none glow-primary' 
                         : msg.isAI 
-                          ? 'bg-indigo-950/40 border border-indigo-500/30 text-gray-100 rounded-bl-sm shadow-lg shadow-indigo-500/5'
-                          : 'glass text-gray-100 rounded-bl-sm'}`}>
+                          ? 'bg-secondary/10 border border-secondary/20 text-white rounded-tl-none'
+                          : 'glass-dark text-gray-200 rounded-tl-none'}`}>
                       {msg.text}
                     </div>
-                    <span className="text-[10px] text-gray-600 mt-1 mx-1">{msg.timestamp}</span>
+                    <span className="text-[10px] font-bold text-gray-600 mt-2 mx-2 uppercase tracking-tighter opacity-60">{msg.timestamp}</span>
                   </div>
                 </motion.div>
               ))}
