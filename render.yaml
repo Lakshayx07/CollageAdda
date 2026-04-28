@@ -7,6 +7,8 @@ services:
     buildCommand: npm install && npm run build
     startCommand: npm run start
     envVars:
+      - key: PORT
+        value: 10000
       - key: NEXT_PUBLIC_API_URL
         sync: false # Set this to the backend's Render URL in the dashboard
 
