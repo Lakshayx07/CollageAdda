@@ -1,11 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Heart, MessageCircle, Share2, MoreHorizontal } from "lucide-react";
 import Image from "next/image";
 import clsx from "clsx";
 
 export default function Home() {
+  const router = useRouter();
+
+  // Auth Guard: Check if user is logged in
+  useEffect(() => {
+    const token = localStorage.getItem("collegeadda_token");
+    if (!token) {
+      router.push("/login");
+    }
+  }, [router]);
   const [posts, setPosts] = useState([
     {
       id: 1,
