@@ -1,12 +1,12 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Home, MessageCircle, BookOpen, Compass, LogOut, Users } from 'lucide-react';
+import { Home, MessageCircle, BookOpen, Compass, LogOut, Users, Zap } from 'lucide-react';
 
 const NAV_ITEMS = [
   { to: '/feed',    icon: Home,          label: 'Feed'    },
+  { to: '/people',  icon: Zap,           label: 'People'  },
   { to: '/chat',    icon: MessageCircle, label: 'Chat'    },
   { to: '/study',   icon: BookOpen,      label: 'Study'   },
-  { to: '/friends', icon: Users,         label: 'Friends' },
   { to: '/explore', icon: Compass,       label: 'Explore' },
 ];
 

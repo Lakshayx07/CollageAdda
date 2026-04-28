@@ -7,7 +7,7 @@ import ChatPage from './pages/ChatPage';
 import StudyPage from './pages/StudyPage';
 import ProfilePage from './pages/ProfilePage';
 import ExplorePage from './pages/ExplorePage';
-import FriendsPage from './pages/FriendsPage';
+import PeoplePage from './pages/PeoplePage';
 
 function App() {
   return (
@@ -21,7 +21,7 @@ function App() {
           <Route path="/study" element={<StudyPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/explore" element={<ExplorePage />} />
-          <Route path="/friends" element={<FriendsPage />} />
+          <Route path="/people" element={<PeoplePage />} />
         </Routes>
       </Router>
     </AuthProvider>

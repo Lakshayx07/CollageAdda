@@ -11,6 +11,11 @@ const userSchema = mongoose.Schema({
   profilePic: { type: String, default: '' },
   instagram: { type: String, default: '' },
   snapchat: { type: String, default: '' },
+  interests: [{ type: String }],
+  goals: [{ type: String }],
+  year: { type: String, default: '' },
+  connectedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  skippedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 }, { timestamps: true });

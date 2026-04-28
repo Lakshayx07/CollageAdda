@@ -7,6 +7,7 @@ import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import postRoutes from './routes/postRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import matchRoutes from './routes/matchRoutes.js';
 
 dotenv.config();
 
@@ -35,6 +36,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/matches', matchRoutes);
 
 // ── Socket.io Real-time Chat ──────────────────────────────────────────────────
 const onlineUsers = new Map(); // socketId → { userId, name, university }

@@ -17,6 +17,19 @@ const UNIVERSITIES = [
   'Other',
 ];
 
+const INTEREST_OPTIONS = [
+  'Coding', 'Gym', 'Startup', 'Content Creation', 'Photography', 
+  'Music', 'Dance', 'Reading', 'Gaming', 'Travel', 'Art', 'Sports'
+];
+
+const GOAL_OPTIONS = [
+  'Placement', 'Freelancing', 'Networking', 'Startup', 'Masters', 'Skill Building'
+];
+
+const YEAR_OPTIONS = [
+  '1st Year', '2nd Year', '3rd Year', '4th Year', 'Graduated'
+];
+
 // Pulled from localStorage (set during login/register)
 const getStoredUser = () => {
   try {
@@ -45,6 +58,9 @@ export default function ProfilePage() {
     profilePic: stored.profilePic || '',
     instagram: stored.instagram || '',
     snapchat: stored.snapchat || '',
+    interests: stored.interests || [],
+    goals: stored.goals || [],
+    year: stored.year || '1st Year',
   });
 
   const [draft, setDraft] = useState({ ...profile });
@@ -268,6 +284,108 @@ export default function ProfilePage() {
                       profile.snapchat
                         ? <span className="text-yellow-400 text-sm font-medium">@{profile.snapchat}</span>
                         : <span className="text-gray-600 text-sm italic">Not set — tap Edit to add</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Year, Interests & Goals */}
+            <div className="glass rounded-2xl border border-gray-800/50 p-4">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-4 flex items-center space-x-2">
+                <Star size={13} />
+                <span>Interests & Goals</span>
+              </h3>
+
+              <div className="space-y-4">
+                {/* Year */}
+                <div>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-2">College Year</p>
+                  {editing ? (
+                    <select
+                      value={draft.year}
+                      onChange={e => setDraft(d => ({ ...d, year: e.target.value }))}
+                      className="w-full bg-dark/60 border border-gray-700/50 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-primary/60"
+                    >
+                      {YEAR_OPTIONS.map(y => <option key={y} value={y}>{y}</option>)}
+                    </select>
+                  ) : (
+                    <span className="inline-block px-3 py-1 rounded-full bg-primary/20 text-primary text-xs font-bold border border-primary/30">
+                      {profile.year}
+                    </span>
+                  )}
+                </div>
+
+                {/* Interests */}
+                <div>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-2">Interests</p>
+                  <div className="flex flex-wrap gap-2">
+                    {editing ? (
+                      INTEREST_OPTIONS.map(interest => (
+                        <button
+                          key={interest}
+                          onClick={() => {
+                            const newInterests = draft.interests.includes(interest)
+                              ? draft.interests.filter(i => i !== interest)
+                              : [...draft.interests, interest];
+                            setDraft(d => ({ ...d, interests: newInterests }));
+                          }}
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                            draft.interests.includes(interest)
+                              ? 'bg-primary text-white'
+                              : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                          }`}
+                        >
+                          {interest}
+                        </button>
+                      ))
+                    ) : (
+                      profile.interests && profile.interests.length > 0 ? (
+                        profile.interests.map(i => (
+                          <span key={i} className="px-3 py-1 rounded-full bg-gray-800/80 text-gray-300 text-xs border border-gray-700/50">
+                            {i}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-gray-600 text-xs italic">No interests selected</span>
+                      )
+                    )}
+                  </div>
+                </div>
+
+                {/* Goals */}
+                <div>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-2">Goals</p>
+                  <div className="flex flex-wrap gap-2">
+                    {editing ? (
+                      GOAL_OPTIONS.map(goal => (
+                        <button
+                          key={goal}
+                          onClick={() => {
+                            const newGoals = draft.goals.includes(goal)
+                              ? draft.goals.filter(g => g !== goal)
+                              : [...draft.goals, goal];
+                            setDraft(d => ({ ...d, goals: newGoals }));
+                          }}
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                            draft.goals.includes(goal)
+                              ? 'bg-indigo-600 text-white'
+                              : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                          }`}
+                        >
+                          {goal}
+                        </button>
+                      ))
+                    ) : (
+                      profile.goals && profile.goals.length > 0 ? (
+                        profile.goals.map(g => (
+                          <span key={g} className="px-3 py-1 rounded-full bg-indigo-900/30 text-indigo-400 text-xs border border-indigo-800/30">
+                            {g}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-gray-600 text-xs italic">No goals selected</span>
+                      )
                     )}
                   </div>
                 </div>
