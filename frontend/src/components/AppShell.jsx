@@ -1,13 +1,12 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Home, MessageCircle, BookOpen, Compass, LogOut, Users, Zap } from 'lucide-react';
+import { Home, MessageCircle, LogOut, Zap, Hash, User, Plus } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { to: '/feed',    icon: Home,          label: 'Feed'    },
-  { to: '/people',  icon: Zap,           label: 'People'  },
-  { to: '/chat',    icon: MessageCircle, label: 'Chat'    },
-  { to: '/study',   icon: BookOpen,      label: 'Study'   },
-  { to: '/explore', icon: Compass,       label: 'Explore' },
+  { to: '/feed',     icon: Home,          label: 'Feed'     },
+  { to: '/trending', icon: Hash,          label: 'Pulse'    },
+  { to: '/people',   icon: Zap,           label: 'Connect'  },
+  { to: '/chat',     icon: MessageCircle, label: 'Chat'     },
 ];
 
 const getUser = () => {
@@ -133,36 +132,35 @@ export function BottomNav() {
     : '?';
 
   return (
-  return (
-    <nav className="md:hidden fixed bottom-6 left-6 right-6 glass rounded-2xl border border-white/10 px-2 py-3 flex justify-around items-center z-50 shadow-2xl">
+    <nav className="md:hidden fixed bottom-6 left-6 right-6 glass rounded-[32px] border border-white/10 px-2 py-3 flex justify-around items-center z-50 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
       {NAV_ITEMS.map(({ to, icon: Icon, label }) => {
-        const isExplore = to === '/explore';
+        const isConnect = to === '/people';
         return (
           <NavLink
             key={to}
             to={to}
             className={({ isActive }) =>
-              `flex flex-col items-center space-y-1 px-3 py-1.5 rounded-xl transition-all relative
+              `flex flex-col items-center space-y-1.5 px-3 py-1.5 rounded-2xl transition-all relative
                ${isActive 
-                 ? 'text-white' 
+                 ? 'text-white scale-110' 
                  : 'text-gray-500 hover:text-gray-300'}`
             }
           >
             {({ isActive }) => (
               <>
-                <div className={`p-2 rounded-2xl transition-all 
+                <div className={`p-2 rounded-xl transition-all 
                   ${isActive 
-                    ? 'bg-primary/30 glow-primary' 
-                    : 'bg-white/5'}`}
+                    ? 'bg-primary/20 glow-primary' 
+                    : 'bg-transparent'}`}
                 >
-                  <Icon size={20} className={isExplore ? (isActive ? 'animate-pulse text-yellow-400' : 'text-yellow-600') : ''} />
+                  <Icon size={20} className={isConnect && isActive ? 'animate-pulse text-secondary' : ''} />
                 </div>
-                <span className={`text-[10px] font-medium ${isExplore && isActive ? 'font-bold' : ''}`}>{label}</span>
-                {isExplore && !isActive && (
-                   <span className="absolute top-1 right-2 flex h-1.5 w-1.5">
-                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
-                     <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-yellow-500"></span>
-                   </span>
+                <span className="text-[9px] font-black uppercase tracking-widest">{label}</span>
+                {isActive && (
+                  <motion.div 
+                    layoutId="bottom-nav-active" 
+                    className="absolute -bottom-1 w-1 h-1 rounded-full bg-primary" 
+                  />
                 )}
               </>
             )}
@@ -174,19 +172,19 @@ export function BottomNav() {
       <NavLink
         to="/profile"
         className={({ isActive }) =>
-          `flex flex-col items-center space-y-1 px-3 py-1.5 rounded-xl transition-all
-           ${isActive ? 'text-primary' : 'text-gray-500'}`
+          `flex flex-col items-center space-y-1.5 px-3 py-1.5 rounded-2xl transition-all
+           ${isActive ? 'text-white scale-110' : 'text-gray-500'}`
         }
       >
         {({ isActive }) => (
           <>
-            <div className={`w-7 h-7 rounded-full overflow-hidden flex items-center justify-center text-[10px] font-bold text-white bg-gradient-to-br from-indigo-500 to-purple-600 border-2 transition-all ${isActive ? 'border-primary' : 'border-transparent'}`}>
+            <div className={`w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center text-[10px] font-black text-white bg-gradient-to-br from-indigo-500 to-purple-600 border-2 transition-all ${isActive ? 'border-primary ring-4 ring-primary/10' : 'border-transparent'}`}>
               {user.profilePic
                 ? <img src={user.profilePic} alt="" className="w-full h-full object-cover" />
                 : initials
               }
             </div>
-            <span className="text-[10px] font-medium">Me</span>
+            <span className="text-[9px] font-black uppercase tracking-widest">Me</span>
           </>
         )}
       </NavLink>
