@@ -18,20 +18,43 @@ export const getMatches = async (req, res) => {
       ...(currentUser.skippedUsers || [])
     ];
 
-    // Simple matching algorithm:
-    // Find users who have at least one common interest or goal
-    const matches = await User.find({
+    // Advanced Matching Algorithm: "Vibe-Score"
+    const users = await User.find({
       _id: { $nin: excludeIds },
-      $or: [
-        { interests: { $in: currentUser.interests || [] } },
-        { goals: { $in: currentUser.goals || [] } }
-      ]
-    }).select('-password').limit(20);
+      isVerified: true // Only match with verified students
+    }).select('-password -email').limit(50);
 
-    // Sort matches by number of common interests/goals (optional enhancement)
-    // For now, we return the list as is.
+    const scoredMatches = users.map(user => {
+      let score = 0;
+      
+      // 1. Shared Interests (+40 max)
+      const commonInterests = user.interests.filter(i => currentUser.interests.includes(i));
+      score += Math.min(commonInterests.length * 15, 40);
+
+      // 2. Shared Goals (+30 max)
+      const commonGoals = user.goals.filter(g => currentUser.goals.includes(g));
+      score += Math.min(commonGoals.length * 15, 30);
+
+      // 3. Same University (+15)
+      if (user.university === currentUser.university) score += 15;
+
+      // 4. Same Year (+15)
+      if (user.year === currentUser.year) score += 15;
+
+      return { 
+        ...user.toObject(), 
+        matchScore: score,
+        commonInterests 
+      };
+    });
+
+    // Sort by score and limit to top 20
+    const sortedMatches = scoredMatches
+      .filter(m => m.matchScore > 10) // Filter out low quality matches
+      .sort((a, b) => b.matchScore - a.matchScore)
+      .slice(0, 20);
     
-    res.json(matches);
+    res.json(sortedMatches);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

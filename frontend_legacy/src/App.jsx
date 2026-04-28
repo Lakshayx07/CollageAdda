@@ -9,6 +9,7 @@ import ProfilePage from './pages/ProfilePage';
 import ExplorePage from './pages/ExplorePage';
 import PeoplePage from './pages/PeoplePage';
 import TrendingPage from './pages/TrendingPage';
+import OnboardingPage from './pages/OnboardingPage';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
           <Route path="/explore" element={<ExplorePage />} />
           <Route path="/people" element={<PeoplePage />} />
           <Route path="/trending" element={<TrendingPage />} />
+          <Route path="/onboarding" element={<OnboardingPage />} />
         </Routes>
       </Router>
     </AuthProvider>
