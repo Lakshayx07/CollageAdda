@@ -17,7 +17,25 @@ const userSchema = mongoose.Schema({
   connectedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   skippedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+  following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  
+  // Verification System Fields
+  isVerified: { type: Boolean, default: false },
+  verificationStatus: { 
+    type: String, 
+    enum: ['unverified', 'pending', 'verified', 'rejected'], 
+    default: 'unverified' 
+  },
+  verificationMethod: { 
+    type: String, 
+    enum: ['email', 'manual', 'none'], 
+    default: 'none' 
+  },
+  collegeEmail: { type: String, sparse: true },
+  verificationToken: { type: String },
+  verificationTokenExpires: { type: Date },
+  idPhotoUrl: { type: String, default: '' },
+  adminNotes: { type: String, default: '' }
 }, { timestamps: true });
 
 // Hash password before saving

@@ -1,6 +1,6 @@
 import express from 'express';
 import Post from '../models/Post.js';
-import { protect } from '../middleware/auth.js';
+import { protect, verified } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -20,7 +20,7 @@ router.get('/', protect, async (req, res) => {
 
 // @route   POST /api/posts
 // @desc    Create a post
-router.post('/', protect, async (req, res) => {
+router.post('/', protect, verified, async (req, res) => {
   const { content, mediaUrl, mediaType } = req.body;
   try {
     const post = await Post.create({
@@ -39,7 +39,7 @@ router.post('/', protect, async (req, res) => {
 
 // @route   PUT /api/posts/:id/like
 // @desc    Toggle like on a post
-router.put('/:id/like', protect, async (req, res) => {
+router.put('/:id/like', protect, verified, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
     if (!post) return res.status(404).json({ message: 'Post not found' });
@@ -59,7 +59,7 @@ router.put('/:id/like', protect, async (req, res) => {
 
 // @route   POST /api/posts/:id/comment
 // @desc    Add a comment to a post
-router.post('/:id/comment', protect, async (req, res) => {
+router.post('/:id/comment', protect, verified, async (req, res) => {
   const { text } = req.body;
   try {
     const post = await Post.findById(req.params.id);

@@ -20,4 +20,15 @@ const protect = async (req, res, next) => {
   }
 };
 
-export { protect };
+const verified = (req, res, next) => {
+  if (req.user && req.user.isVerified) {
+    next();
+  } else {
+    res.status(403).json({ 
+      message: 'Access denied. Please verify your student identity first 🎓',
+      verificationStatus: req.user ? req.user.verificationStatus : 'unverified'
+    });
+  }
+};
+
+export { protect, verified };
