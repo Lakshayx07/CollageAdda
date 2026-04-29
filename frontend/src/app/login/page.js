@@ -73,6 +73,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     const handleAuthCallback = async () => {
+      if (!supabase) return;
       const { data: { session }, error } = await supabase.auth.getSession();
       if (session && session.user) {
         const user = session.user;
@@ -127,6 +128,10 @@ export default function LoginPage() {
   }, []);
 
   const handleGoogleLogin = async () => {
+    if (!supabase) {
+      alert("Supabase is not configured. Please check your environment variables.");
+      return;
+    }
     if (!university) {
       alert("Please select your university first to continue with Google.");
       return;
