@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { MapPin, Mail, Lock, School, User as UserIcon } from "lucide-react";
+import { supabase } from "../../utils/supabase";
 
 const UNIVERSITIES = [
   "Rishihood University, Sonipat",
@@ -70,8 +71,84 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleLogin = () => {
-    alert("Google Login is currently disabled. Please use Email/Password.");
+  useEffect(() => {
+    const handleAuthCallback = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (session && session.user) {
+        const user = session.user;
+        const pendingUni = localStorage.getItem('pending_university');
+        
+        // Sync with backend
+        try {
+          setIsLoading(true);
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+          const res = await fetch(`${apiUrl}/api/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: user.user_metadata.full_name || user.email.split('@')[0],
+              email: user.email,
+              password: user.id, // Use supabase ID as password for simplicity in this bridge
+              university: pendingUni || "Other"
+            })
+          });
+
+          // If register fails because user exists, try login
+          let data;
+          if (!res.ok) {
+            const loginRes = await fetch(`${apiUrl}/api/auth/login`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                email: user.email,
+                password: user.id
+              })
+            });
+            data = await loginRes.json();
+            if (!loginRes.ok) throw new Error(data.message || 'OAuth Sync Failed');
+          } else {
+            data = await res.json();
+          }
+
+          localStorage.setItem('collegeadda_token', data.token);
+          localStorage.setItem('collegeadda_user', JSON.stringify(data));
+          localStorage.removeItem('pending_university');
+          window.location.href = '/';
+        } catch (err) {
+          console.error("OAuth Sync Error:", err);
+          // alert("Error syncing Google account. Please try again.");
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    handleAuthCallback();
+  }, []);
+
+  const handleGoogleLogin = async () => {
+    if (!university) {
+      alert("Please select your university first to continue with Google.");
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      localStorage.setItem('pending_university', university);
+      
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/login`,
+        },
+      });
+      if (error) throw error;
+    } catch (error) {
+      console.error("Google Auth Error:", error.message);
+      alert(error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

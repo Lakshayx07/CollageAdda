@@ -4,9 +4,8 @@ import { Search, Send, Users, ChevronLeft, Info, MessageSquare } from "lucide-re
 import { useRouter, useSearchParams } from "next/navigation";
 import clsx from "clsx";
 
-const MOCK_CHATS = [
-  { id: "uni-group", name: "University Hub", type: "group", avatar: "🏫", lastMsg: "Welcome to the group!", time: "Now" },
-];
+// Real rooms will be fetched from backend
+const MOCK_CHATS = [];
 
 import { Suspense } from "react";
 
@@ -30,40 +29,43 @@ function MessagesContent() {
     const u = JSON.parse(storedUser);
     setUser(u);
 
-    // Update Uni Group name based on user's university
-    setChats(prev => prev.map(c => 
-      c.id === "uni-group" ? { ...c, name: `${u.university || "University"} Hub` } : c
-    ));
+    const fetchRooms = async () => {
+      try {
+        const token = localStorage.getItem("collegeadda_token");
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+        const res = await fetch(`${apiUrl}/api/chat/rooms`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          // Transform backend rooms to UI format
+          const formattedRooms = data.map(room => ({
+            id: room._id,
+            name: room.isGroup ? (room.groupName || `${room.university} Hub`) : (room.participants.find(p => p._id !== u._id)?.name || "Chat"),
+            type: room.isGroup ? "group" : "private",
+            avatar: room.isGroup ? "🏫" : (room.participants.find(p => p._id !== u._id)?.profilePic || "https://i.pravatar.cc/150"),
+            lastMsg: room.lastMessage?.text || "No messages yet",
+            time: room.lastMessage ? new Date(room.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""
+          }));
+          setChats(formattedRooms);
+          
+          // If a chat param is provided in URL, activate it
+          const chatParam = searchParams.get("chat");
+          if (chatParam) {
+            const found = formattedRooms.find(c => c.id === chatParam);
+            if (found) setActiveChat(found);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching rooms:", err);
+      }
+    };
 
-    // Load messages from localStorage
+    fetchRooms();
+
+    // Load messages from localStorage (as fallback or cache)
     const savedMessages = JSON.parse(localStorage.getItem("collegeadda_messages") || "{}");
     setMessages(savedMessages);
-
-    // Load connected friends into chats
-    const connected = JSON.parse(localStorage.getItem("collegeadda_requests") || "{}");
-    const suggested = [
-      { id: 1, name: "Priya Sharma", avatar: "https://i.pravatar.cc/150?u=priya1" },
-      { id: 2, name: "Arjun Mehta", avatar: "https://i.pravatar.cc/150?u=arjun1" },
-      { id: 7, name: "Neha Verma", avatar: "https://i.pravatar.cc/150?u=neha1" },
-    ];
-
-    const friendsChats = suggested
-      .filter(s => connected[s.id] === "connected" || connected[s.id] === "sent")
-      .map(s => {
-        const chatMsgs = savedMessages[s.id.toString()] || [];
-        const lastMsg = chatMsgs.length > 0 ? chatMsgs[chatMsgs.length - 1].text : "Start a conversation";
-        const time = chatMsgs.length > 0 ? chatMsgs[chatMsgs.length - 1].time : "";
-        return { id: s.id.toString(), name: s.name, type: "private", avatar: s.avatar, lastMsg, time };
-      });
-
-    setChats(prev => [...prev.filter(c => c.id === "uni-group"), ...friendsChats]);
-
-    // Check for direct chat from URL
-    const chatParam = searchParams.get("chat");
-    if (chatParam) {
-      const found = [...MOCK_CHATS, ...friendsChats].find(c => c.id === chatParam);
-      if (found) setActiveChat(found);
-    }
   }, [searchParams, router]);
 
   useEffect(() => {

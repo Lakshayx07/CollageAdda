@@ -1,11 +1,34 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import ChatRoom from '../models/ChatRoom.js';
 
 const router = express.Router();
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
+};
+
+const ensureUniversityGroup = async (user) => {
+  if (!user.university) return;
+  try {
+    let universityRoom = await ChatRoom.findOne({ university: user.university, isGroup: true });
+    if (!universityRoom) {
+      await ChatRoom.create({
+        groupName: `${user.university} Common Group`,
+        university: user.university,
+        isGroup: true,
+        participants: [user._id]
+      });
+    } else {
+      if (!universityRoom.participants.includes(user._id)) {
+        universityRoom.participants.push(user._id);
+        await universityRoom.save();
+      }
+    }
+  } catch (err) {
+    console.error("Error joining university room:", err);
+  }
 };
 
 // @route   POST /api/auth/register
@@ -41,6 +64,8 @@ router.post('/register', async (req, res) => {
       points: 50 // Signup bonus
     });
 
+    await ensureUniversityGroup(user);
+
     res.status(201).json({
       _id: user._id,
       name: user.name,
@@ -62,6 +87,7 @@ router.post('/login', async (req, res) => {
   try {
     const user = await User.findOne({ email });
     if (user && (await user.matchPassword(password))) {
+      await ensureUniversityGroup(user);
       res.json({
         _id: user._id,
         name: user.name,
