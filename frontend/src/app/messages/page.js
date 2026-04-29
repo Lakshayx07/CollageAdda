@@ -8,9 +8,12 @@ const MOCK_CHATS = [
   { id: "uni-group", name: "University Hub", type: "group", avatar: "🏫", lastMsg: "Welcome to the group!", time: "Now" },
 ];
 
-export default function MessagesPage() {
+import { Suspense } from "react";
+
+function MessagesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  // ... existing MessagesPage logic ...
   const [user, setUser] = useState(null);
   const [activeChat, setActiveChat] = useState(null);
   const [chats, setChats] = useState(MOCK_CHATS);
@@ -237,5 +240,17 @@ export default function MessagesPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function MessagesPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-primary"></div>
+      </div>
+    }>
+      <MessagesContent />
+    </Suspense>
   );
 }
