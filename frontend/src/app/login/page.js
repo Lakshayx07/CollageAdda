@@ -148,9 +148,42 @@ export default function LoginPage() {
         },
       });
       if (error) throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGuestLogin = async () => {
+    if (!university) {
+      alert("Please select your university first to enter as guest.");
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      const guestEmail = `guest_${Math.random().toString(36).substring(2, 8)}@example.com`;
+      const guestPassword = "guestPassword123";
+      
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+      const res = await fetch(`${apiUrl}/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          name: `Guest User`, 
+          email: guestEmail, 
+          password: guestPassword, 
+          university: university 
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Guest Login failed');
+
+      localStorage.setItem('collegeadda_token', data.token);
+      localStorage.setItem('collegeadda_user', JSON.stringify(data));
+      window.location.href = '/';
     } catch (error) {
-      console.error("Google Auth Error:", error.message);
-      // alert("Google login failed. Please ensure you have enabled Google in Supabase and provided the Client ID/Secret.");
+      console.error("Guest Auth Error:", error.message);
       alert(error.message);
     } finally {
       setIsLoading(false);
@@ -274,6 +307,16 @@ export default function LoginPage() {
             height={24} 
           />
           <span>Continue with Google</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={handleGuestLogin}
+          disabled={isLoading}
+          className="w-full flex items-center justify-center space-x-3 bg-surface-hover border border-border/50 text-foreground py-3 px-4 rounded-xl font-medium transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-70 disabled:hover:scale-100 mt-2"
+        >
+          <UserIcon className="text-primary" size={20} />
+          <span>Enter as Guest</span>
         </button>
 
         <div className="mt-6 text-center text-sm">
