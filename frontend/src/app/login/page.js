@@ -127,13 +127,19 @@ export default function LoginPage() {
     handleAuthCallback();
   }, []);
 
-  const handleGoogleLogin = async () => {
+  const [linkSent, setLinkSent] = useState(false);
+
+  const handleMagicLink = async () => {
     if (!supabase) {
       alert("Supabase is not configured. Please check your environment variables.");
       return;
     }
+    if (!email) {
+      alert("Please enter your email first to receive a Magic Link.");
+      return;
+    }
     if (!university) {
-      alert("Please select your university first to continue with Google.");
+      alert("Please select your university first to continue.");
       return;
     }
     
@@ -141,15 +147,18 @@ export default function LoginPage() {
       setIsLoading(true);
       localStorage.setItem('pending_university', university);
       
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email,
         options: {
-          redirectTo: `${window.location.origin}/login`,
+          emailRedirectTo: `${window.location.origin}/login`,
         },
       });
+      
       if (error) throw error;
+      setLinkSent(true);
+      alert("Magic Link sent! Check your email to login.");
     } catch (error) {
-      console.error("Google Auth Error:", error.message);
+      console.error("Magic Link Error:", error.message);
       alert(error.message);
     } finally {
       setIsLoading(false);
@@ -262,17 +271,12 @@ export default function LoginPage() {
 
         <button
           type="button"
-          onClick={handleGoogleLogin}
+          onClick={handleMagicLink}
           disabled={isLoading}
           className="w-full flex items-center justify-center space-x-3 bg-white text-black py-3 px-4 rounded-xl font-medium transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-70 disabled:hover:scale-100"
         >
-          <Image 
-            src="https://www.svgrepo.com/show/475656/google-color.svg" 
-            alt="Google" 
-            width={24} 
-            height={24} 
-          />
-          <span>Continue with Google</span>
+          <Mail className="text-primary" size={20} />
+          <span>{linkSent ? "Link Sent! Check Email" : "Send Magic Link"}</span>
         </button>
 
         <div className="mt-6 text-center text-sm">
