@@ -10,7 +10,11 @@ services:
       - key: PORT
         value: 10000
       - key: NEXT_PUBLIC_API_URL
-        sync: false # Set this to the backend's Render URL in the dashboard
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
 
   # Node.js/Express Legacy Backend (Optional if migrating entirely to Supabase/Next.js)
   - type: web
