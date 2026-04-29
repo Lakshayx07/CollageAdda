@@ -26,6 +26,7 @@
   
   --animate-fade-in: fade-in 0.3s ease-out;
   --animate-slide-up: slide-up 0.4s ease-out;
+  --animate-blink-twice: blink-twice 1s ease-in-out 2;
 
   @keyframes fade-in {
     from { opacity: 0; }
@@ -34,6 +35,10 @@
   @keyframes slide-up {
     from { transform: translateY(10px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
+  }
+  @keyframes blink-twice {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
   }
 }
 

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { LogOut, Edit3, Instagram, X, Check, Plus, Grid, Heart, MessageCircle } from "lucide-react";
+import { LogOut, Edit3, X, Check, Plus, Grid, Heart, MessageCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 const MOCK_POSTS = [
@@ -96,11 +96,15 @@ export default function ProfilePage() {
                 <p className="text-xs text-muted">Posts</p>
               </div>
               <button className="text-center hover:opacity-70 transition-opacity" onClick={() => setModal("followers")}>
-                <p className="text-lg font-bold text-foreground">{MOCK_FOLLOWERS.length}</p>
+                <p className="text-lg font-bold text-foreground">{
+                  JSON.parse(typeof window !== "undefined" ? (localStorage.getItem("collegeadda_followers_list") || "[]") : "[]").length + MOCK_FOLLOWERS.length
+                }</p>
                 <p className="text-xs text-muted">Followers</p>
               </button>
               <button className="text-center hover:opacity-70 transition-opacity" onClick={() => setModal("following")}>
-                <p className="text-lg font-bold text-foreground">{MOCK_FOLLOWING.length}</p>
+                <p className="text-lg font-bold text-foreground">{
+                  JSON.parse(typeof window !== "undefined" ? (localStorage.getItem("collegeadda_following_list") || "[]") : "[]").length + MOCK_FOLLOWING.length
+                }</p>
                 <p className="text-xs text-muted">Following</p>
               </button>
             </div>
@@ -122,7 +126,7 @@ export default function ProfilePage() {
                     className="flex items-center space-x-1 text-xs px-3 py-1 rounded-full text-white font-medium hover:scale-105 transition-transform"
                     style={{ background: "linear-gradient(135deg, #f09433, #dc2743, #bc1888)" }}
                   >
-                    <Instagram size={12} />
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
                     <span>@{profile.instaId}</span>
                   </a>
                 )}
@@ -196,8 +200,8 @@ export default function ProfilePage() {
               <button onClick={() => setModal(null)}><X size={20} className="text-muted" /></button>
             </div>
             <div className="space-y-3">
-              {MOCK_FOLLOWERS.map(f => (
-                <div key={f.id} className="flex items-center space-x-3">
+              {[...MOCK_FOLLOWERS, ...JSON.parse(localStorage.getItem("collegeadda_followers_list") || "[]")].map((f, idx) => (
+                <div key={idx} className="flex items-center space-x-3">
                   <img src={f.avatar} alt={f.name} className="w-10 h-10 rounded-full object-cover" />
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-foreground">{f.name}</p>
@@ -222,8 +226,8 @@ export default function ProfilePage() {
               <button onClick={() => setModal(null)}><X size={20} className="text-muted" /></button>
             </div>
             <div className="space-y-3">
-              {MOCK_FOLLOWING.map(f => (
-                <div key={f.id} className="flex items-center space-x-3">
+              {[...MOCK_FOLLOWING, ...JSON.parse(localStorage.getItem("collegeadda_following_list") || "[]")].map((f, idx) => (
+                <div key={idx} className="flex items-center space-x-3">
                   <img src={f.avatar} alt={f.name} className="w-10 h-10 rounded-full object-cover" />
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-foreground">{f.name}</p>
