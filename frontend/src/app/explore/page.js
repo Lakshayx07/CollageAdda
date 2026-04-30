@@ -183,12 +183,12 @@ export default function ExplorePage() {
                   onClick={() => setSelectedCollege(college)}
                   className="flex flex-col bg-surface border border-border/50 rounded-2xl overflow-hidden text-left hover:border-primary/50 transition-all shadow-sm group"
                 >
-                  <div className="h-24 w-full relative bg-muted overflow-hidden">
+                  <div className="h-32 w-full relative bg-muted overflow-hidden">
                     <img src={college.banner} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={college.name} />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                     <div className="absolute bottom-2 left-2 text-2xl drop-shadow-lg">{college.emoji}</div>
                   </div>
-                  <div className="p-3 space-y-1 flex-1 flex flex-col justify-between">
+                  <div className="p-3 space-y-2 flex-1 flex flex-col justify-between">
                     <div>
                       <h3 className="font-bold text-sm text-foreground leading-tight line-clamp-2">{college.name}</h3>
                       <div className="flex items-center text-[10px] text-muted mt-1">
@@ -196,12 +196,17 @@ export default function ExplorePage() {
                         <span className="truncate">{college.location}</span>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/10">
-                      <div className="flex items-center text-[10px] text-primary font-medium">
+                    <div className="flex flex-col space-y-2 mt-2 pt-2 border-t border-border/10">
+                      <div className="flex items-center text-[10px] text-muted font-medium">
                         <Users size={10} className="mr-1" />
-                        {college.students}
+                        {college.students} Students
                       </div>
-                      <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">EXPLORE</span>
+                      <div 
+                        className="w-full py-2 rounded-lg text-[10px] font-bold text-center transition-all group-hover:brightness-110"
+                        style={{ backgroundColor: `${college.accent}20`, color: college.accent, border: `1px solid ${college.accent}40` }}
+                      >
+                        Visit Me
+                      </div>
                     </div>
                   </div>
                 </motion.button>
@@ -272,8 +277,9 @@ export default function ExplorePage() {
                   "px-6 py-2 rounded-xl text-sm font-bold transition-all active:scale-95",
                   followed[selectedCollege.id] 
                     ? "bg-surface-hover text-muted border border-border/50" 
-                    : "bg-primary text-white shadow-lg shadow-primary/20"
+                    : "text-white shadow-lg shadow-opacity-20"
                 )}
+                style={!followed[selectedCollege.id] ? { backgroundColor: selectedCollege.accent, boxShadow: `0 10px 15px -3px ${selectedCollege.accent}30` } : {}}
               >
                 {followed[selectedCollege.id] ? "Following" : "Follow"}
               </button>
@@ -287,12 +293,17 @@ export default function ExplorePage() {
                   onClick={() => setActiveTab(tab)}
                   className={clsx(
                     "flex-1 py-3 text-sm font-bold capitalize transition-all relative",
-                    activeTab === tab ? "text-primary" : "text-muted"
+                    activeTab === tab ? "text-foreground" : "text-muted"
                   )}
+                  style={activeTab === tab ? { color: selectedCollege.accent } : {}}
                 >
                   {tab}
                   {activeTab === tab && (
-                    <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+                    <motion.div 
+                      layoutId="activeTab" 
+                      className="absolute bottom-0 left-0 right-0 h-0.5" 
+                      style={{ backgroundColor: selectedCollege.accent }}
+                    />
                   )}
                 </button>
               ))}
@@ -312,7 +323,10 @@ export default function ExplorePage() {
                     {selectedCollege.postsData.map(post => (
                       <div key={post.id} className="bg-surface border border-border/50 rounded-2xl p-4 space-y-3">
                         <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                          <div 
+                            className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                            style={{ backgroundColor: selectedCollege.accent }}
+                          >
                             {post.author.split(' ').map(n => n[0]).join('')}
                           </div>
                           <div className="flex-1">
@@ -375,8 +389,9 @@ export default function ExplorePage() {
                             "flex items-center space-x-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all",
                             addedStudents[student.id]
                               ? "bg-green-500/10 text-green-500 border border-green-500/20"
-                              : "bg-primary text-white"
+                              : "text-white"
                           )}
+                          style={!addedStudents[student.id] ? { backgroundColor: selectedCollege.accent } : {}}
                         >
                           {addedStudents[student.id] ? (
                             <><Check size={14} /> <span>Added ✓</span></>
