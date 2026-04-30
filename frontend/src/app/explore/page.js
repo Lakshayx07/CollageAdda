@@ -149,11 +149,18 @@ export default function ExplorePage() {
     setSwipeDirection(direction);
     
     if (direction === 'right') {
-      setToastMessage(`Connection sent to ${student.name.split(' ')[0]}! 🎉`);
+      const autoMessage = "Hey! 👋 Lakshay from Rishihood University just connected with you on Campus Adda! Say hi back 🎓💗";
+      
+      setChatMessages(prev => ({
+        ...prev,
+        [student.id]: [...(prev[student.id] || []), { text: autoMessage, time: 'now' }]
+      }));
+      
+      setToastMessage("Friend request sent! They'll see your message 💗");
       toggleAddStudent(student.id);
       setTimeout(() => setToastMessage(null), 3000);
     } else {
-      setToastMessage("Maybe next time! 😄");
+      setToastMessage("Skipped! Next up 👀");
       setTimeout(() => setToastMessage(null), 2000);
     }
 
@@ -526,29 +533,30 @@ export default function ExplorePage() {
                               )}
 
                               {/* Student Profile Photo Area */}
-                              <div className="relative h-[60%] w-full bg-muted pointer-events-none">
+                              <div className="relative h-[50%] w-full bg-muted pointer-events-none">
                                 <img src={student.photo} alt={student.name} className="w-full h-full object-cover" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-                                
-                                <div className="absolute bottom-5 left-5 right-5">
-                                  <h2 className="text-3xl font-black text-white flex items-center gap-2 drop-shadow-lg tracking-tight">
-                                    {student.name}, {student.age}
-                                    {student.verified && <span className="text-blue-400 text-xl drop-shadow-md">✅</span>}
-                                  </h2>
-                                  <div className="flex items-center text-white/95 text-[13px] mt-2 font-semibold drop-shadow-md">
-                                    🎓 {student.course} • {student.year}
-                                  </div>
-                                  <div className="flex items-center text-white/80 text-[12px] mt-1 font-medium drop-shadow-md">
-                                    🏫 {selectedCollege.name}
-                                  </div>
-                                  <div className="flex items-center text-white/80 text-[12px] mt-0.5 font-medium drop-shadow-md">
-                                    📍 {student.location || selectedCollege.location}
-                                  </div>
-                                </div>
                               </div>
 
                               {/* Details Area */}
-                              <div className="flex-1 p-5 space-y-4 bg-surface overflow-y-auto pointer-events-none">
+                              <div className="flex-1 p-5 space-y-4 bg-surface overflow-y-auto pointer-events-none flex flex-col">
+                                <div>
+                                  <h2 className="text-2xl font-black text-foreground flex items-center gap-2 tracking-tight">
+                                    {student.name}, {student.age}
+                                    {student.verified && <span className="text-blue-500 text-xl">✅</span>}
+                                  </h2>
+                                  <div className="flex flex-col mt-2 space-y-1.5">
+                                    <div className="flex items-center text-foreground/90 text-[13px] font-semibold">
+                                      🎓 {student.course} • {student.year}
+                                    </div>
+                                    <div className="flex items-center text-foreground/80 text-[12px] font-medium">
+                                      🏫 {selectedCollege.name}
+                                    </div>
+                                    <div className="flex items-center text-foreground/80 text-[12px] font-medium">
+                                      📍 {student.location || selectedCollege.location}
+                                    </div>
+                                  </div>
+                                </div>
+
                                 <div>
                                   <h4 className="text-[10px] font-bold text-muted uppercase tracking-widest mb-2.5">Interests</h4>
                                   <div className="flex flex-wrap gap-2">
@@ -560,14 +568,8 @@ export default function ExplorePage() {
                                   </div>
                                 </div>
 
-                                <div className="pt-1">
-                                  <p className="text-[12px] font-bold text-foreground/70">
-                                    Instagram: <a href="#" className="text-primary hover:underline pointer-events-auto">{student.instagram}</a>
-                                  </p>
-                                </div>
-
-                                <div className="pt-2">
-                                  <p className="text-[13px] text-foreground/80 italic leading-relaxed font-medium">
+                                <div className="pt-2 mt-auto">
+                                  <p className="text-[13px] text-foreground/80 italic leading-relaxed font-medium bg-surface-hover p-3 rounded-xl border border-border/50">
                                     "{student.bio}"
                                   </p>
                                 </div>
