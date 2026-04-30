@@ -175,35 +175,52 @@ export default function ExplorePage() {
               </div>
             </header>
 
-            <div className="p-4 grid grid-cols-2 gap-4">
+            <div className="p-4 grid grid-cols-2 gap-6">
               {filteredColleges.map(college => (
                 <motion.button
-                  whileTap={{ scale: 0.95 }}
+                  whileTap={{ scale: 0.98 }}
                   key={college.id}
                   onClick={() => setSelectedCollege(college)}
-                  className="flex flex-col bg-surface border border-border/50 rounded-2xl overflow-hidden text-left hover:border-primary/50 transition-all shadow-sm group"
+                  className="flex flex-col bg-surface border border-border/50 rounded-3xl overflow-hidden text-left hover:border-primary/50 transition-all shadow-md group h-full"
                 >
-                  <div className="h-32 w-full relative bg-muted overflow-hidden">
-                    <img src={college.banner} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={college.name} />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                    <div className="absolute bottom-2 left-2 text-2xl drop-shadow-lg">{college.emoji}</div>
+                  {/* Full Image Container */}
+                  <div className="h-[200px] w-full bg-muted overflow-hidden">
+                    <img 
+                      src={college.banner} 
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                      alt={college.name} 
+                    />
                   </div>
-                  <div className="p-3 space-y-2 flex-1 flex flex-col justify-between">
-                    <div>
-                      <h3 className="font-bold text-sm text-foreground leading-tight line-clamp-2">{college.name}</h3>
-                      <div className="flex items-center text-[10px] text-muted mt-1">
-                        <MapPin size={10} className="mr-0.5" />
+
+                  {/* Info Section Below Image */}
+                  <div className="p-4 flex flex-col flex-1 space-y-3 bg-surface">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{college.emoji}</span>
+                        <h3 className="font-bold text-sm text-foreground leading-tight line-clamp-2">
+                          {college.name}
+                        </h3>
+                      </div>
+                      <div className="flex items-center text-[11px] text-muted">
+                        <MapPin size={12} className="mr-1 text-primary" />
                         <span className="truncate">{college.location}</span>
                       </div>
                     </div>
-                    <div className="flex flex-col space-y-2 mt-2 pt-2 border-t border-border/10">
-                      <div className="flex items-center text-[10px] text-muted font-medium">
-                        <Users size={10} className="mr-1" />
-                        {college.students} Students
-                      </div>
+
+                    <div className="flex items-center text-[11px] text-muted font-medium pb-2">
+                      <Users size={12} className="mr-1.5 text-secondary" />
+                      {college.students} Students
+                    </div>
+
+                    {/* Visit Me Button */}
+                    <div className="mt-auto pt-2">
                       <div 
-                        className="w-full py-2 rounded-lg text-[10px] font-bold text-center transition-all group-hover:brightness-110"
-                        style={{ backgroundColor: `${college.accent}20`, color: college.accent, border: `1px solid ${college.accent}40` }}
+                        className="w-full py-2.5 rounded-xl text-[11px] font-bold text-center transition-all shadow-sm active:scale-95"
+                        style={{ 
+                          backgroundColor: `${college.accent}15`, 
+                          color: college.accent, 
+                          border: `1.5px solid ${college.accent}30` 
+                        }}
                       >
                         Visit Me
                       </div>
