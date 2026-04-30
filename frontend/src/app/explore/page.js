@@ -127,6 +127,8 @@ export default function ExplorePage() {
   const [followed, setFollowed] = useState({});
   const [addedStudents, setAddedStudents] = useState({});
   const [likes, setLikes] = useState({});
+  const [chatWithStudent, setChatWithStudent] = useState(null);
+  const [chatMessages, setChatMessages] = useState({});
 
   const filteredColleges = useMemo(() => {
     return COLLEGES.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
