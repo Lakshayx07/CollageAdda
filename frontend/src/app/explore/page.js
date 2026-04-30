@@ -26,7 +26,7 @@ const COLLEGES = [
     departments: 12,
     emoji: "⚖️",
     accent: "#6366f1", // Indigo
-    banner: "https://images.unsplash.com/photo-1541339907198-e08756ebafe3?w=800&q=80",
+    banner: "https://images.unsplash.com/photo-1627555021214-b04b92f0744e?w=1200&q=80",
     postsData: [
       { id: 1, author: "Rahul Singh", meta: "B.A. LL.B (Hons) • 3rd Year", time: "2h ago", text: "The Moot Court competition today was intense! Glad to have made it to the semi-finals. #LawLife #OPJGU", likes: 24, liked: false },
       { id: 2, author: "Ishita Rao", meta: "Global Affairs • 1st Year", time: "5h ago", text: "Sunset at the JGU campus is something else. ❤️", likes: 56, liked: true, image: "https://images.unsplash.com/photo-1523050335456-c38a7047d28c?w=500&q=80" },
@@ -46,7 +46,7 @@ const COLLEGES = [
     departments: 80,
     emoji: "📜",
     accent: "#ec4899", // Pink
-    banner: "https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=800&q=80",
+    banner: "https://images.unsplash.com/photo-1541339907198-e08756ebafe3?w=1200&q=80",
     postsData: [
       { id: 3, author: "Amit Sharma", meta: "SRCC • Eco Hons", time: "1h ago", text: "SRCC fest vibes are unmatched. #Crossroads #DU", likes: 120, liked: false },
       { id: 4, author: "Priya Verma", meta: "Miranda House • History", time: "3h ago", text: "North Campus library is my second home now. 📚", likes: 89, liked: false },
@@ -66,7 +66,7 @@ const COLLEGES = [
     departments: 19,
     emoji: "⚙️",
     accent: "#3b82f6", // Blue
-    banner: "https://images.unsplash.com/photo-1562774053-701939374585?w=800&q=80",
+    banner: "https://images.unsplash.com/photo-1606761560479-6646793ee72d?w=1200&q=80",
     postsData: [
       { id: 5, author: "Vikram Gupta", meta: "CSE • 4th Year", time: "30m ago", text: "Placement season is finally over! Off to Google. 🚀 #IITD #LifeAtIIT", likes: 450, liked: true },
       { id: 6, author: "Neha Soni", meta: "EE • 2nd Year", time: "4h ago", text: "Lab reports are the death of me. Anyone up for a coffee at SDA?", likes: 34, liked: false },
@@ -86,7 +86,7 @@ const COLLEGES = [
     departments: 35,
     emoji: "🕌",
     accent: "#10b981", // Emerald
-    banner: "https://images.unsplash.com/photo-1514565131-fce0801e5785?w=800&q=80",
+    banner: "https://images.unsplash.com/photo-1590012314607-cda9d9b699ae?w=1200&q=80",
     postsData: [
       { id: 7, author: "Zaid Khan", meta: "Mass Comm • Final Year", time: "1h ago", text: "The new documentary screening at MCRC was eye-opening.", likes: 45, liked: false },
       { id: 8, author: "Sana Ahmed", meta: "Fine Arts • 2nd Year", time: "6h ago", text: "Painting the central canteen walls today! Stop by to see the progress. 🎨", likes: 67, liked: true },
@@ -106,7 +106,7 @@ const COLLEGES = [
     departments: 50,
     emoji: "🌟",
     accent: "#f59e0b", // Amber
-    banner: "https://images.unsplash.com/photo-1498243639359-2cee349574b0?w=800&q=80",
+    banner: "https://images.unsplash.com/photo-1562774053-701939374585?w=1200&q=80",
     postsData: [
       { id: 9, author: "Karan Johar", meta: "BBA • 2nd Year", time: "45m ago", text: "Amity Noida campus is a whole vibe today. ✨", likes: 21, liked: false },
       { id: 10, author: "Shanaya Roy", meta: "Fashion Design • 1st Year", time: "2h ago", text: "Portfolio submissions are finally done! Pizza party? 🍕", likes: 43, liked: false },
@@ -231,32 +231,34 @@ export default function ExplorePage() {
           >
             {/* Profile Header */}
             <div className="relative">
-              <div className="h-48 w-full">
+              <div className="h-64 w-full bg-surface relative">
                 <img src={selectedCollege.banner} className="w-full h-full object-cover" alt="" />
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-black/30" />
-              </div>
-              
-              <button 
-                onClick={() => setSelectedCollege(null)}
-                className="absolute top-4 left-4 p-2 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-black/60 transition-colors"
-              >
-                <ChevronLeft size={20} />
-              </button>
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-black/40 to-black/20" />
+                
+                {/* Back Button */}
+                <button 
+                  onClick={() => setSelectedCollege(null)}
+                  className="absolute top-4 left-4 p-2 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-black/60 transition-colors z-20"
+                >
+                  <ChevronLeft size={20} />
+                </button>
 
-              <div className="absolute -bottom-8 left-4 flex items-end space-x-4">
-                <div className="w-20 h-20 rounded-2xl bg-surface border-4 border-background flex items-center justify-center text-4xl shadow-xl">
-                  {selectedCollege.emoji}
-                </div>
-                <div className="mb-2 pb-2">
-                  <h2 className="text-xl font-bold text-foreground leading-tight">{selectedCollege.name}</h2>
-                  <p className="text-xs text-muted flex items-center">
-                    <MapPin size={12} className="mr-1" /> {selectedCollege.location}
-                  </p>
+                {/* College Info on Banner */}
+                <div className="absolute bottom-6 left-4 right-4 flex items-center space-x-4 z-10">
+                  <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-3xl shadow-2xl">
+                    {selectedCollege.emoji}
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-bold text-white drop-shadow-md leading-tight">{selectedCollege.name}</h2>
+                    <p className="text-sm text-white/80 flex items-center mt-1 drop-shadow-sm">
+                      <MapPin size={14} className="mr-1" /> {selectedCollege.location}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="mt-12 px-4 flex items-center justify-between">
+            <div className="mt-8 px-4 flex items-center justify-between">
               <div className="flex space-x-6 text-center">
                 <div>
                   <p className="font-bold text-foreground">{selectedCollege.students}</p>
