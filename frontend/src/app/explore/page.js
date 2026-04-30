@@ -26,7 +26,7 @@ const COLLEGES = [
     departments: 12,
     emoji: "⚖️",
     accent: "#6366f1", // Indigo
-    banner: "https://images.unsplash.com/photo-1627555021214-b04b92f0744e?w=1200&q=80",
+    banner: "https://www.jgu.edu.in/wp-content/uploads/2021/08/JGU-Campus.jpg",
     postsData: [
       { id: 1, author: "Rahul Singh", meta: "B.A. LL.B (Hons) • 3rd Year", time: "2h ago", text: "The Moot Court competition today was intense! Glad to have made it to the semi-finals. #LawLife #OPJGU", likes: 24, liked: false },
       { id: 2, author: "Ishita Rao", meta: "Global Affairs • 1st Year", time: "5h ago", text: "Sunset at the JGU campus is something else. ❤️", likes: 56, liked: true, image: "https://images.unsplash.com/photo-1523050335456-c38a7047d28c?w=500&q=80" },
@@ -46,7 +46,7 @@ const COLLEGES = [
     departments: 80,
     emoji: "📜",
     accent: "#ec4899", // Pink
-    banner: "https://images.unsplash.com/photo-1541339907198-e08756ebafe3?w=1200&q=80",
+    banner: "https://akm-img-a-in.tosshub.com/indiatoday/images/story/201911/du_1.png?size=690:388",
     postsData: [
       { id: 3, author: "Amit Sharma", meta: "SRCC • Eco Hons", time: "1h ago", text: "SRCC fest vibes are unmatched. #Crossroads #DU", likes: 120, liked: false },
       { id: 4, author: "Priya Verma", meta: "Miranda House • History", time: "3h ago", text: "North Campus library is my second home now. 📚", likes: 89, liked: false },
@@ -66,7 +66,7 @@ const COLLEGES = [
     departments: 19,
     emoji: "⚙️",
     accent: "#3b82f6", // Blue
-    banner: "https://images.unsplash.com/photo-1606761560479-6646793ee72d?w=1200&q=80",
+    banner: "https://home.iitd.ac.in/images/iitd-campus/6.jpg",
     postsData: [
       { id: 5, author: "Vikram Gupta", meta: "CSE • 4th Year", time: "30m ago", text: "Placement season is finally over! Off to Google. 🚀 #IITD #LifeAtIIT", likes: 450, liked: true },
       { id: 6, author: "Neha Soni", meta: "EE • 2nd Year", time: "4h ago", text: "Lab reports are the death of me. Anyone up for a coffee at SDA?", likes: 34, liked: false },
@@ -86,7 +86,7 @@ const COLLEGES = [
     departments: 35,
     emoji: "🕌",
     accent: "#10b981", // Emerald
-    banner: "https://images.unsplash.com/photo-1590012314607-cda9d9b699ae?w=1200&q=80",
+    banner: "https://upload.wikimedia.org/wikipedia/commons/b/b3/Centenary_Gate_Jamia_Millia_Islamia.jpg",
     postsData: [
       { id: 7, author: "Zaid Khan", meta: "Mass Comm • Final Year", time: "1h ago", text: "The new documentary screening at MCRC was eye-opening.", likes: 45, liked: false },
       { id: 8, author: "Sana Ahmed", meta: "Fine Arts • 2nd Year", time: "6h ago", text: "Painting the central canteen walls today! Stop by to see the progress. 🎨", likes: 67, liked: true },
@@ -106,7 +106,7 @@ const COLLEGES = [
     departments: 50,
     emoji: "🌟",
     accent: "#f59e0b", // Amber
-    banner: "https://images.unsplash.com/photo-1562774053-701939374585?w=1200&q=80",
+    banner: "https://www.amity.edu/noida/images/about-amity.jpg",
     postsData: [
       { id: 9, author: "Karan Johar", meta: "BBA • 2nd Year", time: "45m ago", text: "Amity Noida campus is a whole vibe today. ✨", likes: 21, liked: false },
       { id: 10, author: "Shanaya Roy", meta: "Fashion Design • 1st Year", time: "2h ago", text: "Portfolio submissions are finally done! Pizza party? 🍕", likes: 43, liked: false },
