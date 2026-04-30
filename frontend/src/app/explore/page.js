@@ -306,7 +306,7 @@ export default function ExplorePage() {
 
             {/* Tabs Navigation */}
             <div className="mt-8 px-4 flex border-b border-border/50">
-              {["posts", "students"].map(tab => (
+              {["posts", "students", "memories"].map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -331,7 +331,7 @@ export default function ExplorePage() {
             {/* Tabs Content */}
             <div className="p-4">
               <AnimatePresence mode="wait">
-                {activeTab === "posts" ? (
+                {activeTab === "posts" && (
                   <motion.div 
                     key="posts"
                     initial={{ opacity: 0, y: 10 }}
@@ -383,41 +383,133 @@ export default function ExplorePage() {
                       </div>
                     ))}
                   </motion.div>
-                ) : (
+                )}
+
+                {activeTab === "students" && (
                   <motion.div 
                     key="students"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="space-y-3"
+                    className="space-y-6"
                   >
-                    {selectedCollege.studentsData.map(student => (
-                      <div key={student.id} className="flex items-center justify-between p-3 bg-surface-hover rounded-2xl border border-border/20">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center text-secondary font-bold text-xs">
-                            {student.avatar}
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold text-foreground">{student.name}</p>
-                            <p className="text-[10px] text-muted uppercase">{student.course}</p>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={() => toggleAddStudent(student.id)}
-                          className={clsx(
-                            "flex items-center space-x-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all",
-                            addedStudents[student.id]
-                              ? "bg-green-500/10 text-green-500 border border-green-500/20"
-                              : "text-white"
-                          )}
-                          style={!addedStudents[student.id] ? { backgroundColor: selectedCollege.accent } : {}}
+                    {/* Student Search & Count */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold text-muted uppercase tracking-wider">
+                          Showing {selectedCollege.studentsData.length} students
+                        </h4>
+                      </div>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={14} />
+                        <input
+                          type="text"
+                          placeholder="Find a student or course..."
+                          className="w-full bg-surface-hover border border-border/20 rounded-xl py-2 pl-9 pr-4 text-xs text-foreground focus:outline-none focus:border-primary/50 transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      {selectedCollege.studentsData.map((student, idx) => (
+                        <motion.div 
+                          key={student.id} 
+                          whileHover={{ y: -4, boxShadow: "0 10px 20px -10px rgba(0,0,0,0.1)" }}
+                          className="relative flex items-center justify-between p-4 bg-surface rounded-2xl border border-border/50 transition-all hover:border-primary/30 group"
+                          style={{ borderLeft: `4px solid ${['#6366f1', '#ec4899', '#3b82f6', '#10b981', '#f59e0b'][idx % 5]}` }}
                         >
-                          {addedStudents[student.id] ? (
-                            <><Check size={14} /> <span>Added ✓</span></>
-                          ) : (
-                            <><Plus size={14} /> <span>Add</span></>
-                          )}
-                        </button>
+                          <div className="flex items-center space-x-4">
+                            {/* Large Avatar with Status */}
+                            <div className="relative">
+                              <div 
+                                className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-inner"
+                                style={{ background: `linear-gradient(135deg, ${selectedCollege.accent}, #a5b4fc)` }}
+                              >
+                                {student.avatar}
+                              </div>
+                              {idx % 2 === 0 && (
+                                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-surface rounded-full shadow-sm" />
+                              )}
+                            </div>
+
+                            <div className="space-y-1">
+                              <div className="flex items-center space-x-2">
+                                <p className="text-[15px] font-bold text-foreground">{student.name}</p>
+                                <span className="text-[9px] bg-secondary/10 text-secondary px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter">
+                                  {student.id % 2 === 0 ? "Arts" : "STEM"}
+                                </span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <span className={clsx(
+                                  "px-2 py-0.5 rounded-md text-[9px] font-bold",
+                                  "bg-primary/10 text-primary border border-primary/20"
+                                )}>
+                                  {student.course}
+                                </span>
+                                <span className="text-[10px] text-muted font-medium">2 mutual friends</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Two-Stage Button */}
+                          <div className="flex items-center space-x-2">
+                            {addedStudents[student.id] ? (
+                              <>
+                                <motion.button
+                                  initial={{ scale: 0.8, opacity: 0 }}
+                                  animate={{ scale: 1, opacity: 1 }}
+                                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold bg-green-500/10 text-green-500 border border-green-500/20"
+                                >
+                                  <Check size={12} />
+                                  <span>Friends</span>
+                                </motion.button>
+                                <motion.button
+                                  initial={{ x: 10, opacity: 0 }}
+                                  animate={{ x: 0, opacity: 1 }}
+                                  onClick={() => setChatWithStudent(student)}
+                                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold text-white shadow-lg shadow-primary/20 transition-transform active:scale-95"
+                                  style={{ backgroundColor: selectedCollege.accent }}
+                                >
+                                  <MessageSquare size={12} />
+                                  <span>Message</span>
+                                </motion.button>
+                              </>
+                            ) : (
+                              <button 
+                                onClick={() => toggleAddStudent(student.id)}
+                                className="flex items-center space-x-1.5 px-4 py-2 rounded-xl text-[10px] font-bold text-muted border border-border/50 hover:border-primary hover:text-primary transition-all active:scale-95"
+                              >
+                                <Plus size={14} />
+                                <span>Add Friend</span>
+                              </button>
+                            )}
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+
+                {activeTab === "memories" && (
+                  <motion.div 
+                    key="memories"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="grid grid-cols-2 gap-3"
+                  >
+                    {[
+                      { type: "image", url: "https://images.unsplash.com/photo-1523050335456-c38a7047d28c?w=400&q=80", label: "Sunset Vibes" },
+                      { type: "image", url: "https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=400&q=80", label: "Library Session" },
+                      { type: "image", url: "https://images.unsplash.com/photo-1491438590914-bc09fcaaf77a?w=400&q=80", label: "Campus Day" },
+                      { type: "image", url: "https://images.unsplash.com/photo-1543269664-76bc3997d9ea?w=400&q=80", label: "Hackathon Night" },
+                    ].map((memory, i) => (
+                      <div key={i} className="relative aspect-square rounded-2xl overflow-hidden group cursor-pointer">
+                        <img src={memory.url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="absolute bottom-2 left-2 text-white text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                          {memory.label}
+                        </div>
                       </div>
                     ))}
                   </motion.div>
@@ -425,6 +517,108 @@ export default function ExplorePage() {
               </AnimatePresence>
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Slide-out Chat Drawer */}
+      <AnimatePresence>
+        {chatWithStudent && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setChatWithStudent(null)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
+            />
+            <motion.div 
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed top-0 right-0 bottom-0 w-full max-w-sm bg-background z-[101] shadow-2xl flex flex-col"
+            >
+              <header className="p-4 border-b border-border/50 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div 
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                    style={{ background: `linear-gradient(135deg, ${selectedCollege.accent}, #a5b4fc)` }}
+                  >
+                    {chatWithStudent.avatar}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-foreground text-sm">{chatWithStudent.name}</h3>
+                    <p className="text-[10px] text-muted">{selectedCollege.name}</p>
+                  </div>
+                </div>
+                <button onClick={() => setChatWithStudent(null)} className="p-2 text-muted hover:text-foreground">
+                  <Plus className="rotate-45" size={20} />
+                </button>
+              </header>
+
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                <div className="flex justify-center my-4">
+                  <span className="text-[10px] bg-surface-hover px-4 py-1.5 rounded-full text-muted border border-border/20">
+                    Say hi to {chatWithStudent.name}! You are now connected.
+                  </span>
+                </div>
+                
+                {(chatMessages[chatWithStudent.id] || []).map((msg, i) => (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    key={i} 
+                    className="flex justify-end"
+                  >
+                    <div 
+                      className="p-3 rounded-2xl rounded-tr-none text-sm text-white shadow-lg"
+                      style={{ backgroundColor: selectedCollege.accent }}
+                    >
+                      {msg.text}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              <div className="p-4 border-t border-border/50 bg-surface">
+                <div className="flex items-center space-x-2">
+                  <input
+                    id="chatInput"
+                    type="text"
+                    placeholder={`Message ${chatWithStudent.name}...`}
+                    className="flex-1 bg-surface-hover border border-border/50 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-primary transition-all"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        const val = e.target.value;
+                        if (!val.trim()) return;
+                        setChatMessages(prev => ({
+                          ...prev,
+                          [chatWithStudent.id]: [...(prev[chatWithStudent.id] || []), { text: val, time: 'now' }]
+                        }));
+                        e.target.value = '';
+                      }
+                    }}
+                  />
+                  <button 
+                    onClick={() => {
+                      const el = document.getElementById('chatInput');
+                      const val = el.value;
+                      if (!val.trim()) return;
+                      setChatMessages(prev => ({
+                        ...prev,
+                        [chatWithStudent.id]: [...(prev[chatWithStudent.id] || []), { text: val, time: 'now' }]
+                      }));
+                      el.value = '';
+                    }}
+                    className="p-3 rounded-xl text-white shadow-lg active:scale-95 transition-all"
+                    style={{ backgroundColor: selectedCollege.accent }}
+                  >
+                    <Send size={18} />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </div>
