@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { LogOut, Edit3, X, Check, Plus, Grid, Heart, MessageCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import UniversityBadges from "@/components/UniversityBadges";
 
 const MOCK_POSTS = [
   { id: 1, img: "https://picsum.photos/seed/post1/300/300", likes: 124, comments: 18 },
@@ -77,56 +79,79 @@ export default function ProfilePage() {
         </button>
       </header>
 
-      <div className="flex-1 max-w-md mx-auto w-full">
+      <div className="flex-1 max-w-md mx-auto w-full relative">
+        {/* Subtle animated gradient background */}
+        <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-primary/10 via-secondary/5 to-transparent -z-10 pointer-events-none blur-3xl opacity-60"></div>
+        
         {/* Instagram-style Profile Header */}
-        <div className="p-4 space-y-4">
-          {/* Avatar + Stats Row */}
-          <div className="flex items-center space-x-6">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="p-4 space-y-5"
+        >
+          {/* Glassmorphism Profile Card */}
+          <div className="glass-panel bg-surface/40 backdrop-blur-xl rounded-3xl p-5 border border-white/5 shadow-lg space-y-5 relative overflow-hidden">
+            {/* Inner top glow */}
+            <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/20 rounded-full blur-3xl pointer-events-none"></div>
+
+            {/* Avatar + Stats Row */}
+            <div className="flex items-center space-x-6 relative z-10">
             {/* Avatar */}
-            <div className="w-20 h-20 rounded-full p-[3px] flex-shrink-0" style={{ background: "linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)" }}>
-              <div className="w-full h-full bg-background rounded-full flex items-center justify-center text-2xl font-bold text-foreground">
+            <div className="relative group w-20 h-20 sm:w-24 sm:h-24 rounded-full p-[3px] flex-shrink-0 bg-gradient-to-tr from-pink-500 via-purple-500 to-orange-400 bg-[length:200%_200%] animate-[gradient_3s_ease_infinite] shadow-[0_0_20px_rgba(219,39,119,0.3)]">
+              <div className="w-full h-full bg-background rounded-full flex items-center justify-center text-2xl sm:text-3xl font-bold text-foreground border border-background">
                 {user.name?.charAt(0)?.toUpperCase() || "?"}
               </div>
             </div>
 
             {/* Stats */}
-            <div className="flex flex-1 justify-around">
-              <div className="text-center">
-                <p className="text-lg font-bold text-foreground">{MOCK_POSTS.length}</p>
-                <p className="text-xs text-muted">Posts</p>
+            <div className="flex flex-1 justify-between gap-2">
+              <div className="flex flex-col items-center justify-center bg-surface/50 hover:bg-surface border border-white/5 hover:border-white/10 rounded-2xl py-2 px-2 flex-1 transition-all shadow-sm">
+                <p className="text-lg font-bold bg-gradient-to-br from-indigo-400 to-purple-400 bg-clip-text text-transparent">{MOCK_POSTS.length}</p>
+                <p className="text-[10px] sm:text-xs text-muted font-medium">Posts</p>
               </div>
-              <button className="text-center hover:opacity-70 transition-opacity" onClick={() => setModal("followers")}>
-                <p className="text-lg font-bold text-foreground">{
+              <button 
+                className="flex flex-col items-center justify-center bg-surface/50 hover:bg-surface border border-white/5 hover:border-white/10 rounded-2xl py-2 px-2 flex-1 transition-all shadow-sm group/btn" 
+                onClick={() => setModal("followers")}
+              >
+                <p className="text-lg font-bold group-hover/btn:bg-gradient-to-br group-hover/btn:from-indigo-400 group-hover/btn:to-purple-400 group-hover/btn:bg-clip-text group-hover/btn:text-transparent transition-all">{
                   JSON.parse(typeof window !== "undefined" ? (localStorage.getItem("collegeadda_followers_list") || "[]") : "[]").length + MOCK_FOLLOWERS.length
                 }</p>
-                <p className="text-xs text-muted">Followers</p>
+                <p className="text-[10px] sm:text-xs text-muted font-medium">Followers</p>
               </button>
-              <button className="text-center hover:opacity-70 transition-opacity" onClick={() => setModal("following")}>
-                <p className="text-lg font-bold text-foreground">{
+              <button 
+                className="flex flex-col items-center justify-center bg-surface/50 hover:bg-surface border border-white/5 hover:border-white/10 rounded-2xl py-2 px-2 flex-1 transition-all shadow-sm group/btn" 
+                onClick={() => setModal("following")}
+              >
+                <p className="text-lg font-bold group-hover/btn:bg-gradient-to-br group-hover/btn:from-indigo-400 group-hover/btn:to-purple-400 group-hover/btn:bg-clip-text group-hover/btn:text-transparent transition-all">{
                   JSON.parse(typeof window !== "undefined" ? (localStorage.getItem("collegeadda_following_list") || "[]") : "[]").length + MOCK_FOLLOWING.length
                 }</p>
-                <p className="text-xs text-muted">Following</p>
+                <p className="text-[10px] sm:text-xs text-muted font-medium">Following</p>
               </button>
             </div>
           </div>
 
           {/* Name + Bio */}
-          <div>
-            <p className="font-bold text-foreground">{user.name}</p>
-            <p className="text-xs text-muted">{user.university}</p>
+          <div className="relative z-10 space-y-1">
+            <h2 className="text-xl font-extrabold text-foreground tracking-tight">{user.name}</h2>
+            <p className="text-sm text-muted/80 font-medium">{user.university}</p>
+
+            {/* University Badges */}
+            <div className="pt-1 pb-2">
+              <UniversityBadges userId={user.id || user.email || "mock-user-123"} />
+            </div>
 
             {/* Social Links */}
             {(profile.instaId || profile.snapId) && (
-              <div className="flex flex-wrap gap-2 mt-2">
+              <div className="flex flex-wrap gap-2 mt-2 pt-1">
                 {profile.instaId && (
                   <a
                     href={`https://instagram.com/${profile.instaId}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center space-x-1 text-xs px-3 py-1 rounded-full text-white font-medium hover:scale-105 transition-transform"
-                    style={{ background: "linear-gradient(135deg, #f09433, #dc2743, #bc1888)" }}
+                    className="flex items-center space-x-1.5 text-xs px-3 py-1.5 rounded-full text-white font-medium shadow-md hover:scale-105 hover:shadow-lg transition-all bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888]"
                   >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
                     <span>@{profile.instaId}</span>
                   </a>
                 )}
@@ -135,10 +160,10 @@ export default function ProfilePage() {
                     href={`https://snapchat.com/add/${profile.snapId}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center space-x-1 text-xs px-3 py-1 rounded-full font-medium hover:scale-105 transition-transform"
+                    className="flex items-center space-x-1.5 text-xs px-3 py-1.5 rounded-full font-medium shadow-md hover:scale-105 hover:shadow-lg transition-all"
                     style={{ background: "#FFFC00", color: "#000" }}
                   >
-                    <span>👻</span>
+                    <span className="text-sm">👻</span>
                     <span>{profile.snapId}</span>
                   </a>
                 )}
@@ -147,48 +172,69 @@ export default function ProfilePage() {
 
             {/* Interests */}
             {profile.interests?.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-2">
+              <div className="flex flex-wrap gap-1.5 mt-3 pt-2 border-t border-white/5 relative z-10">
                 {profile.interests.map(i => (
-                  <span key={i} className="text-[11px] bg-primary/10 text-primary px-2 py-0.5 rounded-full">{i}</span>
+                  <span key={i} className="text-[11px] bg-primary/10 text-primary px-2.5 py-1 rounded-full font-medium border border-primary/20">{i}</span>
                 ))}
               </div>
             )}
           </div>
 
           {/* Edit Profile Button */}
-          <button
-            onClick={() => setModal("edit")}
-            className="w-full py-2 rounded-xl border border-border/50 bg-surface-hover text-sm font-semibold text-foreground flex items-center justify-center space-x-2 hover:border-primary/40 transition-colors"
-          >
-            <Edit3 size={15} />
-            <span>Edit Profile</span>
-          </button>
-        </div>
+          <div className="pt-2 relative z-10">
+            <button
+              onClick={() => setModal("edit")}
+              className="relative w-full py-2.5 rounded-xl bg-surface-hover text-sm font-bold text-foreground flex items-center justify-center space-x-2 group overflow-hidden transition-all hover:shadow-[0_0_15px_rgba(99,102,241,0.2)]"
+            >
+              <span className="absolute inset-0 bg-gradient-to-r from-primary to-secondary opacity-0 group-hover:opacity-10 transition-opacity" />
+              <span className="absolute inset-0 bg-gradient-to-r from-primary/50 to-secondary/50 opacity-0 group-hover:opacity-100 transition-opacity blur-md z-0" />
+              <div className="absolute inset-[1px] bg-surface rounded-xl z-0 transition-colors group-hover:bg-surface-hover" />
+              <span className="relative z-10 flex items-center space-x-2">
+                <Edit3 size={16} />
+                <span>Edit Profile</span>
+              </span>
+            </button>
+          </div>
+          </div>
+        </motion.div>
 
         {/* Posts Grid Divider */}
-        <div className="flex items-center justify-center border-t border-border/50 py-2">
-          <Grid size={18} className="text-foreground" />
-        </div>
+        <motion.div 
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
+          className="flex items-center justify-center border-t border-border/50 py-3 mt-2"
+        >
+          <div className="p-2 rounded-full bg-surface-hover">
+            <Grid size={18} className="text-foreground" />
+          </div>
+        </motion.div>
 
         {/* Instagram-style Posts Grid */}
-        <div className="grid grid-cols-3 gap-[2px]">
-          {MOCK_POSTS.map(post => (
-            <div key={post.id} className="relative group aspect-square overflow-hidden">
-              <img src={post.img} alt="post" className="w-full h-full object-cover" />
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+          className="grid grid-cols-3 gap-[2px] pb-20"
+        >
+          {MOCK_POSTS.map((post, idx) => (
+            <motion.div 
+              key={post.id} 
+              whileHover={{ scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+              className="relative group aspect-square overflow-hidden cursor-pointer"
+            >
+              <img src={post.img} alt="post" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
               {/* Hover overlay */}
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-4">
-                <span className="flex items-center space-x-1 text-white text-xs font-bold">
-                  <Heart size={14} className="fill-white" />
-                  <span>{post.likes}</span>
-                </span>
-                <span className="flex items-center space-x-1 text-white text-xs font-bold">
-                  <MessageCircle size={14} className="fill-white" />
-                  <span>{post.comments}</span>
-                </span>
+              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center space-x-5 backdrop-blur-[2px]">
+                <div className="flex flex-col items-center transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                  <Heart size={20} className="fill-white text-white mb-1 drop-shadow-md" />
+                  <span className="text-white text-sm font-bold drop-shadow-md">{post.likes}</span>
+                </div>
+                <div className="flex flex-col items-center transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75">
+                  <MessageCircle size={20} className="fill-white text-white mb-1 drop-shadow-md" />
+                  <span className="text-white text-sm font-bold drop-shadow-md">{post.comments}</span>
+                </div>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
 
       {/* ── MODAL: Followers ── */}
