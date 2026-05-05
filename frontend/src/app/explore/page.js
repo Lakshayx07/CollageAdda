@@ -1,5 +1,6 @@
 "use client";
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { 
   Search, 
   MapPin, 
@@ -131,6 +132,7 @@ const COLLEGES = [
 ];
 
 export default function ExplorePage() {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [selectedCollege, setSelectedCollege] = useState(null);
   const [activeTab, setActiveTab] = useState("posts");
@@ -418,12 +420,12 @@ export default function ExplorePage() {
                               <Heart size={18} fill={likes[post.id] ? "currentColor" : "none"} />
                               <span className="text-xs font-bold">{post.likes + (likes[post.id] ? 1 : 0)}</span>
                             </button>
-                            <button className="flex items-center space-x-1.5 text-muted hover:text-foreground transition-colors">
+                            <button onClick={() => { setToastMessage("Comments coming soon! 💬"); setTimeout(() => setToastMessage(null), 2000); }} className="flex items-center space-x-1.5 text-muted hover:text-foreground transition-colors">
                               <MessageSquare size={18} />
                               <span className="text-xs font-bold">12</span>
                             </button>
                           </div>
-                          <button className="text-muted hover:text-foreground transition-colors">
+                          <button onClick={() => { setToastMessage("Share feature coming soon! 🚀"); setTimeout(() => setToastMessage(null), 2000); }} className="text-muted hover:text-foreground transition-colors">
                             <Share2 size={18} />
                           </button>
                         </div>
@@ -476,7 +478,7 @@ export default function ExplorePage() {
                           <div className="text-7xl mb-2">🎓</div>
                           <h3 className="font-bold text-foreground text-xl">You've seen everyone at {selectedCollege.name}!</h3>
                           <div className="space-y-3 w-full mt-4">
-                            <button className="w-full py-3 bg-primary/10 text-primary font-bold rounded-xl text-sm hover:bg-primary/20 transition-colors shadow-sm">
+                            <button onClick={() => router.push('/messages')} className="w-full py-3 bg-primary/10 text-primary font-bold rounded-xl text-sm hover:bg-primary/20 transition-colors shadow-sm">
                               See who connected back →
                             </button>
                             <button onClick={() => setSelectedCollege(null)} className="w-full py-3 bg-surface-hover border border-border/50 text-foreground font-bold rounded-xl text-sm hover:bg-surface-hover/80 transition-colors shadow-sm">
@@ -619,7 +621,7 @@ export default function ExplorePage() {
                       { type: "image", url: "https://images.unsplash.com/photo-1491438590914-bc09fcaaf77a?w=400&q=80", label: "Campus Day" },
                       { type: "image", url: "https://images.unsplash.com/photo-1543269664-76bc3997d9ea?w=400&q=80", label: "Hackathon Night" },
                     ].map((memory, i) => (
-                      <div key={i} className="relative aspect-square rounded-2xl overflow-hidden group cursor-pointer">
+                      <div key={i} onClick={() => { setToastMessage(`Opening ${memory.label}... 📸`); setTimeout(() => setToastMessage(null), 2000); }} className="relative aspect-square rounded-2xl overflow-hidden group cursor-pointer">
                         <img src={memory.url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                         <div className="absolute bottom-2 left-2 text-white text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">

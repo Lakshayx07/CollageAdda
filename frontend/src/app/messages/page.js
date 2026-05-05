@@ -165,7 +165,7 @@ function MessagesContent() {
                     <p className="text-[10px] text-primary">online</p>
                   </div>
                 </div>
-                <button className="text-muted p-2 hover:text-foreground">
+                <button onClick={() => alert("Chat info coming soon! ℹ️")} className="text-muted p-2 hover:text-foreground">
                   <Info size={20} />
                 </button>
               </header>
