@@ -150,8 +150,28 @@ export default function ProfilePage() {
             <h2 className="text-xl font-extrabold text-foreground tracking-tight">{user.name}</h2>
             <p className="text-sm text-muted/80 font-medium">
               {user.university}
-              {profile.sports && profile.sports.length > 0 && ` • ${profile.sports.join(", ")}`}
             </p>
+            {profile.sports && profile.sports.length > 0 && (
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {profile.sports.map((sport, index) => (
+                  <span 
+                    key={index}
+                    className="inline-flex items-center text-[11px] font-extrabold px-2.5 py-0.5 rounded-md shadow-sm relative overflow-hidden group"
+                    style={{
+                      background: "linear-gradient(135deg, #FFD700 0%, #F59E0B 100%)",
+                      color: "#451A03", // dark brown/gold for contrast
+                      boxShadow: "0 2px 10px rgba(245, 158, 11, 0.3), inset 0 1px 0 rgba(255,255,255,0.4)"
+                    }}
+                  >
+                    {/* Sparkle animation effect */}
+                    <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent -translate-x-[100%] animate-[shimmer_2s_infinite]"></span>
+                    <span className="relative z-10 flex items-center gap-1 tracking-wide uppercase">
+                      ✨ {sport}
+                    </span>
+                  </span>
+                ))}
+              </div>
+            )}
 
             {/* University Badges */}
             <div className="pt-1 pb-2">
