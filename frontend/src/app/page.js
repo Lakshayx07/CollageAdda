@@ -16,6 +16,7 @@ export default function Home() {
       router.push("/login");
     }
   }, [router]);
+  const [activeCommentPost, setActiveCommentPost] = useState(null);
   const [posts, setPosts] = useState([
     {
       id: 1,
@@ -85,14 +86,37 @@ export default function Home() {
       {/* Feed Content */}
       <div className="flex-1 max-w-md mx-auto w-full p-4 space-y-6">
         {/* Create Post Prompt */}
-        <div className="glass-panel p-4 rounded-2xl flex items-center space-x-3 cursor-text">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-secondary p-[2px]">
-            <div className="w-full h-full bg-surface rounded-full flex items-center justify-center overflow-hidden">
-              <span className="text-sm">You</span>
+        <div className="glass-panel p-4 rounded-2xl flex flex-col space-y-3">
+          <div className="flex items-start space-x-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-secondary p-[2px] flex-shrink-0">
+              <div className="w-full h-full bg-surface rounded-full flex items-center justify-center overflow-hidden">
+                <span className="text-sm">You</span>
+              </div>
             </div>
+            <textarea 
+              placeholder="What's happening on campus today?"
+              className="flex-1 bg-transparent resize-none text-sm focus:outline-none text-foreground placeholder:text-muted mt-2"
+              rows={2}
+            ></textarea>
           </div>
-          <div className="flex-1 bg-surface-hover rounded-full px-4 py-2.5 text-muted text-sm border border-border/50">
-            What's happening on campus?
+          <div className="flex items-center justify-between border-t border-border/50 pt-3">
+             <div className="flex space-x-4 text-muted">
+               <button className="flex items-center space-x-1.5 hover:text-primary transition-colors">
+                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                 <span className="text-xs font-medium hidden sm:inline">Photo</span>
+               </button>
+               <button className="flex items-center space-x-1.5 hover:text-secondary transition-colors">
+                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                 <span className="text-xs font-medium hidden sm:inline">Video</span>
+               </button>
+               <button className="flex items-center space-x-1.5 hover:text-orange-500 transition-colors">
+                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                 <span className="text-xs font-medium hidden sm:inline">Note</span>
+               </button>
+             </div>
+             <button className="bg-primary text-white px-5 py-2 rounded-full text-xs font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
+               Post
+             </button>
           </div>
         </div>
 
@@ -108,7 +132,13 @@ export default function Home() {
                   <div>
                     <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                       {post.author}
-                      {post.author === "Anonymous" && <span className="text-[10px] bg-secondary/20 text-secondary px-2 py-0.5 rounded-full">Gossip</span>}
+                      {post.author === "Anonymous" ? (
+                        <span className="text-[10px] bg-secondary/20 text-secondary px-2 py-0.5 rounded-full">Gossip</span>
+                      ) : (
+                        <button className="text-[10px] bg-primary/10 text-primary border border-primary/20 px-2.5 py-0.5 rounded-full hover:bg-primary/20 transition-colors font-bold tracking-wide">
+                          Follow
+                        </button>
+                      )}
                     </h3>
                     <p className="text-xs text-muted">{post.university} • {post.time}</p>
                   </div>
@@ -136,15 +166,40 @@ export default function Home() {
                   />
                   <span className="text-xs font-medium">{post.likes}</span>
                 </button>
-                <button className="flex items-center space-x-1.5 text-muted hover:text-secondary transition-colors group">
+                <button 
+                  onClick={() => setActiveCommentPost(activeCommentPost === post.id ? null : post.id)}
+                  className="flex items-center space-x-1.5 text-muted hover:text-secondary transition-colors group"
+                >
                   <MessageCircle size={20} className="transition-transform group-active:scale-75" />
                   <span className="text-xs font-medium">{post.comments}</span>
                 </button>
-                <button className="flex items-center space-x-1.5 text-muted hover:text-green-500 transition-colors ml-auto">
-                  <Share2 size={18} />
-                  <span className="text-[10px] hidden sm:inline">WhatsApp</span>
+                <button 
+                  onClick={() => window.open(`https://wa.me/?text=Check out this post on Campus Adda: ${encodeURIComponent(post.content)}`, '_blank')}
+                  className="flex items-center space-x-1.5 text-muted hover:text-green-500 transition-colors ml-auto group"
+                >
+                  <Share2 size={18} className="transition-transform group-active:scale-75" />
+                  <span className="text-[10px] hidden sm:inline font-medium">WhatsApp</span>
                 </button>
               </div>
+
+              {/* Comment Input Box */}
+              {activeCommentPost === post.id && (
+                <div className="mt-3 flex items-center space-x-2 border-t border-border/50 pt-3 animate-fade-in">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-primary to-secondary p-[1px] flex-shrink-0">
+                    <div className="w-full h-full bg-surface rounded-full flex items-center justify-center overflow-hidden">
+                      <span className="text-[10px]">You</span>
+                    </div>
+                  </div>
+                  <input 
+                    type="text" 
+                    placeholder={`Reply to ${post.author}...`} 
+                    className="flex-1 bg-surface-hover rounded-full px-4 py-2 text-xs focus:outline-none text-foreground border border-border/50" 
+                  />
+                  <button className="text-xs bg-primary text-white font-bold px-3 py-1.5 rounded-full hover:scale-105 transition-transform shadow-md shadow-primary/20">
+                    Post
+                  </button>
+                </div>
+              )}
             </article>
           ))}
         </div>

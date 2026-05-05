@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Search, Send, Users, ChevronLeft, Info, MessageSquare } from "lucide-react";
+import { Search, Send, Users, ChevronLeft, Info, MessageSquare, Plus, Image as ImageIcon } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import clsx from "clsx";
 
@@ -18,6 +18,8 @@ function MessagesContent() {
   const [chats, setChats] = useState(MOCK_CHATS);
   const [messages, setMessages] = useState({});
   const [input, setInput] = useState("");
+  const [showAttachments, setShowAttachments] = useState(false);
+  const fileInputRef = useRef(null);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -209,8 +211,45 @@ function MessagesContent() {
                 ))}
               </div>
 
-              <div className="p-4 glass-panel border-t border-border/50">
-                <div className="flex items-center space-x-2">
+              <div className="p-4 glass-panel border-t border-border/50 relative">
+                {/* Hidden file input */}
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  accept="image/*,video/*" 
+                  className="hidden" 
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      // In a real app you'd upload it, here we just mock sending it
+                      const newMsg = { id: Date.now(), text: `Sent an attachment: ${file.name} 🖼️`, sender: "me", time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+                      setMessages(prev => ({ ...prev, [activeChat.id]: [...(prev[activeChat.id] || []), newMsg] }));
+                    }
+                  }} 
+                />
+
+                {/* Attachment Menu Popup */}
+                {showAttachments && (
+                  <div className="absolute bottom-full left-4 mb-2 bg-surface border border-border/50 rounded-2xl shadow-xl overflow-hidden animate-fade-in w-48 z-50">
+                    <button 
+                      onClick={() => { setShowAttachments(false); fileInputRef.current?.click(); }}
+                      className="w-full flex items-center space-x-3 px-4 py-3 hover:bg-surface-hover transition-colors text-sm text-foreground text-left"
+                    >
+                      <div className="bg-purple-500/20 p-2 rounded-xl text-purple-400">
+                        <ImageIcon size={18} />
+                      </div>
+                      <span className="font-medium">Gallery</span>
+                    </button>
+                  </div>
+                )}
+
+                <div className="flex items-center space-x-2 relative z-10">
+                  <button 
+                    onClick={() => setShowAttachments(!showAttachments)}
+                    className="p-3 bg-surface-hover border border-border/50 rounded-xl text-muted hover:text-foreground transition-all hover:scale-105 active:scale-95"
+                  >
+                    <Plus size={20} className={`transition-transform duration-300 ${showAttachments ? 'rotate-45' : ''}`} />
+                  </button>
                   <input
                     value={input}
                     onChange={e => setInput(e.target.value)}
