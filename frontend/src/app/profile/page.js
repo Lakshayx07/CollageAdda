@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { LogOut, Edit3, X, Check, Plus, Grid, Heart, MessageCircle } from "lucide-react";
+import { LogOut, Edit3, X, Check, Plus, Grid, Heart, MessageCircle, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import UniversityBadges from "@/components/UniversityBadges";
@@ -26,12 +26,14 @@ const MOCK_FOLLOWING = [
 ];
 
 const INTEREST_OPTIONS = ["Music 🎵", "Cricket 🏏", "Coding 💻", "Art 🎨", "Travel ✈️", "Gaming 🎮", "Books 📚", "Fitness 💪", "Movies 🎬", "Cooking 🍳"];
+const SPORT_OPTIONS = ["Football ⚽", "Basketball 🏀", "Cricket 🏏", "Tennis 🎾", "Badminton 🏸", "Volleyball 🏐", "Table Tennis 🏓", "Athletics 🏃", "Swimming 🏊", "Chess ♟️"];
 
 export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
-  const [modal, setModal] = useState(null); // 'followers' | 'following' | 'edit'
-  const [editData, setEditData] = useState({ instaId: "", snapId: "", interests: [] });
+  const [modal, setModal] = useState(null); // 'followers' | 'following' | 'edit' | 'story' | 'post'
+  const [activePost, setActivePost] = useState(null);
+  const [editData, setEditData] = useState({ instaId: "", snapId: "", interests: [], sports: [] });
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -40,7 +42,7 @@ export default function ProfilePage() {
     const u = JSON.parse(stored);
     setUser(u);
     const profile = JSON.parse(localStorage.getItem("collegeadda_profile") || "{}");
-    setEditData({ instaId: profile.instaId || "", snapId: profile.snapId || "", interests: profile.interests || [] });
+    setEditData({ instaId: profile.instaId || "", snapId: profile.snapId || "", interests: profile.interests || [], sports: profile.sports || [] });
   }, [router]);
 
   const handleLogout = () => {
@@ -61,6 +63,15 @@ export default function ProfilePage() {
       interests: prev.interests.includes(interest)
         ? prev.interests.filter(i => i !== interest)
         : [...prev.interests, interest]
+    }));
+  };
+
+  const toggleSport = (sport) => {
+    setEditData(prev => ({
+      ...prev,
+      sports: prev.sports.includes(sport)
+        ? prev.sports.filter(s => s !== sport)
+        : [...prev.sports, sport]
     }));
   };
 
@@ -98,7 +109,10 @@ export default function ProfilePage() {
             {/* Avatar + Stats Row */}
             <div className="flex items-center space-x-6 relative z-10">
             {/* Avatar */}
-            <div className="relative group w-20 h-20 sm:w-24 sm:h-24 rounded-full p-[3px] flex-shrink-0 bg-gradient-to-tr from-pink-500 via-purple-500 to-orange-400 bg-[length:200%_200%] animate-[gradient_3s_ease_infinite] shadow-[0_0_20px_rgba(219,39,119,0.3)]">
+            <div 
+              onClick={() => setModal("story")}
+              className="cursor-pointer relative group w-20 h-20 sm:w-24 sm:h-24 rounded-full p-[3px] flex-shrink-0 bg-gradient-to-tr from-pink-500 via-purple-500 to-orange-400 bg-[length:200%_200%] animate-[gradient_3s_ease_infinite] shadow-[0_0_20px_rgba(219,39,119,0.3)] hover:scale-105 transition-transform"
+            >
               <div className="w-full h-full bg-background rounded-full flex items-center justify-center text-2xl sm:text-3xl font-bold text-foreground border border-background">
                 {user.name?.charAt(0)?.toUpperCase() || "?"}
               </div>
@@ -134,7 +148,10 @@ export default function ProfilePage() {
           {/* Name + Bio */}
           <div className="relative z-10 space-y-1">
             <h2 className="text-xl font-extrabold text-foreground tracking-tight">{user.name}</h2>
-            <p className="text-sm text-muted/80 font-medium">{user.university}</p>
+            <p className="text-sm text-muted/80 font-medium">
+              {user.university}
+              {profile.sports && profile.sports.length > 0 && ` • ${profile.sports.join(", ")}`}
+            </p>
 
             {/* University Badges */}
             <div className="pt-1 pb-2">
@@ -217,6 +234,7 @@ export default function ProfilePage() {
             <motion.div 
               key={post.id} 
               whileHover={{ scale: 0.98 }}
+              onClick={() => { setActivePost(post); setModal("post"); }}
               transition={{ type: "spring", stiffness: 400, damping: 25 }}
               className="relative group aspect-square overflow-hidden cursor-pointer"
             >
@@ -352,6 +370,30 @@ export default function ProfilePage() {
                 </div>
               </div>
 
+              {/* Sports */}
+              <div>
+                <label className="text-xs text-muted mb-2 block">Sports (select your sports)</label>
+                <div className="flex flex-wrap gap-2">
+                  {SPORT_OPTIONS.map(sport => {
+                    const selected = editData.sports.includes(sport);
+                    return (
+                      <button
+                        key={sport}
+                        onClick={() => toggleSport(sport)}
+                        className={`flex items-center space-x-1 text-xs px-3 py-1.5 rounded-full border transition-all ${
+                          selected
+                            ? "bg-green-500/20 text-green-500 border-green-500/40 font-medium"
+                            : "bg-surface-hover text-muted border-border/50 hover:border-green-500/30"
+                        }`}
+                      >
+                        {selected && <Check size={10} />}
+                        <span>{sport}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Save Button */}
               <button
                 onClick={saveProfile}
@@ -362,6 +404,92 @@ export default function ProfilePage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── MODAL: Story ── */}
+      {modal === "story" && (
+        <div className="fixed inset-0 z-[100] flex flex-col bg-black" onClick={() => setModal(null)}>
+          {/* Story Progress */}
+          <div className="absolute top-2 left-2 right-2 flex space-x-1 z-10">
+            <div className="h-0.5 bg-white/50 w-full rounded-full overflow-hidden">
+               <motion.div initial={{ width: "0%" }} animate={{ width: "100%" }} transition={{ duration: 5 }} className="h-full bg-white" onAnimationComplete={() => setModal(null)} />
+            </div>
+          </div>
+          {/* Story Header */}
+          <div className="absolute top-6 left-4 right-4 flex justify-between items-center z-10">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold">{user.name?.charAt(0)}</div>
+              <span className="text-white font-semibold text-sm">{user.name}</span>
+              <span className="text-white/60 text-xs">2h</span>
+            </div>
+            <button onClick={() => setModal(null)} className="text-white"><X size={24} /></button>
+          </div>
+          {/* Story Content */}
+          <div className="flex-1 flex items-center justify-center bg-zinc-900 relative">
+             <img src="https://images.unsplash.com/photo-1523050335456-c38a7047d28c?w=800&q=80" className="w-full h-auto max-h-full object-contain" alt="Story" />
+          </div>
+          {/* Reply bar */}
+          <div className="p-4 flex items-center space-x-3 bg-black">
+            <div className="flex-1 rounded-full border border-white/30 px-4 py-3 text-white/50 text-sm">Reply to {user.name.split(" ")[0]}...</div>
+            <Heart className="text-white" />
+            <Send className="text-white" />
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: Post View ── */}
+      {modal === "post" && activePost && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setModal(null)}>
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="w-full max-w-md bg-surface h-[85vh] sm:h-[90vh] flex flex-col rounded-2xl overflow-hidden shadow-2xl relative" 
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="p-3 flex justify-between items-center border-b border-border/50">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold">{user.name?.charAt(0)}</div>
+                <span className="font-bold text-foreground text-sm">{user.name}</span>
+              </div>
+              <button onClick={() => setModal(null)}><X size={20} className="text-muted" /></button>
+            </div>
+            {/* Image */}
+            <div className="w-full bg-black flex-shrink-0 flex items-center justify-center">
+              <img src={activePost.img} className="w-full max-h-[400px] object-contain" alt="Post" />
+            </div>
+            {/* Actions */}
+            <div className="p-3 flex items-center justify-between border-b border-border/10">
+              <div className="flex space-x-4">
+                <Heart size={24} className="text-foreground hover:text-red-500 cursor-pointer transition-colors" />
+                <MessageCircle size={24} className="text-foreground hover:text-blue-500 cursor-pointer transition-colors" />
+                <Send size={24} className="text-foreground cursor-pointer" />
+              </div>
+              <div className="text-foreground font-bold text-sm">{activePost.likes} likes</div>
+            </div>
+            {/* Comments List (Mock) */}
+            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+               <div className="flex space-x-2">
+                 <span className="font-bold text-sm">{user.name}</span>
+                 <span className="text-sm text-foreground/90">Campus vibes! ☀️</span>
+               </div>
+               <div className="text-xs text-muted font-bold mt-2 mb-2">View all {activePost.comments} comments</div>
+               <div className="flex space-x-2">
+                 <span className="font-bold text-sm">Priya Sharma</span>
+                 <span className="text-sm text-foreground/90">Amazing click! 😍</span>
+               </div>
+               <div className="flex space-x-2">
+                 <span className="font-bold text-sm">Ravi Kumar</span>
+                 <span className="text-sm text-foreground/90">Which block is this?</span>
+               </div>
+            </div>
+            {/* Add comment */}
+            <div className="p-3 border-t border-border/50 flex items-center space-x-2 bg-surface">
+              <input type="text" placeholder="Add a comment..." className="flex-1 bg-transparent text-sm text-foreground focus:outline-none" />
+              <button className="text-primary font-bold text-sm">Post</button>
+            </div>
+          </motion.div>
         </div>
       )}
     </div>
