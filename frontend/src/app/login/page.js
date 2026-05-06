@@ -20,7 +20,7 @@ const UNIVERSITIES = [
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
-  
+
   // Form State
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -36,12 +36,12 @@ export default function LoginPage() {
 
     try {
       setIsLoading(true);
-      
+
       const endpoint = isSignUp ? '/api/auth/register' : '/api/auth/login';
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
-      
-      const bodyData = isSignUp 
-        ? { name, email, password, university } 
+
+      const bodyData = isSignUp
+        ? { name, email, password, university }
         : { email, password };
 
       const res = await fetch(`${apiUrl}${endpoint}`, {
@@ -59,10 +59,10 @@ export default function LoginPage() {
       // Save token and user info
       localStorage.setItem('collegeadda_token', data.token);
       localStorage.setItem('collegeadda_user', JSON.stringify(data));
-      
+
       // Redirect to home
       window.location.href = '/';
-      
+
     } catch (error) {
       console.error("Auth Error:", error.message);
       alert(error.message);
@@ -78,7 +78,7 @@ export default function LoginPage() {
       if (session && session.user) {
         const user = session.user;
         const pendingUni = localStorage.getItem('pending_university');
-        
+
         // Sync with backend
         try {
           setIsLoading(true);
@@ -136,15 +136,15 @@ export default function LoginPage() {
       alert("Please select your university first to continue with Google.");
       return;
     }
-    
+
     try {
       setIsLoading(true);
       localStorage.setItem('pending_university', university);
-      
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/login`,
+          redirectTo: `https://collage-adda.vercel.app/login`,
         },
       });
       if (error) throw error;
@@ -174,12 +174,12 @@ export default function LoginPage() {
               <label className="block text-xs text-muted mb-1 ml-1">Full Name</label>
               <div className="relative">
                 <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={18} />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Rahul Sharma" 
+                  placeholder="Rahul Sharma"
                   className="w-full bg-surface-hover border border-border/50 rounded-xl py-3 pl-10 pr-4 text-sm text-foreground focus:outline-none focus:border-primary transition-colors"
                 />
               </div>
@@ -190,12 +190,12 @@ export default function LoginPage() {
             <label className="block text-xs text-muted mb-1 ml-1">Email</label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={18} />
-              <input 
-                type="email" 
+              <input
+                type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="student@college.edu" 
+                placeholder="student@college.edu"
                 className="w-full bg-surface-hover border border-border/50 rounded-xl py-3 pl-10 pr-4 text-sm text-foreground focus:outline-none focus:border-primary transition-colors"
               />
             </div>
@@ -205,12 +205,12 @@ export default function LoginPage() {
             <label className="block text-xs text-muted mb-1 ml-1">Password</label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={18} />
-              <input 
-                type="password" 
+              <input
+                type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••" 
+                placeholder="••••••••"
                 className="w-full bg-surface-hover border border-border/50 rounded-xl py-3 pl-10 pr-4 text-sm text-foreground focus:outline-none focus:border-primary transition-colors"
               />
             </div>
@@ -220,7 +220,7 @@ export default function LoginPage() {
             <label className="block text-xs text-muted mb-1 ml-1">Select University (Required)</label>
             <div className="relative">
               <School className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={18} />
-              <select 
+              <select
                 required
                 value={university}
                 onChange={(e) => setUniversity(e.target.value)}
@@ -264,11 +264,11 @@ export default function LoginPage() {
           disabled={isLoading}
           className="w-full flex items-center justify-center space-x-3 bg-white text-black py-3 px-4 rounded-xl font-medium transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-70 disabled:hover:scale-100"
         >
-          <Image 
-            src="https://www.svgrepo.com/show/475656/google-color.svg" 
-            alt="Google" 
-            width={24} 
-            height={24} 
+          <Image
+            src="https://www.svgrepo.com/show/475656/google-color.svg"
+            alt="Google"
+            width={24}
+            height={24}
           />
           <span>Continue with Google</span>
         </button>
@@ -276,7 +276,7 @@ export default function LoginPage() {
 
         <div className="mt-6 text-center text-sm">
           <span className="text-muted">{isSignUp ? "Already have an account?" : "New to Campus Adda?"}</span>
-          <button 
+          <button
             type="button"
             onClick={() => setIsSignUp(!isSignUp)}
             className="ml-2 text-primary hover:text-primary-hover font-medium"
