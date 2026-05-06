@@ -5,9 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import clsx from "clsx";
 import { io } from "socket.io-client";
 
-// Real rooms will be fetched from backend
-const MOCK_CHATS = [];
-
 import { Suspense } from "react";
 
 function MessagesContent() {
@@ -16,10 +13,11 @@ function MessagesContent() {
   // ... existing MessagesPage logic ...
   const [user, setUser] = useState(null);
   const [activeChat, setActiveChat] = useState(null);
-  const [chats, setChats] = useState(MOCK_CHATS);
+  const [chats, setChats] = useState([]);
   const [messages, setMessages] = useState({});
   const [input, setInput] = useState("");
   const [showAttachments, setShowAttachments] = useState(false);
+  const socketRef = useRef(null);
   const fileInputRef = useRef(null);
   const scrollRef = useRef(null);
 
@@ -69,23 +67,15 @@ function MessagesContent() {
         if (res.ok) {
           const data = await res.json();
           // Transform backend rooms to UI format
-          let formattedRooms = data.map(room => ({
+          const formattedRooms = data.map(room => ({
             id: room._id,
             name: room.isGroup ? (room.groupName || `${room.university} Hub`) : (room.participants.find(p => p._id !== u._id)?.name || "Chat"),
             type: room.isGroup ? "group" : "private",
-            avatar: room.isGroup ? "🏫" : (room.participants.find(p => p._id !== u._id)?.profilePic || "https://i.pravatar.cc/150"),
+            avatar: room.isGroup ? "🏫" : (room.participants.find(p => p._id !== u._id)?.profilePic || `https://ui-avatars.com/api/?name=User&background=6366f1&color=fff`),
             lastMsg: room.lastMessage?.text || "No messages yet",
             time: room.lastMessage ? new Date(room.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""
           }));
           
-          // Prepend local mock rooms (from post sharing)
-          const mockRooms = JSON.parse(localStorage.getItem("collegeadda_mock_rooms") || "[]");
-          if (mockRooms.length > 0) {
-             const existingMockIds = mockRooms.map(m => m.id);
-             formattedRooms = formattedRooms.filter(r => !existingMockIds.includes(r.id));
-             formattedRooms = [...mockRooms, ...formattedRooms];
-          }
-
           setChats(formattedRooms);
           
           // If a chat param is provided in URL, activate it
@@ -101,10 +91,6 @@ function MessagesContent() {
     };
 
     fetchRooms();
-
-    // Load messages from localStorage (as fallback or cache)
-    const savedMessages = JSON.parse(localStorage.getItem("collegeadda_messages") || "{}");
-    setMessages(savedMessages);
 
     return () => {
       if (socketRef.current) socketRef.current.disconnect();
@@ -137,35 +123,16 @@ function MessagesContent() {
           console.error(e);
         }
       }
-      if (!activeChat.id.toString().startsWith("mock_")) {
-        fetchHistory();
-      }
+      fetchHistory();
     }
   }, [activeChat]);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-    if (Object.keys(messages).length > 0) {
-      localStorage.setItem("collegeadda_messages", JSON.stringify(messages));
-    }
   }, [messages, activeChat]);
 
   const sendMessage = () => {
     if (!input.trim() || !activeChat) return;
-
-    if (activeChat.id.toString().startsWith("mock_")) {
-      const newMsg = { id: Date.now(), text: input, sender: "me", time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
-      const updatedMessages = {
-        ...messages,
-        [activeChat.id]: [...(messages[activeChat.id] || []), newMsg]
-      };
-      setMessages(updatedMessages);
-      setChats(prev => prev.map(c => 
-        c.id === activeChat.id ? { ...c, lastMsg: input, time: "Just now" } : c
-      ));
-      setInput("");
-      return;
-    }
 
     const data = {
       room: activeChat.id,

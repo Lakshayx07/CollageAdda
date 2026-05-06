@@ -9,20 +9,8 @@ import clsx from "clsx";
 export default function Home() {
   const router = useRouter();
 
-  // Auth Guard: Check if user is logged in
-  useEffect(() => {
-    const token = localStorage.getItem("collegeadda_token");
-    if (!token) {
-      router.push("/login");
-    } else {
-      fetchPosts();
-    }
-  }, [router]);
-  const FRIENDS_LIST = [
-    { id: 1, name: "Priya Sharma", avatar: "https://i.pravatar.cc/150?u=priya1" },
-    { id: 2, name: "Arjun Mehta", avatar: "https://i.pravatar.cc/150?u=arjun1" },
-    { id: 3, name: "Sneha Gupta", avatar: "https://i.pravatar.cc/150?u=sneha1" },
-  ];
+
+  const [friendsList, setFriendsList] = useState([]);
 
   const [activeCommentPost, setActiveCommentPost] = useState(null);
   const [commentInputs, setCommentInputs] = useState({});
@@ -34,39 +22,19 @@ export default function Home() {
 
   const [posts, setPosts] = useState([]);
   const [newPostContent, setNewPostContent] = useState("");
+  const [loadingPosts, setLoadingPosts] = useState(true);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
-  const MOCK_POSTS_FALLBACK = [
-    {
-      id: 1,
-      author: "Rahul Sharma",
-      university: "Rishihood University",
-      avatar: "https://i.pravatar.cc/150?u=rahul",
-      time: "2 hours ago",
-      content: "Just finished my final year project! So relieved. 🎉",
-      likes: 124,
-      isLiked: false,
-      comments: 20,
-      commentsList: [
-        { id: 101, author: "Priya Patel", text: "Congratulations bro! 🎉" },
-        { id: 104, author: "Aman Gupta", text: "Party where? 🍕" },
-        { id: 105, author: "Sneha", text: "So happy for you!" },
-        { id: 106, author: "Karan", text: "Awesome project man." }
-      ],
-    },
-    {
-      id: 2,
-      author: "Priya Patel",
-      university: "Delhi University",
-      avatar: "https://i.pravatar.cc/150?u=priya",
-      time: "5 hours ago",
-      content: "Anyone have notes for the upcoming Data Structures mid-term? Willing to trade for a coffee! ☕",
-      likes: 89,
-      isLiked: true,
-      comments: 42,
-      commentsList: [{ id: 102, author: "Rahul Sharma", text: "I have them, meet me at library!" }],
+  // Auth Guard: Check if user is logged in
+  useEffect(() => {
+    const token = localStorage.getItem("collegeadda_token");
+    if (!token) {
+      router.push("/login");
+    } else {
+      fetchPosts();
+      fetchFriends();
     }
-  ];
+  }, [router]);
 
   const fetchPosts = async () => {
     try {
@@ -81,8 +49,11 @@ export default function Home() {
         const formatted = data.map(p => ({
           id: p._id,
           author: p.author?.name || 'Unknown',
+          authorId: p.author?._id,
           university: p.university,
-          avatar: p.author?.profilePic || `https://ui-avatars.com/api/?name=${p.author?.name || 'U'}`,
+          avatar: p.author?.profilePic
+            ? p.author.profilePic
+            : `https://ui-avatars.com/api/?name=${encodeURIComponent(p.author?.name || 'U')}&background=6366f1&color=fff`,
           time: new Date(p.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
           content: p.content,
           likes: p.likes?.length || 0,
@@ -90,17 +61,36 @@ export default function Home() {
           comments: p.comments?.length || 0,
           commentsList: p.comments?.map(c => ({
             id: c._id || Math.random().toString(),
-            author: "Student", 
+            author: c.user?.name || 'Student',
             text: c.text
           })) || []
         }));
-        setPosts(formatted.length > 0 ? formatted : MOCK_POSTS_FALLBACK);
-      } else {
-        setPosts(MOCK_POSTS_FALLBACK);
+        setPosts(formatted);
       }
     } catch (err) {
       console.error(err);
-      setPosts(MOCK_POSTS_FALLBACK);
+    } finally {
+      setLoadingPosts(false);
+    }
+  };
+
+  const fetchFriends = async () => {
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      if (!token) return;
+      const res = await fetch(`${apiUrl}/api/users/me/following`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setFriendsList(data.map(u => ({
+          id: u._id,
+          name: u.name,
+          avatar: u.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=6366f1&color=fff`
+        })));
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -148,7 +138,7 @@ export default function Home() {
     );
     setCommentInputs(prev => ({ ...prev, [postId]: "" }));
 
-    if (typeof postId !== 'string') return; // mock post
+    if (typeof postId !== 'string' || !postId) return; // skip non-real posts
     try {
       const token = localStorage.getItem("collegeadda_token");
       await fetch(`${apiUrl}/api/posts/${postId}/comment`, {
@@ -164,52 +154,37 @@ export default function Home() {
     }
   };
 
-  const handleFollow = (author) => {
-    if (followedUsers[author]) return;
-    setFollowedUsers(prev => ({ ...prev, [author]: true }));
-    
-    const currentFollowing = JSON.parse(localStorage.getItem("collegeadda_following_list") || "[]");
-    currentFollowing.push({ name: author, university: "University", avatar: `https://i.pravatar.cc/150?u=${author}` });
-    localStorage.setItem("collegeadda_following_list", JSON.stringify(currentFollowing));
-    
-    setToastMsg(`You are now following ${author}`);
+  const handleFollow = async (authorId, authorName) => {
+    if (!authorId) return;
+    const currentlyFollowing = followedUsers[authorId];
+    // Optimistic update
+    setFollowedUsers(prev => ({ ...prev, [authorId]: !currentlyFollowing }));
+    setToastMsg(currentlyFollowing ? `Unfollowed ${authorName}` : `Now following ${authorName}`);
     setTimeout(() => setToastMsg(""), 2000);
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      await fetch(`${apiUrl}/api/users/${authorId}/follow`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      // Refresh friends list after follow/unfollow
+      fetchFriends();
+    } catch (err) {
+      console.error(err);
+      // Revert on failure
+      setFollowedUsers(prev => ({ ...prev, [authorId]: currentlyFollowing }));
+    }
   };
 
-  const handleShare = (friend) => {
+  const handleShare = async (friend) => {
     const postToShare = posts.find(p => p.id === shareModal);
-    const msgText = `Check out this post from ${postToShare?.author}: "${postToShare?.content}"`;
-    
-    // Save to local messages
-    const savedMessages = JSON.parse(localStorage.getItem("collegeadda_messages") || "{}");
-    const newMsg = { id: Date.now(), text: msgText, sender: "me", time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
-    const chatId = `mock_friend_${friend.id}`;
-    
-    savedMessages[chatId] = [...(savedMessages[chatId] || []), newMsg];
-    localStorage.setItem("collegeadda_messages", JSON.stringify(savedMessages));
-
-    // Save to local mock rooms
-    const mockRooms = JSON.parse(localStorage.getItem("collegeadda_mock_rooms") || "[]");
-    const existingRoom = mockRooms.find(r => r.id === chatId);
-    if (!existingRoom) {
-      mockRooms.push({
-        id: chatId,
-        name: friend.name,
-        type: "private",
-        avatar: friend.avatar,
-        lastMsg: msgText,
-        time: "Just now"
-      });
-    } else {
-      existingRoom.lastMsg = msgText;
-      existingRoom.time = "Just now";
-    }
-    localStorage.setItem("collegeadda_mock_rooms", JSON.stringify(mockRooms));
-
+    if (!postToShare) return;
+    const msgText = `Check out this post on Campus Adda: "${postToShare.content}"`;
     setToastMsg(`Post sent to ${friend.name} successfully!`);
     setShareModal(null);
     setShareSearchTerm("");
     setTimeout(() => setToastMsg(""), 2000);
+    // In a real DM flow this would call the chat API; for now we just show confirmation
   };
 
   const toggleLike = async (postId) => {
@@ -227,7 +202,7 @@ export default function Home() {
       })
     );
     
-    if (typeof postId !== 'string') return; // mock post
+    if (typeof postId !== 'string' || !postId) return; // skip non-real posts
     try {
       const token = localStorage.getItem("collegeadda_token");
       await fetch(`${apiUrl}/api/posts/${postId}/like`, {
@@ -292,6 +267,17 @@ export default function Home() {
 
         {/* Posts List */}
         <div className="space-y-4">
+          {loadingPosts && (
+            <div className="flex justify-center py-10">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
+            </div>
+          )}
+          {!loadingPosts && posts.length === 0 && (
+            <div className="text-center py-10 text-muted">
+              <p className="text-lg font-semibold">No posts yet 👀</p>
+              <p className="text-sm mt-1">Be the first to post something on your campus!</p>
+            </div>
+          )}
           {posts.map((post) => (
             <article key={post.id} className="glass-panel rounded-2xl p-4 animate-slide-up">
               <div className="flex items-center justify-between mb-3 relative">
@@ -306,15 +292,15 @@ export default function Home() {
                         <span className="text-[10px] bg-secondary/20 text-secondary px-2 py-0.5 rounded-full">Gossip</span>
                       ) : (
                         <button 
-                          onClick={() => handleFollow(post.author)}
+                          onClick={() => handleFollow(post.authorId, post.author)}
                           className={clsx(
                             "text-[10px] border px-2.5 py-0.5 rounded-full transition-colors font-bold tracking-wide",
-                            followedUsers[post.author] 
-                              ? "bg-surface-hover text-muted border-border/50 cursor-default"
+                            followedUsers[post.authorId] 
+                              ? "bg-surface-hover text-muted border-border/50"
                               : "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
                           )}
                         >
-                          {followedUsers[post.author] ? "Following" : "Follow"}
+                          {followedUsers[post.authorId] ? "Following" : "Follow"}
                         </button>
                       )}
                     </h3>
@@ -427,7 +413,10 @@ export default function Home() {
               />
             </div>
             <div className="space-y-2 max-h-60 overflow-y-auto">
-              {FRIENDS_LIST.filter(f => f.name.toLowerCase().includes(shareSearchTerm.toLowerCase())).map(friend => (
+              {friendsList.length === 0 && (
+                <p className="text-sm text-muted text-center py-4">Follow people to share posts with them.</p>
+              )}
+              {friendsList.filter(f => f.name.toLowerCase().includes(shareSearchTerm.toLowerCase())).map(friend => (
                 <div key={friend.id} className="flex items-center space-x-3 p-2 hover:bg-surface-hover rounded-xl transition-colors cursor-pointer" onClick={() => handleShare(friend)}>
                   <img src={friend.avatar} alt={friend.name} className="w-10 h-10 rounded-full object-cover" />
                   <div className="flex-1">

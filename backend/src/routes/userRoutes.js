@@ -72,6 +72,74 @@ router.put('/profile', protect, async (req, res) => {
   }
 });
 
+// @route   GET /api/users/search
+// @desc    Search users by name or university
+router.get('/search/query', protect, async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q) return res.json([]);
+    const users = await User.find({
+      _id: { $ne: req.user._id },
+      $or: [
+        { name: { $regex: q, $options: 'i' } },
+        { university: { $regex: q, $options: 'i' } }
+      ]
+    }).select('-password').limit(20);
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @route   GET /api/users/me/followers
+// @desc    Get logged-in user's followers
+router.get('/me/followers', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).populate('followers', 'name university profilePic _id');
+    res.json(user.followers || []);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @route   GET /api/users/me/following
+// @desc    Get logged-in user's following list
+router.get('/me/following', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).populate('following', 'name university profilePic _id');
+    res.json(user.following || []);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @route   PUT /api/users/:id/follow
+// @desc    Follow / unfollow a user (toggle)
+router.put('/:id/follow', protect, async (req, res) => {
+  try {
+    if (req.params.id === req.user._id.toString()) {
+      return res.status(400).json({ message: "You can't follow yourself" });
+    }
+    const targetUser = await User.findById(req.params.id);
+    const currentUser = await User.findById(req.user._id);
+    if (!targetUser) return res.status(404).json({ message: 'User not found' });
+
+    const isFollowing = currentUser.following.includes(req.params.id);
+    if (isFollowing) {
+      currentUser.following = currentUser.following.filter(id => id.toString() !== req.params.id);
+      targetUser.followers = targetUser.followers.filter(id => id.toString() !== req.user._id.toString());
+    } else {
+      currentUser.following.push(req.params.id);
+      targetUser.followers.push(req.user._id);
+    }
+    await currentUser.save();
+    await targetUser.save();
+    res.json({ following: !isFollowing, followersCount: targetUser.followers.length });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // @route   GET /api/users/:id
 // @desc    Get another user's public profile
 router.get('/:id', protect, async (req, res) => {

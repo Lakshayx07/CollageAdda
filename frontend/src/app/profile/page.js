@@ -5,42 +5,17 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import UniversityBadges from "@/components/UniversityBadges";
 
-const MOCK_POSTS = [
-  { id: 1, img: "https://picsum.photos/seed/post1/300/300", likes: 124, comments: 18 },
-  { id: 2, img: "https://picsum.photos/seed/post2/300/300", likes: 89, comments: 42 },
-  { id: 3, img: "https://picsum.photos/seed/post3/300/300", likes: 342, comments: 89 },
-  { id: 4, img: "https://picsum.photos/seed/post4/300/300", likes: 56, comments: 12 },
-  { id: 5, img: "https://picsum.photos/seed/post5/300/300", likes: 211, comments: 33 },
-  { id: 6, img: "https://picsum.photos/seed/post6/300/300", likes: 178, comments: 27 },
-];
-
-const MOCK_FOLLOWERS = [
-  { id: 1, name: "Priya Sharma", university: "Rishihood University", avatar: "https://i.pravatar.cc/150?u=priya1" },
-  { id: 2, name: "Arjun Mehta", university: "Delhi University", avatar: "https://i.pravatar.cc/150?u=arjun1" },
-  { id: 3, name: "Sneha Gupta", university: "Amity University", avatar: "https://i.pravatar.cc/150?u=sneha1" },
-];
-
-const MOCK_FOLLOWING = [
-  { id: 4, name: "Ravi Kumar", university: "IIT Delhi", avatar: "https://i.pravatar.cc/150?u=ravi1" },
-  { id: 5, name: "Asha Patel", university: "DTU", avatar: "https://i.pravatar.cc/150?u=asha1" },
-];
-
 const INTEREST_OPTIONS = ["Music 🎵", "Cricket 🏏", "Coding 💻", "Art 🎨", "Travel ✈️", "Gaming 🎮", "Books 📚", "Fitness 💪", "Movies 🎬", "Cooking 🍳"];
 const SPORT_OPTIONS = ["Football ⚽", "Basketball 🏀", "Cricket 🏏", "Tennis 🎾", "Badminton 🏸", "Volleyball 🏐", "Table Tennis 🏓", "Athletics 🏃", "Swimming 🏊", "Chess ♟️"];
 
 export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
+  const [followers, setFollowers] = useState([]);
+  const [following, setFollowing] = useState([]);
   const [modal, setModal] = useState(null); // 'followers' | 'following' | 'edit' | 'story' | 'post' | 'share'
   const [activePostIndex, setActivePostIndex] = useState(null);
-  const [userPosts, setUserPosts] = useState(MOCK_POSTS.map(p => ({
-    ...p, 
-    isLiked: false, 
-    commentsList: [
-      { id: 101, author: "Priya Sharma", text: "Amazing click! 😍" },
-      { id: 102, author: "Ravi Kumar", text: "Which block is this?" }
-    ]
-  })));
+  const [userPosts, setUserPosts] = useState([]);
   const [commentInput, setCommentInput] = useState("");
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
@@ -154,6 +129,22 @@ export default function ProfilePage() {
     };
     
     fetchProfileAndPosts();
+
+    // Fetch followers & following
+    const fetchSocial = async () => {
+      try {
+        const token = localStorage.getItem("collegeadda_token");
+        const [followersRes, followingRes] = await Promise.all([
+          fetch(`${apiUrl}/api/users/me/followers`, { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${apiUrl}/api/users/me/following`, { headers: { Authorization: `Bearer ${token}` } })
+        ]);
+        if (followersRes.ok) setFollowers(await followersRes.json());
+        if (followingRes.ok) setFollowing(await followingRes.json());
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchSocial();
   }, [router]);
 
   const handleLogout = () => {
@@ -257,25 +248,21 @@ export default function ProfilePage() {
             {/* Stats */}
             <div className="flex flex-1 justify-between gap-2">
               <div className="flex flex-col items-center justify-center bg-surface/50 hover:bg-surface border border-white/5 hover:border-white/10 rounded-2xl py-2 px-2 flex-1 transition-all shadow-sm">
-                <p className="text-lg font-bold bg-gradient-to-br from-indigo-400 to-purple-400 bg-clip-text text-transparent">{MOCK_POSTS.length}</p>
+                <p className="text-lg font-bold bg-gradient-to-br from-indigo-400 to-purple-400 bg-clip-text text-transparent">{userPosts.length}</p>
                 <p className="text-[10px] sm:text-xs text-muted font-medium">Posts</p>
               </div>
               <button 
                 className="flex flex-col items-center justify-center bg-surface/50 hover:bg-surface border border-white/5 hover:border-white/10 rounded-2xl py-2 px-2 flex-1 transition-all shadow-sm group/btn" 
                 onClick={() => setModal("followers")}
               >
-                <p className="text-lg font-bold group-hover/btn:bg-gradient-to-br group-hover/btn:from-indigo-400 group-hover/btn:to-purple-400 group-hover/btn:bg-clip-text group-hover/btn:text-transparent transition-all">{
-                  JSON.parse(typeof window !== "undefined" ? (localStorage.getItem("collegeadda_followers_list") || "[]") : "[]").length + MOCK_FOLLOWERS.length
-                }</p>
+                <p className="text-lg font-bold group-hover/btn:bg-gradient-to-br group-hover/btn:from-indigo-400 group-hover/btn:to-purple-400 group-hover/btn:bg-clip-text group-hover/btn:text-transparent transition-all">{followers.length}</p>
                 <p className="text-[10px] sm:text-xs text-muted font-medium">Followers</p>
               </button>
               <button 
                 className="flex flex-col items-center justify-center bg-surface/50 hover:bg-surface border border-white/5 hover:border-white/10 rounded-2xl py-2 px-2 flex-1 transition-all shadow-sm group/btn" 
                 onClick={() => setModal("following")}
               >
-                <p className="text-lg font-bold group-hover/btn:bg-gradient-to-br group-hover/btn:from-indigo-400 group-hover/btn:to-purple-400 group-hover/btn:bg-clip-text group-hover/btn:text-transparent transition-all">{
-                  JSON.parse(typeof window !== "undefined" ? (localStorage.getItem("collegeadda_following_list") || "[]") : "[]").length + MOCK_FOLLOWING.length
-                }</p>
+                <p className="text-lg font-bold group-hover/btn:bg-gradient-to-br group-hover/btn:from-indigo-400 group-hover/btn:to-purple-400 group-hover/btn:bg-clip-text group-hover/btn:text-transparent transition-all">{following.length}</p>
                 <p className="text-[10px] sm:text-xs text-muted font-medium">Following</p>
               </button>
             </div>
@@ -386,6 +373,12 @@ export default function ProfilePage() {
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
           className="grid grid-cols-3 gap-[2px] pb-20"
         >
+          {userPosts.length === 0 && (
+            <div className="col-span-3 text-center py-10 text-muted">
+              <p className="text-lg font-semibold">No posts yet</p>
+              <p className="text-sm mt-1">Share something on the feed!</p>
+            </div>
+          )}
           {userPosts.map((post, idx) => (
             <motion.div 
               key={post.id} 
@@ -420,16 +413,16 @@ export default function ProfilePage() {
               <button onClick={() => setModal(null)}><X size={20} className="text-muted" /></button>
             </div>
             <div className="space-y-3">
-              {[...MOCK_FOLLOWERS, ...JSON.parse(localStorage.getItem("collegeadda_followers_list") || "[]")].map((f, idx) => (
-                <div key={idx} className="flex items-center space-x-3">
-                  <img src={f.avatar} alt={f.name} className="w-10 h-10 rounded-full object-cover" />
+              {followers.length === 0 && (
+                <p className="text-sm text-muted text-center py-4">No followers yet. Share your profile!</p>
+              )}
+              {followers.map((f, idx) => (
+                <div key={f._id || idx} className="flex items-center space-x-3">
+                  <img src={f.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(f.name)}&background=6366f1&color=fff`} alt={f.name} className="w-10 h-10 rounded-full object-cover" />
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-foreground">{f.name}</p>
                     <p className="text-xs text-muted">{f.university}</p>
                   </div>
-                  <button className="text-xs text-primary font-medium border border-primary/30 px-3 py-1 rounded-xl hover:bg-primary/10 transition-colors">
-                    Follow back
-                  </button>
                 </div>
               ))}
             </div>
@@ -446,9 +439,12 @@ export default function ProfilePage() {
               <button onClick={() => setModal(null)}><X size={20} className="text-muted" /></button>
             </div>
             <div className="space-y-3">
-              {[...MOCK_FOLLOWING, ...JSON.parse(localStorage.getItem("collegeadda_following_list") || "[]")].map((f, idx) => (
-                <div key={idx} className="flex items-center space-x-3">
-                  <img src={f.avatar} alt={f.name} className="w-10 h-10 rounded-full object-cover" />
+              {following.length === 0 && (
+                <p className="text-sm text-muted text-center py-4">You're not following anyone yet.</p>
+              )}
+              {following.map((f, idx) => (
+                <div key={f._id || idx} className="flex items-center space-x-3">
+                  <img src={f.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(f.name)}&background=6366f1&color=fff`} alt={f.name} className="w-10 h-10 rounded-full object-cover" />
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-foreground">{f.name}</p>
                     <p className="text-xs text-muted">{f.university}</p>
@@ -683,17 +679,20 @@ export default function ProfilePage() {
               />
             </div>
             <div className="space-y-2 max-h-60 overflow-y-auto">
-              {[...MOCK_FOLLOWERS, ...MOCK_FOLLOWING].filter(f => f.name.toLowerCase().includes(shareSearchTerm.toLowerCase())).map(friend => (
-                <div key={friend.id} className="flex items-center space-x-3 p-2 hover:bg-surface-hover rounded-xl transition-colors cursor-pointer" onClick={() => handleShare(friend)}>
-                  <img src={friend.avatar} alt={friend.name} className="w-10 h-10 rounded-full object-cover" />
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-foreground">{friend.name}</p>
+              {[...followers, ...following].filter((f, i, arr) => arr.findIndex(x => x._id === f._id) === i).filter(f => f.name.toLowerCase().includes(shareSearchTerm.toLowerCase())).map(friend => {
+                const avatar = friend.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.name)}&background=6366f1&color=fff`;
+                return (
+                  <div key={friend._id} className="flex items-center space-x-3 p-2 hover:bg-surface-hover rounded-xl transition-colors cursor-pointer" onClick={() => handleShare(friend)}>
+                    <img src={avatar} alt={friend.name} className="w-10 h-10 rounded-full object-cover" />
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-foreground">{friend.name}</p>
+                    </div>
+                    <button className="bg-primary text-white text-xs font-bold px-4 py-1.5 rounded-full hover:scale-105 transition-transform shadow-md shadow-primary/20">
+                      Send
+                    </button>
                   </div>
-                  <button className="bg-primary text-white text-xs font-bold px-4 py-1.5 rounded-full hover:scale-105 transition-transform shadow-md shadow-primary/20">
-                    Send
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
