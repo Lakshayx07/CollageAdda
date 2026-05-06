@@ -81,6 +81,17 @@ export default function ExplorePage() {
       });
       if (res.ok) {
         const data = await res.json();
+
+        // Sort: non-connections first, existing connections last
+        if (data.studentsData && data.studentsData.length > 0) {
+          data.studentsData = [...data.studentsData].sort((a, b) => {
+            const aFollowed = myFollowing.includes(a._id);
+            const bFollowed = myFollowing.includes(b._id);
+            if (aFollowed === bFollowed) return 0;
+            return aFollowed ? 1 : -1; // already followed → go to end
+          });
+        }
+
         setSelectedCollege(data);
         setActiveTab("posts");
       }
