@@ -14,7 +14,7 @@ const delhiColleges = [
     departments: 10,
     emoji: "💡",
     accent: "#E11D48",
-    banner: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&q=80",
+    banner: "https://framerusercontent.com/images/XFjzi1N8IY9NG8fcSIM2Ev9sc.webp?width=680&height=377",
     description: "An impact-driven university located in Sonipat, Delhi NCR."
   },
   {
@@ -25,7 +25,7 @@ const delhiColleges = [
     departments: 12,
     emoji: "🏛️",
     accent: "#0284C7",
-    banner: "https://images.unsplash.com/photo-1581358055655-eb54ce9ac056?w=800&q=80",
+    banner: "https://spa.ac.in/sites/default/files/inline-images/Rectangle%2022740.jpg",
     description: "A specialized university in Delhi for architecture and planning."
   },
   {
@@ -36,7 +36,7 @@ const delhiColleges = [
     departments: 30,
     emoji: "🔬",
     accent: "#0F172A",
-    banner: "https://images.unsplash.com/photo-1562774053-701939374585?w=800&q=80",
+    banner: "https://home.iitd.ac.in/images/for-faculty/camp8.jpghttps://home.iitd.ac.in/images/for-faculty/camp8.jpg",
     description: "One of India's premier engineering and research institutes."
   },
   {
@@ -47,7 +47,7 @@ const delhiColleges = [
     departments: 15,
     emoji: "⚙️",
     accent: "#047857",
-    banner: "https://images.unsplash.com/photo-1523050335456-c38a7047d28c?w=800&q=80",
+    banner: "https://learn.vcnow.in/wp-content/uploads/2026/01/DTU.jpg",
     description: "A leading state university renowned for engineering and technology."
   },
   {
@@ -58,7 +58,7 @@ const delhiColleges = [
     departments: 11,
     emoji: "💻",
     accent: "#4F46E5",
-    banner: "https://images.unsplash.com/photo-1590483866299-158a18df7cb3?w=800&q=80",
+    banner: "https://edufever.in/colleges/wp-content/uploads/2021/03/NSUT-Delhi.webp",
     description: "Formerly NSIT, a prominent engineering university in Delhi."
   },
   {
@@ -69,7 +69,7 @@ const delhiColleges = [
     departments: 6,
     emoji: "🖥️",
     accent: "#0891B2",
-    banner: "https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=800&q=80",
+    banner: "https://iiitd.ac.in/sites/all/themes/gavias_educar/images/slide-pl.jpg",
     description: "Indraprastha Institute of Information Technology Delhi."
   },
   {
@@ -80,7 +80,7 @@ const delhiColleges = [
     departments: 86,
     emoji: "🎓",
     accent: "#7C3AED",
-    banner: "https://images.unsplash.com/photo-1601224283838-518296213038?w=800&q=80",
+    banner: "https://images.shiksha.com/mediadata/images/articles/1662370481phpb8qpYu.jpeg",
     description: "A collegiate public central university offering numerous courses."
   },
   {
@@ -91,7 +91,7 @@ const delhiColleges = [
     departments: 20,
     emoji: "📚",
     accent: "#BE123C",
-    banner: "https://images.unsplash.com/photo-1498243691581-b145c3f54a5a?w=800&q=80",
+    banner: "https://images.hindustantimes.com/img/2021/06/09/1600x900/https___blankpaper.htdigital.in_cms-backend-service-mt_image_redirect_link=https___images.hindustantimes.com_rf_image_size_960x540_HT_p2_2020_12_02_Pictures_jnu_faac0890-344e-11eb-a095-f4dd1fe9b7fb_1623229693932_1623229700573.jpg",
     description: "A premier central university renowned for research and liberal arts."
   },
   {
@@ -102,7 +102,7 @@ const delhiColleges = [
     departments: 38,
     emoji: "🕌",
     accent: "#166534",
-    banner: "https://images.unsplash.com/photo-1565022536102-f7645c84354a?w=800&q=80",
+    banner: "https://scontent-bom5-1.xx.fbcdn.net/v/t39.30808-6/561528853_1245033950996230_1527605211030628163_n.jpg?_nc_cat=111&ccb=1-7&_nc_sid=7b2446&_nc_ohc=uNUTIxfVPdcQ7kNvwFYmlij&_nc_oc=AdqHja1I-EpbbxGJLdWf8i7tmNcXvufZh8TKjZjjkJ8fYUCkp3n6g-6GO-ghERPAZolJLlRBveO_0nYWaMS5TORU&_nc_zt=23&_nc_ht=scontent-bom5-1.xx&_nc_gid=qTwBxoOe2UaiE0_uieCl7w&_nc_ss=7b289&oh=00_Af44xunQlnssAAB6biZUsHEhfejtFQBWLjiQNo_2lisr8g&oe=6A01B952",
     description: "A central university located in New Delhi."
   },
   {
@@ -113,7 +113,7 @@ const delhiColleges = [
     departments: 50,
     emoji: "🏢",
     accent: "#EA580C",
-    banner: "https://images.unsplash.com/photo-1576495199011-eb94736d05d6?w=800&q=80",
+    banner: "https://images.indianexpress.com/2025/02/ggsipu-1.jpg",
     description: "A state university with numerous affiliated colleges across Delhi."
   }
 ];
@@ -130,10 +130,11 @@ const seedDelhiColleges = async () => {
         await college.save();
         console.log(`Added: ${collegeData.name}`);
       } else {
-        console.log(`Already exists: ${collegeData.name}`);
+        await College.updateOne({ name: collegeData.name }, { $set: collegeData });
+        console.log(`Updated: ${collegeData.name}`);
       }
     }
-    
+
     console.log("Delhi NCR Colleges seeding complete.");
     process.exit(0);
   } catch (error) {

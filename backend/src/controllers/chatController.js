@@ -92,3 +92,31 @@ export const getOrCreatePrivateRoom = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// Create a message via HTTP
+export const sendMessage = async (req, res) => {
+  const { text, mediaUrl, mediaType } = req.body;
+  const roomId = req.params.id;
+
+  try {
+    const room = await ChatRoom.findById(roomId);
+    if (!room) return res.status(404).json({ message: 'Room not found' });
+
+    const message = await Message.create({
+      room: roomId,
+      sender: req.user._id,
+      text: text || '',
+      mediaUrl,
+      mediaType: mediaType || 'none'
+    });
+
+    // Update last message in room
+    room.lastMessage = message._id;
+    await room.save();
+
+    const populatedMsg = await Message.findById(message._id).populate('sender', 'name profilePic');
+    res.status(201).json(populatedMsg);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

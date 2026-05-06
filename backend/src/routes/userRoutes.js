@@ -115,6 +115,36 @@ router.get('/me/following', protect, async (req, res) => {
   }
 });
 
+// @route   GET /api/users/:id/university-connections
+// @desc    Get counts of connections (following) grouped by university
+router.get('/:id/university-connections', protect, async (req, res) => {
+  try {
+    // If id is 'me', use req.user._id
+    const userId = req.params.id === 'me' ? req.user._id : req.params.id;
+    const user = await User.findById(userId).populate('following', 'university');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const counts = {};
+    if (user.following && user.following.length > 0) {
+      user.following.forEach(f => {
+        if (f.university) {
+          counts[f.university] = (counts[f.university] || 0) + 1;
+        }
+      });
+    }
+
+    const result = Object.entries(counts)
+      .map(([university, count]) => ({ university, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3)
+      .map((item, index) => ({ ...item, rank: index + 1 }));
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // @route   PUT /api/users/:id/follow
 // @desc    Follow / unfollow a user (toggle)
 router.put('/:id/follow', protect, async (req, res) => {
