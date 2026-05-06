@@ -18,8 +18,6 @@ export default function AuthCallback() {
         } catch (error) {
           console.log("333333333", error)
         }
-        const item = (await supabase.auth.getSession()).data.session;
-        console.log("444444444", item)
 
         if (session && session.user) {
 
