@@ -7,14 +7,18 @@ export default function AuthCallback() {
     const handleAuthCallback = async () => {
       if (!supabase) return;
 
-      const { data: { session }, error } = await supabase.auth.getSession();
+      try {
+        console.log("-----------")
+        const { data: { session }, error } = await supabase.auth.getSession();
+        console.log("111111111", data)
+        console.log("222222222", session)
 
-      if (session && session.user) {
-        const user = session.user;
-        const pendingUni = localStorage.getItem('pending_university');
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+        if (session && session.user) {
 
-        try {
+          const user = session.user;
+          const pendingUni = localStorage.getItem('pending_university');
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+
           // Sync with our custom backend
           let res = await fetch(`${apiUrl}/api/auth/register`, {
             method: 'POST',
@@ -49,12 +53,12 @@ export default function AuthCallback() {
             localStorage.removeItem('pending_university');
             window.location.href = '/';
           }
-        } catch (err) {
-          console.error("OAuth Sync Error:", err);
-          window.location.href = '/login?error=sync_failed';
+        } else {
+          window.location.href = '/login';
         }
-      } else {
-        window.location.href = '/login';
+      } catch (err) {
+        console.error("OAuth Sync Error:", err);
+        window.location.href = '/login?error=sync_failed';
       }
     };
 
