@@ -12,7 +12,6 @@ const postSchema = mongoose.Schema({
     text: { type: String, required: true },
     createdAt: { type: Date, default: Date.now }
   }],
-  isAnonymous: { type: Boolean, default: false },
   hashtags: [{ type: String }],
   poll: {
     question: { type: String },

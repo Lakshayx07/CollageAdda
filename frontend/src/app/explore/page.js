@@ -18,121 +18,10 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
 
-const COLLEGES = [
-  {
-    id: "opjgu",
-    name: "O.P. Jindal Global University",
-    location: "Sonipat, Haryana",
-    students: "10,000+",
-    posts: 420,
-    departments: 12,
-    emoji: "⚖️",
-    accent: "#6366f1", // Indigo
-    banner: "https://media.collegedekho.com/media/img/institute/crawled_images/None/op-jindal-global-university-.jpg",
-    postsData: [
-      { id: 1, author: "Rahul Singh", meta: "B.A. LL.B (Hons) • 3rd Year", time: "2h ago", text: "The Moot Court competition today was intense! Glad to have made it to the semi-finals. #LawLife #OPJGU", likes: 24, liked: false },
-      { id: 2, author: "Ishita Rao", meta: "Global Affairs • 1st Year", time: "5h ago", text: "Sunset at the JGU campus is something else. ❤️", likes: 56, liked: true, image: "https://images.unsplash.com/photo-1523050335456-c38a7047d28c?w=500&q=80" },
-    ],
-    studentsData: [
-      { id: 101, name: "Arjun Khanna", age: 20, course: "BBA", year: "2nd Year", avatar: "AK", verified: true, interests: ["🎸 Music", "💻 Coding", "📸 Photography"], instagram: "@arjun.khanna", bio: "Looking for study buddies and chai pe charcha 😄", photo: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=500&q=80" },
-      { id: 102, name: "Sneha Reddy", age: 21, course: "LLM", year: "Final Year", avatar: "SR", verified: false, interests: ["📚 Reading", "☕ Coffee", "✈️ Travel"], instagram: "@sneha.reads", bio: "Always found in the library. Let's debate!", photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&q=80" },
-      { id: 103, name: "Kabir Das", age: 19, course: "Psychology", year: "3rd Year", avatar: "KD", verified: true, interests: ["🎨 Art", "🧘‍♂️ Meditation", "🌱 Nature"], instagram: "@kabir.mind", bio: "Analyzing minds and painting sunsets.", photo: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=500&q=80" },
-      { id: 104, name: "Priya Sharma", age: 20, course: "Global Affairs", year: "2nd Year", avatar: "PS", verified: true, interests: ["🌍 Politics", "🗣️ Debating", "🎾 Tennis"], instagram: "@priya.global", bio: "Future diplomat. Catch me on the tennis court.", photo: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=500&q=80" },
-      { id: 105, name: "Rohan Verma", age: 22, course: "MBA", year: "1st Year", avatar: "RV", verified: false, interests: ["📈 Finance", "🚗 Cars", "🏋️ Fitness"], instagram: "@rohan_invests", bio: "Building the next big thing. Let's network.", photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=500&q=80" }
-    ]
-  },
-  {
-    id: "du",
-    name: "Delhi University",
-    location: "New Delhi, Delhi",
-    students: "700,000+",
-    posts: "15k+",
-    departments: 80,
-    emoji: "📜",
-    accent: "#ec4899", // Pink
-    banner: "https://blog.oureducation.in/wp-content/uploads/2013/03/Delhi_University2.jpg",
-    postsData: [
-      { id: 3, author: "Amit Sharma", meta: "SRCC • Eco Hons", time: "1h ago", text: "SRCC fest vibes are unmatched. #Crossroads #DU", likes: 120, liked: false },
-      { id: 4, author: "Priya Verma", meta: "Miranda House • History", time: "3h ago", text: "North Campus library is my second home now. 📚", likes: 89, liked: false },
-    ],
-    studentsData: [
-      { id: 201, name: "Rohan Mehra", age: 19, course: "B.Com", year: "1st Year", avatar: "RM", verified: false, interests: ["🏏 Cricket", "🎬 K-Drama", "🍕 Foodie"], instagram: "@rohan.du", bio: "First year surviving on momos and dreams.", photo: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=500&q=80" },
-      { id: 202, name: "Ananya Jha", age: 21, course: "MA English", year: "1st Year", avatar: "AJ", verified: true, interests: ["📖 Poetry", "🎸 Indie Music", "☕ Chai"], instagram: "@ananya.writes", bio: "Finding poetry in the chaos of North Campus.", photo: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500&q=80" },
-      { id: 203, name: "Vicky Kaushal", age: 20, course: "Physics", year: "2nd Year", avatar: "VK", verified: true, interests: ["🌌 Astronomy", "💻 Coding", "🎮 Gaming"], instagram: "@vicky.astro", bio: "Trying to understand the universe and my syllabus.", photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&q=80" },
-      { id: 204, name: "Neha Singh", age: 19, course: "History", year: "2nd Year", avatar: "NS", verified: false, interests: ["🏛️ Museums", "📷 Photography", "✈️ Travel"], instagram: "@neha.hist", bio: "Living in the past, capturing the present.", photo: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=500&q=80" },
-      { id: 205, name: "Amit Kumar", age: 21, course: "Economics", year: "3rd Year", avatar: "AK", verified: true, interests: ["📊 Data", "💼 Startups", "🏃 Running"], instagram: "@amit.eco", bio: "Economics by day, startup hustler by night.", photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=500&q=80" }
-    ]
-  },
-  {
-    id: "iitd",
-    name: "IIT Delhi",
-    location: "Hauz Khas, Delhi",
-    students: "11,000+",
-    posts: "5k+",
-    departments: 19,
-    emoji: "⚙️",
-    accent: "#3b82f6", // Blue
-    banner: "https://home.iitd.ac.in/images/for-faculty/camp8.jpg",
-    postsData: [
-      { id: 5, author: "Vikram Gupta", meta: "CSE • 4th Year", time: "30m ago", text: "Placement season is finally over! Off to Google. 🚀 #IITD #LifeAtIIT", likes: 450, liked: true },
-      { id: 6, author: "Neha Soni", meta: "EE • 2nd Year", time: "4h ago", text: "Lab reports are the death of me. Anyone up for a coffee at SDA?", likes: 34, liked: false },
-    ],
-    studentsData: [
-      { id: 301, name: "Saurabh Jain", age: 23, course: "M.Tech CSE", year: "1st Year", avatar: "SJ", verified: true, interests: ["🤖 AI", "💻 Coding", "🎮 Gaming"], instagram: "@saurabh.ai", bio: "Training models and drinking red bull.", photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&q=80" },
-      { id: 302, name: "Tanmay Singh", age: 20, course: "B.Tech ME", year: "3rd Year", avatar: "TS", verified: false, interests: ["🏎️ Formula 1", "🎸 Guitar", "📸 Photography"], instagram: "@tanmay.mech", bio: "Building robots and breaking hearts.", photo: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=500&q=80" },
-      { id: 303, name: "Ridhi Dogra", age: 25, course: "PhD Physics", year: "2nd Year", avatar: "RD", verified: true, interests: ["🌌 Astronomy", "📚 Reading", "☕ Coffee"], instagram: "@ridhi.physics", bio: "Lost in quantum mechanics.", photo: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500&q=80" },
-      { id: 304, name: "Ankit Patel", age: 19, course: "B.Tech EE", year: "2nd Year", avatar: "AP", verified: true, interests: ["⚡ Electronics", "🏏 Cricket", "🍿 Movies"], instagram: "@ankit.ee", bio: "Shockingly good at circuits.", photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=500&q=80" },
-      { id: 305, name: "Meera Reddy", age: 21, course: "B.Tech CE", year: "4th Year", avatar: "MR", verified: false, interests: ["🏗️ Design", "🎨 Art", "✈️ Travel"], instagram: "@meera.civil", bio: "Building bridges, literally.", photo: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=500&q=80" }
-    ]
-  },
-  {
-    id: "jmi",
-    name: "Jamia Millia Islamia",
-    location: "Jamia Nagar, Delhi",
-    students: "20,000+",
-    posts: "2.4k",
-    departments: 35,
-    emoji: "🕌",
-    accent: "#10b981", // Emerald
-    banner: "https://cache.careers360.mobi/media/article_images/2025/7/1/jamia-millia-islamia-set-up-department-of-library-and-information-science-featured-image.jpg",
-    postsData: [
-      { id: 7, author: "Zaid Khan", meta: "Mass Comm • Final Year", time: "1h ago", text: "The new documentary screening at MCRC was eye-opening.", likes: 45, liked: false },
-      { id: 8, author: "Sana Ahmed", meta: "Fine Arts • 2nd Year", time: "6h ago", text: "Painting the central canteen walls today! Stop by to see the progress. 🎨", likes: 67, liked: true },
-    ],
-    studentsData: [
-      { id: 401, name: "Omar Farooq", age: 21, course: "Journalism", year: "Final Year", avatar: "OF", verified: true, interests: ["📰 News", "📸 Photography", "🗣️ Debating"], instagram: "@omar.reports", bio: "Seeking truth and good biryani.", photo: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=500&q=80" },
-      { id: 402, name: "Farah Naaz", age: 20, course: "B.Arch", year: "3rd Year", avatar: "FN", verified: true, interests: ["🏛️ Architecture", "🎨 Art", "☕ Coffee"], instagram: "@farah.designs", bio: "Designing spaces and sketching faces.", photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&q=80" },
-      { id: 403, name: "Yusuf Malik", age: 19, course: "Law", year: "1st Year", avatar: "YM", verified: false, interests: ["⚖️ Law", "📚 Reading", "⚽ Football"], instagram: "@yusuf.law", bio: "Future Chief Justice. Probably.", photo: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=500&q=80" },
-      { id: 404, name: "Aisha Khan", age: 22, course: "Fine Arts", year: "MFA 1st Year", avatar: "AK", verified: true, interests: ["🎨 Painting", "🎸 Indie Music", "🌿 Nature"], instagram: "@aisha.art", bio: "Living life in watercolors.", photo: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500&q=80" },
-      { id: 405, name: "Zain Ali", age: 20, course: "BBA", year: "2nd Year", avatar: "ZA", verified: false, interests: ["💼 Business", "📱 Tech", "🎮 Gaming"], instagram: "@zain.hustles", bio: "Entrepreneur in the making.", photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&q=80" }
-    ]
-  },
-  {
-    id: "amity",
-    name: "Amity University",
-    location: "Noida, UP",
-    students: "150,000+",
-    posts: "8k+",
-    departments: 50,
-    emoji: "🌟",
-    accent: "#f59e0b", // Amber
-    banner: "https://www.amity.edu/lucknow/images/university.jpg",
-    postsData: [
-      { id: 9, author: "Karan Johar", meta: "BBA • 2nd Year", time: "45m ago", text: "Amity Noida campus is a whole vibe today. ✨", likes: 21, liked: false },
-      { id: 10, author: "Shanaya Roy", meta: "Fashion Design • 1st Year", time: "2h ago", text: "Portfolio submissions are finally done! Pizza party? 🍕", likes: 43, liked: false },
-    ],
-    studentsData: [
-      { id: 501, name: "Varun Dhawan", age: 21, course: "Marketing", year: "3rd Year", avatar: "VD", verified: true, interests: ["📈 Marketing", "🎬 Movies", "🏋️ Fitness"], instagram: "@varun.markets", bio: "Pitching ideas and lifting weights.", photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=500&q=80" },
-      { id: 502, name: "Alia Bhatt", age: 20, course: "Journalism", year: "2nd Year", avatar: "AB", verified: true, interests: ["📰 News", "👗 Fashion", "☕ Coffee"], instagram: "@alia.scoop", bio: "Always looking for the next big story.", photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&q=80" },
-      { id: 503, name: "Sidharth M", age: 22, course: "Law", year: "Final Year", avatar: "SM", verified: false, interests: ["⚖️ Law", "🚗 Cars", "🏏 Cricket"], instagram: "@sid.legal", bio: "Objection, hearsay! Just kidding, let's play cricket.", photo: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=500&q=80" },
-      { id: 504, name: "Tara Sutaria", age: 19, course: "Fashion Design", year: "1st Year", avatar: "TS", verified: true, interests: ["👗 Fashion", "🎵 Music", "✈️ Travel"], instagram: "@tara.styles", bio: "Designing dreams and singing songs.", photo: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500&q=80" },
-      { id: 505, name: "Tiger Shroff", age: 21, course: "B.P.Ed", year: "3rd Year", avatar: "TS", verified: true, interests: ["🥋 Martial Arts", "🏋️ Fitness", "🕺 Dance"], instagram: "@tiger.moves", bio: "Flipping through college life.", photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&q=80" }
-    ]
-  }
-];
 
 export default function ExplorePage() {
   const router = useRouter();
+  const [colleges, setColleges] = useState([]);
   const [search, setSearch] = useState("");
   const [selectedCollege, setSelectedCollege] = useState(null);
   const [activeTab, setActiveTab] = useState("posts");
@@ -141,25 +30,64 @@ export default function ExplorePage() {
   const [likes, setLikes] = useState({});
   const [chatWithStudent, setChatWithStudent] = useState(null);
   const [chatMessages, setChatMessages] = useState({});
+  const [loading, setLoading] = useState(true);
   
   const [currentStudentIndices, setCurrentStudentIndices] = useState({});
   const [swipeDirection, setSwipeDirection] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
   const [dragX, setDragX] = useState(0);
 
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+
+  useEffect(() => {
+    const fetchColleges = async () => {
+      try {
+        const token = localStorage.getItem("collegeadda_token");
+        const res = await fetch(`${apiUrl}/api/colleges`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setColleges(data);
+        }
+      } catch (err) {
+        console.error("Error fetching colleges:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchColleges();
+  }, [apiUrl]);
+
+  const fetchCollegeDetails = async (college) => {
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const res = await fetch(`${apiUrl}/api/colleges/${college._id || college.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSelectedCollege(data);
+        setActiveTab("posts");
+      }
+    } catch (err) {
+      console.error("Error fetching college details:", err);
+    }
+  };
+
   const handleSwipe = (collegeId, direction, student) => {
     setSwipeDirection(direction);
     
     if (direction === 'right') {
-      const autoMessage = "Hey! 👋 Lakshay from Rishihood University just connected with you on Campus Adda! Say hi back 🎓💗";
+      const autoMessage = `Hey! 👋 Lakshay from Rishihood University just connected with you on Campus Adda! Say hi back 🎓💗`;
       
       setChatMessages(prev => ({
         ...prev,
-        [student.id]: [...(prev[student.id] || []), { text: autoMessage, time: 'now' }]
+        [student._id || student.id]: [...(prev[student._id || student.id] || []), { text: autoMessage, time: 'now' }]
       }));
       
       setToastMessage("Friend request sent! They'll see your message 💗");
-      toggleAddStudent(student.id);
+      toggleAddStudent(student._id || student.id);
       setTimeout(() => setToastMessage(null), 3000);
     } else {
       setToastMessage("Skipped! Next up 👀");
@@ -177,8 +105,8 @@ export default function ExplorePage() {
   };
 
   const filteredColleges = useMemo(() => {
-    return COLLEGES.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
-  }, [search]);
+    return colleges.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
+  }, [search, colleges]);
 
   const toggleFollow = (id) => {
     setFollowed(prev => ({ ...prev, [id]: !prev[id] }));
@@ -225,11 +153,22 @@ export default function ExplorePage() {
             </header>
 
             <div className="p-4 grid grid-cols-2 gap-6">
+              {loading && (
+                <div className="col-span-2 flex justify-center py-20">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
+                </div>
+              )}
+              {!loading && filteredColleges.length === 0 && (
+                <div className="col-span-2 text-center py-20 text-muted">
+                  <Search size={48} className="mx-auto mb-4 opacity-20" />
+                  <p>No colleges found. Try searching for something else!</p>
+                </div>
+              )}
               {filteredColleges.map(college => (
                 <motion.button
                   whileTap={{ scale: 0.98 }}
-                  key={college.id}
-                  onClick={() => setSelectedCollege(college)}
+                  key={college._id || college.id}
+                  onClick={() => fetchCollegeDetails(college)}
                   className="flex flex-col bg-surface border border-border/50 rounded-3xl overflow-hidden text-left hover:border-primary/50 transition-all shadow-md group h-full"
                 >
                   {/* Full Image Container */}
@@ -613,22 +552,10 @@ export default function ExplorePage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="grid grid-cols-2 gap-3"
+                    className="flex flex-col items-center justify-center py-20 text-muted w-full"
                   >
-                    {[
-                      { type: "image", url: "https://images.unsplash.com/photo-1523050335456-c38a7047d28c?w=400&q=80", label: "Sunset Vibes" },
-                      { type: "image", url: "https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=400&q=80", label: "Library Session" },
-                      { type: "image", url: "https://images.unsplash.com/photo-1491438590914-bc09fcaaf77a?w=400&q=80", label: "Campus Day" },
-                      { type: "image", url: "https://images.unsplash.com/photo-1543269664-76bc3997d9ea?w=400&q=80", label: "Hackathon Night" },
-                    ].map((memory, i) => (
-                      <div key={i} onClick={() => { setToastMessage(`Opening ${memory.label}... 📸`); setTimeout(() => setToastMessage(null), 2000); }} className="relative aspect-square rounded-2xl overflow-hidden group cursor-pointer">
-                        <img src={memory.url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <div className="absolute bottom-2 left-2 text-white text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">
-                          {memory.label}
-                        </div>
-                      </div>
-                    ))}
+                    <Bookmark size={48} className="mb-4 opacity-20" />
+                    <p>No campus memories shared yet. Be the first!</p>
                   </motion.div>
                 )}
               </AnimatePresence>

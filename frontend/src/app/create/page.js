@@ -1,10 +1,41 @@
 "use client";
 import { useState } from "react";
-import { PlusSquare, Image, Type, Send } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { PlusSquare, Type, Send } from "lucide-react";
 
 export default function CreatePage() {
   const [content, setContent] = useState("");
-  const [isAnon, setIsAnon] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+
+  const handlePost = async () => {
+    if (!content.trim()) return;
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const res = await fetch(`${apiUrl}/api/posts`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ content, isAnonymous: false }),
+      });
+      if (res.ok) {
+        setContent("");
+        router.push("/");
+      } else {
+        const err = await res.json();
+        alert(err.message || "Failed to create post");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -15,48 +46,33 @@ export default function CreatePage() {
 
       <div className="flex-1 max-w-md mx-auto w-full p-4 space-y-4">
         <div className="glass-panel p-4 rounded-2xl space-y-4">
-          {/* Anonymous Toggle */}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-foreground">Post Anonymously</p>
-              <p className="text-xs text-muted">Your name will be hidden</p>
-            </div>
-            <button
-              onClick={() => setIsAnon(!isAnon)}
-              className={`w-12 h-6 rounded-full transition-colors ${isAnon ? 'bg-primary' : 'bg-surface-hover'}`}
-            >
-              <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform mx-0.5 ${isAnon ? 'translate-x-6' : 'translate-x-0'}`} />
-            </button>
-          </div>
-
-          <div className="border-t border-border/50" />
-
           {/* Text Area */}
           <div className="relative">
             <Type className="absolute left-3 top-3 text-muted" size={18} />
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="What's happening on campus? Share a thought, confession, or update..."
-              rows={5}
+              placeholder="What's happening on campus? Share a thought or update..."
+              rows={6}
               className="w-full bg-surface-hover border border-border/50 rounded-xl py-3 pl-10 pr-4 text-sm text-foreground focus:outline-none focus:border-primary transition-colors resize-none"
             />
           </div>
-
-          {/* Image Upload Button */}
-          <button className="flex items-center space-x-2 text-muted hover:text-primary transition-colors text-sm">
-            <Image size={18} />
-            <span>Add Image</span>
-          </button>
         </div>
 
         {/* Post Button */}
         <button
-          disabled={!content.trim()}
+          onClick={handlePost}
+          disabled={!content.trim() || isLoading}
           className="w-full bg-primary hover:bg-primary-hover text-white py-3 rounded-xl font-medium transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center space-x-2"
         >
-          <Send size={18} />
-          <span>{isAnon ? "Post Anonymously" : "Post to Campus"}</span>
+          {isLoading ? (
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <>
+              <Send size={18} />
+              <span>Post to Campus</span>
+            </>
+          )}
         </button>
       </div>
     </div>

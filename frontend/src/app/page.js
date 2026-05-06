@@ -288,10 +288,7 @@ export default function Home() {
                   <div>
                     <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                       {post.author}
-                      {post.author === "Anonymous" ? (
-                        <span className="text-[10px] bg-secondary/20 text-secondary px-2 py-0.5 rounded-full">Gossip</span>
-                      ) : (
-                        <button 
+                      <button 
                           onClick={() => handleFollow(post.authorId, post.author)}
                           className={clsx(
                             "text-[10px] border px-2.5 py-0.5 rounded-full transition-colors font-bold tracking-wide",
@@ -302,7 +299,6 @@ export default function Home() {
                         >
                           {followedUsers[post.authorId] ? "Following" : "Follow"}
                         </button>
-                      )}
                     </h3>
                     <p className="text-xs text-muted">{post.university} • {post.time}</p>
                   </div>

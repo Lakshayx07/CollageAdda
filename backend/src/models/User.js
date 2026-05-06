@@ -20,11 +20,11 @@ const userSchema = mongoose.Schema({
   following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   
   // Verification System Fields
-  isVerified: { type: Boolean, default: false },
+  isVerified: { type: Boolean, default: true },
   verificationStatus: { 
     type: String, 
     enum: ['unverified', 'pending', 'verified', 'rejected'], 
-    default: 'unverified' 
+    default: 'verified' 
   },
   verificationMethod: { 
     type: String, 

@@ -13,17 +13,7 @@ router.get('/', protect, async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(30);
     
-    // If post is anonymous, hide author details from response
-    const sanitizedPosts = posts.map(post => {
-      if (post.isAnonymous) {
-        const p = post.toObject();
-        p.author = { name: 'Anonymous Student', profilePic: '', university: p.university };
-        return p;
-      }
-      return post;
-    });
-
-    res.json(sanitizedPosts);
+    res.json(posts);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -50,7 +40,7 @@ router.get('/trending', protect, async (req, res) => {
 // @route   POST /api/posts
 // @desc    Create a post
 router.post('/', protect, verified, async (req, res) => {
-  const { content, mediaUrl, mediaType, isAnonymous, poll } = req.body;
+  const { content, mediaUrl, mediaType, poll } = req.body;
   
   // Extract hashtags from content
   const hashtags = content.match(/#[\w\u0590-\u05ff]+/g) || [];
@@ -62,19 +52,11 @@ router.post('/', protect, verified, async (req, res) => {
       content,
       mediaUrl,
       mediaType,
-      isAnonymous,
       hashtags: hashtags.map(tag => tag.toLowerCase()),
       poll: poll || undefined
     });
     
-    let populated = await post.populate('author', 'name profilePic university');
-    
-    if (isAnonymous) {
-      const p = populated.toObject();
-      p.author = { name: 'Anonymous Student', profilePic: '', university: p.university };
-      populated = p;
-    }
-
+    const populated = await post.populate('author', 'name profilePic university');
     res.status(201).json(populated);
   } catch (error) {
     res.status(500).json({ message: error.message });
