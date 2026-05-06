@@ -41,7 +41,7 @@ function MessagesContent() {
         if (res.ok) {
           const data = await res.json();
           // Transform backend rooms to UI format
-          const formattedRooms = data.map(room => ({
+          let formattedRooms = data.map(room => ({
             id: room._id,
             name: room.isGroup ? (room.groupName || `${room.university} Hub`) : (room.participants.find(p => p._id !== u._id)?.name || "Chat"),
             type: room.isGroup ? "group" : "private",
@@ -49,6 +49,15 @@ function MessagesContent() {
             lastMsg: room.lastMessage?.text || "No messages yet",
             time: room.lastMessage ? new Date(room.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""
           }));
+          
+          // Prepend local mock rooms (from post sharing)
+          const mockRooms = JSON.parse(localStorage.getItem("collegeadda_mock_rooms") || "[]");
+          if (mockRooms.length > 0) {
+             const existingMockIds = mockRooms.map(m => m.id);
+             formattedRooms = formattedRooms.filter(r => !existingMockIds.includes(r.id));
+             formattedRooms = [...mockRooms, ...formattedRooms];
+          }
+
           setChats(formattedRooms);
           
           // If a chat param is provided in URL, activate it

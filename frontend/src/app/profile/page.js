@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { LogOut, Edit3, X, Check, Plus, Grid, Heart, MessageCircle, Send } from "lucide-react";
+import { LogOut, Edit3, X, Check, Plus, Grid, Heart, MessageCircle, Send, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import UniversityBadges from "@/components/UniversityBadges";
@@ -31,10 +31,72 @@ const SPORT_OPTIONS = ["Football ⚽", "Basketball 🏀", "Cricket 🏏", "Tenni
 export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
-  const [modal, setModal] = useState(null); // 'followers' | 'following' | 'edit' | 'story' | 'post'
-  const [activePost, setActivePost] = useState(null);
+  const [modal, setModal] = useState(null); // 'followers' | 'following' | 'edit' | 'story' | 'post' | 'share'
+  const [activePostIndex, setActivePostIndex] = useState(null);
+  const [userPosts, setUserPosts] = useState(MOCK_POSTS.map(p => ({
+    ...p, 
+    isLiked: false, 
+    commentsList: [
+      { id: 101, author: "Priya Sharma", text: "Amazing click! 😍" },
+      { id: 102, author: "Ravi Kumar", text: "Which block is this?" }
+    ]
+  })));
+  const [commentInput, setCommentInput] = useState("");
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+  const [shareSearchTerm, setShareSearchTerm] = useState("");
+  const [toastMsg, setToastMsg] = useState("");
+  
   const [editData, setEditData] = useState({ instaId: "", snapId: "", interests: [], sports: [] });
   const [saved, setSaved] = useState(false);
+
+  const minSwipeDistance = 50;
+  const onTouchStart = (e) => { setTouchEnd(null); setTouchStart(e.targetTouches[0].clientX); };
+  const onTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
+  const onTouchEndHandler = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    if (distance > minSwipeDistance) handleNextPost();
+    if (distance < -minSwipeDistance) handlePrevPost();
+  };
+  const handleNextPost = () => { if (activePostIndex !== null && activePostIndex < userPosts.length - 1) setActivePostIndex(activePostIndex + 1); };
+  const handlePrevPost = () => { if (activePostIndex !== null && activePostIndex > 0) setActivePostIndex(activePostIndex - 1); };
+
+  const handleLike = () => {
+    if (activePostIndex === null) return;
+    setUserPosts(prev => prev.map((p, i) => i === activePostIndex ? { ...p, isLiked: !p.isLiked, likes: p.isLiked ? p.likes - 1 : p.likes + 1 } : p));
+  };
+
+  const handleAddComment = () => {
+    if (!commentInput.trim() || activePostIndex === null) return;
+    setUserPosts(prev => prev.map((p, i) => i === activePostIndex ? {
+      ...p, comments: p.comments + 1, commentsList: [...p.commentsList, { id: Date.now(), author: "You", text: commentInput }]
+    } : p));
+    setCommentInput("");
+  };
+
+  const handleShare = (friend) => {
+    const postToShare = userPosts[activePostIndex];
+    const msgText = `Check out my post: "${postToShare?.img}"`;
+    const savedMessages = JSON.parse(localStorage.getItem("collegeadda_messages") || "{}");
+    const newMsg = { id: Date.now(), text: msgText, sender: "me", time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+    const chatId = `mock_friend_${friend.id}`;
+    savedMessages[chatId] = [...(savedMessages[chatId] || []), newMsg];
+    localStorage.setItem("collegeadda_messages", JSON.stringify(savedMessages));
+
+    const mockRooms = JSON.parse(localStorage.getItem("collegeadda_mock_rooms") || "[]");
+    const existingRoom = mockRooms.find(r => r.id === chatId);
+    if (!existingRoom) {
+      mockRooms.push({ id: chatId, name: friend.name, type: "private", avatar: friend.avatar, lastMsg: msgText, time: "Just now" });
+    } else {
+      existingRoom.lastMsg = msgText; existingRoom.time = "Just now";
+    }
+    localStorage.setItem("collegeadda_mock_rooms", JSON.stringify(mockRooms));
+    setToastMsg(`Post sent to ${friend.name} successfully!`);
+    setModal("post");
+    setShareSearchTerm("");
+    setTimeout(() => setToastMsg(""), 2000);
+  };
 
   useEffect(() => {
     const stored = localStorage.getItem("collegeadda_user");
@@ -250,11 +312,11 @@ export default function ProfilePage() {
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
           className="grid grid-cols-3 gap-[2px] pb-20"
         >
-          {MOCK_POSTS.map((post, idx) => (
+          {userPosts.map((post, idx) => (
             <motion.div 
               key={post.id} 
               whileHover={{ scale: 0.98 }}
-              onClick={() => { setActivePost(post); setModal("post"); }}
+              onClick={() => { setActivePostIndex(idx); setModal("post"); }}
               transition={{ type: "spring", stiffness: 400, damping: 25 }}
               className="relative group aspect-square overflow-hidden cursor-pointer"
             >
@@ -459,7 +521,7 @@ export default function ProfilePage() {
       )}
 
       {/* ── MODAL: Post View ── */}
-      {modal === "post" && activePost && (
+      {modal === "post" && activePostIndex !== null && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setModal(null)}>
           <motion.div 
             initial={{ scale: 0.9, opacity: 0 }}
@@ -475,41 +537,101 @@ export default function ProfilePage() {
               </div>
               <button onClick={() => setModal(null)}><X size={20} className="text-muted" /></button>
             </div>
-            {/* Image */}
-            <div className="w-full bg-black flex-shrink-0 flex items-center justify-center">
-              <img src={activePost.img} className="w-full max-h-[400px] object-contain" alt="Post" />
+            {/* Image with Swipe handlers */}
+            <div 
+              className="w-full bg-black flex-shrink-0 flex items-center justify-center relative group/img"
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEndHandler}
+            >
+              {activePostIndex > 0 && (
+                <button onClick={handlePrevPost} className="absolute left-2 p-2 bg-black/50 text-white rounded-full z-10 opacity-0 group-hover/img:opacity-100 transition-opacity"><ChevronLeft size={20}/></button>
+              )}
+              <img src={userPosts[activePostIndex].img} className="w-full max-h-[400px] object-contain select-none" alt="Post" draggable="false" />
+              {activePostIndex < userPosts.length - 1 && (
+                <button onClick={handleNextPost} className="absolute right-2 p-2 bg-black/50 text-white rounded-full z-10 opacity-0 group-hover/img:opacity-100 transition-opacity"><ChevronRight size={20}/></button>
+              )}
             </div>
             {/* Actions */}
             <div className="p-3 flex items-center justify-between border-b border-border/10">
               <div className="flex space-x-4">
-                <Heart size={24} className="text-foreground hover:text-red-500 cursor-pointer transition-colors" />
+                <Heart onClick={handleLike} size={24} className={`cursor-pointer transition-colors ${userPosts[activePostIndex].isLiked ? 'fill-red-500 text-red-500' : 'text-foreground hover:text-red-500'}`} />
                 <MessageCircle size={24} className="text-foreground hover:text-blue-500 cursor-pointer transition-colors" />
-                <Send size={24} className="text-foreground cursor-pointer" />
+                <Send onClick={() => setModal("share")} size={24} className="text-foreground cursor-pointer hover:text-primary transition-colors" />
               </div>
-              <div className="text-foreground font-bold text-sm">{activePost.likes} likes</div>
+              <div className="text-foreground font-bold text-sm">{userPosts[activePostIndex].likes} likes</div>
             </div>
-            {/* Comments List (Mock) */}
+            {/* Comments List */}
             <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
                <div className="flex space-x-2">
                  <span className="font-bold text-sm">{user.name}</span>
                  <span className="text-sm text-foreground/90">Campus vibes! ☀️</span>
                </div>
-               <div className="text-xs text-muted font-bold mt-2 mb-2">View all {activePost.comments} comments</div>
-               <div className="flex space-x-2">
-                 <span className="font-bold text-sm">Priya Sharma</span>
-                 <span className="text-sm text-foreground/90">Amazing click! 😍</span>
-               </div>
-               <div className="flex space-x-2">
-                 <span className="font-bold text-sm">Ravi Kumar</span>
-                 <span className="text-sm text-foreground/90">Which block is this?</span>
-               </div>
+               <div className="text-xs text-muted font-bold mt-2 mb-2">View all {userPosts[activePostIndex].comments} comments</div>
+               {userPosts[activePostIndex].commentsList.map(comment => (
+                 <div key={comment.id} className="flex space-x-2">
+                   <span className="font-bold text-sm">{comment.author}</span>
+                   <span className="text-sm text-foreground/90">{comment.text}</span>
+                 </div>
+               ))}
             </div>
             {/* Add comment */}
             <div className="p-3 border-t border-border/50 flex items-center space-x-2 bg-surface">
-              <input type="text" placeholder="Add a comment..." className="flex-1 bg-transparent text-sm text-foreground focus:outline-none" />
-              <button className="text-primary font-bold text-sm">Post</button>
+              <input 
+                type="text" 
+                value={commentInput}
+                onChange={e => setCommentInput(e.target.value)}
+                onKeyPress={e => e.key === "Enter" && handleAddComment()}
+                placeholder="Add a comment..." 
+                className="flex-1 bg-transparent text-sm text-foreground focus:outline-none" 
+              />
+              <button onClick={handleAddComment} className="text-primary font-bold text-sm">Post</button>
             </div>
           </motion.div>
+        </div>
+      )}
+
+      {/* Share Modal */}
+      {modal === "share" && (
+        <div className="fixed inset-0 z-[110] flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={() => setModal("post")}>
+          <div className="w-full max-w-md bg-surface rounded-t-3xl p-4 animate-slide-up" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-bold text-foreground text-lg">Send to...</h2>
+              <button onClick={() => setModal("post")} className="text-muted hover:text-foreground"><X size={20} /></button>
+            </div>
+            <div className="mb-4">
+              <input 
+                type="text" 
+                placeholder="Search friends..." 
+                value={shareSearchTerm}
+                onChange={(e) => setShareSearchTerm(e.target.value)}
+                className="w-full bg-surface-hover border border-border/50 rounded-xl py-2 px-4 text-sm text-foreground focus:outline-none focus:border-primary transition-colors"
+              />
+            </div>
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {[...MOCK_FOLLOWERS, ...MOCK_FOLLOWING].filter(f => f.name.toLowerCase().includes(shareSearchTerm.toLowerCase())).map(friend => (
+                <div key={friend.id} className="flex items-center space-x-3 p-2 hover:bg-surface-hover rounded-xl transition-colors cursor-pointer" onClick={() => handleShare(friend)}>
+                  <img src={friend.avatar} alt={friend.name} className="w-10 h-10 rounded-full object-cover" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-foreground">{friend.name}</p>
+                  </div>
+                  <button className="bg-primary text-white text-xs font-bold px-4 py-1.5 rounded-full hover:scale-105 transition-transform shadow-md shadow-primary/20">
+                    Send
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toastMsg && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-surface border border-border/50 px-6 py-3 rounded-full shadow-2xl z-[120] animate-fade-in flex items-center space-x-2">
+          <div className="bg-green-500/20 text-green-500 p-1 rounded-full">
+            <Check size={14} strokeWidth={3} />
+          </div>
+          <span className="text-sm font-bold text-foreground whitespace-nowrap">{toastMsg}</span>
         </div>
       )}
     </div>

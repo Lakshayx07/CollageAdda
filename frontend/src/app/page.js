@@ -27,6 +27,7 @@ export default function Home() {
   const [followedUsers, setFollowedUsers] = useState({});
   const [shareModal, setShareModal] = useState(null);
   const [postMenu, setPostMenu] = useState(null);
+  const [shareSearchTerm, setShareSearchTerm] = useState("");
   const [toastMsg, setToastMsg] = useState("");
 
   const [posts, setPosts] = useState([
@@ -39,8 +40,13 @@ export default function Home() {
       content: "Just finished my final year project! So relieved. 🎉",
       likes: 124,
       isLiked: false,
-      comments: 18,
-      commentsList: [{ id: 101, author: "Priya Patel", text: "Congratulations bro! 🎉" }],
+      comments: 20,
+      commentsList: [
+        { id: 101, author: "Priya Patel", text: "Congratulations bro! 🎉" },
+        { id: 104, author: "Aman Gupta", text: "Party where? 🍕" },
+        { id: 105, author: "Sneha", text: "So happy for you!" },
+        { id: 106, author: "Karan", text: "Awesome project man." }
+      ],
     },
     {
       id: 2,
@@ -99,9 +105,39 @@ export default function Home() {
     setTimeout(() => setToastMsg(""), 2000);
   };
 
-  const handleShare = () => {
-    setToastMsg("Post sent successfully!");
+  const handleShare = (friend) => {
+    const postToShare = posts.find(p => p.id === shareModal);
+    const msgText = `Check out this post from ${postToShare?.author}: "${postToShare?.content}"`;
+    
+    // Save to local messages
+    const savedMessages = JSON.parse(localStorage.getItem("collegeadda_messages") || "{}");
+    const newMsg = { id: Date.now(), text: msgText, sender: "me", time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+    const chatId = `mock_friend_${friend.id}`;
+    
+    savedMessages[chatId] = [...(savedMessages[chatId] || []), newMsg];
+    localStorage.setItem("collegeadda_messages", JSON.stringify(savedMessages));
+
+    // Save to local mock rooms
+    const mockRooms = JSON.parse(localStorage.getItem("collegeadda_mock_rooms") || "[]");
+    const existingRoom = mockRooms.find(r => r.id === chatId);
+    if (!existingRoom) {
+      mockRooms.push({
+        id: chatId,
+        name: friend.name,
+        type: "private",
+        avatar: friend.avatar,
+        lastMsg: msgText,
+        time: "Just now"
+      });
+    } else {
+      existingRoom.lastMsg = msgText;
+      existingRoom.time = "Just now";
+    }
+    localStorage.setItem("collegeadda_mock_rooms", JSON.stringify(mockRooms));
+
+    setToastMsg(`Post sent to ${friend.name} successfully!`);
     setShareModal(null);
+    setShareSearchTerm("");
     setTimeout(() => setToastMsg(""), 2000);
   };
 
@@ -255,7 +291,7 @@ export default function Home() {
               {/* Comment Input Box */}
               {activeCommentPost === post.id && (
                 <div className="mt-3 border-t border-border/50 pt-3 animate-fade-in">
-                  <div className="space-y-3 mb-3 max-h-40 overflow-y-auto pr-2">
+                  <div className="space-y-3 mb-3 max-h-60 overflow-y-auto pr-2">
                     {(post.commentsList || []).map(comment => (
                       <div key={comment.id} className="flex space-x-2">
                         <span className="font-bold text-xs">{comment.author}</span>
@@ -299,9 +335,18 @@ export default function Home() {
               <h2 className="font-bold text-foreground text-lg">Send to...</h2>
               <button onClick={() => setShareModal(null)} className="text-muted hover:text-foreground"><X size={20} /></button>
             </div>
-            <div className="space-y-2">
-              {FRIENDS_LIST.map(friend => (
-                <div key={friend.id} className="flex items-center space-x-3 p-2 hover:bg-surface-hover rounded-xl transition-colors cursor-pointer" onClick={handleShare}>
+            <div className="mb-4">
+              <input 
+                type="text" 
+                placeholder="Search friends..." 
+                value={shareSearchTerm}
+                onChange={(e) => setShareSearchTerm(e.target.value)}
+                className="w-full bg-surface-hover border border-border/50 rounded-xl py-2 px-4 text-sm text-foreground focus:outline-none focus:border-primary transition-colors"
+              />
+            </div>
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {FRIENDS_LIST.filter(f => f.name.toLowerCase().includes(shareSearchTerm.toLowerCase())).map(friend => (
+                <div key={friend.id} className="flex items-center space-x-3 p-2 hover:bg-surface-hover rounded-xl transition-colors cursor-pointer" onClick={() => handleShare(friend)}>
                   <img src={friend.avatar} alt={friend.name} className="w-10 h-10 rounded-full object-cover" />
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-foreground">{friend.name}</p>
