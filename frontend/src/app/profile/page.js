@@ -98,13 +98,62 @@ export default function ProfilePage() {
     setTimeout(() => setToastMsg(""), 2000);
   };
 
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+
   useEffect(() => {
-    const stored = localStorage.getItem("collegeadda_user");
-    if (!stored) { router.push("/login"); return; }
-    const u = JSON.parse(stored);
-    setUser(u);
-    const profile = JSON.parse(localStorage.getItem("collegeadda_profile") || "{}");
-    setEditData({ instaId: profile.instaId || "", snapId: profile.snapId || "", interests: profile.interests || [], sports: profile.sports || [] });
+    const fetchProfileAndPosts = async () => {
+      const stored = localStorage.getItem("collegeadda_user");
+      const token = localStorage.getItem("collegeadda_token");
+      if (!stored || !token) { router.push("/login"); return; }
+      
+      const u = JSON.parse(stored);
+      setUser(u);
+      
+      try {
+        // Fetch fresh profile
+        const profileRes = await fetch(`${apiUrl}/api/users/profile`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (profileRes.ok) {
+          const profileData = await profileRes.json();
+          setUser(profileData);
+          setEditData({ 
+            instaId: profileData.instagram || "", 
+            snapId: profileData.snapchat || "", 
+            interests: profileData.interests || [], 
+            sports: profileData.sports || [] 
+          });
+        }
+
+        // Fetch user posts (by filtering feed posts for now, since no specific user posts API exists)
+        const postsRes = await fetch(`${apiUrl}/api/posts`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (postsRes.ok) {
+          const postsData = await postsRes.json();
+          const myPosts = postsData.filter(p => p.author?._id === u._id || p.author?._id === u.id);
+          
+          if (myPosts.length > 0) {
+            setUserPosts(myPosts.map(p => ({
+              id: p._id,
+              img: p.mediaUrl || "https://picsum.photos/seed/fallback/300/300", // Fallback if no mediaUrl
+              likes: p.likes?.length || 0,
+              isLiked: p.likes?.includes(u._id || u.id),
+              comments: p.comments?.length || 0,
+              commentsList: p.comments?.map(c => ({
+                id: c._id || Math.random().toString(),
+                author: "Student",
+                text: c.text
+              })) || []
+            })));
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    
+    fetchProfileAndPosts();
   }, [router]);
 
   const handleLogout = () => {
@@ -113,10 +162,34 @@ export default function ProfilePage() {
     router.push("/login");
   };
 
-  const saveProfile = () => {
-    localStorage.setItem("collegeadda_profile", JSON.stringify(editData));
-    setSaved(true);
-    setTimeout(() => { setSaved(false); setModal(null); }, 1200);
+  const saveProfile = async () => {
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const res = await fetch(`${apiUrl}/api/users/profile`, {
+        method: 'PUT',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          instagram: editData.instaId,
+          snapchat: editData.snapId,
+          interests: editData.interests,
+          sports: editData.sports // note: sports needs to be mapped to goals or custom field if backend doesn't support sports. Assume backend accepts it or ignores it for now.
+        })
+      });
+      if (res.ok) {
+        const updatedUser = await res.json();
+        setUser(updatedUser);
+        localStorage.setItem("collegeadda_user", JSON.stringify(updatedUser));
+        setSaved(true);
+        setTimeout(() => { setSaved(false); setModal(null); }, 1200);
+      } else {
+        alert("Failed to update profile");
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const toggleInterest = (interest) => {
@@ -139,7 +212,8 @@ export default function ProfilePage() {
 
   if (!user) return null;
 
-  const profile = JSON.parse(typeof window !== "undefined" ? (localStorage.getItem("collegeadda_profile") || "{}") : "{}");
+  // profile is now part of user object (from backend)
+  const profile = user;
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -241,29 +315,29 @@ export default function ProfilePage() {
             </div>
 
             {/* Social Links */}
-            {(profile.instaId || profile.snapId) && (
+            {(profile.instagram || profile.snapchat) && (
               <div className="flex flex-wrap gap-2 mt-2 pt-1">
-                {profile.instaId && (
+                {profile.instagram && (
                   <a
-                    href={`https://instagram.com/${profile.instaId}`}
+                    href={`https://instagram.com/${profile.instagram}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center space-x-1.5 text-xs px-3 py-1.5 rounded-full text-white font-medium shadow-md hover:scale-105 hover:shadow-lg transition-all bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888]"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
-                    <span>@{profile.instaId}</span>
+                    <span>@{profile.instagram}</span>
                   </a>
                 )}
-                {profile.snapId && (
+                {profile.snapchat && (
                   <a
-                    href={`https://snapchat.com/add/${profile.snapId}`}
+                    href={`https://snapchat.com/add/${profile.snapchat}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center space-x-1.5 text-xs px-3 py-1.5 rounded-full font-medium shadow-md hover:scale-105 hover:shadow-lg transition-all"
                     style={{ background: "#FFFC00", color: "#000" }}
                   >
                     <span className="text-sm">👻</span>
-                    <span>{profile.snapId}</span>
+                    <span>{profile.snapchat}</span>
                   </a>
                 )}
               </div>

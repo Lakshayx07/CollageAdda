@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { Search, Send, Users, ChevronLeft, Info, MessageSquare, Plus, Image as ImageIcon } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import clsx from "clsx";
+import { io } from "socket.io-client";
 
 // Real rooms will be fetched from backend
 const MOCK_CHATS = [];
@@ -30,6 +31,33 @@ function MessagesContent() {
     }
     const u = JSON.parse(storedUser);
     setUser(u);
+
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+
+    // Initialize socket
+    socketRef.current = io(apiUrl, { transports: ['websocket'] });
+    socketRef.current.emit('user_online', { userId: u.id || u._id, name: u.name, university: u.university });
+
+    socketRef.current.on('receive_message', (msg) => {
+      setMessages(prev => {
+        const roomMessages = prev[msg.room] || [];
+        if (roomMessages.find(m => m.id === msg._id)) return prev;
+        
+        return {
+          ...prev,
+          [msg.room]: [...roomMessages, { 
+            id: msg._id, 
+            text: msg.text, 
+            sender: msg.senderId === (u.id || u._id) ? "me" : "them",
+            time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          }]
+        };
+      });
+
+      setChats(prevChats => prevChats.map(c => 
+        c.id === msg.room ? { ...c, lastMsg: msg.text, time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) } : c
+      ));
+    });
 
     const fetchRooms = async () => {
       try {
@@ -77,7 +105,43 @@ function MessagesContent() {
     // Load messages from localStorage (as fallback or cache)
     const savedMessages = JSON.parse(localStorage.getItem("collegeadda_messages") || "{}");
     setMessages(savedMessages);
+
+    return () => {
+      if (socketRef.current) socketRef.current.disconnect();
+    };
   }, [searchParams, router]);
+
+  useEffect(() => {
+    if (activeChat && socketRef.current) {
+      socketRef.current.emit('join_room', activeChat.id);
+      
+      const fetchHistory = async () => {
+        const token = localStorage.getItem("collegeadda_token");
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+        try {
+          const res = await fetch(`${apiUrl}/api/chat/rooms/${activeChat.id}/messages`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) {
+             const data = await res.json();
+             const u = JSON.parse(localStorage.getItem('collegeadda_user'));
+             const formattedMsgs = data.map(m => ({
+               id: m._id,
+               text: m.text,
+               sender: m.sender?._id === (u.id || u._id) ? "me" : "them",
+               time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+             }));
+             setMessages(prev => ({ ...prev, [activeChat.id]: formattedMsgs }));
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      if (!activeChat.id.toString().startsWith("mock_")) {
+        fetchHistory();
+      }
+    }
+  }, [activeChat]);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -88,19 +152,32 @@ function MessagesContent() {
 
   const sendMessage = () => {
     if (!input.trim() || !activeChat) return;
-    
-    const newMsg = { id: Date.now(), text: input, sender: "me", time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
-    const updatedMessages = {
-      ...messages,
-      [activeChat.id]: [...(messages[activeChat.id] || []), newMsg]
-    };
-    setMessages(updatedMessages);
-    setInput("");
 
-    // Update last message in chat list
-    setChats(prev => prev.map(c => 
-      c.id === activeChat.id ? { ...c, lastMsg: input, time: "Just now" } : c
-    ));
+    if (activeChat.id.toString().startsWith("mock_")) {
+      const newMsg = { id: Date.now(), text: input, sender: "me", time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+      const updatedMessages = {
+        ...messages,
+        [activeChat.id]: [...(messages[activeChat.id] || []), newMsg]
+      };
+      setMessages(updatedMessages);
+      setChats(prev => prev.map(c => 
+        c.id === activeChat.id ? { ...c, lastMsg: input, time: "Just now" } : c
+      ));
+      setInput("");
+      return;
+    }
+
+    const data = {
+      room: activeChat.id,
+      senderId: user._id || user.id,
+      senderName: user.name,
+      text: input,
+      mediaUrl: '',
+      mediaType: 'none'
+    };
+    
+    socketRef.current.emit('send_message', data);
+    setInput("");
   };
 
   if (!user) return null;

@@ -14,6 +14,8 @@ export default function Home() {
     const token = localStorage.getItem("collegeadda_token");
     if (!token) {
       router.push("/login");
+    } else {
+      fetchPosts();
     }
   }, [router]);
   const FRIENDS_LIST = [
@@ -30,7 +32,11 @@ export default function Home() {
   const [shareSearchTerm, setShareSearchTerm] = useState("");
   const [toastMsg, setToastMsg] = useState("");
 
-  const [posts, setPosts] = useState([
+  const [posts, setPosts] = useState([]);
+  const [newPostContent, setNewPostContent] = useState("");
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+
+  const MOCK_POSTS_FALLBACK = [
     {
       id: 1,
       author: "Rahul Sharma",
@@ -59,22 +65,72 @@ export default function Home() {
       isLiked: true,
       comments: 42,
       commentsList: [{ id: 102, author: "Rahul Sharma", text: "I have them, meet me at library!" }],
-    },
-    {
-      id: 3,
-      author: "Anonymous",
-      university: "Rishihood University",
-      avatar: "https://i.pravatar.cc/150?u=anon",
-      time: "8 hours ago",
-      content: "Confession #451: I think the new cafeteria food is actually pretty good, but I'm too scared to say it out loud.",
-      likes: 342,
-      isLiked: false,
-      comments: 89,
-      commentsList: [{ id: 103, author: "Priya Patel", text: "Haha so true! 🤐" }],
     }
-  ]);
+  ];
 
-  const handleComment = (postId) => {
+  const fetchPosts = async () => {
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      if (!token) return;
+      const res = await fetch(`${apiUrl}/api/posts`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const user = JSON.parse(localStorage.getItem('collegeadda_user') || '{}');
+        const formatted = data.map(p => ({
+          id: p._id,
+          author: p.author?.name || 'Unknown',
+          university: p.university,
+          avatar: p.author?.profilePic || `https://ui-avatars.com/api/?name=${p.author?.name || 'U'}`,
+          time: new Date(p.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+          content: p.content,
+          likes: p.likes?.length || 0,
+          isLiked: p.likes?.includes(user._id || user.id),
+          comments: p.comments?.length || 0,
+          commentsList: p.comments?.map(c => ({
+            id: c._id || Math.random().toString(),
+            author: "Student", 
+            text: c.text
+          })) || []
+        }));
+        setPosts(formatted.length > 0 ? formatted : MOCK_POSTS_FALLBACK);
+      } else {
+        setPosts(MOCK_POSTS_FALLBACK);
+      }
+    } catch (err) {
+      console.error(err);
+      setPosts(MOCK_POSTS_FALLBACK);
+    }
+  };
+
+  const handleCreatePost = async () => {
+    if (!newPostContent.trim()) return;
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const res = await fetch(`${apiUrl}/api/posts`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ content: newPostContent, isAnonymous: false })
+      });
+      if (res.ok) {
+        setNewPostContent("");
+        fetchPosts();
+        setToastMsg("Post created!");
+        setTimeout(() => setToastMsg(""), 2000);
+      } else {
+        const errorData = await res.json();
+        alert(errorData.message || "Failed to create post");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleComment = async (postId) => {
     const text = commentInputs[postId];
     if (!text?.trim()) return;
 
@@ -91,6 +147,21 @@ export default function Home() {
       })
     );
     setCommentInputs(prev => ({ ...prev, [postId]: "" }));
+
+    if (typeof postId !== 'string') return; // mock post
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      await fetch(`${apiUrl}/api/posts/${postId}/comment`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ text })
+      });
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleFollow = (author) => {
@@ -141,7 +212,7 @@ export default function Home() {
     setTimeout(() => setToastMsg(""), 2000);
   };
 
-  const toggleLike = (postId) => {
+  const toggleLike = async (postId) => {
     setPosts(currentPosts => 
       currentPosts.map(post => {
         if (post.id === postId) {
@@ -155,8 +226,17 @@ export default function Home() {
         return post;
       })
     );
-    // In a real app, you would make the Supabase API call here.
-    // If it fails, you revert the state. This is Optimistic UI!
+    
+    if (typeof postId !== 'string') return; // mock post
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      await fetch(`${apiUrl}/api/posts/${postId}/like`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -182,6 +262,8 @@ export default function Home() {
               </div>
             </div>
             <textarea 
+              value={newPostContent}
+              onChange={(e) => setNewPostContent(e.target.value)}
               placeholder="What's happening on campus today?"
               className="flex-1 bg-transparent resize-none text-sm focus:outline-none text-foreground placeholder:text-muted mt-2"
               rows={2}
@@ -202,7 +284,7 @@ export default function Home() {
                  <span className="text-xs font-medium hidden sm:inline">Note</span>
                </button>
              </div>
-             <button className="bg-primary text-white px-5 py-2 rounded-full text-xs font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
+             <button onClick={handleCreatePost} className="bg-primary text-white px-5 py-2 rounded-full text-xs font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
                Post
              </button>
           </div>
