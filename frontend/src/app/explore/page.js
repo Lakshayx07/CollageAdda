@@ -212,6 +212,7 @@ export default function ExplorePage() {
                     </div>
 
                     {/* Visit Me Button */}
+                    <div className="mt-auto pt-2">
                       <div
                         className="w-full py-2.5 rounded-xl text-[11px] font-bold text-center transition-all shadow-sm active:scale-95"
                         style={{
