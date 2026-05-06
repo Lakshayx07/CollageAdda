@@ -11,13 +11,15 @@ export default function AuthCallback() {
         console.log("-----------")
         let session, data;
         try {
-          data = await supabase.auth.getSession();
-          console.log("111111111", data)
-          session = data.session
+          const { data: sessionData, error } = await supabase.auth.getSession();
+          console.log("111111111", sessionData)
+          session = sessionData?.session || null
           console.log("222222222", session)
         } catch (error) {
           console.log("333333333", error)
         }
+        const item = (await supabase.auth.getSession()).data.session;
+        console.log("444444444", item)
 
         if (session && session.user) {
 
