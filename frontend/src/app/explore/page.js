@@ -1,15 +1,15 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { 
-  Search, 
-  MapPin, 
-  Users, 
-  MessageSquare, 
-  ChevronLeft, 
-  Heart, 
-  Share2, 
-  Plus, 
+import {
+  Search,
+  MapPin,
+  Users,
+  MessageSquare,
+  ChevronLeft,
+  Heart,
+  Share2,
+  Plus,
   Check,
   Building2,
   Bookmark,
@@ -31,7 +31,7 @@ export default function ExplorePage() {
   const [chatWithStudent, setChatWithStudent] = useState(null);
   const [chatMessages, setChatMessages] = useState({});
   const [loading, setLoading] = useState(true);
-  
+
   const [currentStudentIndices, setCurrentStudentIndices] = useState({});
   const [swipeDirection, setSwipeDirection] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
@@ -77,15 +77,15 @@ export default function ExplorePage() {
 
   const handleSwipe = (collegeId, direction, student) => {
     setSwipeDirection(direction);
-    
+
     if (direction === 'right') {
       const autoMessage = `Hey! 👋 Lakshay from Rishihood University just connected with you on Campus Adda! Say hi back 🎓💗`;
-      
+
       setChatMessages(prev => ({
         ...prev,
         [student._id || student.id]: [...(prev[student._id || student.id] || []), { text: autoMessage, time: 'now' }]
       }));
-      
+
       setToastMessage("Friend request sent! They'll see your message 💗");
       toggleAddStudent(student._id || student.id);
       setTimeout(() => setToastMessage(null), 3000);
@@ -125,7 +125,7 @@ export default function ExplorePage() {
       <AnimatePresence mode="wait">
         {!selectedCollege ? (
           /* --- EXPLORE GRID VIEW --- */
-          <motion.div 
+          <motion.div
             key="explore"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -139,7 +139,7 @@ export default function ExplorePage() {
                 </div>
                 <h1 className="text-xl font-bold text-foreground">Explore Colleges</h1>
               </div>
-              
+
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
                 <input
@@ -173,10 +173,10 @@ export default function ExplorePage() {
                 >
                   {/* Full Image Container */}
                   <div className="h-[200px] w-full bg-muted overflow-hidden">
-                    <img 
-                      src={college.banner} 
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                      alt={college.name} 
+                    <img
+                      src={college.banner}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      alt={college.name}
                     />
                   </div>
 
@@ -202,12 +202,12 @@ export default function ExplorePage() {
 
                     {/* Visit Me Button */}
                     <div className="mt-auto pt-2">
-                      <div 
+                      <div
                         className="w-full py-2.5 rounded-xl text-[11px] font-bold text-center transition-all shadow-sm active:scale-95"
-                        style={{ 
-                          backgroundColor: `${college.accent}15`, 
-                          color: college.accent, 
-                          border: `1.5px solid ${college.accent}30` 
+                        style={{
+                          backgroundColor: `${college.accent}15`,
+                          color: college.accent,
+                          border: `1.5px solid ${college.accent}30`
                         }}
                       >
                         Visit Me
@@ -217,7 +217,7 @@ export default function ExplorePage() {
                 </motion.button>
               ))}
             </div>
-            
+
             {filteredColleges.length === 0 && (
               <div className="flex-1 flex flex-col items-center justify-center py-20 text-muted">
                 <Search size={48} className="mb-4 opacity-20" />
@@ -227,7 +227,7 @@ export default function ExplorePage() {
           </motion.div>
         ) : (
           /* --- COLLEGE PROFILE VIEW --- */
-          <motion.div 
+          <motion.div
             key="profile"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -239,9 +239,9 @@ export default function ExplorePage() {
               <div className="h-64 w-full bg-surface relative">
                 <img src={selectedCollege.banner} className="w-full h-full object-cover" alt="" />
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-black/40 to-black/20" />
-                
+
                 {/* Back Button */}
-                <button 
+                <button
                   onClick={() => setSelectedCollege(null)}
                   className="absolute top-4 left-4 p-2 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-black/60 transition-colors z-20"
                 >
@@ -278,12 +278,12 @@ export default function ExplorePage() {
                   <p className="text-[10px] text-muted uppercase">Depts</p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => toggleFollow(selectedCollege.id)}
                 className={clsx(
                   "px-6 py-2 rounded-xl text-sm font-bold transition-all active:scale-95",
-                  followed[selectedCollege.id] 
-                    ? "bg-surface-hover text-muted border border-border/50" 
+                  followed[selectedCollege.id]
+                    ? "bg-surface-hover text-muted border border-border/50"
                     : "text-white shadow-lg shadow-opacity-20"
                 )}
                 style={!followed[selectedCollege.id] ? { backgroundColor: selectedCollege.accent, boxShadow: `0 10px 15px -3px ${selectedCollege.accent}30` } : {}}
@@ -306,9 +306,9 @@ export default function ExplorePage() {
                 >
                   {tab}
                   {activeTab === tab && (
-                    <motion.div 
-                      layoutId="activeTab" 
-                      className="absolute bottom-0 left-0 right-0 h-0.5" 
+                    <motion.div
+                      layoutId="activeTab"
+                      className="absolute bottom-0 left-0 right-0 h-0.5"
                       style={{ backgroundColor: selectedCollege.accent }}
                     />
                   )}
@@ -320,7 +320,7 @@ export default function ExplorePage() {
             <div className="p-4">
               <AnimatePresence mode="wait">
                 {activeTab === "posts" && (
-                  <motion.div 
+                  <motion.div
                     key="posts"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -330,7 +330,7 @@ export default function ExplorePage() {
                     {selectedCollege.postsData.map(post => (
                       <div key={post.id} className="bg-surface border border-border/50 rounded-2xl p-4 space-y-3">
                         <div className="flex items-center space-x-3">
-                          <div 
+                          <div
                             className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
                             style={{ backgroundColor: selectedCollege.accent }}
                           >
@@ -349,7 +349,7 @@ export default function ExplorePage() {
                         )}
                         <div className="flex items-center justify-between pt-2">
                           <div className="flex items-center space-x-4">
-                            <button 
+                            <button
                               onClick={() => toggleLike(post.id)}
                               className={clsx(
                                 "flex items-center space-x-1.5 transition-colors",
@@ -374,7 +374,7 @@ export default function ExplorePage() {
                 )}
 
                 {activeTab === "students" && (
-                  <motion.div 
+                  <motion.div
                     key="students"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -409,7 +409,7 @@ export default function ExplorePage() {
                     <div className="relative w-full max-w-[340px] aspect-[4/5] flex items-center justify-center perspective-1000">
                       {/* Empty State */}
                       {(currentStudentIndices[selectedCollege.id] || 0) >= selectedCollege.studentsData.length && (
-                        <motion.div 
+                        <motion.div
                           initial={{ opacity: 0, scale: 0.8 }}
                           animate={{ opacity: 1, scale: 1 }}
                           className="flex flex-col items-center justify-center text-center p-6 space-y-5 bg-surface rounded-[32px] w-full h-full border border-border/50 shadow-lg"
@@ -426,17 +426,17 @@ export default function ExplorePage() {
                           </div>
                         </motion.div>
                       )}
-                      
+
                       {/* Cards */}
                       <AnimatePresence>
                         {selectedCollege.studentsData.map((student, idx) => {
                           const currentIndex = currentStudentIndices[selectedCollege.id] || 0;
                           if (idx < currentIndex) return null;
                           if (idx > currentIndex + 2) return null; // Only render top 3 cards
-                          
+
                           const isTop = idx === currentIndex;
                           const offset = idx - currentIndex;
-                          
+
                           return (
                             <motion.div
                               key={student.id}
@@ -450,8 +450,8 @@ export default function ExplorePage() {
                                 else if (info.offset.x < -100) handleSwipe(selectedCollege.id, 'left', student);
                               }}
                               initial={false}
-                              animate={{ 
-                                scale: isTop ? 1 : 1 - offset * 0.05, 
+                              animate={{
+                                scale: isTop ? 1 : 1 - offset * 0.05,
                                 y: isTop ? 0 : offset * 18,
                                 zIndex: 10 - offset,
                                 rotate: isTop && swipeDirection === 'right' ? 15 : isTop && swipeDirection === 'left' ? -15 : isTop ? dragX * 0.05 : 0,
@@ -532,7 +532,7 @@ export default function ExplorePage() {
                         >
                           🤪
                         </motion.button>
-                        
+
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
@@ -547,7 +547,7 @@ export default function ExplorePage() {
                 )}
 
                 {activeTab === "memories" && (
-                  <motion.div 
+                  <motion.div
                     key="memories"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -568,14 +568,14 @@ export default function ExplorePage() {
       <AnimatePresence>
         {chatWithStudent && (
           <>
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setChatWithStudent(null)}
               className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
             />
-            <motion.div 
+            <motion.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
@@ -584,7 +584,7 @@ export default function ExplorePage() {
             >
               <header className="p-4 border-b border-border/50 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div 
+                  <div
                     className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
                     style={{ background: `linear-gradient(135deg, ${selectedCollege.accent}, #a5b4fc)` }}
                   >
@@ -606,15 +606,15 @@ export default function ExplorePage() {
                     Say hi to {chatWithStudent.name}! You are now connected.
                   </span>
                 </div>
-                
+
                 {(chatMessages[chatWithStudent.id] || []).map((msg, i) => (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    key={i} 
+                    key={i}
                     className="flex justify-end"
                   >
-                    <div 
+                    <div
                       className="p-3 rounded-2xl rounded-tr-none text-sm text-white shadow-lg"
                       style={{ backgroundColor: selectedCollege.accent }}
                     >
@@ -643,7 +643,7 @@ export default function ExplorePage() {
                       }
                     }}
                   />
-                  <button 
+                  <button
                     onClick={() => {
                       const el = document.getElementById('chatInput');
                       const val = el.value;
