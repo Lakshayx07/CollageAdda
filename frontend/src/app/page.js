@@ -180,11 +180,43 @@ export default function Home() {
     const postToShare = posts.find(p => p.id === shareModal);
     if (!postToShare) return;
     const msgText = `Check out this post on Campus Adda: "${postToShare.content}"`;
-    setToastMsg(`Post sent to ${friend.name} successfully!`);
+    
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      // 1. Get or create the chat room with this friend
+      const roomRes = await fetch(`${apiUrl}/api/chat/rooms`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ targetUserId: friend.id })
+      });
+      
+      if (roomRes.ok) {
+        const room = await roomRes.json();
+        // 2. Send the message to the room
+        await fetch(`${apiUrl}/api/chat/rooms/${room._id}/messages`, {
+          method: 'POST',
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ text: msgText })
+        });
+        
+        setToastMsg(`Post sent to ${friend.name} successfully!`);
+      } else {
+        setToastMsg(`Failed to send to ${friend.name}`);
+      }
+    } catch (err) {
+      console.error(err);
+      setToastMsg("Error sharing post");
+    }
+
     setShareModal(null);
     setShareSearchTerm("");
     setTimeout(() => setToastMsg(""), 2000);
-    // In a real DM flow this would call the chat API; for now we just show confirmation
   };
 
   const toggleLike = async (postId) => {

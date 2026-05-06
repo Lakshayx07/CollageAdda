@@ -36,7 +36,7 @@ const delhiColleges = [
     departments: 30,
     emoji: "🔬",
     accent: "#0F172A",
-    banner: "https://home.iitd.ac.in/images/for-faculty/camp8.jpghttps://home.iitd.ac.in/images/for-faculty/camp8.jpg",
+    banner: "https://home.iitd.ac.in/images/for-faculty/camp8.jpg",
     description: "One of India's premier engineering and research institutes."
   },
   {

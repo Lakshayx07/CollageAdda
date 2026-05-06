@@ -24,60 +24,39 @@ function getMockTopConnections() {
 
 export async function getTopUniversityConnections(userId, limit = 3) {
   if (!userId) return [];
-  if (!supabase) return getMockTopConnections();
   
   try {
-    // Attempt to fetch connections from the Supabase database
-    // This assumes a 'connections' table where 'user_id' is the current user
-    // and we join with 'users' table to get the 'university' of 'friend_id'
-    const { data, error } = await supabase
-      .from('connections')
-      .select(`
-        friend_id,
-        users!connections_friend_id_fkey (
-          university
-        )
-      `)
-      .eq('user_id', userId)
-      .eq('status', 'accepted');
+    const token = localStorage.getItem("collegeadda_token");
+    if (!token) return [];
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+    
+    // Determine the ID to use
+    let targetId = typeof userId === 'string' && userId.length > 5 ? userId : 'me';
+    if (targetId === 'mock-user-123') targetId = 'me'; // Handle legacy mock id
 
-    if (error) {
-      console.warn("Error fetching connections, falling back to mock data:", error);
-      return getMockTopConnections(); 
-    }
-
-    if (!data || data.length === 0) return getMockTopConnections();
-
-    // Group by university and count
-    const counts = {};
-    data.forEach(conn => {
-      // Handle array or object from one-to-one/many joins
-      const friendUser = Array.isArray(conn.users) ? conn.users[0] : conn.users;
-      const uni = friendUser?.university;
-      if (uni) {
-        counts[uni] = (counts[uni] || 0) + 1;
+    const res = await fetch(`${apiUrl}/api/users/${targetId}/university-connections`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
       }
     });
 
-    if (Object.keys(counts).length === 0) return getMockTopConnections();
-
-    // Convert to array, assign short names, sort, and rank
-    const ranked = Object.entries(counts)
-      .map(([university, count]) => ({
-        university,
-        shortName: getShortUniversityName(university),
-        count
-      }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, limit)
-      .map((item, index) => ({
+    if (res.ok) {
+      const data = await res.json();
+      
+      // Add short names
+      const withShortNames = data.map(item => ({
         ...item,
-        rank: index + 1
+        shortName: getShortUniversityName(item.university)
       }));
-
-    return ranked;
+      
+      // If there are no connections, don't show any badges (or fake badges)
+      // We return empty array so that it won't highlight any fake university.
+      return withShortNames;
+    }
+    
+    return [];
   } catch (err) {
     console.error("Failed to compute university badges:", err);
-    return getMockTopConnections();
+    return [];
   }
 }

@@ -39,10 +39,14 @@ export default function ExplorePage() {
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
 
+  const [myFollowing, setMyFollowing] = useState([]);
+
   useEffect(() => {
-    const fetchColleges = async () => {
+    const fetchInitialData = async () => {
       try {
         const token = localStorage.getItem("collegeadda_token");
+        
+        // Fetch colleges
         const res = await fetch(`${apiUrl}/api/colleges`, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -50,13 +54,23 @@ export default function ExplorePage() {
           const data = await res.json();
           setColleges(data);
         }
+
+        // Fetch my following list to check connections
+        const followingRes = await fetch(`${apiUrl}/api/users/me/following`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (followingRes.ok) {
+          const followingData = await followingRes.json();
+          setMyFollowing(followingData.map(u => u._id));
+        }
+
       } catch (err) {
-        console.error("Error fetching colleges:", err);
+        console.error("Error fetching initial data:", err);
       } finally {
         setLoading(false);
       }
     };
-    fetchColleges();
+    fetchInitialData();
   }, [apiUrl]);
 
   const fetchCollegeDetails = async (college) => {
@@ -96,6 +110,9 @@ export default function ExplorePage() {
 
         setToastMessage("Connected successfully! They'll see your message 💕");
         toggleAddStudent(student._id || student.id);
+        
+        // Optimistically update following list
+        setMyFollowing(prev => [...prev, student._id || student.id]);
       } catch (err) {
         console.error("Error connecting with user:", err);
       }
@@ -338,49 +355,48 @@ export default function ExplorePage() {
                     exit={{ opacity: 0, y: -10 }}
                     className="space-y-4"
                   >
-                    {selectedCollege.postsData.map(post => (
-                      <div key={post.id} className="bg-surface border border-border/50 rounded-2xl p-4 space-y-3">
-                        <div className="flex items-center space-x-3">
-                          <div
-                            className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
-                            style={{ backgroundColor: selectedCollege.accent }}
-                          >
-                            {post.author.split(' ').map(n => n[0]).join('')}
+                    {!selectedCollege.postsData || selectedCollege.postsData.length === 0 ? (
+                      <div className="text-center py-10 text-muted">No posts from {selectedCollege.name} yet.</div>
+                    ) : (
+                      selectedCollege.postsData.map(post => (
+                        <div key={post._id} className="bg-surface border border-border/50 rounded-2xl p-4 space-y-3">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 rounded-full overflow-hidden border border-border/50 bg-muted">
+                              <img src={post.author?.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author?.name || 'U')}&background=6366f1&color=fff`} className="w-full h-full object-cover" alt="" />
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-sm font-bold text-foreground leading-none">{post.author?.name || 'Student'}</p>
+                              <p className="text-[10px] text-muted mt-1">{new Date(post.createdAt).toLocaleDateString()} • {new Date(post.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                            </div>
                           </div>
-                          <div className="flex-1">
-                            <p className="text-sm font-bold text-foreground leading-none">{post.author}</p>
-                            <p className="text-[10px] text-muted mt-1">{post.meta} • {post.time}</p>
-                          </div>
-                        </div>
-                        <p className="text-sm text-foreground/90">{post.text}</p>
-                        {post.image && (
-                          <div className="rounded-xl overflow-hidden border border-border/50">
-                            <img src={post.image} className="w-full h-auto" alt="" />
-                          </div>
-                        )}
-                        <div className="flex items-center justify-between pt-2">
-                          <div className="flex items-center space-x-4">
-                            <button
-                              onClick={() => toggleLike(post.id)}
-                              className={clsx(
-                                "flex items-center space-x-1.5 transition-colors",
-                                likes[post.id] ? "text-red-500" : "text-muted hover:text-foreground"
+                          <p className="text-sm text-foreground/90">{post.content}</p>
+                          {post.mediaUrl && (
+                            <div className="rounded-xl overflow-hidden border border-border/50 mt-2">
+                              {post.mediaType === 'video' ? (
+                                <video src={post.mediaUrl} controls className="w-full h-auto" />
+                              ) : (
+                                <img src={post.mediaUrl} className="w-full h-auto" alt="" />
                               )}
-                            >
-                              <Heart size={18} fill={likes[post.id] ? "currentColor" : "none"} />
-                              <span className="text-xs font-bold">{post.likes + (likes[post.id] ? 1 : 0)}</span>
-                            </button>
-                            <button onClick={() => { setToastMessage("Comments coming soon! 💬"); setTimeout(() => setToastMessage(null), 2000); }} className="flex items-center space-x-1.5 text-muted hover:text-foreground transition-colors">
-                              <MessageSquare size={18} />
-                              <span className="text-xs font-bold">12</span>
+                            </div>
+                          )}
+                          <div className="flex items-center justify-between pt-2">
+                            <div className="flex items-center space-x-4">
+                              <button className="flex items-center space-x-1.5 text-muted hover:text-pink-500 transition-colors">
+                                <Heart size={18} />
+                                <span className="text-xs font-bold">{post.likes?.length || 0}</span>
+                              </button>
+                              <button className="flex items-center space-x-1.5 text-muted hover:text-blue-500 transition-colors">
+                                <MessageSquare size={18} />
+                                <span className="text-xs font-bold">{post.comments?.length || 0}</span>
+                              </button>
+                            </div>
+                            <button className="text-muted hover:text-green-500 transition-colors">
+                              <Share2 size={18} />
                             </button>
                           </div>
-                          <button onClick={() => { setToastMessage("Share feature coming soon! 🚀"); setTimeout(() => setToastMessage(null), 2000); }} className="text-muted hover:text-foreground transition-colors">
-                            <Share2 size={18} />
-                          </button>
                         </div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </motion.div>
                 )}
 
@@ -486,39 +502,48 @@ export default function ExplorePage() {
 
                               {/* Student Profile Photo Area */}
                               <div className="relative h-[50%] w-full bg-muted pointer-events-none">
-                                <img src={student.photo} alt={student.name} className="w-full h-full object-cover" />
+                                <img src={student.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=6366f1&color=fff`} alt={student.name} className="w-full h-full object-cover" />
                               </div>
 
                               {/* Details Area */}
                               <div className="flex-1 p-5 space-y-4 bg-surface overflow-y-auto pointer-events-none flex flex-col">
                                 <div>
                                   <h2 className="text-2xl font-black text-foreground flex items-center gap-2 tracking-tight">
-                                    {student.name}, {student.age}
-                                    {student.verified && <span className="text-blue-500 text-xl">✅</span>}
+                                    {student.name}
                                   </h2>
                                   <div className="flex flex-col mt-2 space-y-1.5">
-                                    <div className="flex items-center text-foreground/90 text-[13px] font-semibold">
-                                      🎓 {student.course} • {student.year}
+                                    {student.year && (
+                                      <div className="flex items-center text-foreground/90 text-[13px] font-semibold">
+                                        🎓 {student.year}
+                                      </div>
+                                    )}
+                                    <div className="flex items-center text-foreground/80 text-[12px] font-medium">
+                                      🏫 {student.university || selectedCollege.name}
                                     </div>
                                     <div className="flex items-center text-foreground/80 text-[12px] font-medium">
-                                      🏫 {selectedCollege.name}
+                                      📍 {selectedCollege.location}
                                     </div>
-                                    <div className="flex items-center text-foreground/80 text-[12px] font-medium">
-                                      📍 {student.location || selectedCollege.location}
-                                    </div>
+                                    
+                                    {myFollowing.includes(student._id || student.id) && (
+                                      <div className="mt-1 inline-flex bg-green-500/20 text-green-500 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider self-start items-center gap-1 shadow-sm">
+                                        🤝 Already Friends
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
 
-                                <div>
-                                  <h4 className="text-[10px] font-bold text-muted uppercase tracking-widest mb-2.5">Interests</h4>
-                                  <div className="flex flex-wrap gap-2">
-                                    {student.interests.map(interest => (
-                                      <span key={interest} className="px-3 py-1.5 bg-surface-hover border border-border/50 rounded-lg text-[11px] font-bold text-foreground shadow-sm">
-                                        {interest}
-                                      </span>
-                                    ))}
+                                {student.interests && student.interests.length > 0 && (
+                                  <div>
+                                    <h4 className="text-[10px] font-bold text-muted uppercase tracking-widest mb-2.5">Interests</h4>
+                                    <div className="flex flex-wrap gap-2">
+                                      {student.interests.map((interest, i) => (
+                                        <span key={i} className="px-3 py-1.5 bg-surface-hover border border-border/50 rounded-lg text-[11px] font-bold text-foreground shadow-sm">
+                                          {interest}
+                                        </span>
+                                      ))}
+                                    </div>
                                   </div>
-                                </div>
+                                )}
 
                                 <div className="pt-2 mt-auto">
                                   <p className="text-[13px] text-foreground/80 italic leading-relaxed font-medium bg-surface-hover p-3 rounded-xl border border-border/50">
