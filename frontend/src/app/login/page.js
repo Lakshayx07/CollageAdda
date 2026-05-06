@@ -144,7 +144,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `https://collage-adda.vercel.app/login`,
+          redirectTo: `https://collage-adda.vercel.app`,
         },
       });
       if (error) throw error;
