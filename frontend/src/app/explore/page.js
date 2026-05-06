@@ -75,19 +75,30 @@ export default function ExplorePage() {
     }
   };
 
-  const handleSwipe = (collegeId, direction, student) => {
+  const handleSwipe = async (collegeId, direction, student) => {
     setSwipeDirection(direction);
 
     if (direction === 'right') {
-      const autoMessage = `Hey! 👋 Lakshay from Rishihood University just connected with you on Campus Adda! Say hi back 🎓💗`;
+      try {
+        const token = localStorage.getItem("collegeadda_token");
+        // Follow the user
+        await fetch(`${apiUrl}/api/users/${student._id || student.id}/follow`, {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        const autoMessage = `Hey! 👋 just connected with you on Campus Adda! Say hi back 🎓💕`;
 
-      setChatMessages(prev => ({
-        ...prev,
-        [student._id || student.id]: [...(prev[student._id || student.id] || []), { text: autoMessage, time: 'now' }]
-      }));
+        setChatMessages(prev => ({
+          ...prev,
+          [student._id || student.id]: [...(prev[student._id || student.id] || []), { text: autoMessage, time: 'now' }]
+        }));
 
-      setToastMessage("Friend request sent! They'll see your message 💗");
-      toggleAddStudent(student._id || student.id);
+        setToastMessage("Connected successfully! They'll see your message 💕");
+        toggleAddStudent(student._id || student.id);
+      } catch (err) {
+        console.error("Error connecting with user:", err);
+      }
       setTimeout(() => setToastMessage(null), 3000);
     } else {
       setToastMessage("Skipped! Next up 👀");
@@ -201,7 +212,6 @@ export default function ExplorePage() {
                     </div>
 
                     {/* Visit Me Button */}
-                    <div className="mt-auto pt-2">
                       <div
                         className="w-full py-2.5 rounded-xl text-[11px] font-bold text-center transition-all shadow-sm active:scale-95"
                         style={{
@@ -210,7 +220,7 @@ export default function ExplorePage() {
                           border: `1.5px solid ${college.accent}30`
                         }}
                       >
-                        Visit Me
+                        Visit Now
                       </div>
                     </div>
                   </div>
@@ -464,7 +474,7 @@ export default function ExplorePage() {
                               {/* Stamps */}
                               {isTop && dragX > 20 && (
                                 <div className="absolute top-12 left-6 z-20 rotate-[-15deg] border-4 border-green-500 text-green-500 font-black text-3xl px-4 py-1 rounded-xl uppercase tracking-widest bg-green-500/10 backdrop-blur-sm" style={{ opacity: Math.min(dragX / 100, 1) }}>
-                                  CONNECT 💗
+                                  CONNECT 💕
                                 </div>
                               )}
                               {isTop && dragX < -20 && (
@@ -539,7 +549,7 @@ export default function ExplorePage() {
                           onClick={() => handleSwipe(selectedCollege.id, 'right', selectedCollege.studentsData[currentStudentIndices[selectedCollege.id] || 0])}
                           className="w-[84px] h-[84px] rounded-full bg-surface border-2 border-pink-500/20 flex items-center justify-center text-4xl shadow-[0_0_25px_rgba(236,72,153,0.2)] hover:shadow-[0_0_40px_rgba(236,72,153,0.4)] transition-shadow"
                         >
-                          💗
+                          💕
                         </motion.button>
                       </div>
                     )}
