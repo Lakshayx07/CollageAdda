@@ -13,6 +13,7 @@ const userSchema = mongoose.Schema({
   snapchat: { type: String, default: '' },
   interests: [{ type: String }],
   goals: [{ type: String }],
+  sports: [{ type: String }],
   year: { type: String, default: '' },
   connectedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   skippedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],

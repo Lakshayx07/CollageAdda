@@ -204,7 +204,7 @@ export default function FriendsPage() {
                             </button>
                             {status === "connected" && (
                               <button
-                                onClick={() => router.push(`/messages`)}
+                                onClick={() => router.push(`/messages?userId=${person._id}`)}
                                 className="p-2.5 rounded-xl bg-surface-hover text-primary hover:bg-primary/10 hover:scale-105 active:scale-95 transition-all shadow-sm"
                               >
                                 <MessageCircle size={20} />

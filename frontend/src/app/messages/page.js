@@ -84,6 +84,41 @@ function MessagesContent() {
             const found = formattedRooms.find(c => c.id === chatParam);
             if (found) setActiveChat(found);
           }
+
+          // If a userId param is provided, get or create the private chat
+          const userIdParam = searchParams.get("userId");
+          if (userIdParam) {
+            try {
+              const resCreate = await fetch(`${apiUrl}/api/chat/rooms`, {
+                method: 'POST',
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}` 
+                },
+                body: JSON.stringify({ targetUserId: userIdParam })
+              });
+              
+              if (resCreate.ok) {
+                const newRoom = await resCreate.json();
+                const formattedNewRoom = {
+                  id: newRoom._id,
+                  name: newRoom.participants.find(p => p._id !== u._id)?.name || "Chat",
+                  type: "private",
+                  avatar: newRoom.participants.find(p => p._id !== u._id)?.profilePic || `https://ui-avatars.com/api/?name=User&background=6366f1&color=fff`,
+                  lastMsg: newRoom.lastMessage?.text || "No messages yet",
+                  time: newRoom.lastMessage ? new Date(newRoom.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""
+                };
+                
+                // Add to chats if not already there
+                if (!formattedRooms.find(c => c.id === formattedNewRoom.id)) {
+                  setChats(prev => [formattedNewRoom, ...prev]);
+                }
+                setActiveChat(formattedNewRoom);
+              }
+            } catch (err) {
+              console.error("Error creating private chat:", err);
+            }
+          }
         }
       } catch (err) {
         console.error("Error fetching rooms:", err);

@@ -39,7 +39,7 @@ router.put('/profile', protect, async (req, res) => {
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    const { name, bio, profilePic, instagram, snapchat, university, password, interests, goals, year } = req.body;
+    const { name, bio, profilePic, instagram, snapchat, university, password, interests, goals, sports, year } = req.body;
 
     if (name) user.name = name;
     if (bio !== undefined) user.bio = bio;
@@ -49,6 +49,7 @@ router.put('/profile', protect, async (req, res) => {
     if (university) user.university = university;
     if (interests !== undefined) user.interests = interests;
     if (goals !== undefined) user.goals = goals;
+    if (sports !== undefined) user.sports = sports;
     if (year !== undefined) user.year = year;
     if (password) user.password = password; // pre-save hook will hash it
 
@@ -64,6 +65,7 @@ router.put('/profile', protect, async (req, res) => {
       snapchat: updated.snapchat,
       interests: updated.interests,
       goals: updated.goals,
+      sports: updated.sports,
       year: updated.year,
       isPremium: updated.isPremium,
     });

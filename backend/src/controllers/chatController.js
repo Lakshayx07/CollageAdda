@@ -62,3 +62,33 @@ export const markAsSeen = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+/**
+ * @desc    Get or create a private room with a user
+ * @route   POST /api/chat/rooms
+ * @access  Private
+ */
+export const getOrCreatePrivateRoom = async (req, res) => {
+  const { targetUserId } = req.body;
+  
+  if (!targetUserId) return res.status(400).json({ message: 'Target user ID is required' });
+
+  try {
+    let room = await ChatRoom.findOne({
+      isGroup: false,
+      participants: { $all: [req.user._id, targetUserId] }
+    }).populate('participants', 'name profilePic university');
+
+    if (!room) {
+      room = await ChatRoom.create({
+        participants: [req.user._id, targetUserId],
+        isGroup: false
+      });
+      room = await ChatRoom.findById(room._id).populate('participants', 'name profilePic university');
+    }
+
+    res.json(room);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
