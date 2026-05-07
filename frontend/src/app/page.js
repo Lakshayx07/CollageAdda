@@ -25,15 +25,38 @@ export default function Home() {
   const [loadingPosts, setLoadingPosts] = useState(true);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
-  // Auth Guard: Check if user is logged in
+  // Auth Guard: Check if user is logged in AND has a valid university
   useEffect(() => {
     const token = localStorage.getItem("collegeadda_token");
     if (!token) {
       router.push("/login");
-    } else {
+      return;
+    }
+
+    // Validate that the user's university is in the allowed list
+    const validateUniversity = async () => {
+      try {
+        const user = JSON.parse(localStorage.getItem('collegeadda_user') || '{}');
+        const res = await fetch(`${apiUrl}/api/colleges/public`);
+        if (res.ok) {
+          const colleges = await res.json();
+          const validNames = colleges.map(c => c.name);
+          if (user.university && !validNames.includes(user.university)) {
+            // University not in the allowed list — log out
+            localStorage.removeItem('collegeadda_token');
+            localStorage.removeItem('collegeadda_user');
+            router.push('/login');
+            return;
+          }
+        }
+      } catch (err) {
+        console.error("University validation error:", err);
+      }
       fetchPosts();
       fetchFriends();
-    }
+    };
+
+    validateUniversity();
   }, [router]);
 
   const fetchPosts = async () => {

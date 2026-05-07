@@ -6,6 +6,17 @@ import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
+// @route   GET /api/colleges/public
+// @desc    Get all college names (no auth required - used on login page)
+router.get('/public', async (req, res) => {
+  try {
+    const colleges = await College.find({}, 'name location emoji accent');
+    res.json(colleges);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // @route   GET /api/colleges
 // @desc    Get all colleges
 router.get('/', protect, async (req, res) => {
