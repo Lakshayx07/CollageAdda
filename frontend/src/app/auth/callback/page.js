@@ -1,81 +1,56 @@
 "use client";
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "../../../utils/supabase";
 
 export default function AuthCallback() {
+  const router = useRouter();
+
   useEffect(() => {
     const handleAuthCallback = async () => {
       if (!supabase) return;
 
       try {
-        console.log("-----------")
-        let session, data;
-        try {
-          const { data: sessionData, error } = await supabase.auth.getSession();
-          console.log("111111111", sessionData)
-          session = sessionData?.session || null
-          console.log("222222222", session)
-        } catch (error) {
-          console.log("333333333", error)
-        }
+        // The @supabase/ssr client in utils/supabase.js will handle 
+        // the cookie exchange automatically when this page loads.
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        if (error) throw error;
 
         if (session && session.user) {
-
+          // Optional: Sync with your custom backend if you still need it for other features
           const user = session.user;
-          const pendingUni = localStorage.getItem('pending_university');
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+          const userData = {
+            _id: user.id,
+            name: user.user_metadata.full_name || user.email.split('@')[0],
+            email: user.email,
+            university: localStorage.getItem('pending_university') || "Other",
+            token: session.access_token
+          };
 
-          // Sync with our custom backend
-          let res = await fetch(`${apiUrl}/api/auth/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              name: user.user_metadata.full_name || user.email.split('@')[0],
-              email: user.email,
-              password: user.id,
-              university: pendingUni || "Other"
-            })
-          });
+          localStorage.setItem('collegeadda_token', session.access_token);
+          localStorage.setItem('collegeadda_user', JSON.stringify(userData));
+          localStorage.removeItem('pending_university');
 
-          let data;
-          if (!res.ok) {
-            // If user already exists, just login
-            const loginRes = await fetch(`${apiUrl}/api/auth/login`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                email: user.email,
-                password: user.id
-              })
-            });
-            data = await loginRes.json();
-          } else {
-            data = await res.json();
-          }
-
-          if (data.token) {
-            localStorage.setItem('collegeadda_token', data.token);
-            localStorage.setItem('collegeadda_user', JSON.stringify(data));
-            localStorage.removeItem('pending_university');
-            window.location.href = '/';
-          }
+          // Redirect to home (Middleware will handle the onboarding check)
+          router.push("/");
         } else {
-          window.location.href = '/login';
+          router.push("/login");
         }
       } catch (err) {
-        console.error("OAuth Sync Error:", err);
-        window.location.href = '/login?error=sync_failed';
+        console.error("OAuth Callback Error:", err);
+        router.push("/login?error=auth_failed");
       }
     };
 
     handleAuthCallback();
-  }, []);
+  }, [router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="text-center space-y-4">
         <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-        <p className="text-muted font-medium">Verifying your identity...</p>
+        <p className="text-muted font-medium">Completing login...</p>
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { MapPin, Mail, Lock, School, User as UserIcon } from "lucide-react";
 import { supabase } from "../../utils/supabase";
+import Cookies from "js-cookie";
 
 const UNIVERSITIES = [
   "Rishihood University, Sonipat",
@@ -36,39 +37,41 @@ export default function LoginPage() {
 
     try {
       setIsLoading(true);
-
-      const endpoint = isSignUp ? '/api/auth/register' : '/api/auth/login';
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
-
-      const bodyData = isSignUp
-        ? { name, email, password, university }
-        : { email, password };
-
-      const res = await fetch(`${apiUrl}${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bodyData)
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || 'Authentication failed');
+      
+      let authResult;
+      if (isSignUp) {
+        authResult = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { full_name: name, university: university }
+          }
+        });
+      } else {
+        authResult = await supabase.auth.signInWithPassword({ email, password });
       }
 
-      // NEW: Also sign into Supabase manually to ensure Middleware sees the session
-      const { error: supabaseError } = isSignUp 
-        ? await supabase.auth.signUp({ email, password })
-        : await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = authResult;
+      if (error) throw error;
 
-      if (supabaseError) console.warn("Supabase Sync Warning:", supabaseError.message);
-
-      // Save token and user info
-      localStorage.setItem('collegeadda_token', data.token);
-      localStorage.setItem('collegeadda_user', JSON.stringify(data));
-
-      // Redirect to home
-      window.location.href = '/';
+      if (data.session) {
+        // Sync with legacy local storage for other components that might still use it
+        const userData = {
+          _id: data.user.id,
+          name: data.user.user_metadata.full_name || name,
+          email: data.user.email,
+          university: data.user.user_metadata.university || university,
+          token: data.session.access_token
+        };
+        
+        localStorage.setItem('collegeadda_token', data.session.access_token);
+        localStorage.setItem('collegeadda_user', JSON.stringify(userData));
+        
+        // Redirect to onboarding or home (Middleware will handle the onboarding check)
+        window.location.href = '/';
+      } else if (isSignUp) {
+        alert("Check your email for the confirmation link!");
+      }
 
     } catch (error) {
       console.error("Auth Error:", error.message);
