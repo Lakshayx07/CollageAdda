@@ -81,9 +81,6 @@ export default function Home() {
     }
   };
 
-    }
-  };
-
   const fetchFriends = async () => {
     try {
       const token = localStorage.getItem("collegeadda_token");
