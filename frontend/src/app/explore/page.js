@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
+import { supabase } from "@/utils/supabase";
 
 
 export default function ExplorePage() {
@@ -42,36 +43,63 @@ export default function ExplorePage() {
   const [myFollowing, setMyFollowing] = useState([]);
 
   useEffect(() => {
-    const fetchInitialData = async () => {
+    const fetchStudents = async () => {
       try {
-        const token = localStorage.getItem("collegeadda_token");
+        setLoading(true);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
         
-        // Fetch colleges
-        const res = await fetch(`${apiUrl}/api/colleges`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setColleges(data);
-        }
+        // 1. Fetch all profiles except current user
+        const { data: profiles, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .neq('id', user.id);
 
-        // Fetch my following list to check connections
-        const followingRes = await fetch(`${apiUrl}/api/users/me/following`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (followingRes.ok) {
-          const followingData = await followingRes.json();
-          setMyFollowing(followingData.map(u => u._id));
-        }
+        if (error) throw error;
 
+        // 2. Fetch my following list
+        const { data: followingData } = await supabase
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', user.id);
+
+        const followingIds = followingData?.map(f => f.following_id) || [];
+        setMyFollowing(followingIds);
+
+        // 3. Format students for the UI
+        const formattedStudents = profiles.map(p => ({
+          id: p.id,
+          _id: p.id,
+          name: p.full_name || 'Student',
+          year: p.batch_year || '2025',
+          university: 'Rishihood University',
+          bio: 'Hey! I am using Campus Adda to meet new people 🎓',
+          profilePic: p.avatar_url,
+          interests: ['Sports', 'Coding', 'Music']
+        }));
+
+        const discoverCollege = {
+          id: 'discover',
+          _id: 'discover',
+          name: 'Global Campus',
+          location: 'All Universities',
+          banner: 'https://images.unsplash.com/photo-1541339907198-e08756ebafe3?auto=format&fit=crop&q=80',
+          emoji: '🌎',
+          students: formattedStudents.length,
+          posts: 0,
+          accent: '#ec4899',
+          studentsData: formattedStudents
+        };
+
+        setColleges([discoverCollege]);
       } catch (err) {
-        console.error("Error fetching initial data:", err);
+        console.error("Error fetching students:", err);
       } finally {
         setLoading(false);
       }
     };
-    fetchInitialData();
-  }, [apiUrl]);
+    fetchStudents();
+  }, []);
 
   const fetchCollegeDetails = async (college) => {
     try {
@@ -105,27 +133,33 @@ export default function ExplorePage() {
 
     if (direction === 'right') {
       try {
-        const token = localStorage.getItem("collegeadda_token");
-        // Follow the user
-        await fetch(`${apiUrl}/api/users/${student._id || student.id}/follow`, {
-          method: "PUT",
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const { data: { user } } = await supabase.auth.getUser();
         
-        const autoMessage = `Hey! 👋 just connected with you on Campus Adda! Say hi back 🎓💕`;
+        // 1. Create real follow relationship
+        const { error } = await supabase
+          .from('follows')
+          .insert({
+            follower_id: user.id,
+            following_id: student.id
+          });
 
-        setChatMessages(prev => ({
-          ...prev,
-          [student._id || student.id]: [...(prev[student._id || student.id] || []), { text: autoMessage, time: 'now' }]
-        }));
+        if (error && error.code !== '23505') throw error;
 
-        setToastMessage("Connected successfully! They'll see your message 💕");
-        toggleAddStudent(student._id || student.id);
-        
-        // Optimistically update following list
-        setMyFollowing(prev => [...prev, student._id || student.id]);
+        // 2. Create notification
+        await supabase
+          .from('notifications')
+          .insert({
+            user_id: student.id,
+            sender_id: user.id,
+            type: 'connection_request',
+            message: `someone wants to connect with you! 💕`
+          });
+
+        setToastMessage("Connected successfully! 💕");
+        toggleAddStudent(student.id);
+        setMyFollowing(prev => [...prev, student.id]);
       } catch (err) {
-        console.error("Error connecting with user:", err);
+        console.error("Error connecting:", err);
       }
       setTimeout(() => setToastMessage(null), 3000);
     } else {
