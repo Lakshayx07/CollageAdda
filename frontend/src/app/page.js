@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check } from "lucide-react";
 import Image from "next/image";
 import clsx from "clsx";
+import NotificationBell from "@/components/NotificationBell";
 
 export default function Home() {
   const router = useRouter();
@@ -253,8 +254,11 @@ export default function Home() {
         <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
           Campus Adda
         </h1>
-        <div className="w-8 h-8 rounded-full bg-surface-hover flex items-center justify-center">
-          <Image src="/next.svg" alt="Logo" width={16} height={16} className="dark:invert opacity-50" />
+        <div className="flex items-center space-x-2">
+          <NotificationBell />
+          <div className="w-8 h-8 rounded-full bg-surface-hover flex items-center justify-center overflow-hidden">
+            <Image src="/next.svg" alt="Logo" width={16} height={16} className="dark:invert opacity-50" />
+          </div>
         </div>
       </header>
 
