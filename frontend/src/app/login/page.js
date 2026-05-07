@@ -5,37 +5,27 @@ import Image from "next/image";
 import { MapPin, Mail, Lock, School, User as UserIcon } from "lucide-react";
 import { supabase } from "../../utils/supabase";
 
+const UNIVERSITIES = [
+  "Rishihood University, Sonipat",
+  "Delhi University (DU)",
+  "Jawaharlal Nehru University (JNU)",
+  "Amity University, Noida",
+  "Ashoka University, Sonipat",
+  "SRM University, Delhi-NCR",
+  "IIT Delhi",
+  "DTU (Delhi Technological University)",
+  "Other"
+];
+
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
-  const [universities, setUniversities] = useState([]);
-  const [loadingUnis, setLoadingUnis] = useState(true);
 
   // Form State
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [university, setUniversity] = useState("");
-
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
-
-  // Fetch universities from the backend (same ones shown in Explore)
-  useEffect(() => {
-    const fetchUniversities = async () => {
-      try {
-        const res = await fetch(`${apiUrl}/api/colleges/public`);
-        if (res.ok) {
-          const data = await res.json();
-          setUniversities(data.map(c => c.name));
-        }
-      } catch (err) {
-        console.error("Failed to load universities:", err);
-      } finally {
-        setLoadingUnis(false);
-      }
-    };
-    fetchUniversities();
-  }, [apiUrl]);
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -179,11 +169,10 @@ export default function LoginPage() {
                 required
                 value={university}
                 onChange={(e) => setUniversity(e.target.value)}
-                className="w-full bg-surface-hover border border-border/50 rounded-xl py-3 pl-10 pr-4 text-sm text-foreground focus:outline-none focus:border-primary transition-colors appearance-none disabled:opacity-60"
-                disabled={loadingUnis}
+                className="w-full bg-surface-hover border border-border/50 rounded-xl py-3 pl-10 pr-4 text-sm text-foreground focus:outline-none focus:border-primary transition-colors appearance-none"
               >
-                <option value="" disabled>{loadingUnis ? "Loading universities..." : "Choose your campus..."}</option>
-                {universities.map(uni => (
+                <option value="" disabled>Choose your campus...</option>
+                {UNIVERSITIES.map(uni => (
                   <option key={uni} value={uni}>{uni}</option>
                 ))}
               </select>
@@ -191,7 +180,7 @@ export default function LoginPage() {
                 <MapPin className="text-muted" size={16} />
               </div>
             </div>
-            <p className="text-[10px] text-muted mt-1 ml-1">Only universities available on CollageAdda</p>
+            <p className="text-[10px] text-muted mt-1 ml-1">Includes nearby universities in your region</p>
           </div>
 
           <button
