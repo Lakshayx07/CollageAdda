@@ -104,6 +104,26 @@ router.get('/me/followers', protect, async (req, res) => {
   }
 });
 
+// @route   GET /api/users/me/followers/new
+// @desc    Get new followers since a given timestamp (for notifications)
+router.get('/me/followers/new', protect, async (req, res) => {
+  try {
+    const since = req.query.since ? new Date(Number(req.query.since)) : new Date(0);
+    // Populate followers with their joinedAt / updatedAt so we can filter
+    const user = await User.findById(req.user._id).populate('followers', 'name university profilePic _id createdAt');
+    
+    // Return all followers if no since param, otherwise filter by createdAt after 'since'
+    const allFollowers = user.followers || [];
+    const newFollowers = req.query.since
+      ? allFollowers.filter(f => f.createdAt && new Date(f.createdAt) > since)
+      : allFollowers;
+
+    res.json(newFollowers);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // @route   GET /api/users/me/following
 // @desc    Get logged-in user's following list
 router.get('/me/following', protect, async (req, res) => {
