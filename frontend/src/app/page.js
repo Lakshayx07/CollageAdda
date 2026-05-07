@@ -77,7 +77,9 @@ export default function Home() {
             id: c._id || Math.random().toString(),
             author: c.user?.name || 'Student',
             text: c.text
-          })) || []
+          })) || [],
+          mediaUrl: p.mediaUrl,
+          mediaType: p.mediaType
         }));
         setPosts(formatted);
       }
@@ -508,9 +510,29 @@ export default function Home() {
                 </div>
               </div>
               
-              <p className="text-sm text-foreground mb-4 leading-relaxed">
-                {post.content}
-              </p>
+              {post.content && (
+                <p className="text-sm text-foreground mb-3 leading-relaxed">
+                  {post.content}
+                </p>
+              )}
+
+              {post.mediaUrl && (
+                <div className="rounded-xl overflow-hidden mb-4 border border-border/30 bg-surface-hover/50">
+                  {post.mediaType === 'video' ? (
+                    <video 
+                      src={post.mediaUrl} 
+                      controls 
+                      className="w-full h-auto max-h-[400px] object-contain mx-auto" 
+                    />
+                  ) : (
+                    <img 
+                      src={post.mediaUrl} 
+                      alt="Post content" 
+                      className="w-full h-auto max-h-[400px] object-contain mx-auto" 
+                    />
+                  )}
+                </div>
+              )}
 
               <div className="flex items-center space-x-6 border-t border-border/50 pt-3">
                 <button 
@@ -534,7 +556,10 @@ export default function Home() {
                   <span className="text-xs font-medium">{post.comments}</span>
                 </button>
                 <button 
-                  onClick={() => window.open(`https://wa.me/?text=Check out this post on Campus Adda: ${encodeURIComponent(post.content)}`, '_blank')}
+                  onClick={() => {
+                    const text = post.content ? post.content : "Check out this media post on Campus Adda!";
+                    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                  }}
                   className="flex items-center space-x-1.5 text-muted hover:text-green-500 transition-colors ml-auto group"
                 >
                   <Share2 size={18} className="transition-transform group-active:scale-75" />

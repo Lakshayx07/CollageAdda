@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const postSchema = mongoose.Schema({
   author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   university: { type: String, required: true },
-  content: { type: String, required: true },
+  content: { type: String },
   mediaUrl: { type: String }, // image or video URL
   mediaType: { type: String }, // 'image' or 'video'
   likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
