@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check, Plus } from "lucide-react";
 import Image from "next/image";
@@ -31,6 +31,10 @@ export default function Home() {
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [activeStory, setActiveStory] = useState(null);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+  
+  const photoInputRef = useRef(null);
+  const videoInputRef = useRef(null);
+  const scrollRef = useRef(null);
 
   // Auth Guard: Check if user is logged in
   useEffect(() => {
