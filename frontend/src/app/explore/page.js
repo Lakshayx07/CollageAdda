@@ -75,9 +75,6 @@ export default function ExplorePage() {
     fetchInitialData();
   }, [apiUrl]);
 
-    }
-  };
-
   const toggleLike = async (postId) => {
     try {
       const token = localStorage.getItem("collegeadda_token");
