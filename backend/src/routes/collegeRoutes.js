@@ -24,11 +24,15 @@ router.get('/:id', protect, async (req, res) => {
     const college = await College.findById(req.params.id);
     if (!college) return res.status(404).json({ message: 'College not found' });
 
-    // Find students belonging to this university (all of them)
-    const students = await User.find({ university: college.name }).select('name profilePic bio university interests year');
+    // Find students belonging to this university (flexible partial match)
+    const students = await User.find({ 
+      university: { $regex: new RegExp(college.name.trim().split(',')[0], 'i') } 
+    }).select('name profilePic bio university interests year');
     
-    // Find ALL posts by students of this university (posted on the main feed)
-    const posts = await Post.find({ university: college.name })
+    // Find ALL posts by students of this university (flexible partial match)
+    const posts = await Post.find({ 
+      university: { $regex: new RegExp(college.name.trim().split(',')[0], 'i') } 
+    })
       .populate('author', 'name profilePic university')
       .sort({ createdAt: -1 });
 

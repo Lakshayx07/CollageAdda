@@ -1,5 +1,6 @@
 import ChatRoom from '../models/ChatRoom.js';
 import Message from '../models/Message.js';
+import Notification from '../models/Notification.js';
 
 /**
  * @desc    Get user's chat rooms
@@ -119,6 +120,20 @@ export const sendMessage = async (req, res) => {
       }
     });
     await room.save();
+
+    // Create notification for private messages
+    if (!room.isGroup) {
+      const recipient = room.participants.find(p => p.toString() !== req.user._id.toString());
+      if (recipient) {
+        await Notification.create({
+          recipient: recipient,
+          sender: req.user._id,
+          type: 'message',
+          chatRoom: room._id,
+          text: 'sent you a message'
+        });
+      }
+    }
 
     const populatedMsg = await Message.findById(message._id).populate('sender', 'name profilePic');
     res.status(201).json(populatedMsg);

@@ -1,5 +1,6 @@
 import express from 'express';
 import User from '../models/User.js';
+import Notification from '../models/Notification.js';
 import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -186,6 +187,17 @@ router.put('/:id/follow', protect, async (req, res) => {
     }
     await currentUser.save();
     await targetUser.save();
+
+    // Notification for follow
+    if (!isFollowing) {
+      await Notification.create({
+        recipient: targetUser._id,
+        sender: req.user._id,
+        type: 'follow',
+        text: 'started following you'
+      });
+    }
+
     res.json({ following: !isFollowing, followersCount: targetUser.followers.length });
   } catch (error) {
     res.status(500).json({ message: error.message });

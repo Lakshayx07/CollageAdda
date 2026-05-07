@@ -14,6 +14,7 @@ import Message from './models/Message.js';
 import ChatRoom from './models/ChatRoom.js';
 import collegeRoutes from './routes/collegeRoutes.js';
 import storyRoutes from './routes/storyRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 
 dotenv.config();
 
@@ -62,6 +63,7 @@ app.use('/api/verify', verifyRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/colleges', collegeRoutes);
 app.use('/api/stories', storyRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // ── Socket.io Real-time Chat ──────────────────────────────────────────────────
 const onlineUsers = new Map(); // socketId → { userId, name, university }

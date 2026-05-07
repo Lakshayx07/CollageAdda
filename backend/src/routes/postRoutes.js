@@ -1,5 +1,6 @@
 import express from 'express';
 import Post from '../models/Post.js';
+import Notification from '../models/Notification.js';
 import { protect, verified } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -97,6 +98,18 @@ router.put('/:id/like', protect, verified, async (req, res) => {
       post.likes.push(req.user._id);
     }
     await post.save();
+
+    // Notification for like
+    if (!alreadyLiked && post.author.toString() !== req.user._id.toString()) {
+      await Notification.create({
+        recipient: post.author,
+        sender: req.user._id,
+        type: 'like',
+        post: post._id,
+        text: 'liked your post'
+      });
+    }
+
     res.json({ likes: post.likes.length, liked: !alreadyLiked });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -113,6 +126,18 @@ router.post('/:id/comment', protect, verified, async (req, res) => {
 
     post.comments.push({ user: req.user._id, text });
     await post.save();
+
+    // Notification for comment
+    if (post.author.toString() !== req.user._id.toString()) {
+      await Notification.create({
+        recipient: post.author,
+        sender: req.user._id,
+        type: 'comment',
+        post: post._id,
+        text: 'commented on your post'
+      });
+    }
+
     res.status(201).json(post.comments);
   } catch (error) {
     res.status(500).json({ message: error.message });
