@@ -230,9 +230,7 @@ export default function ExplorePage() {
     setAddedStudents(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const toggleLike = (postId) => {
-    setLikes(prev => ({ ...prev, [postId]: !prev[postId] }));
-  };
+
 
   return (
     <div className="flex flex-col min-h-screen bg-background relative overflow-x-hidden">
