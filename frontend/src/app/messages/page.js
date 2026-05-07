@@ -46,6 +46,8 @@ function MessagesContent() {
           [msg.room]: [...roomMessages, { 
             id: msg._id, 
             text: msg.text, 
+            mediaUrl: msg.mediaUrl,
+            mediaType: msg.mediaType,
             sender: msg.senderId === (u.id || u._id) ? "me" : "them",
             senderName: msg.senderName,
             senderAvatar: msg.senderAvatar,
@@ -178,6 +180,8 @@ function MessagesContent() {
                sender: m.sender?._id === (u.id || u._id) ? "me" : "them",
                senderName: m.sender?.name || "Student",
                senderAvatar: m.sender?.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.sender?.name || "U")}&background=6366f1&color=fff`,
+               mediaUrl: m.mediaUrl,
+               mediaType: m.mediaType,
                time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
              }));
              setMessages(prev => ({ ...prev, [activeChat.id]: formattedMsgs }));
@@ -384,7 +388,18 @@ function MessagesContent() {
                           {activeChat.type === "group" && msg.sender === "them" && (
                             <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 -rotate-45 translate-x-8 -translate-y-8 pointer-events-none" />
                           )}
-                          {msg.text}
+                          
+                          {msg.mediaUrl && (
+                            <div className="mb-2 rounded-lg overflow-hidden border border-white/10">
+                              {msg.mediaType === 'video' ? (
+                                <video src={msg.mediaUrl} controls className="max-w-full h-auto max-h-60 object-cover" />
+                              ) : (
+                                <img src={msg.mediaUrl} alt="Shared media" className="max-w-full h-auto max-h-60 object-cover" />
+                              )}
+                            </div>
+                          )}
+                          
+                          {msg.text && <div>{msg.text}</div>}
                         </div>
                         <span className="text-[9px] text-muted mt-1 px-1">{msg.time}</span>
                       </div>

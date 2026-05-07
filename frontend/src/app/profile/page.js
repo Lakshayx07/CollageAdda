@@ -4,6 +4,7 @@ import { LogOut, Edit3, X, Check, Plus, Grid, Heart, MessageCircle, Send, Chevro
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import UniversityBadges from "@/components/UniversityBadges";
+import VerifiedBadge from "@/components/VerifiedBadge";
 
 const INTEREST_OPTIONS = ["Music 🎵", "Cricket 🏏", "Coding 💻", "Art 🎨", "Travel ✈️", "Gaming 🎮", "Books 📚", "Fitness 💪", "Movies 🎬", "Cooking 🍳"];
 const SPORT_OPTIONS = ["Football ⚽", "Basketball 🏀", "Cricket 🏏", "Tennis 🎾", "Badminton 🏸", "Volleyball 🏐", "Table Tennis 🏓", "Athletics 🏃", "Swimming 🏊", "Chess ♟️"];
@@ -21,6 +22,7 @@ export default function ProfilePage() {
   const [touchEnd, setTouchEnd] = useState(null);
   const [shareSearchTerm, setShareSearchTerm] = useState("");
   const [toastMsg, setToastMsg] = useState("");
+  const [userStories, setUserStories] = useState([]);
   
   const [editData, setEditData] = useState({ profilePic: "", instaId: "", snapId: "", interests: [], sports: [] });
   const [saved, setSaved] = useState(false);
@@ -37,17 +39,55 @@ export default function ProfilePage() {
   const handleNextPost = () => { if (activePostIndex !== null && activePostIndex < userPosts.length - 1) setActivePostIndex(activePostIndex + 1); };
   const handlePrevPost = () => { if (activePostIndex !== null && activePostIndex > 0) setActivePostIndex(activePostIndex - 1); };
 
-  const handleLike = () => {
+  const handleLike = async () => {
     if (activePostIndex === null) return;
+    const post = userPosts[activePostIndex];
+    const token = localStorage.getItem("collegeadda_token");
+    
+    // Optimistic UI
     setUserPosts(prev => prev.map((p, i) => i === activePostIndex ? { ...p, isLiked: !p.isLiked, likes: p.isLiked ? p.likes - 1 : p.likes + 1 } : p));
+    
+    try {
+      await fetch(`${apiUrl}/api/posts/${post.id}/like`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+    } catch (err) {
+      console.error(err);
+      // Revert on error
+      setUserPosts(prev => prev.map((p, i) => i === activePostIndex ? { ...p, isLiked: !p.isLiked, likes: p.isLiked ? p.likes - 1 : p.likes + 1 } : p));
+    }
   };
 
-  const handleAddComment = () => {
+  const handleAddComment = async () => {
     if (!commentInput.trim() || activePostIndex === null) return;
+    const post = userPosts[activePostIndex];
+    const token = localStorage.getItem("collegeadda_token");
+    const text = commentInput;
+    
+    // Optimistic UI
     setUserPosts(prev => prev.map((p, i) => i === activePostIndex ? {
-      ...p, comments: p.comments + 1, commentsList: [...p.commentsList, { id: Date.now(), author: "You", text: commentInput }]
+      ...p, 
+      comments: p.comments + 1, 
+      commentsList: [...p.commentsList, { id: Date.now(), author: user.name, text: text }]
     } : p));
+    
     setCommentInput("");
+
+    try {
+      const res = await fetch(`${apiUrl}/api/posts/${post.id}/comment`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ text })
+      });
+      if (!res.ok) throw new Error("Failed to post comment");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save comment. Please try again.");
+    }
   };
 
   const handleShare = (friend) => {
@@ -112,17 +152,27 @@ export default function ProfilePage() {
           if (myPosts.length > 0) {
             setUserPosts(myPosts.map(p => ({
               id: p._id,
-              img: p.mediaUrl || "https://picsum.photos/seed/fallback/300/300", // Fallback if no mediaUrl
+              img: p.mediaUrl || "https://picsum.photos/seed/fallback/300/300",
+              content: p.content,
               likes: p.likes?.length || 0,
               isLiked: p.likes?.includes(u._id || u.id),
               comments: p.comments?.length || 0,
               commentsList: p.comments?.map(c => ({
                 id: c._id || Math.random().toString(),
-                author: "Student",
+                author: c.user?.name || "Student",
                 text: c.text
               })) || []
             })));
           }
+        }
+
+        // Fetch my stories
+        const storyRes = await fetch(`${apiUrl}/api/stories/me`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (storyRes.ok) {
+          const storiesData = await storyRes.json();
+          setUserStories(storiesData);
         }
       } catch (err) {
         console.error(err);
@@ -152,6 +202,23 @@ export default function ProfilePage() {
     localStorage.removeItem("collegeadda_token");
     localStorage.removeItem("collegeadda_user");
     router.push("/login");
+  };
+
+  const handleUnfollow = async (targetUserId) => {
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const res = await fetch(`${apiUrl}/api/users/${targetUserId}/follow`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setFollowing(prev => prev.filter(f => f._id !== targetUserId));
+        setToastMsg("Unfollowed successfully");
+        setTimeout(() => setToastMsg(""), 2000);
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const saveProfile = async () => {
@@ -286,7 +353,10 @@ export default function ProfilePage() {
 
           {/* Name + Bio */}
           <div className="relative z-10 space-y-1">
-            <h2 className="text-xl font-extrabold text-foreground tracking-tight">{user.name}</h2>
+            <h2 className="text-xl font-extrabold text-foreground tracking-tight flex items-center">
+              {user.name}
+              <VerifiedBadge user={user} size={18} />
+            </h2>
             <p className="text-sm text-muted/80 font-medium">
               {user.university}
             </p>
@@ -436,7 +506,10 @@ export default function ProfilePage() {
                 <div key={f._id || idx} className="flex items-center space-x-3">
                   <img src={f.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(f.name)}&background=6366f1&color=fff`} alt={f.name} className="w-10 h-10 rounded-full object-cover" />
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-foreground">{f.name}</p>
+                    <p className="text-sm font-semibold text-foreground flex items-center">
+                      {f.name}
+                      <VerifiedBadge user={f} size={14} />
+                    </p>
                     <p className="text-xs text-muted">{f.university}</p>
                   </div>
                 </div>
@@ -462,10 +535,16 @@ export default function ProfilePage() {
                 <div key={f._id || idx} className="flex items-center space-x-3">
                   <img src={f.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(f.name)}&background=6366f1&color=fff`} alt={f.name} className="w-10 h-10 rounded-full object-cover" />
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-foreground">{f.name}</p>
+                    <p className="text-sm font-semibold text-foreground flex items-center">
+                      {f.name}
+                      <VerifiedBadge user={f} size={14} />
+                    </p>
                     <p className="text-xs text-muted">{f.university}</p>
                   </div>
-                  <button className="text-xs text-muted font-medium border border-border/50 px-3 py-1 rounded-xl hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 transition-colors">
+                  <button 
+                    onClick={() => handleUnfollow(f._id)}
+                    className="text-xs text-muted font-medium border border-border/50 px-3 py-1 rounded-xl hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 transition-colors"
+                  >
                     Unfollow
                   </button>
                 </div>
@@ -618,7 +697,15 @@ export default function ProfilePage() {
           </div>
           {/* Story Content */}
           <div className="flex-1 flex items-center justify-center bg-zinc-900 relative">
-             <img src="https://images.unsplash.com/photo-1523050335456-c38a7047d28c?w=800&q=80" className="w-full h-auto max-h-full object-contain" alt="Story" />
+             {userStories.length > 0 ? (
+               userStories[0].mediaType === 'video' ? (
+                 <video src={userStories[0].mediaUrl} autoPlay className="w-full h-auto max-h-full object-contain" />
+               ) : (
+                 <img src={userStories[0].mediaUrl} className="w-full h-auto max-h-full object-contain" alt="Story" />
+               )
+             ) : (
+               <div className="text-white text-sm opacity-50 italic">No active story</div>
+             )}
           </div>
           {/* Reply bar */}
           <div className="p-4 flex items-center space-x-3 bg-black">

@@ -16,6 +16,7 @@ import {
   Send
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import VerifiedBadge from "@/components/VerifiedBadge";
 import clsx from "clsx";
 
 
@@ -449,7 +450,10 @@ export default function ExplorePage() {
                               <img src={post.author?.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author?.name || 'U')}&background=6366f1&color=fff`} className="w-full h-full object-cover" alt="" />
                             </div>
                             <div className="flex-1">
-                              <p className="text-sm font-bold text-foreground leading-none">{post.author?.name || 'Student'}</p>
+                              <p className="text-sm font-bold text-foreground leading-none flex items-center">
+                                {post.author?.name || 'Student'}
+                                <VerifiedBadge user={post.author} size={14} />
+                              </p>
                               <p className="text-[10px] text-muted mt-1">{new Date(post.createdAt).toLocaleDateString()} • {new Date(post.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
                             </div>
                           </div>
@@ -645,6 +649,7 @@ export default function ExplorePage() {
                                 <div>
                                   <h2 className="text-2xl font-black text-foreground flex items-center gap-2 tracking-tight">
                                     {student.name}
+                                    <VerifiedBadge user={student} size={22} />
                                   </h2>
                                   <div className="flex flex-col mt-2 space-y-1.5">
                                     {student.year && (

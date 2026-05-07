@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Bell, Heart, MessageSquare, UserPlus, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
+import VerifiedBadge from './VerifiedBadge';
 
 export default function NotificationBell() {
   const [notifications, setNotifications] = useState([]);
@@ -185,8 +186,11 @@ export default function NotificationBell() {
                       </div>
                     </div>
                     <div className="flex-1">
-                      <p className="text-xs text-foreground leading-relaxed">
-                        <span className="font-bold">{notif.sender?.name}</span> {notif.text}
+                      <p className="text-xs text-foreground leading-relaxed flex items-center gap-1 flex-wrap">
+                        <span className="font-bold flex items-center">
+                          {notif.sender?.name}
+                          <VerifiedBadge user={notif.sender} size={12} />
+                        </span> {notif.text}
                       </p>
                       <span className="text-[10px] text-muted mt-1 block">
                         {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

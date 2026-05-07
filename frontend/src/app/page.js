@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check, Plus } from "lucide-react";
 import Image from "next/image";
 import NotificationBell from "../components/NotificationBell";
+import VerifiedBadge from "../components/VerifiedBadge";
 import clsx from "clsx";
 import { motion } from "framer-motion";
 
@@ -79,7 +80,9 @@ export default function Home() {
             text: c.text
           })) || [],
           mediaUrl: p.mediaUrl,
-          mediaType: p.mediaType
+          mediaType: p.mediaType,
+          authorFollowers: p.author?.followers || [],
+          authorFollowing: p.author?.following || []
         }));
         setPosts(formatted);
       }
@@ -253,7 +256,7 @@ export default function Home() {
   const handleShare = async (friend) => {
     const postToShare = posts.find(p => p.id === shareModal);
     if (!postToShare) return;
-    const msgText = `Check out this post on Campus Adda: "${postToShare.content}"`;
+    const msgText = postToShare.content || `Check out this ${postToShare.mediaType} on Campus Adda!`;
     
     try {
       const token = localStorage.getItem("collegeadda_token");
@@ -276,7 +279,11 @@ export default function Home() {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ text: msgText })
+          body: JSON.stringify({ 
+            text: msgText,
+            mediaUrl: postToShare.mediaUrl || '',
+            mediaType: postToShare.mediaType || 'none'
+          })
         });
         
         setToastMsg(`Post sent to ${friend.name} successfully!`);
@@ -291,6 +298,29 @@ export default function Home() {
     setShareModal(null);
     setShareSearchTerm("");
     setTimeout(() => setToastMsg(""), 2000);
+  };
+
+  const handleDeletePost = async (postId) => {
+    if (!window.confirm("Are you sure you want to delete this post?")) return;
+    
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const res = await fetch(`${apiUrl}/api/posts/${postId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (res.ok) {
+        setPosts(prev => prev.filter(p => p.id !== postId));
+        setToastMsg("Post deleted 🗑️");
+        setPostMenu(null);
+        setTimeout(() => setToastMsg(""), 2000);
+      } else {
+        alert("Failed to delete post");
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const toggleLike = async (postId) => {
@@ -478,8 +508,9 @@ export default function Home() {
                     <img src={post.avatar} alt={post.author} className="w-full h-full object-cover" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
                       {post.author}
+                      <VerifiedBadge user={{ followers: post.authorFollowers, following: post.authorFollowing }} /> 
                       <button 
                           onClick={() => handleFollow(post.authorId, post.author)}
                           className={clsx(
@@ -501,11 +532,21 @@ export default function Home() {
                   </button>
                   {postMenu === post.id && (
                     <div className="absolute right-0 mt-2 w-48 bg-surface border border-border/50 rounded-xl shadow-xl z-50 overflow-hidden animate-fade-in">
-                      <button onClick={() => { setPostMenu(null); setShareModal(post.id); }} className="w-full flex items-center space-x-2 px-4 py-3 hover:bg-surface-hover transition-colors text-sm text-foreground text-left">
-                        <Send size={16} className="text-primary" />
-                        <span>Share in Message</span>
-                      </button>
-                    </div>
+                        <button onClick={() => { setPostMenu(null); setShareModal(post.id); }} className="w-full flex items-center space-x-2 px-4 py-3 hover:bg-surface-hover transition-colors text-sm text-foreground text-left">
+                          <Send size={16} className="text-primary" />
+                          <span>Share in Message</span>
+                        </button>
+                        
+                        {(currentUser?._id === post.authorId || currentUser?.id === post.authorId) && (
+                          <button 
+                            onClick={() => handleDeletePost(post.id)} 
+                            className="w-full flex items-center space-x-2 px-4 py-3 hover:bg-red-500/10 transition-colors text-sm text-red-500 text-left border-t border-border/30"
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            <span>Delete Post</span>
+                          </button>
+                        )}
+                      </div>
                   )}
                 </div>
               </div>
