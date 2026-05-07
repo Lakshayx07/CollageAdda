@@ -50,7 +50,8 @@ export async function middleware(request) {
 
   // 2. If no user, redirect to login
   if (!user) {
-    if (path === '/') return response
+    // ALLOW the landing page to be public
+    if (path === '/') return response;
     return NextResponse.redirect(new URL('/login', request.url))
   }
 

@@ -56,6 +56,13 @@ export default function LoginPage() {
         throw new Error(data.message || 'Authentication failed');
       }
 
+      // NEW: Also sign into Supabase manually to ensure Middleware sees the session
+      const { error: supabaseError } = isSignUp 
+        ? await supabase.auth.signUp({ email, password })
+        : await supabase.auth.signInWithPassword({ email, password });
+
+      if (supabaseError) console.warn("Supabase Sync Warning:", supabaseError.message);
+
       // Save token and user info
       localStorage.setItem('collegeadda_token', data.token);
       localStorage.setItem('collegeadda_user', JSON.stringify(data));
