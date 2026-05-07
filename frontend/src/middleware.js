@@ -1,20 +1,40 @@
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
+import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 
-/**
- * Middleware to enforce onboarding completion.
- * 
- * Note: Requires '@supabase/auth-helpers-nextjs' package.
- * Run: npm install @supabase/auth-helpers-nextjs
- */
-export async function middleware(req) {
-  const res = NextResponse.next()
-  const supabase = createMiddlewareClient({ req, res })
+export async function middleware(request) {
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  })
 
-  // Refresh session if expired - required for Server Components
-  const { data: { session } } = await supabase.auth.getSession()
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
 
-  const url = new URL(req.url)
+  // Refresh session if expired
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const url = new URL(request.url)
   const path = url.pathname
 
   // 1. Exclude static assets and auth routes
@@ -25,48 +45,38 @@ export async function middleware(req) {
     path.includes('favicon.ico') ||
     ['/login', '/register', '/auth/callback'].includes(path)
   ) {
-    return res
+    return response
   }
 
-  // 2. If no session, user must go to login (unless they are already on a public page)
-  if (!session) {
-    // Optional: Allow landing page '/' to be public
-    if (path === '/') return res
-    return NextResponse.redirect(new URL('/login', req.url))
+  // 2. If no user, redirect to login
+  if (!user) {
+    if (path === '/') return response
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // 3. Check onboarding status from profiles table
+  // 3. Check onboarding status
   const { data: profile } = await supabase
     .from('profiles')
     .select('is_onboarding_complete')
-    .eq('id', session.user.id)
+    .eq('id', user.id)
     .single()
 
   const isOnboardingComplete = profile?.is_onboarding_complete
 
-  // 4. Handle Redirection Logic
+  // 4. Onboarding Redirection Logic
   if (!isOnboardingComplete && path !== '/onboarding') {
-    // Force redirect to onboarding if not complete
-    return NextResponse.redirect(new URL('/onboarding', req.url))
+    return NextResponse.redirect(new URL('/onboarding', request.url))
   }
 
   if (isOnboardingComplete && path === '/onboarding') {
-    // If onboarding is already done, don't allow access to /onboarding
-    return NextResponse.redirect(new URL('/profile', req.url))
+    return NextResponse.redirect(new URL('/profile', request.url))
   }
 
-  return res
+  return response
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 }
