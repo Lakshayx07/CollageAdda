@@ -2,7 +2,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { UserPlus, UserCheck, Search, Users, MessageCircle, Loader2, Heart, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/utils/supabase";
 
 const LAST_SEEN_KEY = "collegeadda_followers_last_seen";
 
@@ -27,77 +26,64 @@ export default function FriendsPage() {
 
   // Fetch followers and compare against last seen
   const fetchFollowerNotifications = useCallback(async () => {
+    const token = getToken();
+    if (!token) return;
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const res = await fetch(`${apiUrl}/api/users/me/followers`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const followers = await res.json();
+        setAllFollowers(followers);
 
-      const { data: followers, error } = await supabase
-        .from('follows')
-        .select(`
-          follower_id,
-          profiles!follows_follower_id_fkey(full_name, avatar_url, batch_year)
-        `)
-        .eq('following_id', user.id);
-
-      if (error) throw error;
-
-      const formatted = followers.map(f => ({
-        _id: f.follower_id,
-        name: f.profiles?.full_name || 'Student',
-        university: f.profiles?.batch_year || 'Campus',
-        profilePic: f.profiles?.avatar_url
-      }));
-
-      setAllFollowers(formatted);
-      setNewFollowersCount(0);
-      setHeartSeen(true);
+        const lastSeen = Number(localStorage.getItem(LAST_SEEN_KEY) || "0");
+        // Count followers whose account was created after last seen timestamp
+        const newOnes = followers.filter(f => {
+          if (!f.createdAt) return false;
+          return new Date(f.createdAt).getTime() > lastSeen;
+        });
+        setNewFollowersCount(newOnes.length);
+        setHeartSeen(newOnes.length === 0);
+      }
     } catch (err) {
       console.error("Error fetching follower notifications:", err);
     }
-  }, []);
+  }, [apiUrl]);
 
   const loadData = useCallback(async () => {
+    const stored = localStorage.getItem("collegeadda_user");
+    const token = getToken();
+    if (!stored || !token) { router.push("/login"); return; }
+    const u = JSON.parse(stored);
+    setUser(u);
+
     try {
-      const { data: { user: supabaseUser } } = await supabase.auth.getUser();
-      if (!supabaseUser) { router.push("/login"); return; }
-      setUser(supabaseUser);
+      const [profileRes, suggestedRes] = await Promise.all([
+        fetch(`${apiUrl}/api/users/profile`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${apiUrl}/api/users/search/query?q=${encodeURIComponent(u.university || "")}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ]);
 
-      const { data: profiles, error: pError } = await supabase
-        .from('profiles')
-        .select('*')
-        .neq('id', supabaseUser.id)
-        .limit(10);
+      if (profileRes.ok) {
+        const profileData = await profileRes.json();
+        const statusMap = {};
+        (profileData.following || []).forEach(id => {
+          statusMap[id.toString ? id.toString() : id] = "connected";
+        });
+        setFollowStatus(statusMap);
+      }
 
-      if (pError) throw pError;
-
-      const { data: following, error: fError } = await supabase
-        .from('follows')
-        .select('following_id')
-        .eq('follower_id', supabaseUser.id);
-
-      if (fError) throw fError;
-
-      const statusMap = {};
-      following.forEach(f => {
-        statusMap[f.following_id] = "connected";
-      });
-      setFollowStatus(statusMap);
-
-      setSuggestedUsers(profiles.map(p => ({
-        _id: p.id,
-        name: p.full_name,
-        profilePic: p.avatar_url,
-        university: 'Rishihood University',
-        year: p.batch_year,
-        bio: 'Student at Campus Adda'
-      })));
-
+      if (suggestedRes.ok) {
+        const data = await suggestedRes.json();
+        setSuggestedUsers(data);
+      }
     } catch (err) {
       console.error("Error loading friends data:", err);
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, [apiUrl, router]);
 
   useEffect(() => {
     loadData();
@@ -170,23 +156,13 @@ export default function FriendsPage() {
 
   const toggleFollow = async (targetId) => {
     const currentStatus = followStatus[targetId];
-    const isConnecting = currentStatus !== "connected";
-    
-    setFollowStatus(prev => ({ ...prev, [targetId]: isConnecting ? "connected" : null }));
+    setFollowStatus(prev => ({ ...prev, [targetId]: currentStatus === "connected" ? null : "connected" }));
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (isConnecting) {
-        await supabase.from('follows').insert({ follower_id: user.id, following_id: targetId });
-        await supabase.from('notifications').insert({
-          user_id: targetId,
-          sender_id: user.id,
-          type: 'connection_accepted',
-          message: `is now following you!`
-        });
-      } else {
-        await supabase.from('follows').delete().eq('follower_id', user.id).eq('following_id', targetId);
-      }
+      const token = getToken();
+      await fetch(`${apiUrl}/api/users/${targetId}/follow`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` }
+      });
     } catch (err) {
       console.error(err);
       setFollowStatus(prev => ({ ...prev, [targetId]: currentStatus }));

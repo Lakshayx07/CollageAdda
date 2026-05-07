@@ -5,9 +5,6 @@ import { useRouter } from "next/navigation";
 import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check } from "lucide-react";
 import Image from "next/image";
 import clsx from "clsx";
-import NotificationBell from "@/components/NotificationBell";
-import { supabase } from "@/utils/supabase";
-import { formatDistanceToNow } from "date-fns";
 
 export default function Home() {
   const router = useRouter();
@@ -30,49 +27,48 @@ export default function Home() {
 
   // Auth Guard: Check if user is logged in
   useEffect(() => {
-    const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push("/login");
-      } else {
-        fetchPosts();
-        fetchFriends();
-      }
-    };
-    checkUser();
+    const token = localStorage.getItem("collegeadda_token");
+    if (!token) {
+      router.push("/login");
+    } else {
+      fetchPosts();
+      fetchFriends();
+    }
   }, [router]);
 
   const fetchPosts = async () => {
     try {
-      setLoadingPosts(true);
-      const { data: postsData, error } = await supabase
-        .from('posts')
-        .select(`
-          *,
-          author:profiles!posts_user_id_fkey(id, full_name, avatar_url, batch_year)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      const formatted = postsData.map(p => ({
-        id: p.id,
-        author: p.author?.full_name || 'Anonymous Student',
-        authorId: p.user_id,
-        university: p.author?.batch_year || 'Campus',
-        avatar: p.author?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.author?.full_name || 'U')}&background=6366f1&color=fff`,
-        time: formatDistanceToNow(new Date(p.created_at), { addSuffix: true }),
-        content: p.content,
-        likes: 0, // We'll add a likes table later if needed
-        isLiked: false,
-        comments: 0,
-        commentsList: []
-      }));
-      setPosts(formatted);
+      const token = localStorage.getItem("collegeadda_token");
+      if (!token) return;
+      const res = await fetch(`${apiUrl}/api/posts`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const user = JSON.parse(localStorage.getItem('collegeadda_user') || '{}');
+        const formatted = data.map(p => ({
+          id: p._id,
+          author: p.author?.name || 'Unknown',
+          authorId: p.author?._id,
+          university: p.university,
+          avatar: p.author?.profilePic
+            ? p.author.profilePic
+            : `https://ui-avatars.com/api/?name=${encodeURIComponent(p.author?.name || 'U')}&background=6366f1&color=fff`,
+          time: new Date(p.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+          content: p.content,
+          likes: p.likes?.length || 0,
+          isLiked: p.likes?.includes(user._id || user.id),
+          comments: p.comments?.length || 0,
+          commentsList: p.comments?.map(c => ({
+            id: c._id || Math.random().toString(),
+            author: c.user?.name || 'Student',
+            text: c.text
+          })) || []
+        }));
+        setPosts(formatted);
+      }
     } catch (err) {
-      console.error("Error fetching posts:", err);
+      console.error(err);
     } finally {
       setLoadingPosts(false);
     }
@@ -80,51 +76,47 @@ export default function Home() {
 
   const fetchFriends = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from('follows')
-        .select(`
-          following_id,
-          profiles!follows_following_id_fkey(full_name, avatar_url)
-        `)
-        .eq('follower_id', user.id);
-
-      if (error) throw error;
-
-      setFriendsList(data.map(f => ({
-        id: f.following_id,
-        name: f.profiles?.full_name || 'Student',
-        avatar: f.profiles?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(f.profiles?.full_name)}&background=6366f1&color=fff`
-      })));
+      const token = localStorage.getItem("collegeadda_token");
+      if (!token) return;
+      const res = await fetch(`${apiUrl}/api/users/me/following`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setFriendsList(data.map(u => ({
+          id: u._id,
+          name: u.name,
+          avatar: u.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=6366f1&color=fff`
+        })));
+      }
     } catch (err) {
-      console.error("Error fetching friends:", err);
+      console.error(err);
     }
   };
 
   const handleCreatePost = async () => {
     if (!newPostContent.trim()) return;
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      const { error } = await supabase
-        .from('posts')
-        .insert({
-          user_id: user.id,
-          content: newPostContent,
-          post_type: 'regular'
-        });
-
-      if (error) throw error;
-
-      setNewPostContent("");
-      fetchPosts();
-      setToastMsg("Post created!");
-      setTimeout(() => setToastMsg(""), 2000);
+      const token = localStorage.getItem("collegeadda_token");
+      const res = await fetch(`${apiUrl}/api/posts`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ content: newPostContent, isAnonymous: false })
+      });
+      if (res.ok) {
+        setNewPostContent("");
+        fetchPosts();
+        setToastMsg("Post created!");
+        setTimeout(() => setToastMsg(""), 2000);
+      } else {
+        const errorData = await res.json();
+        alert(errorData.message || "Failed to create post");
+      }
     } catch (err) {
-      console.error("Error creating post:", err);
-      alert("Failed to create post");
+      console.error(err);
     }
   };
 
@@ -261,11 +253,8 @@ export default function Home() {
         <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
           Campus Adda
         </h1>
-        <div className="flex items-center space-x-2">
-          <NotificationBell />
-          <div className="w-8 h-8 rounded-full bg-surface-hover flex items-center justify-center overflow-hidden">
-            <Image src="/next.svg" alt="Logo" width={16} height={16} className="dark:invert opacity-50" />
-          </div>
+        <div className="w-8 h-8 rounded-full bg-surface-hover flex items-center justify-center">
+          <Image src="/next.svg" alt="Logo" width={16} height={16} className="dark:invert opacity-50" />
         </div>
       </header>
 
