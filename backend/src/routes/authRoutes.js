@@ -9,21 +9,37 @@ const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 };
 
+// Single source of truth: university group identified by name ONLY
 const ensureUniversityGroup = async (user) => {
-  if (!user.university) return;
+  // Normalize university name — trim whitespace, consistent casing key
+  const universityName = (user.university || '').trim();
+  if (!universityName || universityName === 'Other') return;
+
   try {
-    let universityRoom = await ChatRoom.findOne({ university: user.university, isGroup: true });
+    // Find by exact university name — this is the ONLY key used
+    let universityRoom = await ChatRoom.findOne({
+      university: universityName,
+      isGroup: true
+    });
+
     if (!universityRoom) {
-      await ChatRoom.create({
-        groupName: `${user.university} Common Group`,
-        university: user.university,
+      // Create the one canonical group for this university
+      universityRoom = await ChatRoom.create({
+        groupName: `${universityName} Common Group`,
+        university: universityName,
         isGroup: true,
         participants: [user._id]
       });
+      console.log(`Created university group for: ${universityName}`);
     } else {
-      if (!universityRoom.participants.includes(user._id)) {
+      // Add user if not already a member — safe to call multiple times
+      const alreadyMember = universityRoom.participants.some(
+        id => id.toString() === user._id.toString()
+      );
+      if (!alreadyMember) {
         universityRoom.participants.push(user._id);
         await universityRoom.save();
+        console.log(`Added ${user.email} to existing group: ${universityName}`);
       }
     }
   } catch (err) {
@@ -32,12 +48,31 @@ const ensureUniversityGroup = async (user) => {
 };
 
 // @route   POST /api/auth/register
-// @desc    Register a new user
+// @desc    Register a new user OR sync an existing OAuth user
 router.post('/register', async (req, res) => {
   const { name, email, password, university, referralCode: usedCode } = req.body;
   try {
-    const userExists = await User.findOne({ email });
-    if (userExists) return res.status(400).json({ message: 'User already exists' });
+    const existingUser = await User.findOne({ email });
+    
+    // If user already exists (e.g. Google OAuth re-registration), 
+    // update university if it was missing/Other, then return success
+    if (existingUser) {
+      // Update university if the stored one is empty or "Other" and we have a better one
+      const shouldUpdateUniversity = 
+        university &&
+        university !== 'Other' &&
+        (!existingUser.university || existingUser.university === 'Other');
+      
+      if (shouldUpdateUniversity) {
+        existingUser.university = university.trim();
+        await existingUser.save();
+      }
+
+      // Always ensure this user is in the correct university group
+      await ensureUniversityGroup(existingUser);
+
+      return res.status(400).json({ message: 'User already exists' });
+    }
 
     // Generate unique referral code (First name + random string)
     const genCode = `${name.split(' ')[0].toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
@@ -47,7 +82,6 @@ router.post('/register', async (req, res) => {
       const inviter = await User.findOne({ referralCode: usedCode.toUpperCase() });
       if (inviter) {
         referredBy = inviter._id;
-        // Reward inviter
         inviter.points += 100;
         inviter.inviteCount += 1;
         await inviter.save();
@@ -58,10 +92,10 @@ router.post('/register', async (req, res) => {
       name, 
       email, 
       password, 
-      university, 
+      university: (university || '').trim(), 
       referralCode: genCode,
       referredBy,
-      points: 50 // Signup bonus
+      points: 50
     });
 
     await ensureUniversityGroup(user);
