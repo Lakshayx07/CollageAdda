@@ -144,6 +144,7 @@ function MessagesContent() {
     };
   }, [searchParams, router]);
 
+  useEffect(() => {
     if (activeChat && socketRef.current) {
       socketRef.current.emit('join_room', activeChat.id);
       
