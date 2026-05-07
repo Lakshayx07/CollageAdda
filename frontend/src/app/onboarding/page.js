@@ -1,4 +1,5 @@
 "use client";
+// Triggering fresh deployment with detailed error logging
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -68,7 +69,10 @@ export default function OnboardingPage() {
           .from("avatars")
           .upload(fileName, avatarFile);
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error("Storage Upload Error:", uploadError);
+          throw new Error(`Upload failed: ${uploadError.message}. Did you create the 'avatars' bucket in Supabase Storage?`);
+        }
         
         const { data: { publicUrl } } = supabase.storage
           .from("avatars")
@@ -86,10 +90,13 @@ export default function OnboardingPage() {
           avatar_url: avatarUrl,
           batch_year: batchYear,
           is_onboarding_complete: true,
-          updated_at: new Date(),
-        });
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'id' });
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error("Profile Upsert Error:", profileError);
+        throw new Error(`Profile update failed: ${profileError.message}`);
+      }
 
       // 3. Create First Post
       const { error: postError } = await supabase
@@ -101,7 +108,11 @@ export default function OnboardingPage() {
           post_type: "profile_picture",
         });
 
-      if (postError) throw postError;
+      if (postError) {
+        console.error("Post Creation Error:", postError);
+        // We don't necessarily want to block onboarding if the post fails, 
+        // but for now let's track it.
+      }
 
       // 4. Update local storage user if exists (for legacy compat)
       const stored = localStorage.getItem("collegeadda_user");
@@ -116,8 +127,8 @@ export default function OnboardingPage() {
       // Success Redirect
       router.push("/profile");
     } catch (err) {
-      console.error("Onboarding Error:", err);
-      alert("Failed to complete onboarding. Please try again.");
+      console.error("FULL ONBOARDING ERROR:", err);
+      alert(`Error: ${err.message || "Failed to complete onboarding. Please try again."}`);
     } finally {
       setLoading(false);
     }
