@@ -86,7 +86,7 @@ router.get('/search/query', protect, async (req, res) => {
         { name: { $regex: q, $options: 'i' } },
         { university: { $regex: q, $options: 'i' } }
       ]
-    }).select('-password').limit(20);
+    }).select('-password').sort({ createdAt: -1 }).limit(20);
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: error.message });

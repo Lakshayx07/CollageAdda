@@ -40,6 +40,8 @@ export default function ExplorePage() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
 
   const [myFollowing, setMyFollowing] = useState([]);
+  const [commentInputs, setCommentInputs] = useState({});
+  const [activeCommentPost, setActiveCommentPost] = useState(null);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -72,6 +74,82 @@ export default function ExplorePage() {
     };
     fetchInitialData();
   }, [apiUrl]);
+
+    }
+  };
+
+  const toggleLike = async (postId) => {
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const user = JSON.parse(localStorage.getItem('collegeadda_user') || '{}');
+      const userId = user._id || user.id;
+
+      // Optimistic update
+      setSelectedCollege(prev => ({
+        ...prev,
+        postsData: prev.postsData.map(post => {
+          if (post._id === postId) {
+            const isLiked = post.likes?.includes(userId);
+            const newLikes = isLiked 
+              ? post.likes.filter(id => id !== userId)
+              : [...(post.likes || []), userId];
+            return { ...post, likes: newLikes };
+          }
+          return post;
+        })
+      }));
+
+      await fetch(`${apiUrl}/api/posts/${postId}/like`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+    } catch (err) {
+      console.error("Error toggling like:", err);
+    }
+  };
+
+  const handleComment = async (postId) => {
+    const text = commentInputs[postId];
+    if (!text?.trim()) return;
+
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const user = JSON.parse(localStorage.getItem('collegeadda_user') || '{}');
+      
+      const res = await fetch(`${apiUrl}/api/posts/${postId}/comment`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ text })
+      });
+
+      if (res.ok) {
+        const updatedPost = await res.json();
+        // The API might return the new comment or the whole post. 
+        // Based on chatController, it usually returns the created comment or similar.
+        // But for Explore, let's just update the local state optimistically or re-fetch if needed.
+        // Actually, let's just update local state with what we know.
+        setSelectedCollege(prev => ({
+          ...prev,
+          postsData: prev.postsData.map(post => {
+            if (post._id === postId) {
+              const newComment = { _id: Date.now(), user: { name: user.name, profilePic: user.profilePic }, text };
+              return { 
+                ...post, 
+                comments: [...(post.comments || []), newComment] 
+              };
+            }
+            return post;
+          })
+        }));
+        setCommentInputs(prev => ({ ...prev, [postId]: "" }));
+      }
+    } catch (err) {
+      console.error("Error posting comment:", err);
+    }
+  };
 
   const fetchCollegeDetails = async (college) => {
     try {
@@ -390,20 +468,71 @@ export default function ExplorePage() {
                               )}
                             </div>
                           )}
-                          <div className="flex items-center justify-between pt-2">
-                            <div className="flex items-center space-x-4">
-                              <button className="flex items-center space-x-1.5 text-muted hover:text-pink-500 transition-colors">
-                                <Heart size={18} />
-                                <span className="text-xs font-bold">{post.likes?.length || 0}</span>
-                              </button>
-                              <button className="flex items-center space-x-1.5 text-muted hover:text-blue-500 transition-colors">
-                                <MessageSquare size={18} />
-                                <span className="text-xs font-bold">{post.comments?.length || 0}</span>
+                          <div className="flex flex-col space-y-3 pt-2">
+                            <div className="flex items-center justify-between border-t border-border/10 pt-3">
+                              <div className="flex items-center space-x-6">
+                                <button 
+                                  onClick={() => toggleLike(post._id)}
+                                  className={clsx(
+                                    "flex items-center space-x-1.5 transition-colors group",
+                                    post.likes?.includes(JSON.parse(localStorage.getItem('collegeadda_user') || '{}')._id) ? "text-pink-500" : "text-muted hover:text-pink-500"
+                                  )}
+                                >
+                                  <Heart 
+                                    size={20} 
+                                    className={clsx(
+                                      "transition-transform group-active:scale-75", 
+                                      post.likes?.includes(JSON.parse(localStorage.getItem('collegeadda_user') || '{}')._id) && "fill-pink-500"
+                                    )} 
+                                  />
+                                  <span className="text-xs font-bold">{post.likes?.length || 0}</span>
+                                </button>
+                                <button 
+                                  onClick={() => setActiveCommentPost(activeCommentPost === post._id ? null : post._id)}
+                                  className="flex items-center space-x-1.5 text-muted hover:text-blue-500 transition-colors group"
+                                >
+                                  <MessageSquare size={20} className="transition-transform group-active:scale-75" />
+                                  <span className="text-xs font-bold">{post.comments?.length || 0}</span>
+                                </button>
+                              </div>
+                              <button 
+                                onClick={() => window.open(`https://wa.me/?text=Check out this post from ${selectedCollege.name} on CollageAdda: ${encodeURIComponent(post.content)}`, '_blank')}
+                                className="text-muted hover:text-green-500 transition-colors"
+                              >
+                                <Share2 size={20} />
                               </button>
                             </div>
-                            <button className="text-muted hover:text-green-500 transition-colors">
-                              <Share2 size={18} />
-                            </button>
+
+                            {/* Comment Section */}
+                            {activeCommentPost === post._id && (
+                              <div className="space-y-3 animate-fade-in">
+                                {post.comments?.length > 0 && (
+                                  <div className="bg-surface-hover/50 rounded-xl p-3 space-y-2 max-h-40 overflow-y-auto">
+                                    {post.comments.map((comment, i) => (
+                                      <div key={i} className="flex space-x-2 text-xs">
+                                        <span className="font-bold text-foreground">{comment.user?.name || "Student"}:</span>
+                                        <span className="text-muted">{comment.text}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                <div className="flex items-center space-x-2">
+                                  <input 
+                                    value={commentInputs[post._id] || ""}
+                                    onChange={e => setCommentInputs(prev => ({ ...prev, [post._id]: e.target.value }))}
+                                    onKeyPress={e => e.key === "Enter" && handleComment(post._id)}
+                                    placeholder="Add a comment..."
+                                    className="flex-1 bg-surface-hover border border-border/30 rounded-full px-4 py-2 text-xs text-foreground focus:outline-none focus:border-primary transition-colors"
+                                  />
+                                  <button 
+                                    onClick={() => handleComment(post._id)}
+                                    className="bg-primary text-white p-2 rounded-full hover:scale-105 active:scale-95 transition-all shadow-md shadow-primary/20"
+                                  >
+                                    <Send size={14} />
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))

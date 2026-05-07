@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check } from "lucide-react";
+import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check, Plus } from "lucide-react";
 import Image from "next/image";
 import clsx from "clsx";
+import { motion } from "framer-motion";
 
 export default function Home() {
   const router = useRouter();
@@ -21,8 +22,11 @@ export default function Home() {
   const [toastMsg, setToastMsg] = useState("");
 
   const [posts, setPosts] = useState([]);
+  const [stories, setStories] = useState([]);
   const [newPostContent, setNewPostContent] = useState("");
+  const [currentUser, setCurrentUser] = useState(null);
   const [loadingPosts, setLoadingPosts] = useState(true);
+  const [activeStory, setActiveStory] = useState(null);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
   // Auth Guard: Check if user is logged in
@@ -31,8 +35,11 @@ export default function Home() {
     if (!token) {
       router.push("/login");
     } else {
+      const u = JSON.parse(localStorage.getItem('collegeadda_user') || '{}');
+      setCurrentUser(u);
       fetchPosts();
       fetchFriends();
+      fetchStories();
     }
   }, [router]);
 
@@ -74,6 +81,9 @@ export default function Home() {
     }
   };
 
+    }
+  };
+
   const fetchFriends = async () => {
     try {
       const token = localStorage.getItem("collegeadda_token");
@@ -91,6 +101,34 @@ export default function Home() {
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const fetchStories = async () => {
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      if (!token) return;
+      const res = await fetch(`${apiUrl}/api/stories`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // Group stories by author for the horizontal bar
+        const grouped = data.reduce((acc, story) => {
+          const authorId = story.author._id || story.author.id;
+          if (!acc[authorId]) {
+            acc[authorId] = {
+              author: story.author,
+              stories: []
+            };
+          }
+          acc[authorId].stories.push(story);
+          return acc;
+        }, {});
+        setStories(Object.values(grouped));
+      }
+    } catch (err) {
+      console.error("Error fetching stories:", err);
     }
   };
 
@@ -260,12 +298,61 @@ export default function Home() {
 
       {/* Feed Content */}
       <div className="flex-1 max-w-md mx-auto w-full p-4 space-y-6">
+        
+        {/* Stories Section */}
+        <div className="flex space-x-4 overflow-x-auto no-scrollbar pb-2">
+          {/* Your Story bubble */}
+          <div className="flex flex-col items-center space-y-1 flex-shrink-0 cursor-pointer" onClick={() => router.push('/profile')}>
+            <div className="relative">
+              <div className="w-16 h-16 rounded-full p-[2px] bg-surface-hover border border-border/50 overflow-hidden">
+                <div className="w-full h-full rounded-full bg-surface flex items-center justify-center overflow-hidden">
+                   {currentUser?.profilePic ? (
+                     <img src={currentUser.profilePic} className="w-full h-full object-cover" alt="You" />
+                   ) : (
+                     <span className="text-xl font-bold">{currentUser?.name?.charAt(0) || "Y"}</span>
+                   )}
+                </div>
+              </div>
+              <div className="absolute bottom-0 right-0 w-5 h-5 bg-primary rounded-full border-2 border-background flex items-center justify-center text-white">
+                <Plus size={12} strokeWidth={3} />
+              </div>
+            </div>
+            <span className="text-[10px] text-muted font-medium">Your Story</span>
+          </div>
+
+          {/* Others' Stories */}
+          {stories.map((group) => (
+            <div 
+              key={group.author._id} 
+              className="flex flex-col items-center space-y-1 flex-shrink-0 cursor-pointer"
+              onClick={() => setActiveStory(group)}
+            >
+              <div className="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600">
+                <div className="w-full h-full rounded-full bg-background p-[2px]">
+                  <div className="w-full h-full rounded-full bg-surface flex items-center justify-center overflow-hidden">
+                    <img 
+                      src={group.author.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(group.author.name)}&background=6366f1&color=fff`} 
+                      className="w-full h-full object-cover" 
+                      alt={group.author.name} 
+                    />
+                  </div>
+                </div>
+              </div>
+              <span className="text-[10px] text-foreground font-medium truncate w-16 text-center">{group.author.name.split(' ')[0]}</span>
+            </div>
+          ))}
+        </div>
+
         {/* Create Post Prompt */}
         <div className="glass-panel p-4 rounded-2xl flex flex-col space-y-3">
           <div className="flex items-start space-x-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-secondary p-[2px] flex-shrink-0">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-secondary p-[2px] flex-shrink-0 overflow-hidden">
               <div className="w-full h-full bg-surface rounded-full flex items-center justify-center overflow-hidden">
-                <span className="text-sm">You</span>
+                {currentUser?.profilePic ? (
+                  <img src={currentUser.profilePic} className="w-full h-full object-cover" alt="You" />
+                ) : (
+                  <span className="text-sm font-bold">{currentUser?.name?.charAt(0) || "Y"}</span>
+                )}
               </div>
             </div>
             <textarea 
@@ -457,6 +544,65 @@ export default function Home() {
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Story Viewer Modal */}
+      {activeStory && (
+        <div className="fixed inset-0 z-[100] bg-black flex flex-col" onClick={() => setActiveStory(null)}>
+           {/* Progress Bars */}
+           <div className="absolute top-4 left-4 right-4 flex space-x-1 z-20">
+              {activeStory.stories.map((s, i) => (
+                <div key={i} className="h-0.5 bg-white/30 flex-1 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }} 
+                    animate={{ width: "100%" }} 
+                    transition={{ duration: 5 }} 
+                    onAnimationComplete={() => {
+                      if (i === activeStory.stories.length - 1) setActiveStory(null);
+                    }}
+                    className="h-full bg-white" 
+                  />
+                </div>
+              ))}
+           </div>
+
+           {/* Header */}
+           <div className="absolute top-8 left-4 right-4 flex justify-between items-center z-20">
+              <div className="flex items-center space-x-2">
+                <img 
+                  src={activeStory.author.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(activeStory.author.name)}&background=6366f1&color=fff`} 
+                  className="w-8 h-8 rounded-full border border-white/20" 
+                  alt="" 
+                />
+                <span className="text-white font-bold text-sm">{activeStory.author.name}</span>
+                <span className="text-white/60 text-xs">{new Date(activeStory.stories[0].createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+              </div>
+              <button onClick={() => setActiveStory(null)} className="text-white p-2">
+                <X size={24} />
+              </button>
+           </div>
+
+           {/* Content */}
+           <div className="flex-1 flex items-center justify-center">
+              {activeStory.stories[0].mediaType === 'video' ? (
+                <video src={activeStory.stories[0].mediaUrl} autoPlay className="w-full h-auto max-h-screen" />
+              ) : (
+                <img src={activeStory.stories[0].mediaUrl} className="w-full h-auto max-h-screen object-contain" alt="" />
+              )}
+           </div>
+
+           {/* Reply Bar */}
+           <div className="p-4 bg-black flex items-center space-x-4">
+              <input 
+                type="text" 
+                placeholder={`Reply to ${activeStory.author.name.split(' ')[0]}...`} 
+                className="flex-1 bg-transparent border border-white/30 rounded-full px-4 py-2 text-white text-sm focus:outline-none"
+                onClick={e => e.stopPropagation()}
+              />
+              <Heart className="text-white cursor-pointer" />
+              <Send className="text-white cursor-pointer" />
+           </div>
         </div>
       )}
 

@@ -22,7 +22,7 @@ export default function ProfilePage() {
   const [shareSearchTerm, setShareSearchTerm] = useState("");
   const [toastMsg, setToastMsg] = useState("");
   
-  const [editData, setEditData] = useState({ instaId: "", snapId: "", interests: [], sports: [] });
+  const [editData, setEditData] = useState({ profilePic: "", instaId: "", snapId: "", interests: [], sports: [] });
   const [saved, setSaved] = useState(false);
 
   const minSwipeDistance = 50;
@@ -93,6 +93,7 @@ export default function ProfilePage() {
           const profileData = await profileRes.json();
           setUser(profileData);
           setEditData({ 
+            profilePic: profileData.profilePic || "",
             instaId: profileData.instagram || "", 
             snapId: profileData.snapchat || "", 
             interests: profileData.interests || [], 
@@ -163,10 +164,11 @@ export default function ProfilePage() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
+          profilePic: editData.profilePic,
           instagram: editData.instaId,
           snapchat: editData.snapId,
           interests: editData.interests,
-          sports: editData.sports // note: sports needs to be mapped to goals or custom field if backend doesn't support sports. Assume backend accepts it or ignores it for now.
+          sports: editData.sports
         })
       });
       if (res.ok) {
@@ -237,12 +239,26 @@ export default function ProfilePage() {
             <div className="flex items-center space-x-6 relative z-10">
             {/* Avatar */}
             <div 
-              onClick={() => setModal("story")}
               className="cursor-pointer relative group w-20 h-20 sm:w-24 sm:h-24 rounded-full p-[3px] flex-shrink-0 bg-gradient-to-tr from-pink-500 via-purple-500 to-orange-400 bg-[length:200%_200%] animate-[gradient_3s_ease_infinite] shadow-[0_0_20px_rgba(219,39,119,0.3)] hover:scale-105 transition-transform"
             >
-              <div className="w-full h-full bg-background rounded-full flex items-center justify-center text-2xl sm:text-3xl font-bold text-foreground border border-background">
-                {user.name?.charAt(0)?.toUpperCase() || "?"}
+              <div 
+                onClick={() => setModal("story")}
+                className="w-full h-full bg-background rounded-full flex items-center justify-center text-2xl sm:text-3xl font-bold text-foreground border border-background overflow-hidden"
+              >
+                {user.profilePic ? (
+                  <img src={user.profilePic} alt={user.name} className="w-full h-full object-cover" />
+                ) : (
+                  user.name?.charAt(0)?.toUpperCase() || "?"
+                )}
               </div>
+              
+              {/* Instagram-style Plus Button */}
+              <button 
+                onClick={(e) => { e.stopPropagation(); setModal("avatar_options"); }}
+                className="absolute bottom-0 right-0 w-6 h-6 sm:w-8 sm:h-8 bg-primary rounded-full border-2 border-background flex items-center justify-center text-white hover:scale-110 transition-transform shadow-lg z-20"
+              >
+                <Plus size={16} strokeWidth={3} />
+              </button>
             </div>
 
             {/* Stats */}
@@ -469,6 +485,27 @@ export default function ProfilePage() {
             </div>
 
             <div className="space-y-4">
+              {/* Profile Picture */}
+              <div>
+                <label className="text-xs text-muted mb-1 block">Profile Picture URL</label>
+                <div className="flex flex-col space-y-2">
+                  <div className="flex items-center bg-surface-hover border border-border/50 rounded-xl overflow-hidden">
+                    <input
+                      value={editData.profilePic}
+                      onChange={e => setEditData(prev => ({ ...prev, profilePic: e.target.value }))}
+                      placeholder="https://example.com/avatar.jpg"
+                      className="flex-1 bg-transparent py-3 px-4 text-sm text-foreground focus:outline-none"
+                    />
+                  </div>
+                  {editData.profilePic && (
+                    <div className="flex items-center space-x-3 p-2 bg-surface-hover/50 rounded-xl border border-border/30">
+                      <img src={editData.profilePic} className="w-12 h-12 rounded-full object-cover border border-primary/30" alt="Preview" onError={(e) => e.target.src = 'https://ui-avatars.com/api/?name=Error&background=ef4444&color=fff'} />
+                      <span className="text-[10px] text-muted">Preview (looks good!)</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Instagram ID */}
               <div>
                 <label className="text-xs text-muted mb-1 block">Instagram Username</label>
@@ -571,7 +608,9 @@ export default function ProfilePage() {
           {/* Story Header */}
           <div className="absolute top-6 left-4 right-4 flex justify-between items-center z-10">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold">{user.name?.charAt(0)}</div>
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold overflow-hidden">
+                {user.profilePic ? <img src={user.profilePic} className="w-full h-full object-cover" /> : user.name?.charAt(0)}
+              </div>
               <span className="text-white font-semibold text-sm">{user.name}</span>
               <span className="text-white/60 text-xs">2h</span>
             </div>
@@ -602,7 +641,9 @@ export default function ProfilePage() {
             {/* Header */}
             <div className="p-3 flex justify-between items-center border-b border-border/50">
               <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold">{user.name?.charAt(0)}</div>
+                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold overflow-hidden">
+                  {user.profilePic ? <img src={user.profilePic} className="w-full h-full object-cover" /> : user.name?.charAt(0)}
+                </div>
                 <span className="font-bold text-foreground text-sm">{user.name}</span>
               </div>
               <button onClick={() => setModal(null)}><X size={20} className="text-muted" /></button>
@@ -695,6 +736,124 @@ export default function ProfilePage() {
               })}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── MODAL: Avatar Options (Instagram Style) ── */}
+      {modal === "avatar_options" && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={() => setModal(null)}>
+          <motion.div 
+            initial={{ y: "100%" }} 
+            animate={{ y: 0 }} 
+            className="w-full max-w-md bg-surface rounded-t-3xl p-6 space-y-4" 
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="font-bold text-lg text-foreground">Create</h3>
+              <button onClick={() => setModal(null)}><X size={20} className="text-muted" /></button>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <button 
+                onClick={() => document.getElementById('profilePicInput').click()}
+                className="flex flex-col items-center justify-center p-4 rounded-2xl bg-surface-hover border border-border/50 hover:border-primary/50 transition-all group"
+              >
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-2 group-hover:scale-110 transition-transform">
+                  <Plus size={24} />
+                </div>
+                <span className="text-sm font-bold text-foreground">Profile Pic</span>
+              </button>
+              
+              <button 
+                onClick={() => document.getElementById('storyInput').click()}
+                className="flex flex-col items-center justify-center p-4 rounded-2xl bg-surface-hover border border-border/50 hover:border-pink-500/50 transition-all group"
+              >
+                <div className="w-12 h-12 rounded-full bg-pink-500/10 flex items-center justify-center text-pink-500 mb-2 group-hover:scale-110 transition-transform">
+                  <Heart size={24} />
+                </div>
+                <span className="text-sm font-bold text-foreground">Add Story</span>
+              </button>
+            </div>
+            
+            <input 
+              type="file" 
+              id="profilePicInput" 
+              className="hidden" 
+              accept="image/*" 
+              onChange={async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                // Convert to Base64
+                const reader = new FileReader();
+                reader.onloadend = async () => {
+                  const base64String = reader.result;
+                  try {
+                    const token = localStorage.getItem("collegeadda_token");
+                    const res = await fetch(`${apiUrl}/api/users/profile`, {
+                      method: 'PUT',
+                      headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify({ profilePic: base64String })
+                    });
+                    if (res.ok) {
+                      const updatedUser = await res.json();
+                      setUser(updatedUser);
+                      localStorage.setItem("collegeadda_user", JSON.stringify(updatedUser));
+                      setToastMsg("Profile picture updated!");
+                      setModal(null);
+                      setTimeout(() => setToastMsg(""), 2000);
+                    }
+                  } catch (err) {
+                    console.error(err);
+                    alert("Failed to update profile picture");
+                  }
+                };
+                reader.readAsDataURL(file);
+              }}
+            />
+            
+            <input 
+              type="file" 
+              id="storyInput" 
+              className="hidden" 
+              accept="image/*,video/*" 
+              onChange={async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onloadend = async () => {
+                  const base64String = reader.result;
+                  try {
+                    const token = localStorage.getItem("collegeadda_token");
+                    const res = await fetch(`${apiUrl}/api/stories`, {
+                      method: 'POST',
+                      headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify({ 
+                        mediaUrl: base64String,
+                        mediaType: file.type.startsWith('video') ? 'video' : 'image'
+                      })
+                    });
+                    if (res.ok) {
+                      setToastMsg("Story shared for 24 hours! 🌟");
+                      setModal(null);
+                      setTimeout(() => setToastMsg(""), 2000);
+                    }
+                  } catch (err) {
+                    console.error(err);
+                    alert("Failed to post story");
+                  }
+                };
+                reader.readAsDataURL(file);
+              }}
+            />
+          </motion.div>
         </div>
       )}
 

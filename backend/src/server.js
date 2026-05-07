@@ -13,6 +13,7 @@ import chatRoutes from './routes/chatRoutes.js';
 import Message from './models/Message.js';
 import ChatRoom from './models/ChatRoom.js';
 import collegeRoutes from './routes/collegeRoutes.js';
+import storyRoutes from './routes/storyRoutes.js';
 
 dotenv.config();
 
@@ -45,7 +46,8 @@ const io = new Server(httpServer, { cors: corsOptions });
 
 // Middleware
 app.use(cors(corsOptions));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // API Routes
 app.get('/api/health', (req, res) => {
@@ -59,6 +61,7 @@ app.use('/api/matches', matchRoutes);
 app.use('/api/verify', verifyRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/colleges', collegeRoutes);
+app.use('/api/stories', storyRoutes);
 
 // ── Socket.io Real-time Chat ──────────────────────────────────────────────────
 const onlineUsers = new Map(); // socketId → { userId, name, university }
@@ -93,11 +96,20 @@ io.on('connection', (socket) => {
         mediaType: data.mediaType || 'none'
       });
 
-      // Update room's last message and timestamps
-      await ChatRoom.findByIdAndUpdate(data.room, { 
-        lastMessage: message._id,
-        $set: { updatedAt: Date.now() }
-      });
+      // Update room's last message, timestamps and unread counts
+      const room = await ChatRoom.findById(data.room);
+      if (room) {
+        room.lastMessage = message._id;
+        room.updatedAt = Date.now();
+        // Increment unread count for everyone except sender
+        room.participants.forEach(pId => {
+          if (pId.toString() !== data.senderId.toString()) {
+            const current = room.unreadCounts.get(pId.toString()) || 0;
+            room.unreadCounts.set(pId.toString(), current + 1);
+          }
+        });
+        await room.save();
+      }
 
       io.to(data.room).emit('receive_message', {
         ...data,

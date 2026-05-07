@@ -110,8 +110,14 @@ export const sendMessage = async (req, res) => {
       mediaType: mediaType || 'none'
     });
 
-    // Update last message in room
+    // Update last message in room and unread counts
     room.lastMessage = message._id;
+    room.participants.forEach(pId => {
+      if (pId.toString() !== req.user._id.toString()) {
+        const current = room.unreadCounts.get(pId.toString()) || 0;
+        room.unreadCounts.set(pId.toString(), current + 1);
+      }
+    });
     await room.save();
 
     const populatedMsg = await Message.findById(message._id).populate('sender', 'name profilePic');
