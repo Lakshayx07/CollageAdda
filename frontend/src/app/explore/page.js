@@ -577,7 +577,7 @@ export default function ExplorePage() {
                     </AnimatePresence>
 
                     {/* Tinder Card Stack */}
-                    <div className="relative w-full max-w-[340px] aspect-[4/5] flex items-center justify-center perspective-1000">
+                    <div className="relative w-full max-w-[340px] aspect-[4/5] flex items-center justify-center overflow-hidden">
                       {/* Empty State */}
                       {(currentStudentIndices[selectedCollege.id] || 0) >= selectedCollege.studentsData.length && (
                         <motion.div
@@ -644,58 +644,61 @@ export default function ExplorePage() {
                                 </div>
                               )}
 
-                              {/* Student Profile Photo Area */}
-                              <div className="relative h-[50%] w-full bg-muted pointer-events-none">
+                              {/* Student Profile Photo Area - always shown */}
+                              <div className="relative w-full bg-muted pointer-events-none" style={{ height: isTop ? '50%' : '100%' }}>
                                 <img src={student.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=6366f1&color=fff`} alt={student.name} className="w-full h-full object-cover" />
-                              </div>
-
-                              {/* Details Area */}
-                              <div className="flex-1 p-5 space-y-4 bg-surface overflow-y-auto custom-scrollbar flex flex-col relative z-10">
-                                <div>
-                                  <h2 className="text-2xl font-black text-foreground flex items-center gap-2 tracking-tight line-clamp-1">
-                                    {student.name}
-                                    <VerifiedBadge user={student} size={20} />
-                                  </h2>
-                                  <div className="flex flex-col mt-2 space-y-1.5">
-                                    {student.year && (
-                                      <div className="flex items-center text-foreground/90 text-[13px] font-semibold">
-                                        🎓 {student.year}
-                                      </div>
-                                    )}
-                                    <div className="flex items-center text-foreground/80 text-[12px] font-medium">
-                                      🏫 {student.university || selectedCollege.name}
-                                    </div>
-                                    <div className="flex items-center text-foreground/80 text-[12px] font-medium">
-                                      📍 {selectedCollege.location}
-                                    </div>
-                                    
-                                    {myFollowing.includes(student._id || student.id) && (
-                                      <div className="mt-1 inline-flex bg-green-500/20 text-green-500 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider self-start items-center gap-1 shadow-sm">
-                                        🤝 Already Friends
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {student.interests && student.interests.length > 0 && (
-                                  <div>
-                                    <h4 className="text-[10px] font-bold text-muted uppercase tracking-widest mb-2.5">Interests</h4>
-                                    <div className="flex flex-wrap gap-2">
-                                      {student.interests.map((interest, i) => (
-                                        <span key={i} className="px-3 py-1.5 bg-surface-hover border border-border/50 rounded-lg text-[11px] font-bold text-foreground shadow-sm">
-                                          {interest}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  </div>
+                                {/* Overlay for background cards */}
+                                {!isTop && (
+                                  <div className="absolute inset-0 bg-black/30" />
                                 )}
-
-                                <div className="pt-2 mt-auto">
-                                  <p className="text-[13px] text-foreground/80 italic leading-relaxed font-medium bg-surface-hover p-3 rounded-xl border border-border/50">
-                                    "{student.bio}"
-                                  </p>
-                                </div>
                               </div>
+
+                              {/* Details Area - only for top card */}
+                              {isTop && (
+                                <div className="flex-1 p-5 space-y-4 bg-surface overflow-y-auto custom-scrollbar flex flex-col relative z-10">
+                                  <div>
+                                    <h2 className="text-2xl font-black text-foreground flex items-center gap-2 tracking-tight line-clamp-1">
+                                      {student.name}
+                                      <VerifiedBadge user={student} size={20} />
+                                    </h2>
+                                    <div className="flex flex-col mt-2 space-y-1.5">
+                                      {student.year && (
+                                        <div className="flex items-center text-foreground/90 text-[13px] font-semibold">
+                                          🎓 {student.year}
+                                        </div>
+                                      )}
+                                      <div className="flex items-center text-foreground/80 text-[12px] font-medium">
+                                        🏫 {student.university || selectedCollege.name}
+                                      </div>
+                                      <div className="flex items-center text-foreground/80 text-[12px] font-medium">
+                                        📍 {selectedCollege.location}
+                                      </div>
+                                      {myFollowing.includes(student._id || student.id) && (
+                                        <div className="mt-1 inline-flex bg-green-500/20 text-green-500 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider self-start items-center gap-1 shadow-sm">
+                                          🤝 Already Friends
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {student.interests && student.interests.length > 0 && (
+                                    <div>
+                                      <h4 className="text-[10px] font-bold text-muted uppercase tracking-widest mb-2.5">Interests</h4>
+                                      <div className="flex flex-wrap gap-2">
+                                        {student.interests.map((interest, i) => (
+                                          <span key={i} className="px-3 py-1.5 bg-surface-hover border border-border/50 rounded-lg text-[11px] font-bold text-foreground shadow-sm">
+                                            {interest}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                  <div className="pt-2 mt-auto">
+                                    <p className="text-[13px] text-foreground/80 italic leading-relaxed font-medium bg-surface-hover p-3 rounded-xl border border-border/50">
+                                      "{student.bio}"
+                                    </p>
+                                  </div>
+                                </div>
+                              )}
                             </motion.div>
                           );
                         }).reverse()}
