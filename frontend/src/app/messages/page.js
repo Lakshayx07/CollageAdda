@@ -10,9 +10,14 @@ import { Suspense } from "react";
 import VerifiedBadge from "@/components/VerifiedBadge";
 
 function MessagesContent() {
+  const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   const [activeChat, setActiveChat] = useState(null);
   const [chats, setChats] = useState([]);
   const [messages, setMessages] = useState({});
@@ -225,7 +230,7 @@ function MessagesContent() {
     setInput("");
   };
 
-  if (!user) return null;
+  if (!isMounted || !user) return null;
 
   return (
     <div className="flex h-screen bg-[#0A0A0F] overflow-hidden">

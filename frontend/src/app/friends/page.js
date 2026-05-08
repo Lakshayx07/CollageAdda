@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { UserPlus, UserCheck, Search, Users, MessageCircle, Loader2, Heart, X, Sparkles, MapPin, Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import VerifiedBadge from "@/components/VerifiedBadge";
+import VerifiedBadge from "../../components/VerifiedBadge";
 
 const LAST_SEEN_KEY = "collegeadda_followers_last_seen";
 
 export default function FriendsPage() {
+  const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [suggestedUsers, setSuggestedUsers] = useState([]);
@@ -16,6 +17,10 @@ export default function FriendsPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Notification state
   const [allFollowers, setAllFollowers] = useState([]);
@@ -176,9 +181,10 @@ export default function FriendsPage() {
     }
   };
 
-  if (!user) return null;
+  if (!isMounted || !user) return null;
 
   return (
+    <Suspense fallback={null}>
     <div className="min-h-screen bg-[#0A0A0F] pb-24 relative overflow-hidden">
       {/* Background Noise & Glows */}
       <div className="fixed inset-0 opacity-[0.03] pointer-events-none z-0" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' }} />
@@ -436,5 +442,6 @@ export default function FriendsPage() {
         </div>
       </div>
     </div>
+    </Suspense>
   );
 }
