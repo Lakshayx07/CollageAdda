@@ -5,6 +5,7 @@ import Image from "next/image";
 import { MapPin, Mail, Lock, School, User as UserIcon, ArrowRight, Zap, Star } from "lucide-react";
 import { supabase } from "../../utils/supabase";
 import { motion, AnimatePresence } from "framer-motion";
+import clsx from "clsx";
 
 const UNIVERSITIES = [
   "Rishihood University, Sonipat",
@@ -199,21 +200,26 @@ export default function LoginPage() {
             <div className="space-y-2">
               <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-4">Your Campus</label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-white/20 group-focus-within:text-purple-500 transition-colors">
+                <div className={clsx("absolute inset-y-0 left-5 flex items-center pointer-events-none transition-colors z-10", !university ? "text-gray-800" : "text-white/20 group-focus-within:text-purple-500")}>
                   <School size={18} />
                 </div>
                 <select
                   required
                   value={university}
                   onChange={(e) => setUniversity(e.target.value)}
-                  className="w-full glass border border-white/5 rounded-2xl py-4 pl-14 pr-12 text-sm text-white focus:outline-none focus:border-purple-500/50 transition-all appearance-none cursor-pointer"
+                  className={clsx(
+                    "w-full rounded-2xl py-4 pl-14 pr-12 text-sm font-bold focus:outline-none transition-all appearance-none cursor-pointer",
+                    !university 
+                      ? "bg-gradient-to-r from-gray-200 to-gray-400 text-gray-900 border-[3px] border-gray-300 animate-[pulse_2s_ease-in-out_infinite] shadow-[0_0_25px_rgba(209,213,219,0.3)] hover:shadow-[0_0_35px_rgba(209,213,219,0.5)]"
+                      : "glass border border-white/5 text-white focus:border-purple-500/50"
+                  )}
                 >
-                  <option value="" disabled className="bg-[#0A0A0F]">Select University</option>
+                  <option value="" disabled className="bg-[#0A0A0F] text-gray-400">Select University</option>
                   {UNIVERSITIES.map(uni => (
-                    <option key={uni} value={uni} className="bg-[#0A0A0F]">{uni}</option>
+                    <option key={uni} value={uni} className="bg-[#0A0A0F] text-white">{uni}</option>
                   ))}
                 </select>
-                <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-white/20">
+                <div className={clsx("absolute inset-y-0 right-5 flex items-center pointer-events-none z-10", !university ? "text-gray-800" : "text-white/20")}>
                   <MapPin size={16} />
                 </div>
               </div>
