@@ -270,7 +270,7 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-background relative overflow-x-hidden">
       {/* Top Header */}
-      <header className="sticky top-0 z-40 glass border-b border-white/10 px-6 py-4 flex justify-between items-center">
+      <header className="lg:hidden sticky top-0 z-40 glass border-b border-white/10 px-6 py-4 flex justify-between items-center">
         <h1 className="text-2xl font-bold gradient-text tracking-tight">
           Campus Adda
         </h1>

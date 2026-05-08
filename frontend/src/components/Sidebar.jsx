@@ -42,7 +42,7 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-full w-72 glass border-r border-white/5 p-8 z-50">
+    <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-full w-64 glass border-r border-white/5 p-6 z-50">
       {/* Brand */}
       <div className="mb-12 flex items-center space-x-3">
         <div className="w-10 h-10 gradient-bg rounded-2xl flex items-center justify-center text-white shadow-lg shadow-purple-500/20">

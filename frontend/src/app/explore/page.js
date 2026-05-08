@@ -21,7 +21,12 @@ import clsx from "clsx";
 
 
 export default function ExplorePage() {
+  const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
+  
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   const [colleges, setColleges] = useState([]);
   const [search, setSearch] = useState("");
   const [selectedCollege, setSelectedCollege] = useState(null);
@@ -245,7 +250,7 @@ export default function ExplorePage() {
             exit={{ opacity: 0, x: -20 }}
             className="flex-1 flex flex-col"
           >
-            <header className="sticky top-0 z-40 glass-panel border-b border-border/50 px-4 py-4 flex flex-col space-y-4">
+            <header className="lg:hidden sticky top-0 z-40 glass-panel border-b border-border/50 px-4 py-4 flex flex-col space-y-4">
               <div className="flex items-center space-x-3">
                 <div className="bg-primary/20 p-2 rounded-xl">
                   <Building2 className="text-primary" size={20} />
@@ -617,15 +622,15 @@ export default function ExplorePage() {
                               }}
                               initial={false}
                               animate={{
-                                scale: isTop ? 1 : 1 - offset * 0.05,
-                                y: isTop ? 0 : offset * 18,
+                                scale: isTop ? 1 : 1 - offset * 0.06,
+                                y: isTop ? 0 : offset * 25,
                                 zIndex: 10 - offset,
                                 rotate: isTop && swipeDirection === 'right' ? 15 : isTop && swipeDirection === 'left' ? -15 : isTop ? dragX * 0.05 : 0,
                                 x: isTop && swipeDirection === 'right' ? 400 : isTop && swipeDirection === 'left' ? -400 : isTop ? dragX : 0,
                                 opacity: isTop && swipeDirection ? 0 : 1
                               }}
                               transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                              className="absolute w-full h-full bg-surface border border-border/50 rounded-[32px] overflow-hidden shadow-[0_20px_40px_-15px_rgba(0,0,0,0.15)] flex flex-col cursor-grab active:cursor-grabbing"
+                              className="absolute w-full h-full bg-surface border border-border/50 rounded-[32px] overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] flex flex-col cursor-grab active:cursor-grabbing"
                             >
                               {/* Stamps */}
                               {isTop && dragX > 20 && (
@@ -645,11 +650,11 @@ export default function ExplorePage() {
                               </div>
 
                               {/* Details Area */}
-                              <div className="flex-1 p-5 space-y-4 bg-surface overflow-y-auto pointer-events-none flex flex-col">
+                              <div className="flex-1 p-5 space-y-4 bg-surface overflow-y-auto custom-scrollbar flex flex-col relative z-10">
                                 <div>
-                                  <h2 className="text-2xl font-black text-foreground flex items-center gap-2 tracking-tight">
+                                  <h2 className="text-2xl font-black text-foreground flex items-center gap-2 tracking-tight line-clamp-1">
                                     {student.name}
-                                    <VerifiedBadge user={student} size={22} />
+                                    <VerifiedBadge user={student} size={20} />
                                   </h2>
                                   <div className="flex flex-col mt-2 space-y-1.5">
                                     {student.year && (

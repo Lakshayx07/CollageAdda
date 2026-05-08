@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LogOut, Edit3, X, Check, Plus, Grid, Heart, MessageCircle, Send, ChevronLeft, ChevronRight, Share2, Ghost, MapPin, Zap, Star } from "lucide-react";
+import { LogOut, Edit3, X, Check, Plus, Grid, Heart, MessageCircle, Send, ChevronLeft, ChevronRight, Share2, Ghost, MapPin, Zap, Star, Camera, Clock, Image as ImageIcon } from "lucide-react";
 
 const InstagramIcon = ({ size = 20 }) => (
   <svg 
@@ -40,7 +40,11 @@ export default function ProfilePage() {
   const [commentInput, setCommentInput] = useState("");
   const [toastMsg, setToastMsg] = useState("");
   const [userStories, setUserStories] = useState([]);
-  
+  const [activeStories, setActiveStories] = useState([]);
+  const [storyInput, setStoryInput] = useState({ imageUrl: "", caption: "" });
+  const [storyUploading, setStoryUploading] = useState(false);
+  const [viewingStoryIndex, setViewingStoryIndex] = useState(0);
+
   const [editData, setEditData] = useState({ profilePic: "", instaId: "", snapId: "", interests: [], sports: [] });
   const [saved, setSaved] = useState(false);
 
@@ -95,12 +99,18 @@ export default function ProfilePage() {
           }
         }
 
-        const storyRes = await fetch(`${apiUrl}/api/stories/me`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (storyRes.ok) {
-          const storiesData = await storyRes.json();
-          setUserStories(storiesData);
+        // Load stories from localStorage (24-hour expiry)
+        try {
+          const storedStories = JSON.parse(localStorage.getItem("collegeadda_stories") || "[]");
+          const now = Date.now();
+          const validStories = storedStories.filter(s => now - s.createdAt < 24 * 60 * 60 * 1000);
+          if (validStories.length !== storedStories.length) {
+            localStorage.setItem("collegeadda_stories", JSON.stringify(validStories));
+          }
+          setActiveStories(validStories);
+          setUserStories(validStories);
+        } catch (e) {
+          setActiveStories([]);
         }
       } catch (err) {
         console.error(err);
@@ -197,6 +207,33 @@ export default function ProfilePage() {
     }));
   };
 
+  const handleAddStory = () => {
+    if (!storyInput.imageUrl.trim()) return;
+    setStoryUploading(true);
+    try {
+      const newStory = {
+        id: Date.now().toString(),
+        imageUrl: storyInput.imageUrl,
+        caption: storyInput.caption,
+        createdAt: Date.now(),
+        user: { name: user.name, profilePic: user.profilePic }
+      };
+      const existing = JSON.parse(localStorage.getItem("collegeadda_stories") || "[]");
+      const updated = [newStory, ...existing];
+      localStorage.setItem("collegeadda_stories", JSON.stringify(updated));
+      setActiveStories(updated);
+      setUserStories(updated);
+      setStoryInput({ imageUrl: "", caption: "" });
+      setModal(null);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setStoryUploading(false);
+    }
+  };
+
+  const hasActiveStory = activeStories.length > 0;
+
   if (!user) return null;
 
   return (
@@ -206,8 +243,8 @@ export default function ProfilePage() {
       <div className="fixed bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-pink-600/10 blur-[150px] rounded-full z-0" />
       <div className="fixed inset-0 opacity-[0.03] pointer-events-none z-0" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' }} />
 
-      {/* Header */}
-      <header className="sticky top-0 z-50 glass border-b border-white/5 px-6 py-4 flex items-center justify-between">
+      {/* Header - only show on mobile, sidebar handles desktop nav */}
+      <header className="lg:hidden sticky top-0 z-40 glass border-b border-white/5 px-6 py-4 flex items-center justify-between">
         <motion.h1 
           initial={{ x: -20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
@@ -244,10 +281,18 @@ export default function ProfilePage() {
               transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
               className="absolute -inset-3 gradient-bg rounded-[3rem] opacity-30 blur-2xl group-hover:opacity-50 transition-opacity" 
             />
-            <div className="relative w-32 h-32 rounded-[2.8rem] p-[3px] gradient-bg shadow-2xl">
+            {/* Story Ring */}
+            {hasActiveStory && (
+              <div className="absolute -inset-1.5 rounded-[3rem] p-[3px] z-10 pointer-events-none"
+                style={{ background: "conic-gradient(from 0deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888, #a855f7, #7c3aed, #f09433)" }}
+              >
+                <div className="w-full h-full rounded-[2.7rem] bg-[#0A0A0F]" />
+              </div>
+            )}
+            <div className="relative w-32 h-32 rounded-[2.8rem] p-[3px] gradient-bg shadow-2xl z-20">
               <div 
-                onClick={() => setModal("story")}
-                className="w-full h-full rounded-[2.7rem] bg-[#0A0A0F] flex items-center justify-center overflow-hidden cursor-pointer active:scale-95 transition-transform"
+                onClick={() => hasActiveStory ? setModal("viewStory") : null}
+                className={`w-full h-full rounded-[2.7rem] bg-[#0A0A0F] flex items-center justify-center overflow-hidden ${hasActiveStory ? 'cursor-pointer active:scale-95 transition-transform' : ''}`}
               >
                 {user.profilePic ? (
                   <img src={user.profilePic} className="w-full h-full object-cover" />
@@ -258,8 +303,8 @@ export default function ProfilePage() {
               <motion.button 
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                onClick={() => setModal("edit")}
-                className="absolute -bottom-2 -right-2 w-10 h-10 gradient-bg rounded-2xl border-4 border-[#0A0A0F] flex items-center justify-center text-white shadow-xl"
+                onClick={() => setModal("uploadChoice")}
+                className="absolute -bottom-2 -right-2 w-10 h-10 gradient-bg rounded-2xl border-4 border-[#0A0A0F] flex items-center justify-center text-white shadow-xl z-30"
               >
                 <Plus size={20} strokeWidth={3} />
               </motion.button>
@@ -428,6 +473,20 @@ export default function ProfilePage() {
           </motion.div>
         </div>
       </div>
+
+      {/* Toast */}
+      <AnimatePresence>
+        {toastMsg && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-[200] bg-white/10 backdrop-blur-xl border border-white/20 shadow-xl px-6 py-3 rounded-full text-sm font-bold text-white"
+          >
+            {toastMsg}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* --- MODALS --- */}
       <AnimatePresence>
@@ -654,6 +713,231 @@ export default function ProfilePage() {
             </motion.div>
           </motion.div>
         )}
+
+        {/* ====== UPLOAD CHOICE MODAL ====== */}
+        {modal === "uploadChoice" && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-end justify-center p-4 bg-black/80 backdrop-blur-sm"
+            onClick={() => setModal(null)}
+          >
+            <motion.div
+              initial={{ y: 80, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 80, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="w-full max-w-md bg-[#111118] border border-white/10 rounded-[2.5rem] p-6 space-y-4"
+              onClick={e => e.stopPropagation()}
+            >
+              <h3 className="text-center text-lg font-black text-white tracking-tight mb-2">What do you want to add?</h3>
+              <button
+                onClick={() => setModal("editPic")}
+                className="w-full flex items-center space-x-4 p-5 glass-card rounded-2xl border border-white/5 hover:border-purple-500/40 transition-all group"
+              >
+                <div className="w-12 h-12 gradient-bg rounded-2xl flex items-center justify-center text-white shadow-lg">
+                  <Camera size={22} />
+                </div>
+                <div className="text-left">
+                  <p className="font-black text-white text-sm">Profile Picture</p>
+                  <p className="text-[11px] text-white/40 font-medium mt-0.5">Visible to everyone, always</p>
+                </div>
+              </button>
+              <button
+                onClick={() => setModal("addStory")}
+                className="w-full flex items-center space-x-4 p-5 glass-card rounded-2xl border border-white/5 hover:border-pink-500/40 transition-all group"
+              >
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg"
+                  style={{ background: "linear-gradient(135deg, #f09433, #dc2743, #bc1888)" }}
+                >
+                  <ImageIcon size={22} />
+                </div>
+                <div className="text-left">
+                  <p className="font-black text-white text-sm">Add Story</p>
+                  <p className="text-[11px] text-white/40 font-medium mt-0.5 flex items-center gap-1">
+                    <Clock size={10} /> Disappears after 24 hours
+                  </p>
+                </div>
+              </button>
+              <button onClick={() => setModal(null)} className="w-full py-3 text-white/30 text-sm font-bold">Cancel</button>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* ====== EDIT PROFILE PIC MODAL ====== */}
+        {modal === "editPic" && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-end justify-center p-4 bg-black/80 backdrop-blur-sm"
+            onClick={() => setModal(null)}
+          >
+            <motion.div
+              initial={{ y: 80, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 80, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="w-full max-w-md bg-[#111118] border border-white/10 rounded-[2.5rem] p-6 space-y-4"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-black text-white">Update Profile Picture</h3>
+                <button onClick={() => setModal(null)} className="p-2 glass rounded-full text-white/30"><X size={18} /></button>
+              </div>
+              {/* Preview */}
+              {editData.profilePic && (
+                <div className="flex justify-center">
+                  <div className="w-24 h-24 rounded-[1.5rem] overflow-hidden border-2 border-purple-500/50">
+                    <img src={editData.profilePic} className="w-full h-full object-cover" onError={e => e.target.style.display='none'} />
+                  </div>
+                </div>
+              )}
+              <div className="space-y-2">
+                <label className="text-[11px] text-white/30 font-bold uppercase tracking-widest">Image URL</label>
+                <input
+                  value={editData.profilePic}
+                  onChange={e => setEditData(prev => ({ ...prev, profilePic: e.target.value }))}
+                  placeholder="https://example.com/your-photo.jpg"
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-sm text-white focus:outline-none focus:border-purple-500/50 transition-colors placeholder-white/20"
+                />
+              </div>
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={saveProfile}
+                className="w-full gradient-bg py-4 rounded-2xl text-sm font-black text-white uppercase tracking-widest shadow-xl shadow-purple-500/20"
+              >
+                {saved ? "Saved! ✅" : "Save Picture"}
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* ====== ADD STORY MODAL ====== */}
+        {modal === "addStory" && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-end justify-center p-4 bg-black/80 backdrop-blur-sm"
+            onClick={() => setModal(null)}
+          >
+            <motion.div
+              initial={{ y: 80, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 80, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="w-full max-w-md bg-[#111118] border border-white/10 rounded-[2.5rem] p-6 space-y-4"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-black text-white">Add Story</h3>
+                  <p className="text-[11px] text-white/30 font-medium flex items-center gap-1 mt-0.5"><Clock size={10} /> Visible for 24 hours only</p>
+                </div>
+                <button onClick={() => setModal(null)} className="p-2 glass rounded-full text-white/30"><X size={18} /></button>
+              </div>
+              {/* Preview */}
+              {storyInput.imageUrl && (
+                <div className="relative w-full aspect-[9/16] max-h-64 rounded-2xl overflow-hidden border border-white/10">
+                  <img src={storyInput.imageUrl} className="w-full h-full object-cover" onError={e => e.target.style.display='none'} />
+                  {storyInput.caption && (
+                    <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
+                      <p className="text-white text-sm font-bold text-center">{storyInput.caption}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] text-white/30 font-bold uppercase tracking-widest">Story Image URL</label>
+                  <input
+                    value={storyInput.imageUrl}
+                    onChange={e => setStoryInput(prev => ({ ...prev, imageUrl: e.target.value }))}
+                    placeholder="https://example.com/story-image.jpg"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-pink-500/50 transition-colors placeholder-white/20"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] text-white/30 font-bold uppercase tracking-widest">Caption (optional)</label>
+                  <input
+                    value={storyInput.caption}
+                    onChange={e => setStoryInput(prev => ({ ...prev, caption: e.target.value }))}
+                    placeholder="Write something..."
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-pink-500/50 transition-colors placeholder-white/20"
+                  />
+                </div>
+              </div>
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={handleAddStory}
+                disabled={storyUploading || !storyInput.imageUrl.trim()}
+                className="w-full py-4 rounded-2xl text-sm font-black text-white uppercase tracking-widest shadow-xl disabled:opacity-40"
+                style={{ background: "linear-gradient(135deg, #f09433, #dc2743, #bc1888)" }}
+              >
+                {storyUploading ? "Adding..." : "Share Story ✨"}
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* ====== VIEW STORY MODAL ====== */}
+        {modal === "viewStory" && activeStories.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] bg-black flex items-center justify-center"
+            onClick={() => setModal(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-sm h-full max-h-[90vh] flex flex-col"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Progress bars */}
+              <div className="absolute top-4 left-4 right-4 z-20 flex space-x-1">
+                {activeStories.map((_, i) => (
+                  <div key={i} className="flex-1 h-0.5 rounded-full bg-white/30 overflow-hidden">
+                    <div className={`h-full bg-white rounded-full transition-all duration-300 ${i < viewingStoryIndex ? 'w-full' : i === viewingStoryIndex ? 'w-1/2' : 'w-0'}`} />
+                  </div>
+                ))}
+              </div>
+              {/* Header */}
+              <div className="absolute top-8 left-4 right-4 z-20 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-white">
+                    {user.profilePic ? <img src={user.profilePic} className="w-full h-full object-cover" /> : <div className="w-full h-full gradient-bg flex items-center justify-center text-white font-black text-sm">{user.name?.charAt(0)}</div>}
+                  </div>
+                  <div>
+                    <p className="text-white font-black text-sm">{user.name}</p>
+                    <p className="text-white/60 text-[10px] flex items-center gap-1">
+                      <Clock size={9} />
+                      {Math.round((Date.now() - activeStories[viewingStoryIndex]?.createdAt) / 60000)}m ago · expires in {Math.round((24 * 60 - (Date.now() - activeStories[viewingStoryIndex]?.createdAt) / 60000))}m
+                    </p>
+                  </div>
+                </div>
+                <button onClick={() => setModal(null)} className="p-2 bg-white/10 rounded-full text-white"><X size={18} /></button>
+              </div>
+              {/* Story Image */}
+              <div className="w-full h-full rounded-3xl overflow-hidden relative">
+                <img src={activeStories[viewingStoryIndex]?.imageUrl} className="w-full h-full object-cover" />
+                {activeStories[viewingStoryIndex]?.caption && (
+                  <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
+                    <p className="text-white font-bold text-center text-base">{activeStories[viewingStoryIndex].caption}</p>
+                  </div>
+                )}
+                {/* Tap zones */}
+                <button className="absolute left-0 top-0 w-1/3 h-full" onClick={() => setViewingStoryIndex(Math.max(0, viewingStoryIndex - 1))} />
+                <button className="absolute right-0 top-0 w-1/3 h-full" onClick={() => viewingStoryIndex < activeStories.length - 1 ? setViewingStoryIndex(viewingStoryIndex + 1) : setModal(null)} />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
       </AnimatePresence>
     </div>
   );

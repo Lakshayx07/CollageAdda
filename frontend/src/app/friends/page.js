@@ -5,6 +5,7 @@ import { UserPlus, UserCheck, Search, Users, MessageCircle, Loader2, Heart, X, S
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import VerifiedBadge from "../../components/VerifiedBadge";
+import clsx from "clsx";
 
 const LAST_SEEN_KEY = "collegeadda_followers_last_seen";
 
@@ -192,7 +193,7 @@ export default function FriendsPage() {
       <div className="fixed bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-pink-600/10 blur-[120px] rounded-full z-0" />
 
       {/* Header */}
-      <header className="sticky top-0 z-50 glass border-b border-white/5 px-6 py-4 flex items-center justify-between">
+      <header className="lg:hidden sticky top-0 z-40 glass border-b border-white/5 px-6 py-4 flex items-center justify-between">
         <motion.div 
           initial={{ x: -20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
@@ -378,9 +379,7 @@ export default function FriendsPage() {
                           <div>
                             <div className="flex items-center space-x-2">
                               <h4 className="font-black text-xl text-white truncate tracking-tight">{person.name}</h4>
-                              {person.isVerified && (
-                                <div className="w-4 h-4 bg-cyan-500 rounded-full flex items-center justify-center text-[10px] text-white">✓</div>
-                              )}
+                              <VerifiedBadge user={person} size={16} />
                             </div>
                             <p className="text-[11px] text-purple-400 font-bold uppercase tracking-widest flex items-center mt-1">
                               <MapPin size={10} className="mr-1" />

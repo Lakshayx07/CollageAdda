@@ -18,7 +18,7 @@
   --color-primary-end: var(--primary-end);
   
   --animate-pulse-glow: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  --animate-rotate-gradient: rotate-gradient 3s linear infinite;
+  --animate-rotate-gradient: rotate-gradient 8s linear infinite;
 
   @keyframes pulse-glow {
     0%, 100% { opacity: 1; transform: scale(1); }
