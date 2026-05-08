@@ -249,14 +249,14 @@ export default function FriendsPage() {
                 </div>
 
                 <div className="max-h-[350px] overflow-y-auto custom-scrollbar p-2">
-                  {allFollowers.length === 0 ? (
+                  {(Array.isArray(allFollowers) ? allFollowers : []).length === 0 ? (
                     <div className="py-12 text-center text-white/20">
                       <Heart size={40} className="mx-auto mb-3 opacity-10" />
                       <p className="text-sm font-bold">No fans yet!</p>
                       <p className="text-[10px] mt-1 uppercase tracking-widest">Connect to get followers</p>
                     </div>
                   ) : (
-                    allFollowers.map((follower) => (
+                    (Array.isArray(allFollowers) ? allFollowers : []).map((follower) => (
                       <div
                         key={follower._id}
                         className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-2xl transition-all group"
@@ -378,7 +378,9 @@ export default function FriendsPage() {
                           <div>
                             <div className="flex items-center space-x-2">
                               <h4 className="font-black text-xl text-white truncate tracking-tight">{person.name}</h4>
-                              <VerifiedBadge user={{ followers: [], following: [] }} size={16} />
+                              {person.isVerified && (
+                                <div className="w-4 h-4 bg-cyan-500 rounded-full flex items-center justify-center text-[10px] text-white">✓</div>
+                              )}
                             </div>
                             <p className="text-[11px] text-purple-400 font-bold uppercase tracking-widest flex items-center mt-1">
                               <MapPin size={10} className="mr-1" />
