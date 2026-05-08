@@ -2,19 +2,17 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check, Plus } from "lucide-react";
+import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check, Plus, Flame, TrendingUp, Search } from "lucide-react";
 import Image from "next/image";
 import NotificationBell from "../components/NotificationBell";
 import VerifiedBadge from "../components/VerifiedBadge";
 import clsx from "clsx";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Home() {
   const router = useRouter();
 
-
   const [friendsList, setFriendsList] = useState([]);
-
   const [activeCommentPost, setActiveCommentPost] = useState(null);
   const [commentInputs, setCommentInputs] = useState({});
   const [followedUsers, setFollowedUsers] = useState({});
@@ -22,7 +20,6 @@ export default function Home() {
   const [postMenu, setPostMenu] = useState(null);
   const [shareSearchTerm, setShareSearchTerm] = useState("");
   const [toastMsg, setToastMsg] = useState("");
-
   const [posts, setPosts] = useState([]);
   const [stories, setStories] = useState([]);
   const [newPostContent, setNewPostContent] = useState("");
@@ -31,13 +28,17 @@ export default function Home() {
   const [currentUser, setCurrentUser] = useState(null);
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [activeStory, setActiveStory] = useState(null);
+  const [hoveredPost, setHoveredPost] = useState(null);
+  
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
   
   const photoInputRef = useRef(null);
   const videoInputRef = useRef(null);
-  const scrollRef = useRef(null);
 
-  // Auth Guard: Check if user is logged in
+  const trendingTopics = [
+    "Tech Fest 2024 🔥", "Exam Season 📚", "Campus Elections 🗳️", "Night Canteen 🍔", "Sports Meet ⚽", "Hackathon 💻"
+  ];
+
   useEffect(() => {
     const token = localStorage.getItem("collegeadda_token");
     if (!token) {
@@ -68,7 +69,7 @@ export default function Home() {
           university: p.university,
           avatar: p.author?.profilePic
             ? p.author.profilePic
-            : `https://ui-avatars.com/api/?name=${encodeURIComponent(p.author?.name || 'U')}&background=6366f1&color=fff`,
+            : `https://ui-avatars.com/api/?name=${encodeURIComponent(p.author?.name || 'U')}&background=7C3AED&color=fff`,
           time: new Date(p.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
           content: p.content,
           likes: p.likes?.length || 0,
@@ -105,7 +106,7 @@ export default function Home() {
         setFriendsList(data.map(u => ({
           id: u._id,
           name: u.name,
-          avatar: u.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=6366f1&color=fff`
+          avatar: u.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=7C3AED&color=fff`
         })));
       }
     } catch (err) {
@@ -122,7 +123,6 @@ export default function Home() {
       });
       if (res.ok) {
         const data = await res.json();
-        // Group stories by author for the horizontal bar
         const grouped = data.reduce((acc, story) => {
           const authorId = story.author._id || story.author.id;
           if (!acc[authorId]) {
@@ -144,7 +144,6 @@ export default function Home() {
   const handleMediaSelect = (e, type) => {
     const file = e.target.files[0];
     if (!file) return;
-    
     const reader = new FileReader();
     reader.onloadend = () => {
       setSelectedMedia(reader.result);
@@ -188,9 +187,6 @@ export default function Home() {
         setMediaType('none');
         setToastMsg("Post created! 🚀");
         setTimeout(() => setToastMsg(""), 2000);
-      } else {
-        const errorData = await res.json();
-        alert(errorData.message || "Failed to create post");
       }
     } catch (err) {
       console.error(err);
@@ -215,7 +211,6 @@ export default function Home() {
     );
     setCommentInputs(prev => ({ ...prev, [postId]: "" }));
 
-    if (typeof postId !== 'string' || !postId) return; // skip non-real posts
     try {
       const token = localStorage.getItem("collegeadda_token");
       await fetch(`${apiUrl}/api/posts/${postId}/comment`, {
@@ -226,98 +221,6 @@ export default function Home() {
         },
         body: JSON.stringify({ text })
       });
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleFollow = async (authorId, authorName) => {
-    if (!authorId) return;
-    const currentlyFollowing = followedUsers[authorId];
-    // Optimistic update
-    setFollowedUsers(prev => ({ ...prev, [authorId]: !currentlyFollowing }));
-    setToastMsg(currentlyFollowing ? `Unfollowed ${authorName}` : `Now following ${authorName}`);
-    setTimeout(() => setToastMsg(""), 2000);
-    try {
-      const token = localStorage.getItem("collegeadda_token");
-      await fetch(`${apiUrl}/api/users/${authorId}/follow`, {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      // Refresh friends list after follow/unfollow
-      fetchFriends();
-    } catch (err) {
-      console.error(err);
-      // Revert on failure
-      setFollowedUsers(prev => ({ ...prev, [authorId]: currentlyFollowing }));
-    }
-  };
-
-  const handleShare = async (friend) => {
-    const postToShare = posts.find(p => p.id === shareModal);
-    if (!postToShare) return;
-    const msgText = postToShare.content || `Check out this ${postToShare.mediaType} on Campus Adda!`;
-    
-    try {
-      const token = localStorage.getItem("collegeadda_token");
-      // 1. Get or create the chat room with this friend
-      const roomRes = await fetch(`${apiUrl}/api/chat/rooms`, {
-        method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ targetUserId: friend.id })
-      });
-      
-      if (roomRes.ok) {
-        const room = await roomRes.json();
-        // 2. Send the message to the room
-        await fetch(`${apiUrl}/api/chat/rooms/${room._id}/messages`, {
-          method: 'POST',
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ 
-            text: msgText,
-            mediaUrl: postToShare.mediaUrl || '',
-            mediaType: postToShare.mediaType || 'none'
-          })
-        });
-        
-        setToastMsg(`Post sent to ${friend.name} successfully!`);
-      } else {
-        setToastMsg(`Failed to send to ${friend.name}`);
-      }
-    } catch (err) {
-      console.error(err);
-      setToastMsg("Error sharing post");
-    }
-
-    setShareModal(null);
-    setShareSearchTerm("");
-    setTimeout(() => setToastMsg(""), 2000);
-  };
-
-  const handleDeletePost = async (postId) => {
-    if (!window.confirm("Are you sure you want to delete this post?")) return;
-    
-    try {
-      const token = localStorage.getItem("collegeadda_token");
-      const res = await fetch(`${apiUrl}/api/posts/${postId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (res.ok) {
-        setPosts(prev => prev.filter(p => p.id !== postId));
-        setToastMsg("Post deleted 🗑️");
-        setPostMenu(null);
-        setTimeout(() => setToastMsg(""), 2000);
-      } else {
-        alert("Failed to delete post");
-      }
     } catch (err) {
       console.error(err);
     }
@@ -338,7 +241,6 @@ export default function Home() {
       })
     );
     
-    if (typeof postId !== 'string' || !postId) return; // skip non-real posts
     try {
       const token = localStorage.getItem("collegeadda_token");
       await fetch(`${apiUrl}/api/posts/${postId}/like`, {
@@ -350,408 +252,500 @@ export default function Home() {
     }
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
+
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen bg-background relative overflow-x-hidden">
       {/* Top Header */}
-      <header className="sticky top-0 z-40 glass-panel border-b border-border/50 px-4 py-3 flex justify-between items-center">
-        <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+      <header className="sticky top-0 z-40 glass border-b border-white/10 px-6 py-4 flex justify-between items-center">
+        <h1 className="text-2xl font-bold gradient-text tracking-tight">
           Campus Adda
         </h1>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-4">
+          <button className="p-2 rounded-full hover:bg-white/5 transition-colors text-white/70">
+            <Search size={22} />
+          </button>
           <NotificationBell />
-          <div className="w-8 h-8 rounded-full bg-surface-hover flex items-center justify-center">
-            <Image src="/next.svg" alt="Logo" width={16} height={16} className="dark:invert opacity-50" />
+          <div 
+            onClick={() => router.push('/profile')}
+            className="w-9 h-9 rounded-full p-[2px] gradient-bg cursor-pointer hover:scale-110 transition-transform"
+          >
+            <div className="w-full h-full rounded-full bg-[#0A0A0F] flex items-center justify-center overflow-hidden">
+              {currentUser?.profilePic ? (
+                <img src={currentUser.profilePic} className="w-full h-full object-cover" alt="Me" />
+              ) : (
+                <span className="text-sm font-bold">{currentUser?.name?.charAt(0) || "U"}</span>
+              )}
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Feed Content */}
-      <div className="flex-1 max-w-md mx-auto w-full p-4 space-y-6">
+      {/* Main Feed Container */}
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+        className="flex-1 max-w-xl mx-auto w-full p-4 space-y-8"
+      >
         
         {/* Stories Section */}
-        <div className="flex space-x-4 overflow-x-auto no-scrollbar pb-2">
-          {/* Your Story bubble */}
-          <div className="flex flex-col items-center space-y-1 flex-shrink-0 cursor-pointer" onClick={() => router.push('/profile')}>
-            <div className="relative">
-              <div className="w-16 h-16 rounded-full p-[2px] bg-surface-hover border border-border/50 overflow-hidden">
-                <div className="w-full h-full rounded-full bg-surface flex items-center justify-center overflow-hidden">
-                   {currentUser?.profilePic ? (
-                     <img src={currentUser.profilePic} className="w-full h-full object-cover" alt="You" />
-                   ) : (
-                     <span className="text-xl font-bold">{currentUser?.name?.charAt(0) || "Y"}</span>
-                   )}
-                </div>
-              </div>
-              <div className="absolute bottom-0 right-0 w-5 h-5 bg-primary rounded-full border-2 border-background flex items-center justify-center text-white">
-                <Plus size={12} strokeWidth={3} />
-              </div>
-            </div>
-            <span className="text-[10px] text-muted font-medium">Your Story</span>
-          </div>
-
-          {/* Others' Stories */}
-          {stories.map((group) => (
+        <section className="space-y-3">
+          <div className="flex space-x-5 overflow-x-auto no-scrollbar py-2">
+            {/* Your Story */}
             <div 
-              key={group.author._id} 
-              className="flex flex-col items-center space-y-1 flex-shrink-0 cursor-pointer"
-              onClick={() => setActiveStory(group)}
+              className="flex flex-col items-center space-y-2 flex-shrink-0 cursor-pointer group"
+              onClick={() => router.push('/profile')}
             >
-              <div className="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600">
-                <div className="w-full h-full rounded-full bg-background p-[2px]">
-                  <div className="w-full h-full rounded-full bg-surface flex items-center justify-center overflow-hidden">
-                    <img 
-                      src={group.author.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(group.author.name)}&background=6366f1&color=fff`} 
-                      className="w-full h-full object-cover" 
-                      alt={group.author.name} 
-                    />
+              <div className="relative">
+                <div className="w-20 h-20 rounded-full p-[3px] bg-white/10 group-hover:bg-white/20 transition-all">
+                  <div className="w-full h-full rounded-full bg-[#0A0A0F] flex items-center justify-center overflow-hidden border border-white/5">
+                     {currentUser?.profilePic ? (
+                       <img src={currentUser.profilePic} className="w-full h-full object-cover" alt="You" />
+                     ) : (
+                       <span className="text-2xl font-bold text-white/50">{currentUser?.name?.charAt(0) || "Y"}</span>
+                     )}
                   </div>
                 </div>
+                <div className="absolute bottom-1 right-1 w-6 h-6 gradient-bg rounded-full border-2 border-[#0A0A0F] flex items-center justify-center text-white shadow-lg">
+                  <Plus size={14} strokeWidth={3} />
+                </div>
               </div>
-              <span className="text-[10px] text-foreground font-medium truncate w-16 text-center">{group.author.name.split(' ')[0]}</span>
+              <span className="text-xs text-white/60 font-medium">Your Story</span>
             </div>
-          ))}
-        </div>
+
+            {/* Others' Stories */}
+            {stories.map((group) => (
+              <motion.div 
+                key={group.author._id} 
+                whileHover={{ scale: 1.05 }}
+                className="flex flex-col items-center space-y-2 flex-shrink-0 cursor-pointer"
+                onClick={() => setActiveStory(group)}
+              >
+                <div className="w-20 h-20 rounded-full p-[3px] gradient-bg animate-rotate-gradient">
+                  <div className="w-full h-full rounded-full bg-[#0A0A0F] p-[2px]">
+                    <div className="w-full h-full rounded-full bg-[#1A1A1F] flex items-center justify-center overflow-hidden border border-white/10 shadow-inner">
+                      <img 
+                        src={group.author.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(group.author.name)}&background=7C3AED&color=fff`} 
+                        className="w-full h-full object-cover" 
+                        alt={group.author.name} 
+                      />
+                    </div>
+                  </div>
+                </div>
+                <span className="text-xs text-white/80 font-medium truncate w-20 text-center">{group.author.name.split(' ')[0]}</span>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
+        {/* Trending on Campus Chips */}
+        <section className="space-y-2">
+          <div className="flex items-center space-x-2 text-white/70 px-1">
+            <Flame size={16} className="text-orange-500" />
+            <span className="text-xs font-bold uppercase tracking-wider">Trending on Campus</span>
+          </div>
+          <div className="flex space-x-2 overflow-x-auto no-scrollbar py-1">
+            {trendingTopics.map((topic, i) => (
+              <button 
+                key={i} 
+                className="flex-shrink-0 glass px-4 py-2 rounded-full text-xs font-medium text-white/80 border border-white/5 hover:border-white/20 hover:bg-white/10 transition-all flex items-center space-x-1"
+              >
+                <span>{topic}</span>
+              </button>
+            ))}
+          </div>
+        </section>
 
         {/* Create Post Prompt */}
-        <div className="glass-panel p-4 rounded-2xl flex flex-col space-y-3">
-          <div className="flex items-start space-x-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-secondary p-[2px] flex-shrink-0 overflow-hidden">
-              <div className="w-full h-full bg-surface rounded-full flex items-center justify-center overflow-hidden">
+        <motion.div 
+          variants={itemVariants}
+          className="glass-card p-5 rounded-3xl flex flex-col space-y-4 shadow-2xl relative overflow-hidden group"
+        >
+          <div className="absolute top-0 left-0 w-full h-1 gradient-bg opacity-30 group-focus-within:opacity-100 transition-opacity" />
+          <div className="flex items-start space-x-4">
+            <div className="w-12 h-12 rounded-full gradient-bg p-[2px] flex-shrink-0">
+              <div className="w-full h-full bg-[#0A0A0F] rounded-full flex items-center justify-center overflow-hidden">
                 {currentUser?.profilePic ? (
                   <img src={currentUser.profilePic} className="w-full h-full object-cover" alt="You" />
                 ) : (
-                  <span className="text-sm font-bold">{currentUser?.name?.charAt(0) || "Y"}</span>
+                  <span className="text-lg font-bold">{currentUser?.name?.charAt(0) || "Y"}</span>
                 )}
               </div>
             </div>
             <textarea 
               value={newPostContent}
               onChange={(e) => setNewPostContent(e.target.value)}
-              placeholder="What's happening on campus today?"
-              className="flex-1 bg-transparent resize-none text-sm focus:outline-none text-foreground placeholder:text-muted mt-2"
-              rows={2}
+              placeholder="What's happening on campus today? ✨"
+              className="flex-1 bg-transparent resize-none text-base focus:outline-none text-white placeholder:text-white/30 mt-2 min-h-[60px]"
             ></textarea>
           </div>
 
-          {selectedMedia && (
-            <div className="relative rounded-xl overflow-hidden border border-border/50 max-h-60">
-              {mediaType === 'video' ? (
-                <video src={selectedMedia} controls className="w-full h-full object-cover" />
-              ) : (
-                <img src={selectedMedia} className="w-full h-full object-cover" alt="Preview" />
-              )}
-              <button 
-                onClick={() => { setSelectedMedia(null); setMediaType('none'); }}
-                className="absolute top-2 right-2 bg-black/50 text-white p-1.5 rounded-full hover:bg-black/70 transition-colors"
+          <AnimatePresence>
+            {selectedMedia && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="relative rounded-2xl overflow-hidden border border-white/10 max-h-72"
               >
-                <X size={14} />
-              </button>
-            </div>
-          )}
+                {mediaType === 'video' ? (
+                  <video src={selectedMedia} controls className="w-full h-full object-cover" />
+                ) : (
+                  <img src={selectedMedia} className="w-full h-full object-cover" alt="Preview" />
+                )}
+                <button 
+                  onClick={() => { setSelectedMedia(null); setMediaType('none'); }}
+                  className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white p-2 rounded-full hover:bg-black/80 transition-all border border-white/10"
+                >
+                  <X size={16} />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          <div className="flex items-center justify-between border-t border-border/50 pt-3">
-             <div className="flex space-x-4 text-muted">
-               <input 
-                 type="file" 
-                 ref={photoInputRef} 
-                 className="hidden" 
-                 accept="image/*" 
-                 onChange={(e) => handleMediaSelect(e, 'image')} 
-               />
-               <input 
-                 type="file" 
-                 ref={videoInputRef} 
-                 className="hidden" 
-                 accept="video/*" 
-                 onChange={(e) => handleMediaSelect(e, 'video')} 
-               />
+          <div className="flex items-center justify-between border-t border-white/5 pt-4">
+             <div className="flex space-x-5">
+               <input type="file" ref={photoInputRef} className="hidden" accept="image/*" onChange={(e) => handleMediaSelect(e, 'image')} />
+               <input type="file" ref={videoInputRef} className="hidden" accept="video/*" onChange={(e) => handleMediaSelect(e, 'video')} />
                
                <button 
                  onClick={() => photoInputRef.current?.click()}
-                 className="flex items-center space-x-1.5 hover:text-primary transition-colors"
+                 className="flex items-center space-x-2 text-white/50 hover:text-white transition-all group"
                >
-                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                 <span className="text-xs font-medium hidden sm:inline">Photo</span>
+                 <div className="p-2 rounded-full group-hover:bg-purple-500/10 transition-colors">
+                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                 </div>
+                 <span className="text-xs font-semibold">Photo</span>
                </button>
                <button 
                  onClick={() => videoInputRef.current?.click()}
-                 className="flex items-center space-x-1.5 hover:text-secondary transition-colors"
+                 className="flex items-center space-x-2 text-white/50 hover:text-white transition-all group"
                >
-                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-                 <span className="text-xs font-medium hidden sm:inline">Video</span>
+                 <div className="p-2 rounded-full group-hover:bg-cyan-500/10 transition-colors">
+                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                 </div>
+                 <span className="text-xs font-semibold">Video</span>
                </button>
              </div>
-             <button onClick={handleCreatePost} className="bg-primary text-white px-5 py-2 rounded-full text-xs font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
-               Post
-             </button>
+             <motion.button 
+               whileHover={{ scale: 1.05 }}
+               whileTap={{ scale: 0.95 }}
+               onClick={handleCreatePost} 
+               className="gradient-bg text-white px-7 py-2.5 rounded-full text-sm font-bold shadow-xl shadow-purple-500/20"
+             >
+               Post to Feed
+             </motion.button>
           </div>
-        </div>
+        </motion.div>
 
         {/* Posts List */}
-        <div className="space-y-4">
+        <div className="space-y-6">
           {loadingPosts && (
-            <div className="flex justify-center py-10">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
+            <div className="flex flex-col items-center justify-center py-20 space-y-4">
+              <div className="w-10 h-10 border-4 border-white/5 border-t-purple-500 rounded-full animate-spin"></div>
+              <p className="text-sm text-white/30 font-medium">Fetching campus vibes...</p>
             </div>
           )}
-          {!loadingPosts && posts.length === 0 && (
-            <div className="text-center py-10 text-muted">
-              <p className="text-lg font-semibold">No posts yet 👀</p>
-              <p className="text-sm mt-1">Be the first to post something on your campus!</p>
-            </div>
-          )}
-          {posts.map((post) => (
-            <article key={post.id} className="glass-panel rounded-2xl p-4 animate-slide-up">
-              <div className="flex items-center justify-between mb-3 relative">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-full bg-surface-hover overflow-hidden">
-                    <img src={post.avatar} alt={post.author} className="w-full h-full object-cover" />
+          
+          {!loadingPosts && posts.map((post) => (
+            <motion.article 
+              key={post.id} 
+              variants={itemVariants}
+              onMouseEnter={() => setHoveredPost(post.id)}
+              onMouseLeave={() => setHoveredPost(null)}
+              className="glass-card rounded-[2rem] p-6 relative group border-l-[3px] border-l-transparent hover:border-l-purple-500 transition-all duration-500"
+            >
+              {/* Post Header */}
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center space-x-4">
+                  <div className="relative">
+                    <div className="w-12 h-12 rounded-full p-[2px] bg-white/10 overflow-hidden">
+                      <img src={post.avatar} alt={post.author} className="w-full h-full object-cover rounded-full" />
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-[#0A0A0F] rounded-full animate-pulse"></div>
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
                       {post.author}
-                      <VerifiedBadge user={{ followers: post.authorFollowers, following: post.authorFollowing }} /> 
-                      <button 
-                          onClick={() => handleFollow(post.authorId, post.author)}
-                          className={clsx(
-                            "text-[10px] border px-2.5 py-0.5 rounded-full transition-colors font-bold tracking-wide",
-                            followedUsers[post.authorId] 
-                              ? "bg-surface-hover text-muted border-border/50"
-                              : "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
-                          )}
-                        >
-                          {followedUsers[post.authorId] ? "Following" : "Follow"}
-                        </button>
+                      <VerifiedBadge user={{ followers: post.authorFollowers, following: post.authorFollowing }} size={16} /> 
                     </h3>
-                    <p className="text-xs text-muted">{post.university} • {post.time}</p>
+                    <p className="text-xs text-white/40 font-medium">{post.university} • {post.time}</p>
                   </div>
                 </div>
-                <div className="relative">
-                  <button onClick={() => setPostMenu(postMenu === post.id ? null : post.id)} className="text-muted hover:text-foreground">
+                <div className="flex items-center space-x-2">
+                  <motion.button 
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="text-[11px] font-bold px-4 py-1.5 rounded-full border border-white/10 hover:bg-white/5 transition-all"
+                  >
+                    Follow
+                  </motion.button>
+                  <button onClick={() => setPostMenu(postMenu === post.id ? null : post.id)} className="text-white/40 hover:text-white p-1">
                     <MoreHorizontal size={20} />
                   </button>
-                  {postMenu === post.id && (
-                    <div className="absolute right-0 mt-2 w-48 bg-surface border border-border/50 rounded-xl shadow-xl z-50 overflow-hidden animate-fade-in">
-                        <button onClick={() => { setPostMenu(null); setShareModal(post.id); }} className="w-full flex items-center space-x-2 px-4 py-3 hover:bg-surface-hover transition-colors text-sm text-foreground text-left">
-                          <Send size={16} className="text-primary" />
-                          <span>Share in Message</span>
-                        </button>
-                        
-                        {(currentUser?._id === post.authorId || currentUser?.id === post.authorId) && (
-                          <button 
-                            onClick={() => handleDeletePost(post.id)} 
-                            className="w-full flex items-center space-x-2 px-4 py-3 hover:bg-red-500/10 transition-colors text-sm text-red-500 text-left border-t border-border/30"
-                          >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                            <span>Delete Post</span>
-                          </button>
-                        )}
-                      </div>
-                  )}
                 </div>
               </div>
               
+              {/* Post Content */}
               {post.content && (
-                <p className="text-sm text-foreground mb-3 leading-relaxed">
+                <p className="text-[15px] text-white/90 mb-5 leading-relaxed font-medium">
                   {post.content}
                 </p>
               )}
 
               {post.mediaUrl && (
-                <div className="rounded-xl overflow-hidden mb-4 border border-border/30 bg-surface-hover/50">
+                <div className="rounded-2xl overflow-hidden mb-5 border border-white/5 bg-black/20 shadow-inner">
                   {post.mediaType === 'video' ? (
-                    <video 
-                      src={post.mediaUrl} 
-                      controls 
-                      className="w-full h-auto max-h-[400px] object-contain mx-auto" 
-                    />
+                    <video src={post.mediaUrl} controls className="w-full h-auto max-h-[500px] object-contain" />
                   ) : (
-                    <img 
-                      src={post.mediaUrl} 
-                      alt="Post content" 
-                      className="w-full h-auto max-h-[400px] object-contain mx-auto" 
-                    />
+                    <img src={post.mediaUrl} alt="Post content" className="w-full h-auto max-h-[500px] object-contain mx-auto" />
                   )}
                 </div>
               )}
 
-              <div className="flex items-center space-x-6 border-t border-border/50 pt-3">
+              {/* Action Bar */}
+              <div className="flex items-center justify-between border-t border-white/5 pt-4">
+                <div className="flex items-center space-x-6 relative">
+                  <div className="flex flex-col items-center group/like">
+                    <motion.button 
+                      whileTap={{ scale: 1.5 }}
+                      onClick={() => toggleLike(post.id)}
+                      className={clsx(
+                        "flex items-center space-x-2 transition-all p-2 rounded-full",
+                        post.isLiked ? "text-pink-500 bg-pink-500/10" : "text-white/40 hover:text-pink-500 hover:bg-pink-500/5"
+                      )}
+                    >
+                      <Heart size={22} className={clsx("transition-all", post.isLiked && "fill-pink-500")} />
+                      <span className="text-sm font-bold">{post.likes}</span>
+                    </motion.button>
+                    
+                    {/* Emoji Reaction Bar on Hover */}
+                    {hoveredPost === post.id && !post.isLiked && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                        animate={{ opacity: 1, y: -45, scale: 1 }}
+                        className="absolute left-0 glass px-3 py-1.5 rounded-full flex space-x-3 shadow-xl border border-white/10 z-10"
+                      >
+                        {["❤️", "😂", "🔥", "😮", "🙌"].map(emoji => (
+                          <span key={emoji} className="cursor-pointer hover:scale-125 transition-transform text-lg">{emoji}</span>
+                        ))}
+                      </motion.div>
+                    )}
+                  </div>
+
+                  <button 
+                    onClick={() => setActiveCommentPost(activeCommentPost === post.id ? null : post.id)}
+                    className="flex items-center space-x-2 text-white/40 hover:text-cyan-400 hover:bg-cyan-400/5 p-2 rounded-full transition-all"
+                  >
+                    <MessageCircle size={22} />
+                    <span className="text-sm font-bold">{post.comments}</span>
+                  </button>
+                </div>
+
                 <button 
-                  onClick={() => toggleLike(post.id)}
-                  className={clsx(
-                    "flex items-center space-x-1.5 transition-colors group",
-                    post.isLiked ? "text-primary" : "text-muted hover:text-primary"
-                  )}
+                  onClick={() => setShareModal(post.id)}
+                  className="flex items-center space-x-2 text-white/40 hover:text-purple-400 hover:bg-purple-400/5 p-2 rounded-full transition-all"
                 >
-                  <Heart 
-                    size={20} 
-                    className={clsx("transition-transform group-active:scale-75", post.isLiked && "fill-primary")} 
-                  />
-                  <span className="text-xs font-medium">{post.likes}</span>
-                </button>
-                <button 
-                  onClick={() => setActiveCommentPost(activeCommentPost === post.id ? null : post.id)}
-                  className="flex items-center space-x-1.5 text-muted hover:text-secondary transition-colors group"
-                >
-                  <MessageCircle size={20} className="transition-transform group-active:scale-75" />
-                  <span className="text-xs font-medium">{post.comments}</span>
-                </button>
-                <button 
-                  onClick={() => {
-                    const text = post.content ? post.content : "Check out this media post on Campus Adda!";
-                    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-                  }}
-                  className="flex items-center space-x-1.5 text-muted hover:text-green-500 transition-colors ml-auto group"
-                >
-                  <Share2 size={18} className="transition-transform group-active:scale-75" />
-                  <span className="text-[10px] hidden sm:inline font-medium">WhatsApp</span>
+                  <Send size={20} />
                 </button>
               </div>
 
-              {/* Comment Input Box */}
-              {activeCommentPost === post.id && (
-                <div className="mt-3 border-t border-border/50 pt-3 animate-fade-in">
-                  <div className="space-y-3 mb-3 max-h-60 overflow-y-auto pr-2">
-                    {(post.commentsList || []).map(comment => (
-                      <div key={comment.id} className="flex space-x-2">
-                        <span className="font-bold text-xs">{comment.author}</span>
-                        <span className="text-xs text-foreground/90">{comment.text}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-primary to-secondary p-[1px] flex-shrink-0">
-                      <div className="w-full h-full bg-surface rounded-full flex items-center justify-center overflow-hidden">
-                        <span className="text-[10px]">You</span>
-                      </div>
+              {/* Inline Comments Section */}
+              <AnimatePresence>
+                {activeCommentPost === post.id && (
+                  <motion.div 
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="mt-4 border-t border-white/5 pt-4 overflow-hidden"
+                  >
+                    <div className="space-y-4 mb-5 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                      {(post.commentsList || []).map(comment => (
+                        <div key={comment.id} className="flex space-x-3 items-start bg-white/5 p-3 rounded-2xl">
+                          <div className="w-7 h-7 rounded-full gradient-bg p-[1px] flex-shrink-0">
+                            <div className="w-full h-full bg-[#1A1A1F] rounded-full flex items-center justify-center text-[10px] font-bold">
+                              {comment.author.charAt(0)}
+                            </div>
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-xs font-bold text-white/90">{comment.author}</p>
+                            <p className="text-xs text-white/60 mt-0.5">{comment.text}</p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <input 
-                      type="text" 
-                      value={commentInputs[post.id] || ""}
-                      onChange={(e) => setCommentInputs(prev => ({ ...prev, [post.id]: e.target.value }))}
-                      onKeyPress={(e) => e.key === "Enter" && handleComment(post.id)}
-                      placeholder={`Reply to ${post.author}...`} 
-                      className="flex-1 bg-surface-hover rounded-full px-4 py-2 text-xs focus:outline-none text-foreground border border-border/50" 
-                    />
-                    <button 
-                      onClick={() => handleComment(post.id)}
-                      className="text-xs bg-primary text-white font-bold px-3 py-1.5 rounded-full hover:scale-105 transition-transform shadow-md shadow-primary/20"
-                    >
-                      Post
-                    </button>
-                  </div>
-                </div>
-              )}
-            </article>
+                    
+                    <div className="flex items-center space-x-3 bg-white/5 p-2 rounded-full border border-white/10 focus-within:border-purple-500/50 transition-all">
+                      <input 
+                        type="text" 
+                        value={commentInputs[post.id] || ""}
+                        onChange={(e) => setCommentInputs(prev => ({ ...prev, [post.id]: e.target.value }))}
+                        onKeyPress={(e) => e.key === "Enter" && handleComment(post.id)}
+                        placeholder={`Reply to ${post.author}...`} 
+                        className="flex-1 bg-transparent px-4 py-1.5 text-sm focus:outline-none text-white placeholder:text-white/20" 
+                      />
+                      <motion.button 
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => handleComment(post.id)}
+                        className="gradient-bg p-2 rounded-full text-white shadow-lg shadow-purple-500/20"
+                      >
+                        <Send size={16} />
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.article>
           ))}
         </div>
-      </div>
+      </motion.div>
 
-      {/* Share Modal */}
+      {/* Campus Adda Share Modal */}
       {shareModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShareModal(null)}>
-          <div className="w-full max-w-md bg-surface rounded-t-3xl p-4 animate-slide-up" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-foreground text-lg">Send to...</h2>
-              <button onClick={() => setShareModal(null)} className="text-muted hover:text-foreground"><X size={20} /></button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md px-4" onClick={() => setShareModal(null)}>
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="w-full max-w-md glass-card rounded-[2.5rem] p-6 shadow-2xl border border-white/10" 
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-white tracking-tight">Share with Squad</h2>
+              <button onClick={() => setShareModal(null)} className="p-2 hover:bg-white/5 rounded-full transition-colors text-white/40"><X size={20} /></button>
             </div>
-            <div className="mb-4">
+            <div className="relative mb-6">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
               <input 
                 type="text" 
-                placeholder="Search friends..." 
+                placeholder="Find people to share with..." 
                 value={shareSearchTerm}
                 onChange={(e) => setShareSearchTerm(e.target.value)}
-                className="w-full bg-surface-hover border border-border/50 rounded-xl py-2 px-4 text-sm text-foreground focus:outline-none focus:border-primary transition-colors"
+                className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-purple-500/50 transition-all"
               />
             </div>
-            <div className="space-y-2 max-h-60 overflow-y-auto">
+            <div className="space-y-3 max-h-72 overflow-y-auto pr-1 custom-scrollbar">
               {friendsList.length === 0 && (
-                <p className="text-sm text-muted text-center py-4">Follow people to share posts with them.</p>
+                <div className="text-center py-10 space-y-2">
+                  <p className="text-white/30 text-sm">No connections found yet.</p>
+                  <button onClick={() => router.push('/friends')} className="text-purple-400 text-xs font-bold hover:underline">Find Campus Squad 🎯</button>
+                </div>
               )}
               {friendsList.filter(f => f.name.toLowerCase().includes(shareSearchTerm.toLowerCase())).map(friend => (
-                <div key={friend.id} className="flex items-center space-x-3 p-2 hover:bg-surface-hover rounded-xl transition-colors cursor-pointer" onClick={() => handleShare(friend)}>
-                  <img src={friend.avatar} alt={friend.name} className="w-10 h-10 rounded-full object-cover" />
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-foreground">{friend.name}</p>
+                <div key={friend.id} className="flex items-center justify-between p-3 hover:bg-white/5 rounded-2xl transition-all border border-transparent hover:border-white/5 group">
+                  <div className="flex items-center space-x-4">
+                    <img src={friend.avatar} alt={friend.name} className="w-11 h-11 rounded-full object-cover border border-white/10" />
+                    <p className="text-sm font-bold text-white/90">{friend.name}</p>
                   </div>
-                  <button className="bg-primary text-white text-xs font-bold px-4 py-1.5 rounded-full hover:scale-105 transition-transform shadow-md shadow-primary/20">
-                    Send
+                  <button className="gradient-bg text-white text-[11px] font-bold px-5 py-2 rounded-full shadow-lg shadow-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity">
+                    Send Now
                   </button>
                 </div>
               ))}
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
 
-      {/* Story Viewer Modal */}
+      {/* Story Viewer (Keep logic but update UI) */}
       {activeStory && (
-        <div className="fixed inset-0 z-[100] bg-black flex flex-col" onClick={() => setActiveStory(null)}>
-           {/* Progress Bars */}
-           <div className="absolute top-4 left-4 right-4 flex space-x-1 z-20">
-              {activeStory.stories.map((s, i) => (
-                <div key={i} className="h-0.5 bg-white/30 flex-1 rounded-full overflow-hidden">
-                  <motion.div 
-                    initial={{ width: 0 }} 
-                    animate={{ width: "100%" }} 
-                    transition={{ duration: 5 }} 
-                    onAnimationComplete={() => {
-                      if (i === activeStory.stories.length - 1) setActiveStory(null);
-                    }}
-                    className="h-full bg-white" 
-                  />
-                </div>
-              ))}
-           </div>
-
-           {/* Header */}
-           <div className="absolute top-8 left-4 right-4 flex justify-between items-center z-20">
-              <div className="flex items-center space-x-2">
-                <img 
-                  src={activeStory.author.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(activeStory.author.name)}&background=6366f1&color=fff`} 
-                  className="w-8 h-8 rounded-full border border-white/20" 
-                  alt="" 
-                />
-                <span className="text-white font-bold text-sm">{activeStory.author.name}</span>
-                <span className="text-white/60 text-xs">{new Date(activeStory.stories[0].createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+        <div className="fixed inset-0 z-[100] bg-[#0A0A0F] flex flex-col items-center justify-center" onClick={() => setActiveStory(null)}>
+           <div className="relative w-full max-w-lg aspect-[9/16] bg-black shadow-2xl overflow-hidden md:rounded-3xl border border-white/10">
+              {/* Progress Bars */}
+              <div className="absolute top-6 left-6 right-6 flex space-x-1.5 z-20">
+                  {activeStory.stories.map((s, i) => (
+                    <div key={i} className="h-1 bg-white/20 flex-1 rounded-full overflow-hidden">
+                      <motion.div 
+                        initial={{ width: 0 }} 
+                        animate={{ width: "100%" }} 
+                        transition={{ duration: 5 }} 
+                        onAnimationComplete={() => {
+                          if (i === activeStory.stories.length - 1) setActiveStory(null);
+                        }}
+                        className="h-full bg-white" 
+                      />
+                    </div>
+                  ))}
               </div>
-              <button onClick={() => setActiveStory(null)} className="text-white p-2">
-                <X size={24} />
-              </button>
-           </div>
 
-           {/* Content */}
-           <div className="flex-1 flex items-center justify-center">
-              {activeStory.stories[0].mediaType === 'video' ? (
-                <video src={activeStory.stories[0].mediaUrl} autoPlay className="w-full h-auto max-h-screen" />
-              ) : (
-                <img src={activeStory.stories[0].mediaUrl} className="w-full h-auto max-h-screen object-contain" alt="" />
-              )}
-           </div>
+              {/* Header */}
+              <div className="absolute top-12 left-6 right-6 flex justify-between items-center z-20">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-full p-[2px] gradient-bg">
+                      <img 
+                        src={activeStory.author.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(activeStory.author.name)}&background=7C3AED&color=fff`} 
+                        className="w-full h-full rounded-full border border-[#0A0A0F] object-cover" 
+                        alt="" 
+                      />
+                    </div>
+                    <div>
+                      <p className="text-white font-bold text-sm leading-tight">{activeStory.author.name}</p>
+                      <p className="text-white/50 text-[10px] uppercase font-bold tracking-widest">{new Date(activeStory.stories[0].createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setActiveStory(null)} className="text-white/60 hover:text-white p-2 bg-white/5 rounded-full transition-all">
+                    <X size={24} />
+                  </button>
+              </div>
 
-           {/* Reply Bar */}
-           <div className="p-4 bg-black flex items-center space-x-4">
-              <input 
-                type="text" 
-                placeholder={`Reply to ${activeStory.author.name.split(' ')[0]}...`} 
-                className="flex-1 bg-transparent border border-white/30 rounded-full px-4 py-2 text-white text-sm focus:outline-none"
-                onClick={e => e.stopPropagation()}
-              />
-              <Heart className="text-white cursor-pointer" />
-              <Send className="text-white cursor-pointer" />
+              {/* Content */}
+              <div className="w-full h-full flex items-center justify-center bg-black">
+                  {activeStory.stories[0].mediaType === 'video' ? (
+                    <video src={activeStory.stories[0].mediaUrl} autoPlay className="w-full h-full object-cover" />
+                  ) : (
+                    <img src={activeStory.stories[0].mediaUrl} className="w-full h-full object-cover" alt="" />
+                  )}
+              </div>
+
+              {/* Story Actions */}
+              <div className="absolute bottom-10 left-6 right-6 flex items-center space-x-4 z-20" onClick={e => e.stopPropagation()}>
+                  <div className="flex-1 glass rounded-full flex items-center px-5 py-3 border border-white/10">
+                    <input 
+                      type="text" 
+                      placeholder={`Reply to ${activeStory.author.name.split(' ')[0]}...`} 
+                      className="bg-transparent text-white text-sm focus:outline-none w-full"
+                    />
+                  </div>
+                  <button className="p-3 glass rounded-full text-white hover:text-pink-500 transition-colors">
+                    <Heart size={24} />
+                  </button>
+                  <button className="p-3 gradient-bg rounded-full text-white shadow-lg">
+                    <Send size={20} />
+                  </button>
+              </div>
            </div>
         </div>
       )}
 
-      {/* Toast Notification */}
-      {toastMsg && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-surface border border-border/50 px-6 py-3 rounded-full shadow-2xl z-[60] animate-fade-in flex items-center space-x-2">
-          <div className="bg-green-500/20 text-green-500 p-1 rounded-full">
-            <Check size={14} strokeWidth={3} />
-          </div>
-          <span className="text-sm font-bold text-foreground whitespace-nowrap">{toastMsg}</span>
-        </div>
-      )}
+      {/* Premium Toast */}
+      <AnimatePresence>
+        {toastMsg && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 50, scale: 0.9 }}
+            className="fixed bottom-28 left-1/2 -translate-x-1/2 glass border border-white/10 px-8 py-3.5 rounded-full shadow-2xl z-[60] flex items-center space-x-3"
+          >
+            <div className="gradient-bg text-white p-1 rounded-full">
+              <Check size={14} strokeWidth={4} />
+            </div>
+            <span className="text-sm font-bold text-white whitespace-nowrap">{toastMsg}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -1,16 +1,16 @@
 "use client";
+
 import { useState, useEffect, useRef } from "react";
-import { Search, Send, Users, ChevronLeft, Info, MessageSquare, Plus, Image as ImageIcon } from "lucide-react";
+import { Search, Send, Users, ChevronLeft, Info, MessageSquare, Plus, Image as ImageIcon, Smile, MoreVertical } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import clsx from "clsx";
 import { io } from "socket.io-client";
-
+import { motion, AnimatePresence } from "framer-motion";
 import { Suspense } from "react";
 
 function MessagesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  // ... existing MessagesPage logic ...
   const [user, setUser] = useState(null);
   const [activeChat, setActiveChat] = useState(null);
   const [chats, setChats] = useState([]);
@@ -32,14 +32,27 @@ function MessagesContent() {
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
-    // Initialize socket
     socketRef.current = io(apiUrl, { transports: ['websocket'] });
     socketRef.current.emit('user_online', { userId: u.id || u._id, name: u.name, university: u.university });
 
     socketRef.current.on('receive_message', (msg) => {
       setMessages(prev => {
         const roomMessages = prev[msg.room] || [];
+        
+        // Check if this message already exists (by ID)
         if (roomMessages.find(m => m.id === msg._id)) return prev;
+
+        // If it's my own message coming back, replace the temp one
+        const tempMsgIdx = roomMessages.findIndex(m => m.id === msg.tempId);
+        if (tempMsgIdx !== -1) {
+          const updated = [...roomMessages];
+          updated[tempMsgIdx] = {
+            ...updated[tempMsgIdx],
+            id: msg._id,
+            status: 'sent'
+          };
+          return { ...prev, [msg.room]: updated };
+        }
         
         return {
           ...prev,
@@ -73,65 +86,26 @@ function MessagesContent() {
     const fetchRooms = async () => {
       try {
         const token = localStorage.getItem("collegeadda_token");
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
         const res = await fetch(`${apiUrl}/api/chat/rooms`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
           const data = await res.json();
-          // Transform backend rooms to UI format
           const formattedRooms = data.map(room => ({
             id: room._id,
             name: room.isGroup ? (room.groupName || `${room.university} Hub`) : (room.participants.find(p => p._id !== u._id)?.name || "Chat"),
             type: room.isGroup ? "group" : "private",
-            avatar: room.isGroup ? "🏫" : (room.participants.find(p => p._id !== u._id)?.profilePic || `https://ui-avatars.com/api/?name=User&background=6366f1&color=fff`),
+            avatar: room.isGroup ? "🏫" : (room.participants.find(p => p._id !== u._id)?.profilePic || `https://ui-avatars.com/api/?name=User&background=7C3AED&color=fff`),
             lastMsg: room.lastMessage?.text || "No messages yet",
             time: room.lastMessage ? new Date(room.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "",
             unreadCount: room.unreadCounts?.[u._id] || 0
           }));
           
           setChats(formattedRooms);
-          
-          // If a chat param is provided in URL, activate it
           const chatParam = searchParams.get("chat");
           if (chatParam) {
             const found = formattedRooms.find(c => c.id === chatParam);
             if (found) setActiveChat(found);
-          }
-
-          // If a userId param is provided, get or create the private chat
-          const userIdParam = searchParams.get("userId");
-          if (userIdParam) {
-            try {
-              const resCreate = await fetch(`${apiUrl}/api/chat/rooms`, {
-                method: 'POST',
-                headers: { 
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}` 
-                },
-                body: JSON.stringify({ targetUserId: userIdParam })
-              });
-              
-              if (resCreate.ok) {
-                const newRoom = await resCreate.json();
-                const formattedNewRoom = {
-                  id: newRoom._id,
-                  name: newRoom.participants.find(p => p._id !== u._id)?.name || "Chat",
-                  type: "private",
-                  avatar: newRoom.participants.find(p => p._id !== u._id)?.profilePic || `https://ui-avatars.com/api/?name=User&background=6366f1&color=fff`,
-                  lastMsg: newRoom.lastMessage?.text || "No messages yet",
-                  time: newRoom.lastMessage ? new Date(newRoom.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""
-                };
-                
-                // Add to chats if not already there
-                if (!formattedRooms.find(c => c.id === formattedNewRoom.id)) {
-                  setChats(prev => [formattedNewRoom, ...prev]);
-                }
-                setActiveChat(formattedNewRoom);
-              }
-            } catch (err) {
-              console.error("Error creating private chat:", err);
-            }
           }
         }
       } catch (err) {
@@ -150,7 +124,6 @@ function MessagesContent() {
     if (activeChat && socketRef.current) {
       socketRef.current.emit('join_room', activeChat.id);
       
-      // Mark as seen in backend and local state
       const markSeen = async () => {
         const token = localStorage.getItem("collegeadda_token");
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
@@ -179,7 +152,7 @@ function MessagesContent() {
                text: m.text,
                sender: m.sender?._id === (u.id || u._id) ? "me" : "them",
                senderName: m.sender?.name || "Student",
-               senderAvatar: m.sender?.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.sender?.name || "U")}&background=6366f1&color=fff`,
+               senderAvatar: m.sender?.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.sender?.name || "U")}&background=7C3AED&color=fff`,
                mediaUrl: m.mediaUrl,
                mediaType: m.mediaType,
                time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -201,15 +174,34 @@ function MessagesContent() {
   const sendMessage = () => {
     if (!input.trim() || !activeChat) return;
 
+    const tempId = `temp-${Date.now()}`;
     const data = {
       room: activeChat.id,
       senderId: user._id || user.id,
       senderName: user.name,
-      senderAvatar: user.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6366f1&color=fff`,
+      senderAvatar: user.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=7C3AED&color=fff`,
       text: input,
       mediaUrl: '',
-      mediaType: 'none'
+      mediaType: 'none',
+      tempId // Add tempId to track optimistic message
     };
+
+    // Optimistic UI update
+    setMessages(prev => ({
+      ...prev,
+      [activeChat.id]: [
+        ...(prev[activeChat.id] || []),
+        {
+          id: tempId,
+          text: data.text,
+          sender: "me",
+          senderName: data.senderName,
+          senderAvatar: data.senderAvatar,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          status: 'sending'
+        }
+      ]
+    }));
     
     socketRef.current.emit('send_message', data);
     setInput("");
@@ -218,278 +210,322 @@ function MessagesContent() {
   if (!user) return null;
 
   return (
-    <div className="flex flex-col h-screen bg-background pb-safe">
-      <div className="flex flex-1 overflow-hidden">
-        {/* Chat List */}
-        <div className={clsx(
-          "w-full lg:w-80 flex flex-col border-r border-border/50 transition-all",
+    <div className="flex h-screen bg-[#0A0A0F] overflow-hidden">
+      {/* Chat List Sidebar */}
+      <motion.div 
+        initial={{ x: -20, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        className={clsx(
+          "w-full lg:w-[380px] flex flex-col border-r border-white/5 transition-all relative z-20",
           activeChat ? "hidden lg:flex" : "flex"
-        )}>
-          <header className="p-4 glass-panel border-b border-border/50 flex items-center justify-between">
-            <h1 className="text-xl font-bold text-foreground">Messages</h1>
-            <div className="bg-primary/20 p-2 rounded-full">
-              <MessageSquare size={18} className="text-primary" />
-            </div>
-          </header>
-
-          <div className="p-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
-              <input
-                type="text"
-                placeholder="Search chats..."
-                className="w-full bg-surface-hover border border-border/50 rounded-xl py-2 pl-10 pr-4 text-xs text-foreground focus:outline-none focus:border-primary transition-colors"
-              />
-            </div>
+        )}
+      >
+        <header className="p-6 pb-4">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-3xl font-bold text-white tracking-tight">Inbox</h1>
+            <motion.button 
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              className="p-3 glass rounded-2xl text-purple-400 border border-white/10"
+            >
+              <Plus size={22} />
+            </motion.button>
           </div>
 
-          <div className="flex-1 overflow-y-auto space-y-1 px-2">
-            {chats.map(chat => (
-              <button
-                key={chat.id}
-                onClick={() => setActiveChat(chat)}
-                className={clsx(
-                  "w-full flex items-center space-x-3 p-3 rounded-2xl transition-all",
-                  activeChat?.id === chat.id ? "bg-primary/10 border border-primary/20" : "hover:bg-surface-hover"
-                )}
-              >
-                <div className="w-12 h-12 rounded-full bg-surface flex items-center justify-center text-xl overflow-hidden border border-border/50">
-                  {chat.type === "group" ? chat.avatar : <img src={chat.avatar} className="w-full h-full object-cover" />}
-                </div>
-                <div className="flex-1 text-left min-w-0">
-                  <div className="flex justify-between items-center mb-0.5">
-                    <p className="font-bold text-sm text-foreground truncate">{chat.name}</p>
-                    <span className={clsx("text-[10px]", chat.unreadCount > 0 ? "text-primary font-bold" : "text-muted")}>
-                      {chat.time}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <p className={clsx("text-xs truncate flex-1", chat.unreadCount > 0 ? "text-foreground font-semibold" : "text-muted")}>
-                      {chat.lastMsg}
-                    </p>
-                    {chat.unreadCount > 0 && (
-                      <span className="ml-2 bg-primary text-white text-[10px] font-bold h-5 w-5 flex items-center justify-center rounded-full shadow-lg shadow-primary/30 animate-in zoom-in duration-300">
-                        {chat.unreadCount > 9 ? "9+" : chat.unreadCount}
-                      </span>
+          <div className="relative group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-purple-400 transition-colors" size={20} />
+            <input
+              type="text"
+              placeholder="Search conversations..."
+              className="w-full bg-white/5 border border-white/5 rounded-[1.25rem] py-3.5 pl-12 pr-4 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all"
+            />
+          </div>
+        </header>
+
+        <div className="flex-1 overflow-y-auto custom-scrollbar px-3 space-y-1 pb-20 lg:pb-4">
+          {chats.map(chat => (
+            <motion.button
+              key={chat.id}
+              whileHover={{ x: 4 }}
+              onClick={() => setActiveChat(chat)}
+              className={clsx(
+                "w-full flex items-center space-x-4 p-4 rounded-[1.5rem] transition-all group relative",
+                activeChat?.id === chat.id 
+                  ? "bg-white/5 border border-white/10 shadow-xl" 
+                  : "hover:bg-white/[0.03] border border-transparent"
+              )}
+            >
+              <div className="relative">
+                <div className="w-14 h-14 rounded-full p-[2px] gradient-bg shadow-lg">
+                  <div className="w-full h-full rounded-full bg-[#0A0A0F] flex items-center justify-center overflow-hidden">
+                    {chat.type === "group" ? (
+                      <span className="text-xl">{chat.avatar}</span>
+                    ) : (
+                      <img src={chat.avatar} className="w-full h-full object-cover" />
                     )}
                   </div>
                 </div>
-              </button>
-            ))}
-          </div>
-        </div>
+                <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-[3px] border-[#0A0A0F] rounded-full animate-pulse-glow" />
+              </div>
 
-        {/* Chat Area */}
-        <div className={clsx(
-          "flex-1 flex flex-col transition-all",
-          !activeChat ? "hidden lg:flex" : "flex"
-        )}>
-          {activeChat ? (
-            <>
-              <header className={clsx(
-                "p-4 glass-panel border-b border-border/50 flex items-center justify-between relative overflow-hidden",
-                activeChat.type === "group" && "bg-gradient-to-r from-primary/10 via-background to-secondary/10"
-              )}>
-                {activeChat.type === "group" && (
-                  <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-primary via-secondary to-primary animate-pulse" />
-                )}
-                <div className="flex items-center space-x-3 relative z-10">
-                  <button onClick={() => setActiveChat(null)} className="lg:hidden p-1 text-muted">
-                    <ChevronLeft size={24} />
-                  </button>
-                  <div className={clsx(
-                    "w-10 h-10 rounded-full bg-surface flex items-center justify-center text-lg overflow-hidden border border-border/50",
-                    activeChat.type === "group" && "ring-2 ring-primary/30 ring-offset-2 ring-offset-background"
+              <div className="flex-1 text-left min-w-0">
+                <div className="flex justify-between items-center mb-1">
+                  <p className="font-bold text-[15px] text-white truncate leading-tight">{chat.name}</p>
+                  <span className="text-[10px] text-white/30 font-medium">{chat.time}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <p className={clsx(
+                    "text-xs truncate flex-1 leading-normal",
+                    chat.unreadCount > 0 ? "text-white font-bold" : "text-white/40"
                   )}>
-                    {activeChat.type === "group" ? (
-                      <div className="w-full h-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold">
-                        {activeChat.name.charAt(0)}
-                      </div>
-                    ) : <img src={activeChat.avatar} className="w-full h-full object-cover" />}
-                  </div>
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <h2 className="font-bold text-foreground text-sm">{activeChat.name}</h2>
-                      {activeChat.type === "group" && (
-                        <span className="flex items-center px-1.5 py-0.5 rounded-full bg-primary/20 text-primary text-[8px] font-black uppercase tracking-widest animate-pulse">
-                          Live Hub
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[10px] text-primary flex items-center">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1 animate-ping" />
-                      {activeChat.type === "group" ? "24 active now" : "online"}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-1">
-                  {activeChat.type === "group" && (
-                    <button className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-colors">
-                      <Users size={20} />
-                    </button>
+                    {chat.lastMsg}
+                  </p>
+                  {chat.unreadCount > 0 && (
+                    <span className="ml-3 px-2 py-0.5 min-w-[20px] bg-[#EC4899] text-white text-[10px] font-black rounded-full shadow-lg shadow-pink-500/20">
+                      {chat.unreadCount}
+                    </span>
                   )}
-                  <button onClick={() => alert("Chat info coming soon! ℹ️")} className="text-muted p-2 hover:text-foreground">
-                    <Info size={20} />
-                  </button>
                 </div>
-              </header>
+              </div>
+              
+              {activeChat?.id === chat.id && (
+                <motion.div 
+                  layoutId="active-chat-indicator"
+                  className="absolute left-0 w-1 h-8 gradient-bg rounded-r-full"
+                />
+              )}
+            </motion.button>
+          ))}
+        </div>
+      </motion.div>
 
-              <div className={clsx(
-                "flex-1 overflow-y-auto p-4 space-y-4 relative",
-                activeChat.type === "group" && "bg-[radial-gradient(circle_at_50%_50%,rgba(99,102,241,0.05)_0%,transparent_50%)]"
-              )}>
-                {activeChat.type === "group" && (
-                   <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#6366f1 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-                )}
-                
-                <div className="flex justify-center relative z-10">
-                  <span className="text-[10px] bg-surface-hover/80 backdrop-blur-md px-3 py-1 rounded-full text-muted uppercase tracking-tighter border border-border/30">
-                    {activeChat.type === "group" ? "Verified University Community Hub" : "Encrypted conversation"}
-                  </span>
+      {/* Chat Area */}
+      <div className={clsx(
+        "flex-1 flex flex-col transition-all relative",
+        !activeChat ? "hidden lg:flex" : "flex"
+      )}>
+        {activeChat ? (
+          <>
+            {/* Chat Header */}
+            <header className="px-6 py-4 glass border-b border-white/5 flex items-center justify-between relative z-10">
+              <div className="flex items-center space-x-4">
+                <button onClick={() => setActiveChat(null)} className="lg:hidden p-2 text-white/40 hover:text-white bg-white/5 rounded-full">
+                  <ChevronLeft size={22} />
+                </button>
+                <div className="relative">
+                  <div className="w-11 h-11 rounded-full p-[2px] gradient-bg">
+                    <div className="w-full h-full rounded-full bg-[#0A0A0F] flex items-center justify-center overflow-hidden">
+                      {activeChat.type === "group" ? (
+                        <div className="w-full h-full gradient-bg flex items-center justify-center text-white font-black text-lg">
+                          {activeChat.name.charAt(0)}
+                        </div>
+                      ) : <img src={activeChat.avatar} className="w-full h-full object-cover" />}
+                    </div>
+                  </div>
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-[#0A0A0F] rounded-full" />
                 </div>
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <h2 className="font-bold text-white text-[15px]">{activeChat.name}</h2>
+                    <VerifiedBadge user={{ followers: [], following: [] }} size={14} />
+                  </div>
+                  <p className="text-[10px] text-green-500 font-bold uppercase tracking-widest flex items-center">
+                    <span className="w-1 h-1 rounded-full bg-green-500 mr-1.5" />
+                    Active Now
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <button className="p-2.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl transition-all">
+                  <Users size={20} />
+                </button>
+                <button className="p-2.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl transition-all">
+                  <MoreVertical size={20} />
+                </button>
+              </div>
+            </header>
 
+            {/* Chat Messages */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar relative">
+              <div className="flex justify-center mb-8">
+                <span className="text-[10px] glass px-4 py-1.5 rounded-full text-white/30 font-bold uppercase tracking-[0.2em] border border-white/5">
+                  Begin your secure campus connection
+                </span>
+              </div>
+
+              <AnimatePresence initial={false}>
                 {(messages[activeChat.id] || []).map((msg, idx, arr) => {
-                  const showAvatar = msg.sender === "them" && (idx === 0 || arr[idx-1].sender !== "them");
+                  const isMe = msg.sender === "me";
+                  const showAvatar = !isMe && (idx === 0 || arr[idx-1].sender !== "them");
+                  
                   return (
-                    <div key={msg.id} className={clsx(
-                      "flex",
-                      msg.sender === "me" ? "justify-end" : "justify-start"
-                    )}>
-                      {msg.sender === "them" && (
-                        <div className="w-8 h-8 flex-shrink-0 mr-2 mt-1">
+                    <motion.div 
+                      key={msg.id}
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      className={clsx(
+                        "flex w-full group",
+                        isMe ? "justify-end" : "justify-start"
+                      )}
+                    >
+                      {!isMe && (
+                        <div className="w-8 h-8 flex-shrink-0 mr-3 mt-auto">
                           {showAvatar ? (
                             <img 
                               src={msg.senderAvatar} 
-                              alt={msg.senderName} 
-                              className="w-full h-full rounded-full object-cover border border-border/50" 
+                              className="w-full h-full rounded-full object-cover border border-white/10" 
                             />
-                          ) : <div className="w-full h-full" />}
+                          ) : null}
                         </div>
                       )}
                       
                       <div className={clsx(
-                        "flex flex-col max-w-[80%]",
-                        msg.sender === "me" ? "items-end" : "items-start"
+                        "flex flex-col max-w-[75%]",
+                        isMe ? "items-end" : "items-start"
                       )}>
-                        {showAvatar && activeChat.type === "group" && (
-                          <span className="text-[10px] text-primary font-bold mb-1 ml-1">
+                        {!isMe && showAvatar && (
+                          <span className="text-[10px] text-white/30 font-bold mb-1.5 ml-1">
                             {msg.senderName.split(' ')[0]}
                           </span>
                         )}
                         <div className={clsx(
-                          "p-3 rounded-2xl text-sm relative overflow-hidden",
-                          msg.sender === "me" 
-                            ? "bg-primary text-white rounded-tr-none shadow-lg shadow-primary/20" 
-                            : clsx(
-                                "bg-surface-hover text-foreground rounded-tl-none border border-border/50",
-                                activeChat.type === "group" && "border-l-4 border-l-primary/50"
-                              )
+                          "px-4 py-3 text-[14px] leading-relaxed shadow-2xl relative",
+                          isMe 
+                            ? "gradient-bg text-white rounded-[1.5rem] rounded-tr-[0.25rem] shadow-purple-500/10" 
+                            : "glass text-white/90 rounded-[1.5rem] rounded-tl-[0.25rem] border-white/5"
                         )}>
-                          {activeChat.type === "group" && msg.sender === "them" && (
-                            <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 -rotate-45 translate-x-8 -translate-y-8 pointer-events-none" />
-                          )}
-                          
                           {msg.mediaUrl && (
-                            <div className="mb-2 rounded-lg overflow-hidden border border-white/10">
+                            <div className="mb-2 rounded-xl overflow-hidden border border-white/10">
                               {msg.mediaType === 'video' ? (
-                                <video src={msg.mediaUrl} controls className="max-w-full h-auto max-h-60 object-cover" />
+                                <video src={msg.mediaUrl} controls className="max-w-full h-auto max-h-64 object-cover" />
                               ) : (
-                                <img src={msg.mediaUrl} alt="Shared media" className="max-w-full h-auto max-h-60 object-cover" />
+                                <img src={msg.mediaUrl} alt="Media" className="max-w-full h-auto max-h-64 object-cover" />
                               )}
                             </div>
                           )}
-                          
-                          {msg.text && <div>{msg.text}</div>}
+                          <div className="relative z-10 font-medium">{msg.text}</div>
                         </div>
-                        <span className="text-[9px] text-muted mt-1 px-1">{msg.time}</span>
+                        <div className="flex items-center space-x-1.5 mt-1.5">
+                          <span className="text-[9px] text-white/20 font-bold uppercase tracking-wider">{msg.time}</span>
+                          {isMe && (
+                            <div className={clsx(
+                              "w-1 h-1 rounded-full",
+                              msg.status === 'sending' ? "bg-white/20 animate-pulse" : "bg-cyan-400 shadow-[0_0_5px_rgba(34,211,238,0.5)]"
+                            )} />
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    </motion.div>
                   );
                 })}
-                <div ref={scrollRef} />
-              </div>
+              </AnimatePresence>
+              <div ref={scrollRef} />
+            </div>
 
-              {/* Suggested Messages */}
-              <div className="px-4 py-2 flex space-x-2 overflow-x-auto no-scrollbar border-t border-border/10">
-                {["Hey! 👋", "Hii!", "How's it going?", "Let's connect!", "What's up?"].map(suggestion => (
-                  <button
-                    key={suggestion}
-                    onClick={() => setInput(suggestion)}
-                    className="whitespace-nowrap px-3 py-1 rounded-full border border-border/50 text-[10px] text-muted hover:border-primary hover:text-primary transition-colors"
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
+            {/* Quick Reply Pills */}
+            <div className="px-6 py-3 flex space-x-2 overflow-x-auto no-scrollbar">
+              {["Sup? 🤘", "Let's meet!", "Class?", "Exam check 📚", "Canteen?"].map(pill => (
+                <motion.button
+                  key={pill}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setInput(pill)}
+                  className="whitespace-nowrap px-4 py-2 glass rounded-full text-[11px] font-bold text-white/60 hover:text-white hover:border-purple-500/50 transition-all border border-white/5"
+                >
+                  {pill}
+                </motion.button>
+              ))}
+            </div>
 
-              <div className="p-4 glass-panel border-t border-border/50 relative">
-                {/* Hidden file input */}
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  accept="image/*,video/*" 
-                  className="hidden" 
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                      // In a real app you'd upload it, here we just mock sending it
-                      const newMsg = { id: Date.now(), text: `Sent an attachment: ${file.name} 🖼️`, sender: "me", time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
-                      setMessages(prev => ({ ...prev, [activeChat.id]: [...(prev[activeChat.id] || []), newMsg] }));
-                    }
-                  }} 
+            {/* Message Input */}
+            <div className="p-6 pt-2">
+              <div className="glass-card p-2 rounded-[2rem] border border-white/10 flex items-center space-x-2 shadow-2xl group focus-within:border-purple-500/30 transition-all">
+                <motion.button 
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setShowAttachments(!showAttachments)}
+                  className="p-3.5 text-white/40 hover:text-purple-400 hover:bg-white/5 rounded-full transition-all"
+                >
+                  <Plus size={22} className={clsx("transition-transform duration-500", showAttachments && "rotate-45")} />
+                </motion.button>
+                
+                <input
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  onKeyPress={e => e.key === "Enter" && sendMessage()}
+                  type="text"
+                  placeholder="Share a campus moment..."
+                  className="flex-1 bg-transparent py-3 px-2 text-sm text-white placeholder:text-white/20 focus:outline-none font-medium"
                 />
 
-                {/* Attachment Menu Popup */}
-                {showAttachments && (
-                  <div className="absolute bottom-full left-4 mb-2 bg-surface border border-border/50 rounded-2xl shadow-xl overflow-hidden animate-fade-in w-48 z-50">
-                    <button 
-                      onClick={() => { setShowAttachments(false); fileInputRef.current?.click(); }}
-                      className="w-full flex items-center space-x-3 px-4 py-3 hover:bg-surface-hover transition-colors text-sm text-foreground text-left"
-                    >
-                      <div className="bg-purple-500/20 p-2 rounded-xl text-purple-400">
-                        <ImageIcon size={18} />
-                      </div>
-                      <span className="font-medium">Gallery</span>
-                    </button>
-                  </div>
-                )}
+                <button className="p-3.5 text-white/40 hover:text-yellow-400 hover:bg-white/5 rounded-full transition-all">
+                  <Smile size={22} />
+                </button>
 
-                <div className="flex items-center space-x-2 relative z-10">
-                  <button 
-                    onClick={() => setShowAttachments(!showAttachments)}
-                    className="p-3 bg-surface-hover border border-border/50 rounded-xl text-muted hover:text-foreground transition-all hover:scale-105 active:scale-95"
-                  >
-                    <Plus size={20} className={`transition-transform duration-300 ${showAttachments ? 'rotate-45' : ''}`} />
-                  </button>
-                  <input
-                    value={input}
-                    onChange={e => setInput(e.target.value)}
-                    onKeyPress={e => e.key === "Enter" && sendMessage()}
-                    type="text"
-                    placeholder="Type a message..."
-                    className="flex-1 bg-surface-hover border border-border/50 rounded-xl py-3 px-4 text-sm text-foreground focus:outline-none focus:border-primary transition-colors"
-                  />
-                  <button 
-                    onClick={sendMessage}
-                    className="bg-primary text-white p-3 rounded-xl hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20"
-                  >
-                    <Send size={18} />
-                  </button>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-4">
-              <div className="w-20 h-20 rounded-3xl bg-surface-hover flex items-center justify-center">
-                <MessageSquare size={40} className="text-muted/30" />
-              </div>
-              <div>
-                <h3 className="font-bold text-foreground">Select a Chat</h3>
-                <p className="text-sm text-muted max-w-[200px]">Choose a conversation or your university hub to start messaging.</p>
+                <motion.button 
+                  whileHover={{ scale: 1.05, x: 2 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={sendMessage}
+                  className="gradient-bg text-white p-3.5 rounded-[1.5rem] shadow-xl shadow-purple-500/20"
+                >
+                  <Send size={20} />
+                </motion.button>
               </div>
             </div>
-          )}
-        </div>
+            
+            {/* Attachment Menu Popup */}
+            <AnimatePresence>
+              {showAttachments && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                  className="absolute bottom-28 left-8 bg-[#16161D] border border-white/10 rounded-[2rem] shadow-2xl overflow-hidden z-50 w-56"
+                >
+                  <button 
+                    onClick={() => { setShowAttachments(false); fileInputRef.current?.click(); }}
+                    className="w-full flex items-center space-x-4 px-6 py-4 hover:bg-white/5 transition-all text-left group"
+                  >
+                    <div className="bg-purple-500/10 p-2.5 rounded-xl text-purple-400 group-hover:scale-110 transition-transform">
+                      <ImageIcon size={20} />
+                    </div>
+                    <span className="text-sm font-bold text-white/80">Gallery</span>
+                  </button>
+                  <button 
+                    className="w-full flex items-center space-x-4 px-6 py-4 hover:bg-white/5 transition-all text-left group border-t border-white/5"
+                  >
+                    <div className="bg-cyan-500/10 p-2.5 rounded-xl text-cyan-400 group-hover:scale-110 transition-transform">
+                      <Plus size={20} />
+                    </div>
+                    <span className="text-sm font-bold text-white/80">Documents</span>
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <input type="file" ref={fileInputRef} accept="image/*,video/*" className="hidden" />
+          </>
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-8 space-y-8">
+            <div className="relative">
+              <motion.div 
+                animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.6, 0.3] }}
+                transition={{ duration: 4, repeat: Infinity }}
+                className="absolute inset-0 bg-purple-500 blur-3xl rounded-full opacity-20" 
+              />
+              <div className="w-24 h-24 rounded-[2.5rem] glass flex items-center justify-center relative z-10 border-white/10">
+                <MessageSquare size={44} className="text-purple-500/50" />
+              </div>
+            </div>
+            <div className="max-w-xs">
+              <h3 className="text-xl font-black text-white mb-2 tracking-tight">Your Inbox is Waiting</h3>
+              <p className="text-sm text-white/30 font-medium leading-relaxed">
+                Connect with your campus squad or join university hubs to start vibrating.
+              </p>
+            </div>
+            <button className="gradient-bg px-8 py-3 rounded-full text-sm font-bold text-white shadow-xl shadow-purple-500/10">
+              New Message
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -498,8 +534,8 @@ function MessagesContent() {
 export default function MessagesPage() {
   return (
     <Suspense fallback={
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-primary"></div>
+      <div className="flex h-screen items-center justify-center bg-[#0A0A0F]">
+        <div className="w-12 h-12 border-4 border-white/5 border-t-purple-500 rounded-full animate-spin"></div>
       </div>
     }>
       <MessagesContent />

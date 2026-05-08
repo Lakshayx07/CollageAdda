@@ -76,8 +76,10 @@ io.on('connection', (socket) => {
     onlineUsers.set(socket.id, { userId, name, university });
     // Join their university room automatically
     socket.join(university);
+    // Join a private room for the user to receive targeted messages
+    socket.join(userId.toString());
     io.emit('online_users', Array.from(onlineUsers.values()));
-    console.log(`[WS] ${name} joined room: ${university}`);
+    console.log(`[WS] ${name} joined private room: ${userId}`);
   });
 
   // Join a specific chat room (university or DM)
@@ -103,21 +105,30 @@ io.on('connection', (socket) => {
       if (room) {
         room.lastMessage = message._id;
         room.updatedAt = Date.now();
-        // Increment unread count for everyone except sender
+        
+        // Prepare delivery data
+        const deliveryData = {
+          ...data,
+          _id: message._id,
+          createdAt: message.createdAt,
+        };
+
+        // Emit to the room (for people actively viewing the chat)
+        io.to(data.room).emit('receive_message', deliveryData);
+
+        // Also emit to each participant's private room (for notifications/unread updates)
         room.participants.forEach(pId => {
-          if (pId.toString() !== data.senderId.toString()) {
-            const current = room.unreadCounts.get(pId.toString()) || 0;
-            room.unreadCounts.set(pId.toString(), current + 1);
+          const participantId = pId.toString();
+          if (participantId !== data.senderId.toString()) {
+            const current = room.unreadCounts.get(participantId) || 0;
+            room.unreadCounts.set(participantId, current + 1);
+            
+            // Deliver to the participant's individual room
+            io.to(participantId).emit('receive_message', deliveryData);
           }
         });
         await room.save();
       }
-
-      io.to(data.room).emit('receive_message', {
-        ...data,
-        _id: message._id,
-        createdAt: message.createdAt,
-      });
     } catch (err) {
       console.error('[WS] Error saving message:', err);
     }

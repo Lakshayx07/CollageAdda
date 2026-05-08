@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { Bell, Heart, MessageSquare, UserPlus, Sparkles } from 'lucide-react';
+import { Bell, Heart, MessageSquare, UserPlus, Sparkles, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import VerifiedBadge from './VerifiedBadge';
@@ -25,13 +25,10 @@ export default function NotificationBell() {
       if (res.ok) {
         const data = await res.json();
         const newUnread = data.filter(n => !n.isRead).length;
-        
-        // If unread count increased, trigger animation
         if (newUnread > unreadCount) {
           setVibrate(true);
           setTimeout(() => setVibrate(false), 1000);
         }
-        
         setNotifications(data);
         setUnreadCount(newUnread);
       }
@@ -42,7 +39,7 @@ export default function NotificationBell() {
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 10000); // Poll every 10s
+    const interval = setInterval(fetchNotifications, 10000);
     return () => clearInterval(interval);
   }, [unreadCount]);
 
@@ -79,11 +76,11 @@ export default function NotificationBell() {
 
   const getIcon = (type) => {
     switch (type) {
-      case 'like': return <Heart size={14} className="text-pink-500 fill-pink-500" />;
-      case 'comment': return <MessageSquare size={14} className="text-blue-500" />;
-      case 'follow': return <UserPlus size={14} className="text-green-500" />;
-      case 'message': return <MessageSquare size={14} className="text-purple-500" />;
-      default: return <Bell size={14} className="text-primary" />;
+      case 'like': return <Heart size={10} className="text-pink-500 fill-pink-500" />;
+      case 'comment': return <MessageSquare size={10} className="text-cyan-400 fill-cyan-400" />;
+      case 'follow': return <UserPlus size={10} className="text-purple-500" />;
+      case 'message': return <Zap size={10} className="text-amber-400 fill-amber-400" />;
+      default: return <Bell size={10} className="text-white" />;
     }
   };
 
@@ -91,119 +88,110 @@ export default function NotificationBell() {
     <div className="relative" ref={dropdownRef}>
       <button 
         onClick={toggleDropdown}
-        className="relative p-2 rounded-full hover:bg-surface-hover transition-colors group"
+        className="relative p-2.5 glass rounded-2xl hover:bg-white/5 transition-all border border-white/5 active:scale-90"
       >
         <motion.div
           animate={vibrate ? { 
             rotate: [0, -20, 20, -20, 20, 0],
             scale: [1, 1.2, 1.2, 1.2, 1.2, 1]
           } : {}}
-          transition={{ duration: 0.5, ease: "easeInOut" }}
+          transition={{ duration: 0.5 }}
         >
           <Bell 
-            size={22} 
+            size={20} 
             className={clsx(
               "transition-colors",
-              unreadCount > 0 ? "text-amber-400 fill-amber-400" : "text-muted group-hover:text-amber-400"
+              unreadCount > 0 ? "text-amber-400 fill-amber-400" : "text-white/40"
             )} 
           />
         </motion.div>
 
-        {/* Sparkles Animation */}
         <AnimatePresence>
-          {vibrate && (
-            <>
-              {[...Array(5)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
-                  animate={{ 
-                    opacity: [0, 1, 0], 
-                    scale: [0, 1.5, 0],
-                    x: (i - 2) * 20, 
-                    y: -40 - (Math.random() * 20)
-                  }}
-                  exit={{ opacity: 0 }}
-                  className="absolute top-0 left-1/2 text-amber-400 pointer-events-none"
-                  transition={{ duration: 1, delay: i * 0.1 }}
-                >
-                  <Sparkles size={16} fill="currentColor" />
-                </motion.div>
-              ))}
-            </>
+          {unreadCount > 0 && (
+            <motion.span 
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0 }}
+              className="absolute -top-1 -right-1 w-5 h-5 gradient-bg text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-[#0A0A0F] shadow-lg shadow-purple-500/30"
+            >
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </motion.span>
           )}
         </AnimatePresence>
-
-        {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-background">
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </span>
-        )}
       </button>
 
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            initial={{ opacity: 0, y: 15, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className="absolute right-0 mt-2 w-80 glass-panel rounded-2xl shadow-2xl z-50 overflow-hidden border border-border/50"
+            exit={{ opacity: 0, y: 15, scale: 0.95 }}
+            className="absolute right-0 mt-4 w-80 glass-card rounded-[2rem] shadow-2xl z-[100] overflow-hidden border border-white/10"
           >
-            <div className="p-4 border-b border-border/50 flex justify-between items-center bg-surface-hover/30">
-              <h3 className="font-bold text-sm">Notifications</h3>
+            <div className="p-5 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+              <h3 className="text-xs font-black text-white uppercase tracking-widest">Recent Activity</h3>
               {unreadCount > 0 && (
                 <button 
                   onClick={markAsRead}
-                  className="text-[10px] text-primary hover:underline font-medium"
+                  className="text-[9px] text-purple-400 font-black uppercase tracking-widest hover:text-purple-300 transition-colors"
                 >
-                  Mark all as read
+                  Clear All
                 </button>
               )}
             </div>
             
-            <div className="max-h-[400px] overflow-y-auto no-scrollbar">
+            <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
               {notifications.length === 0 ? (
-                <div className="p-10 text-center text-muted text-sm italic">
-                  No notifications yet ✨
+                <div className="p-12 text-center">
+                   <div className="w-12 h-12 glass rounded-2xl flex items-center justify-center text-white/10 mx-auto mb-4 border border-white/5">
+                      <Sparkles size={24} />
+                   </div>
+                   <p className="text-[10px] text-white/20 font-black uppercase tracking-widest">No activity found</p>
                 </div>
               ) : (
-                notifications.map((notif) => (
-                  <div 
-                    key={notif._id}
-                    className={clsx(
-                      "p-4 flex items-start space-x-3 hover:bg-surface-hover/50 transition-colors border-b border-border/10 last:border-0",
-                      !notif.isRead && "bg-primary/5"
-                    )}
-                  >
-                    <div className="relative">
-                      <img 
-                        src={notif.sender?.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(notif.sender?.name || 'U')}&background=6366f1&color=fff`}
-                        className="w-10 h-10 rounded-full object-cover border border-border/20"
-                        alt="User"
-                      />
-                      <div className="absolute -bottom-1 -right-1 p-1 bg-background rounded-full shadow-sm">
-                        {getIcon(notif.type)}
+                <div className="divide-y divide-white/5">
+                  {notifications.map((notif, i) => (
+                    <motion.div 
+                      key={notif._id}
+                      initial={{ opacity: 0, x: 10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      className={clsx(
+                        "p-4 flex items-start space-x-3 hover:bg-white/[0.03] transition-all",
+                        !notif.isRead && "bg-purple-500/[0.03]"
+                      )}
+                    >
+                      <div className="relative flex-shrink-0">
+                        <div className="w-10 h-10 rounded-2xl p-[1.5px] gradient-bg">
+                          <img 
+                            src={notif.sender?.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(notif.sender?.name || 'U')}&background=7C3AED&color=fff`}
+                            className="w-full h-full rounded-[0.9rem] object-cover border-2 border-[#0A0A0F]"
+                          />
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-[#0A0A0F] rounded-lg border border-white/10 flex items-center justify-center shadow-lg">
+                          {getIcon(notif.type)}
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-xs text-foreground leading-relaxed flex items-center gap-1 flex-wrap">
-                        <span className="font-bold flex items-center">
-                          {notif.sender?.name}
-                          <VerifiedBadge user={notif.sender} size={12} />
-                        </span> {notif.text}
-                      </p>
-                      <span className="text-[10px] text-muted mt-1 block">
-                        {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-                  </div>
-                ))
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] text-white/90 leading-tight">
+                          <span className="font-black text-white mr-1">
+                            {notif.sender?.name}
+                          </span> 
+                          {notif.text}
+                        </p>
+                        <span className="text-[9px] text-white/20 font-bold uppercase tracking-widest mt-1 block">
+                          {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
               )}
             </div>
             
-            <div className="p-3 bg-surface-hover/30 text-center border-t border-border/50">
-              <button className="text-[10px] text-muted hover:text-foreground transition-colors font-medium">
-                View all activity
+            <div className="p-4 bg-white/[0.02] text-center border-t border-white/5">
+              <button className="text-[9px] text-white/20 font-black uppercase tracking-[0.2em] hover:text-white transition-colors">
+                View Full Logs
               </button>
             </div>
           </motion.div>

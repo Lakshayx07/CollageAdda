@@ -1,10 +1,12 @@
 "use client";
+
 import { useEffect, useState } from "react";
-import { LogOut, Edit3, X, Check, Plus, Grid, Heart, MessageCircle, Send, ChevronLeft, ChevronRight } from "lucide-react";
+import { LogOut, Edit3, X, Check, Plus, Grid, Heart, MessageCircle, Send, ChevronLeft, ChevronRight, Share2, Instagram, Ghost, MapPin, Zap, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import UniversityBadges from "@/components/UniversityBadges";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import clsx from "clsx";
 
 const INTEREST_OPTIONS = ["Music 🎵", "Cricket 🏏", "Coding 💻", "Art 🎨", "Travel ✈️", "Gaming 🎮", "Books 📚", "Fitness 💪", "Movies 🎬", "Cooking 🍳"];
 const SPORT_OPTIONS = ["Football ⚽", "Basketball 🏀", "Cricket 🏏", "Tennis 🎾", "Badminton 🏸", "Volleyball 🏐", "Table Tennis 🏓", "Athletics 🏃", "Swimming 🏊", "Chess ♟️"];
@@ -14,104 +16,15 @@ export default function ProfilePage() {
   const [user, setUser] = useState(null);
   const [followers, setFollowers] = useState([]);
   const [following, setFollowing] = useState([]);
-  const [modal, setModal] = useState(null); // 'followers' | 'following' | 'edit' | 'story' | 'post' | 'share'
+  const [modal, setModal] = useState(null); 
   const [activePostIndex, setActivePostIndex] = useState(null);
   const [userPosts, setUserPosts] = useState([]);
   const [commentInput, setCommentInput] = useState("");
-  const [touchStart, setTouchStart] = useState(null);
-  const [touchEnd, setTouchEnd] = useState(null);
-  const [shareSearchTerm, setShareSearchTerm] = useState("");
   const [toastMsg, setToastMsg] = useState("");
   const [userStories, setUserStories] = useState([]);
   
   const [editData, setEditData] = useState({ profilePic: "", instaId: "", snapId: "", interests: [], sports: [] });
   const [saved, setSaved] = useState(false);
-
-  const minSwipeDistance = 50;
-  const onTouchStart = (e) => { setTouchEnd(null); setTouchStart(e.targetTouches[0].clientX); };
-  const onTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
-  const onTouchEndHandler = () => {
-    if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
-    if (distance > minSwipeDistance) handleNextPost();
-    if (distance < -minSwipeDistance) handlePrevPost();
-  };
-  const handleNextPost = () => { if (activePostIndex !== null && activePostIndex < userPosts.length - 1) setActivePostIndex(activePostIndex + 1); };
-  const handlePrevPost = () => { if (activePostIndex !== null && activePostIndex > 0) setActivePostIndex(activePostIndex - 1); };
-
-  const handleLike = async () => {
-    if (activePostIndex === null) return;
-    const post = userPosts[activePostIndex];
-    const token = localStorage.getItem("collegeadda_token");
-    
-    // Optimistic UI
-    setUserPosts(prev => prev.map((p, i) => i === activePostIndex ? { ...p, isLiked: !p.isLiked, likes: p.isLiked ? p.likes - 1 : p.likes + 1 } : p));
-    
-    try {
-      await fetch(`${apiUrl}/api/posts/${post.id}/like`, {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-    } catch (err) {
-      console.error(err);
-      // Revert on error
-      setUserPosts(prev => prev.map((p, i) => i === activePostIndex ? { ...p, isLiked: !p.isLiked, likes: p.isLiked ? p.likes - 1 : p.likes + 1 } : p));
-    }
-  };
-
-  const handleAddComment = async () => {
-    if (!commentInput.trim() || activePostIndex === null) return;
-    const post = userPosts[activePostIndex];
-    const token = localStorage.getItem("collegeadda_token");
-    const text = commentInput;
-    
-    // Optimistic UI
-    setUserPosts(prev => prev.map((p, i) => i === activePostIndex ? {
-      ...p, 
-      comments: p.comments + 1, 
-      commentsList: [...p.commentsList, { id: Date.now(), author: user.name, text: text }]
-    } : p));
-    
-    setCommentInput("");
-
-    try {
-      const res = await fetch(`${apiUrl}/api/posts/${post.id}/comment`, {
-        method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ text })
-      });
-      if (!res.ok) throw new Error("Failed to post comment");
-    } catch (err) {
-      console.error(err);
-      alert("Failed to save comment. Please try again.");
-    }
-  };
-
-  const handleShare = (friend) => {
-    const postToShare = userPosts[activePostIndex];
-    const msgText = `Check out my post: "${postToShare?.img}"`;
-    const savedMessages = JSON.parse(localStorage.getItem("collegeadda_messages") || "{}");
-    const newMsg = { id: Date.now(), text: msgText, sender: "me", time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
-    const chatId = `mock_friend_${friend.id}`;
-    savedMessages[chatId] = [...(savedMessages[chatId] || []), newMsg];
-    localStorage.setItem("collegeadda_messages", JSON.stringify(savedMessages));
-
-    const mockRooms = JSON.parse(localStorage.getItem("collegeadda_mock_rooms") || "[]");
-    const existingRoom = mockRooms.find(r => r.id === chatId);
-    if (!existingRoom) {
-      mockRooms.push({ id: chatId, name: friend.name, type: "private", avatar: friend.avatar, lastMsg: msgText, time: "Just now" });
-    } else {
-      existingRoom.lastMsg = msgText; existingRoom.time = "Just now";
-    }
-    localStorage.setItem("collegeadda_mock_rooms", JSON.stringify(mockRooms));
-    setToastMsg(`Post sent to ${friend.name} successfully!`);
-    setModal("post");
-    setShareSearchTerm("");
-    setTimeout(() => setToastMsg(""), 2000);
-  };
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
@@ -125,7 +38,6 @@ export default function ProfilePage() {
       setUser(u);
       
       try {
-        // Fetch fresh profile
         const profileRes = await fetch(`${apiUrl}/api/users/profile`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -141,7 +53,6 @@ export default function ProfilePage() {
           });
         }
 
-        // Fetch user posts (by filtering feed posts for now, since no specific user posts API exists)
         const postsRes = await fetch(`${apiUrl}/api/posts`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -166,7 +77,6 @@ export default function ProfilePage() {
           }
         }
 
-        // Fetch my stories
         const storyRes = await fetch(`${apiUrl}/api/stories/me`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -181,7 +91,6 @@ export default function ProfilePage() {
     
     fetchProfileAndPosts();
 
-    // Fetch followers & following
     const fetchSocial = async () => {
       try {
         const token = localStorage.getItem("collegeadda_token");
@@ -272,687 +181,462 @@ export default function ProfilePage() {
 
   if (!user) return null;
 
-  // profile is now part of user object (from backend)
-  const profile = user;
-
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="min-h-screen bg-[#0A0A0F] pb-24 relative overflow-hidden">
+      {/* Background Decorative Glows */}
+      <div className="fixed top-[-10%] right-[-10%] w-[60%] h-[60%] bg-purple-600/10 blur-[150px] rounded-full z-0" />
+      <div className="fixed bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-pink-600/10 blur-[150px] rounded-full z-0" />
+      <div className="fixed inset-0 opacity-[0.03] pointer-events-none z-0" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' }} />
+
       {/* Header */}
-      <header className="sticky top-0 z-40 glass-panel border-b border-border/50 px-4 py-3 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-foreground">{user.name?.split(" ")[0] || "Profile"}</h1>
-        <button onClick={handleLogout} className="flex items-center space-x-1 text-muted hover:text-red-400 transition-colors text-sm">
-          <LogOut size={16} />
-          <span>Logout</span>
-        </button>
+      <header className="sticky top-0 z-50 glass border-b border-white/5 px-6 py-4 flex items-center justify-between">
+        <motion.h1 
+          initial={{ x: -20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          className="text-xl font-black text-white tracking-tight"
+        >
+          {user.name?.split(" ")[0]}<span className="text-purple-500">.</span>
+        </motion.h1>
+        <div className="flex items-center space-x-3">
+          <motion.button 
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            className="p-2.5 glass rounded-2xl text-white/40 hover:text-white border border-white/10"
+          >
+            <Share2 size={20} />
+          </motion.button>
+          <motion.button 
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={handleLogout}
+            className="p-2.5 glass rounded-2xl text-red-500/50 hover:text-red-500 border border-white/10"
+          >
+            <LogOut size={20} />
+          </motion.button>
+        </div>
       </header>
 
-      <div className="flex-1 max-w-md mx-auto w-full relative">
-        {/* Subtle animated gradient background */}
-        <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-primary/10 via-secondary/5 to-transparent -z-10 pointer-events-none blur-3xl opacity-60"></div>
-        
-        {/* Instagram-style Profile Header */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
-          className="p-4 space-y-5"
-        >
-          {/* Glassmorphism Profile Card */}
-          <div className="glass-panel bg-surface/40 backdrop-blur-xl rounded-3xl p-5 border border-white/5 shadow-lg space-y-5 relative overflow-hidden">
-            {/* Inner top glow */}
-            <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/20 rounded-full blur-3xl pointer-events-none"></div>
-
-            {/* Avatar + Stats Row */}
-            <div className="flex items-center space-x-6 relative z-10">
-            {/* Avatar */}
-            <div 
-              className="cursor-pointer relative group w-20 h-20 sm:w-24 sm:h-24 rounded-full p-[3px] flex-shrink-0 bg-gradient-to-tr from-pink-500 via-purple-500 to-orange-400 bg-[length:200%_200%] animate-[gradient_3s_ease_infinite] shadow-[0_0_20px_rgba(219,39,119,0.3)] hover:scale-105 transition-transform"
-            >
+      <div className="max-w-xl mx-auto px-6 pt-10 relative z-10 space-y-10">
+        {/* Profile Stats Section */}
+        <div className="flex flex-col items-center space-y-8">
+          {/* Avatar Area */}
+          <div className="relative group">
+            <motion.div 
+              animate={{ rotate: 360 }}
+              transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+              className="absolute -inset-3 gradient-bg rounded-[3rem] opacity-30 blur-2xl group-hover:opacity-50 transition-opacity" 
+            />
+            <div className="relative w-32 h-32 rounded-[2.8rem] p-[3px] gradient-bg shadow-2xl">
               <div 
                 onClick={() => setModal("story")}
-                className="w-full h-full bg-background rounded-full flex items-center justify-center text-2xl sm:text-3xl font-bold text-foreground border border-background overflow-hidden"
+                className="w-full h-full rounded-[2.7rem] bg-[#0A0A0F] flex items-center justify-center overflow-hidden cursor-pointer active:scale-95 transition-transform"
               >
                 {user.profilePic ? (
-                  <img src={user.profilePic} alt={user.name} className="w-full h-full object-cover" />
+                  <img src={user.profilePic} className="w-full h-full object-cover" />
                 ) : (
-                  user.name?.charAt(0)?.toUpperCase() || "?"
+                  <span className="text-4xl font-black text-white">{user.name?.charAt(0)}</span>
                 )}
               </div>
-              
-              {/* Instagram-style Plus Button */}
-              <button 
-                onClick={(e) => { e.stopPropagation(); setModal("avatar_options"); }}
-                className="absolute bottom-0 right-0 w-6 h-6 sm:w-8 sm:h-8 bg-primary rounded-full border-2 border-background flex items-center justify-center text-white hover:scale-110 transition-transform shadow-lg z-20"
+              <motion.button 
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setModal("edit")}
+                className="absolute -bottom-2 -right-2 w-10 h-10 gradient-bg rounded-2xl border-4 border-[#0A0A0F] flex items-center justify-center text-white shadow-xl"
               >
-                <Plus size={16} strokeWidth={3} />
-              </button>
-            </div>
-
-            {/* Stats */}
-            <div className="flex flex-1 justify-between gap-2">
-              <div className="flex flex-col items-center justify-center bg-surface/50 hover:bg-surface border border-white/5 hover:border-white/10 rounded-2xl py-2 px-2 flex-1 transition-all shadow-sm">
-                <p className="text-lg font-bold bg-gradient-to-br from-indigo-400 to-purple-400 bg-clip-text text-transparent">{userPosts.length}</p>
-                <p className="text-[10px] sm:text-xs text-muted font-medium">Posts</p>
-              </div>
-              <button 
-                className="flex flex-col items-center justify-center bg-surface/50 hover:bg-surface border border-white/5 hover:border-white/10 rounded-2xl py-2 px-2 flex-1 transition-all shadow-sm group/btn" 
-                onClick={() => setModal("followers")}
-              >
-                <p className="text-lg font-bold group-hover/btn:bg-gradient-to-br group-hover/btn:from-indigo-400 group-hover/btn:to-purple-400 group-hover/btn:bg-clip-text group-hover/btn:text-transparent transition-all">{followers.length}</p>
-                <p className="text-[10px] sm:text-xs text-muted font-medium">Followers</p>
-              </button>
-              <button 
-                className="flex flex-col items-center justify-center bg-surface/50 hover:bg-surface border border-white/5 hover:border-white/10 rounded-2xl py-2 px-2 flex-1 transition-all shadow-sm group/btn" 
-                onClick={() => setModal("following")}
-              >
-                <p className="text-lg font-bold group-hover/btn:bg-gradient-to-br group-hover/btn:from-indigo-400 group-hover/btn:to-purple-400 group-hover/btn:bg-clip-text group-hover/btn:text-transparent transition-all">{following.length}</p>
-                <p className="text-[10px] sm:text-xs text-muted font-medium">Following</p>
-              </button>
+                <Plus size={20} strokeWidth={3} />
+              </motion.button>
             </div>
           </div>
 
-          {/* Name + Bio */}
-          <div className="relative z-10 space-y-1">
-            <h2 className="text-xl font-extrabold text-foreground tracking-tight flex items-center">
-              {user.name}
-              <VerifiedBadge user={user} size={18} />
-            </h2>
-            <p className="text-sm text-muted/80 font-medium">
-              {user.university}
-            </p>
-            {profile.sports && profile.sports.length > 0 && (
-              <div className="mt-1 flex flex-wrap gap-1.5">
-                {profile.sports.map((sport, index) => (
-                  <span 
-                    key={index}
-                    className="inline-flex items-center text-[11px] font-extrabold px-2.5 py-0.5 rounded-md shadow-sm relative overflow-hidden group"
-                    style={{
-                      background: "linear-gradient(135deg, #FFD700 0%, #F59E0B 100%)",
-                      color: "#451A03", // dark brown/gold for contrast
-                      boxShadow: "0 2px 10px rgba(245, 158, 11, 0.3), inset 0 1px 0 rgba(255,255,255,0.4)"
-                    }}
-                  >
-                    {/* Sparkle animation effect */}
-                    <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent -translate-x-[100%] animate-[shimmer_2s_infinite]"></span>
-                    <span className="relative z-10 flex items-center gap-1 tracking-wide uppercase">
-                      ✨ {sport}
-                    </span>
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {/* University Badges */}
-            <div className="pt-1 pb-2">
-              <UniversityBadges userId={user.id || user.email || "mock-user-123"} />
+          {/* User Info */}
+          <div className="text-center space-y-2">
+            <div className="flex items-center justify-center space-x-2">
+              <h2 className="text-3xl font-black text-white tracking-tighter">{user.name}</h2>
+              <VerifiedBadge user={user} size={22} />
             </div>
-
-            {/* Social Links */}
-            {(profile.instagram || profile.snapchat) && (
-              <div className="flex flex-wrap gap-2 mt-2 pt-1">
-                {profile.instagram && (
-                  <a
-                    href={`https://instagram.com/${profile.instagram}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center space-x-1.5 text-xs px-3 py-1.5 rounded-full text-white font-medium shadow-md hover:scale-105 hover:shadow-lg transition-all bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888]"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
-                    <span>@{profile.instagram}</span>
-                  </a>
-                )}
-                {profile.snapchat && (
-                  <a
-                    href={`https://snapchat.com/add/${profile.snapchat}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center space-x-1.5 text-xs px-3 py-1.5 rounded-full font-medium shadow-md hover:scale-105 hover:shadow-lg transition-all"
-                    style={{ background: "#FFFC00", color: "#000" }}
-                  >
-                    <span className="text-sm">👻</span>
-                    <span>{profile.snapchat}</span>
-                  </a>
-                )}
-              </div>
-            )}
-
-            {/* Interests */}
-            {profile.interests?.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-3 pt-2 border-t border-white/5 relative z-10">
-                {profile.interests.map(i => (
-                  <span key={i} className="text-[11px] bg-primary/10 text-primary px-2.5 py-1 rounded-full font-medium border border-primary/20">{i}</span>
-                ))}
-              </div>
-            )}
+            <div className="flex items-center justify-center space-x-2 text-purple-400 font-bold uppercase tracking-[0.2em] text-[10px]">
+              <MapPin size={12} className="text-purple-500" />
+              <span>{user.university}</span>
+            </div>
           </div>
 
-          {/* Edit Profile Button */}
-          <div className="pt-2 relative z-10">
-            <button
+          {/* Stat Pills */}
+          <div className="grid grid-cols-3 gap-3 w-full">
+            {[
+              { label: "Posts", value: userPosts.length },
+              { label: "Followers", value: followers.length, action: () => setModal("followers") },
+              { label: "Following", value: following.length, action: () => setModal("following") }
+            ].map((stat, i) => (
+              <motion.button
+                key={stat.label}
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.1 * i }}
+                onClick={stat.action}
+                className="glass-card p-4 rounded-3xl border border-white/5 hover:border-white/20 transition-all group text-center"
+              >
+                <p className="text-2xl font-black text-white tracking-tighter group-hover:scale-110 transition-transform">{stat.value}</p>
+                <p className="text-[10px] text-white/30 font-black uppercase tracking-widest mt-1">{stat.label}</p>
+              </motion.button>
+            ))}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex space-x-3 w-full">
+            <motion.button 
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setModal("edit")}
-              className="relative w-full py-2.5 rounded-xl bg-surface-hover text-sm font-bold text-foreground flex items-center justify-center space-x-2 group overflow-hidden transition-all hover:shadow-[0_0_15px_rgba(99,102,241,0.2)]"
+              className="flex-1 gradient-bg py-4 rounded-2xl text-sm font-black text-white uppercase tracking-widest shadow-xl shadow-purple-500/20"
             >
-              <span className="absolute inset-0 bg-gradient-to-r from-primary to-secondary opacity-0 group-hover:opacity-10 transition-opacity" />
-              <span className="absolute inset-0 bg-gradient-to-r from-primary/50 to-secondary/50 opacity-0 group-hover:opacity-100 transition-opacity blur-md z-0" />
-              <div className="absolute inset-[1px] bg-surface rounded-xl z-0 transition-colors group-hover:bg-surface-hover" />
-              <span className="relative z-10 flex items-center space-x-2">
-                <Edit3 size={16} />
-                <span>Edit Profile</span>
-              </span>
-            </button>
+              Edit Profile
+            </motion.button>
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="p-4 glass rounded-2xl text-white/40 border border-white/10"
+            >
+              <Zap size={20} />
+            </motion.button>
           </div>
-          </div>
-        </motion.div>
+        </div>
 
-        {/* Posts Grid Divider */}
-        <motion.div 
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
-          className="flex items-center justify-center border-t border-border/50 py-3 mt-2"
-        >
-          <div className="p-2 rounded-full bg-surface-hover">
-            <Grid size={18} className="text-foreground" />
+        {/* Connections & Socials */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-[11px] font-black text-white/30 uppercase tracking-[0.2em]">Campus Socials</h3>
+            <UniversityBadges userId={user.id || user.email} />
           </div>
-        </motion.div>
+          
+          <div className="grid grid-cols-2 gap-3">
+            {user.instagram && (
+              <motion.a 
+                whileHover={{ y: -4 }}
+                href={`https://instagram.com/${user.instagram}`}
+                className="glass-card p-4 rounded-3xl border border-white/5 flex items-center space-x-3"
+              >
+                <div className="w-10 h-10 bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] rounded-2xl flex items-center justify-center text-white">
+                  <Instagram size={20} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest">Instagram</p>
+                  <p className="text-sm font-black text-white truncate leading-none">@{user.instagram}</p>
+                </div>
+              </motion.a>
+            )}
+            {user.snapchat && (
+              <motion.a 
+                whileHover={{ y: -4 }}
+                href={`https://snapchat.com/add/${user.snapchat}`}
+                className="glass-card p-4 rounded-3xl border border-white/5 flex items-center space-x-3"
+              >
+                <div className="w-10 h-10 bg-[#FFFC00] rounded-2xl flex items-center justify-center text-black">
+                  <Ghost size={20} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest">Snapchat</p>
+                  <p className="text-sm font-black text-black truncate leading-none">{user.snapchat}</p>
+                </div>
+              </motion.a>
+            )}
+          </div>
+        </div>
 
-        {/* Instagram-style Posts Grid */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-          className="grid grid-cols-3 gap-[2px] pb-20"
-        >
-          {userPosts.length === 0 && (
-            <div className="col-span-3 text-center py-10 text-muted">
-              <p className="text-lg font-semibold">No posts yet</p>
-              <p className="text-sm mt-1">Share something on the feed!</p>
+        {/* Interests & Sports */}
+        <div className="space-y-6">
+          <div className="space-y-4">
+            <h3 className="text-[11px] font-black text-white/30 uppercase tracking-[0.2em] flex items-center">
+              <Star size={12} className="mr-2 text-yellow-500" /> Interests & Sports
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {(user.interests || []).map((i, idx) => (
+                <span key={idx} className="glass px-4 py-2 rounded-full text-[11px] font-bold text-white/60 border border-white/5 hover:border-purple-500/30 hover:text-purple-400 transition-all">
+                  {i}
+                </span>
+              ))}
+              {(user.sports || []).map((s, idx) => (
+                <span key={idx} className="bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-wider">
+                  {s}
+                </span>
+              ))}
             </div>
-          )}
-          {userPosts.map((post, idx) => (
-            <motion.div 
-              key={post.id} 
-              whileHover={{ scale: 0.98 }}
-              onClick={() => { setActivePostIndex(idx); setModal("post"); }}
-              transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              className="relative group aspect-square overflow-hidden cursor-pointer"
-            >
-              <img src={post.img} alt="post" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-              {/* Hover overlay */}
-              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center space-x-5 backdrop-blur-[2px]">
-                <div className="flex flex-col items-center transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                  <Heart size={20} className="fill-white text-white mb-1 drop-shadow-md" />
-                  <span className="text-white text-sm font-bold drop-shadow-md">{post.likes}</span>
-                </div>
-                <div className="flex flex-col items-center transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75">
-                  <MessageCircle size={20} className="fill-white text-white mb-1 drop-shadow-md" />
-                  <span className="text-white text-sm font-bold drop-shadow-md">{post.comments}</span>
-                </div>
+          </div>
+        </div>
+
+        {/* Post Grid Section */}
+        <div className="space-y-6 pb-10">
+          <div className="flex items-center justify-between border-t border-white/5 pt-8">
+            <h3 className="text-[11px] font-black text-white/30 uppercase tracking-[0.2em]">Memories</h3>
+            <Grid size={16} className="text-white/20" />
+          </div>
+
+          <motion.div 
+            initial="hidden"
+            animate="visible"
+            variants={{
+              visible: { transition: { staggerChildren: 0.05 } }
+            }}
+            className="grid grid-cols-3 gap-2"
+          >
+            {userPosts.length === 0 ? (
+              <div className="col-span-3 py-20 glass-card rounded-[2.5rem] border-white/5 border-dashed text-center">
+                <p className="text-xl font-black text-white/10">No Posts Yet</p>
+                <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest mt-2">Your story starts here</p>
               </div>
-            </motion.div>
-          ))}
-        </motion.div>
+            ) : (
+              userPosts.map((post, idx) => (
+                <motion.div
+                  key={post.id}
+                  variants={{
+                    hidden: { scale: 0.8, opacity: 0 },
+                    visible: { scale: 1, opacity: 1 }
+                  }}
+                  whileHover={{ scale: 0.98 }}
+                  onClick={() => { setActivePostIndex(idx); setModal("post"); }}
+                  className="aspect-square rounded-[1.5rem] overflow-hidden relative group cursor-pointer border border-white/5"
+                >
+                  <img src={post.img} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-purple-600/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center space-x-4">
+                    <div className="flex items-center text-white text-xs font-black">
+                      <Heart size={14} className="fill-white mr-1" /> {post.likes}
+                    </div>
+                    <div className="flex items-center text-white text-xs font-black">
+                      <MessageCircle size={14} className="fill-white mr-1" /> {post.comments}
+                    </div>
+                  </div>
+                </motion.div>
+              ))
+            )}
+          </motion.div>
+        </div>
       </div>
 
-      {/* ── MODAL: Followers ── */}
-      {modal === "followers" && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={() => setModal(null)}>
-          <div className="w-full max-w-md bg-surface rounded-t-3xl p-4 max-h-[70vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-foreground text-lg">Followers</h2>
-              <button onClick={() => setModal(null)}><X size={20} className="text-muted" /></button>
-            </div>
-            <div className="space-y-3">
-              {followers.length === 0 && (
-                <p className="text-sm text-muted text-center py-4">No followers yet. Share your profile!</p>
-              )}
-              {followers.map((f, idx) => (
-                <div key={f._id || idx} className="flex items-center space-x-3">
-                  <img src={f.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(f.name)}&background=6366f1&color=fff`} alt={f.name} className="w-10 h-10 rounded-full object-cover" />
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-foreground flex items-center">
-                      {f.name}
-                      <VerifiedBadge user={f} size={14} />
-                    </p>
-                    <p className="text-xs text-muted">{f.university}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* --- MODALS --- */}
+      <AnimatePresence>
+        {/* Followers/Following Modal */}
+        {(modal === "followers" || modal === "following") && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-end justify-center p-4 bg-black/80 backdrop-blur-sm"
+            onClick={() => setModal(null)}
+          >
+            <motion.div 
+              initial={{ y: 100 }}
+              animate={{ y: 0 }}
+              exit={{ y: 100 }}
+              className="w-full max-w-md glass-card rounded-[3rem] border border-white/10 overflow-hidden"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="p-6 border-b border-white/5 flex items-center justify-between">
+                <h3 className="text-lg font-black text-white capitalize">{modal}</h3>
+                <button onClick={() => setModal(null)} className="p-2 glass rounded-full text-white/30"><X size={20} /></button>
+              </div>
+              <div className="max-h-[60vh] overflow-y-auto p-4 space-y-2 custom-scrollbar">
+                {(modal === "followers" ? followers : following).length === 0 ? (
+                  <div className="py-10 text-center text-white/20 font-bold uppercase tracking-widest text-[10px]">No connections yet</div>
+                ) : (
+                  (modal === "followers" ? followers : following).map((f, i) => (
+                    <div key={i} className="flex items-center justify-between p-3 hover:bg-white/5 rounded-[2rem] transition-all">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 rounded-full p-[1.5px] gradient-bg">
+                          <img 
+                            src={f.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(f.name)}&background=7C3AED&color=fff`} 
+                            className="w-full h-full rounded-full object-cover border-2 border-[#0A0A0F]" 
+                          />
+                        </div>
+                        <div>
+                          <p className="text-sm font-black text-white flex items-center">{f.name} <VerifiedBadge user={f} size={14} className="ml-1" /></p>
+                          <p className="text-[10px] text-white/30 font-bold uppercase">{f.university}</p>
+                        </div>
+                      </div>
+                      {modal === "following" && (
+                        <button 
+                          onClick={() => handleUnfollow(f._id)}
+                          className="px-4 py-2 glass rounded-xl text-[10px] font-black uppercase text-red-400 border border-red-500/10"
+                        >
+                          Unfollow
+                        </button>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
 
-      {/* ── MODAL: Following ── */}
-      {modal === "following" && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={() => setModal(null)}>
-          <div className="w-full max-w-md bg-surface rounded-t-3xl p-4 max-h-[70vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-foreground text-lg">Following</h2>
-              <button onClick={() => setModal(null)}><X size={20} className="text-muted" /></button>
-            </div>
-            <div className="space-y-3">
-              {following.length === 0 && (
-                <p className="text-sm text-muted text-center py-4">You're not following anyone yet.</p>
-              )}
-              {following.map((f, idx) => (
-                <div key={f._id || idx} className="flex items-center space-x-3">
-                  <img src={f.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(f.name)}&background=6366f1&color=fff`} alt={f.name} className="w-10 h-10 rounded-full object-cover" />
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-foreground flex items-center">
-                      {f.name}
-                      <VerifiedBadge user={f} size={14} />
-                    </p>
-                    <p className="text-xs text-muted">{f.university}</p>
-                  </div>
-                  <button 
-                    onClick={() => handleUnfollow(f._id)}
-                    className="text-xs text-muted font-medium border border-border/50 px-3 py-1 rounded-xl hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 transition-colors"
-                  >
-                    Unfollow
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── MODAL: Edit Profile ── */}
-      {modal === "edit" && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={() => setModal(null)}>
-          <div className="w-full max-w-md bg-surface rounded-t-3xl p-4 max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-foreground text-lg">Edit Profile</h2>
-              <button onClick={() => setModal(null)}><X size={20} className="text-muted" /></button>
-            </div>
-
-            <div className="space-y-4">
-              {/* Profile Picture */}
-              <div>
-                <label className="text-xs text-muted mb-1 block">Profile Picture URL</label>
-                <div className="flex flex-col space-y-2">
-                  <div className="flex items-center bg-surface-hover border border-border/50 rounded-xl overflow-hidden">
-                    <input
+        {/* Edit Modal */}
+        {modal === "edit" && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-end justify-center p-4 bg-black/80 backdrop-blur-sm"
+            onClick={() => setModal(null)}
+          >
+            <motion.div 
+              initial={{ y: 100 }}
+              animate={{ y: 0 }}
+              exit={{ y: 100 }}
+              className="w-full max-w-md glass-card rounded-[3rem] border border-white/10 overflow-hidden"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="p-6 border-b border-white/5 flex items-center justify-between">
+                <h3 className="text-lg font-black text-white">Edit Vibe</h3>
+                <button onClick={() => setModal(null)} className="p-2 glass rounded-full text-white/30"><X size={20} /></button>
+              </div>
+              <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                {/* Inputs */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-2">Profile Avatar URL</label>
+                    <input 
                       value={editData.profilePic}
-                      onChange={e => setEditData(prev => ({ ...prev, profilePic: e.target.value }))}
-                      placeholder="https://example.com/avatar.jpg"
-                      className="flex-1 bg-transparent py-3 px-4 text-sm text-foreground focus:outline-none"
+                      onChange={e => setEditData({...editData, profilePic: e.target.value})}
+                      className="w-full glass border border-white/5 rounded-2xl p-4 text-sm text-white focus:outline-none focus:border-purple-500/50 transition-all"
+                      placeholder="Paste image link..."
                     />
                   </div>
-                  {editData.profilePic && (
-                    <div className="flex items-center space-x-3 p-2 bg-surface-hover/50 rounded-xl border border-border/30">
-                      <img src={editData.profilePic} className="w-12 h-12 rounded-full object-cover border border-primary/30" alt="Preview" onError={(e) => e.target.src = 'https://ui-avatars.com/api/?name=Error&background=ef4444&color=fff'} />
-                      <span className="text-[10px] text-muted">Preview (looks good!)</span>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-2">Instagram</label>
+                      <input 
+                        value={editData.instaId}
+                        onChange={e => setEditData({...editData, instaId: e.target.value})}
+                        className="w-full glass border border-white/5 rounded-2xl p-4 text-sm text-white focus:outline-none focus:border-purple-500/50 transition-all"
+                        placeholder="@username"
+                      />
                     </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Instagram ID */}
-              <div>
-                <label className="text-xs text-muted mb-1 block">Instagram Username</label>
-                <div className="flex items-center bg-surface-hover border border-border/50 rounded-xl overflow-hidden">
-                  <span className="px-3 text-sm" style={{ color: "#bc1888" }}>@</span>
-                  <input
-                    value={editData.instaId}
-                    onChange={e => setEditData(prev => ({ ...prev, instaId: e.target.value.replace("@", "") }))}
-                    placeholder="your_instagram"
-                    className="flex-1 bg-transparent py-3 pr-4 text-sm text-foreground focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Snapchat ID */}
-              <div>
-                <label className="text-xs text-muted mb-1 block">Snapchat Username</label>
-                <div className="flex items-center bg-surface-hover border border-border/50 rounded-xl overflow-hidden">
-                  <span className="px-3 text-lg">👻</span>
-                  <input
-                    value={editData.snapId}
-                    onChange={e => setEditData(prev => ({ ...prev, snapId: e.target.value }))}
-                    placeholder="your_snapchat"
-                    className="flex-1 bg-transparent py-3 pr-4 text-sm text-foreground focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Interests */}
-              <div>
-                <label className="text-xs text-muted mb-2 block">Interests (select up to 5)</label>
-                <div className="flex flex-wrap gap-2">
-                  {INTEREST_OPTIONS.map(interest => {
-                    const selected = editData.interests.includes(interest);
-                    return (
-                      <button
-                        key={interest}
-                        onClick={() => toggleInterest(interest)}
-                        disabled={!selected && editData.interests.length >= 5}
-                        className={`flex items-center space-x-1 text-xs px-3 py-1.5 rounded-full border transition-all ${
-                          selected
-                            ? "bg-primary/20 text-primary border-primary/40 font-medium"
-                            : "bg-surface-hover text-muted border-border/50 hover:border-primary/30 disabled:opacity-40"
-                        }`}
-                      >
-                        {selected && <Check size={10} />}
-                        <span>{interest}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Sports */}
-              <div>
-                <label className="text-xs text-muted mb-2 block">Sports (select your sports)</label>
-                <div className="flex flex-wrap gap-2">
-                  {SPORT_OPTIONS.map(sport => {
-                    const selected = editData.sports.includes(sport);
-                    return (
-                      <button
-                        key={sport}
-                        onClick={() => toggleSport(sport)}
-                        className={`flex items-center space-x-1 text-xs px-3 py-1.5 rounded-full border transition-all ${
-                          selected
-                            ? "bg-green-500/20 text-green-500 border-green-500/40 font-medium"
-                            : "bg-surface-hover text-muted border-border/50 hover:border-green-500/30"
-                        }`}
-                      >
-                        {selected && <Check size={10} />}
-                        <span>{sport}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Save Button */}
-              <button
-                onClick={saveProfile}
-                className="w-full py-3 rounded-xl text-white font-semibold transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center space-x-2"
-                style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}
-              >
-                {saved ? <><Check size={18} /><span>Saved!</span></> : <><span>Save Changes</span></>}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── MODAL: Story ── */}
-      {modal === "story" && (
-        <div className="fixed inset-0 z-[100] flex flex-col bg-black" onClick={() => setModal(null)}>
-          {/* Story Progress */}
-          <div className="absolute top-2 left-2 right-2 flex space-x-1 z-10">
-            <div className="h-0.5 bg-white/50 w-full rounded-full overflow-hidden">
-               <motion.div initial={{ width: "0%" }} animate={{ width: "100%" }} transition={{ duration: 5 }} className="h-full bg-white" onAnimationComplete={() => setModal(null)} />
-            </div>
-          </div>
-          {/* Story Header */}
-          <div className="absolute top-6 left-4 right-4 flex justify-between items-center z-10">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold overflow-hidden">
-                {user.profilePic ? <img src={user.profilePic} className="w-full h-full object-cover" /> : user.name?.charAt(0)}
-              </div>
-              <span className="text-white font-semibold text-sm">{user.name}</span>
-              <span className="text-white/60 text-xs">2h</span>
-            </div>
-            <button onClick={() => setModal(null)} className="text-white"><X size={24} /></button>
-          </div>
-          {/* Story Content */}
-          <div className="flex-1 flex items-center justify-center bg-zinc-900 relative">
-             {userStories.length > 0 ? (
-               userStories[0].mediaType === 'video' ? (
-                 <video src={userStories[0].mediaUrl} autoPlay className="w-full h-auto max-h-full object-contain" />
-               ) : (
-                 <img src={userStories[0].mediaUrl} className="w-full h-auto max-h-full object-contain" alt="Story" />
-               )
-             ) : (
-               <div className="text-white text-sm opacity-50 italic">No active story</div>
-             )}
-          </div>
-          {/* Reply bar */}
-          <div className="p-4 flex items-center space-x-3 bg-black">
-            <div className="flex-1 rounded-full border border-white/30 px-4 py-3 text-white/50 text-sm">Reply to {user.name.split(" ")[0]}...</div>
-            <Heart className="text-white" />
-            <Send className="text-white" />
-          </div>
-        </div>
-      )}
-
-      {/* ── MODAL: Post View ── */}
-      {modal === "post" && activePostIndex !== null && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setModal(null)}>
-          <motion.div 
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="w-full max-w-md bg-surface h-[85vh] sm:h-[90vh] flex flex-col rounded-2xl overflow-hidden shadow-2xl relative" 
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="p-3 flex justify-between items-center border-b border-border/50">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold overflow-hidden">
-                  {user.profilePic ? <img src={user.profilePic} className="w-full h-full object-cover" /> : user.name?.charAt(0)}
-                </div>
-                <span className="font-bold text-foreground text-sm">{user.name}</span>
-              </div>
-              <button onClick={() => setModal(null)}><X size={20} className="text-muted" /></button>
-            </div>
-            {/* Image with Swipe handlers */}
-            <div 
-              className="w-full bg-black flex-shrink-0 flex items-center justify-center relative group/img"
-              onTouchStart={onTouchStart}
-              onTouchMove={onTouchMove}
-              onTouchEnd={onTouchEndHandler}
-            >
-              {activePostIndex > 0 && (
-                <button onClick={handlePrevPost} className="absolute left-2 p-2 bg-black/50 text-white rounded-full z-10 opacity-0 group-hover/img:opacity-100 transition-opacity"><ChevronLeft size={20}/></button>
-              )}
-              <img src={userPosts[activePostIndex].img} className="w-full max-h-[400px] object-contain select-none" alt="Post" draggable="false" />
-              {activePostIndex < userPosts.length - 1 && (
-                <button onClick={handleNextPost} className="absolute right-2 p-2 bg-black/50 text-white rounded-full z-10 opacity-0 group-hover/img:opacity-100 transition-opacity"><ChevronRight size={20}/></button>
-              )}
-            </div>
-            {/* Actions */}
-            <div className="p-3 flex items-center justify-between border-b border-border/10">
-              <div className="flex space-x-4">
-                <Heart onClick={handleLike} size={24} className={`cursor-pointer transition-colors ${userPosts[activePostIndex].isLiked ? 'fill-red-500 text-red-500' : 'text-foreground hover:text-red-500'}`} />
-                <MessageCircle size={24} className="text-foreground hover:text-blue-500 cursor-pointer transition-colors" />
-                <Send onClick={() => setModal("share")} size={24} className="text-foreground cursor-pointer hover:text-primary transition-colors" />
-              </div>
-              <div className="text-foreground font-bold text-sm">{userPosts[activePostIndex].likes} likes</div>
-            </div>
-            {/* Comments List */}
-            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-               <div className="flex space-x-2">
-                 <span className="font-bold text-sm">{user.name}</span>
-                 <span className="text-sm text-foreground/90">Campus vibes! ☀️</span>
-               </div>
-               <div className="text-xs text-muted font-bold mt-2 mb-2">View all {userPosts[activePostIndex].comments} comments</div>
-               {userPosts[activePostIndex].commentsList.map(comment => (
-                 <div key={comment.id} className="flex space-x-2">
-                   <span className="font-bold text-sm">{comment.author}</span>
-                   <span className="text-sm text-foreground/90">{comment.text}</span>
-                 </div>
-               ))}
-            </div>
-            {/* Add comment */}
-            <div className="p-3 border-t border-border/50 flex items-center space-x-2 bg-surface">
-              <input 
-                type="text" 
-                value={commentInput}
-                onChange={e => setCommentInput(e.target.value)}
-                onKeyPress={e => e.key === "Enter" && handleAddComment()}
-                placeholder="Add a comment..." 
-                className="flex-1 bg-transparent text-sm text-foreground focus:outline-none" 
-              />
-              <button onClick={handleAddComment} className="text-primary font-bold text-sm">Post</button>
-            </div>
-          </motion.div>
-        </div>
-      )}
-
-      {/* Share Modal */}
-      {modal === "share" && (
-        <div className="fixed inset-0 z-[110] flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={() => setModal("post")}>
-          <div className="w-full max-w-md bg-surface rounded-t-3xl p-4 animate-slide-up" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-foreground text-lg">Send to...</h2>
-              <button onClick={() => setModal("post")} className="text-muted hover:text-foreground"><X size={20} /></button>
-            </div>
-            <div className="mb-4">
-              <input 
-                type="text" 
-                placeholder="Search friends..." 
-                value={shareSearchTerm}
-                onChange={(e) => setShareSearchTerm(e.target.value)}
-                className="w-full bg-surface-hover border border-border/50 rounded-xl py-2 px-4 text-sm text-foreground focus:outline-none focus:border-primary transition-colors"
-              />
-            </div>
-            <div className="space-y-2 max-h-60 overflow-y-auto">
-              {[...followers, ...following].filter((f, i, arr) => arr.findIndex(x => x._id === f._id) === i).filter(f => f.name.toLowerCase().includes(shareSearchTerm.toLowerCase())).map(friend => {
-                const avatar = friend.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.name)}&background=6366f1&color=fff`;
-                return (
-                  <div key={friend._id} className="flex items-center space-x-3 p-2 hover:bg-surface-hover rounded-xl transition-colors cursor-pointer" onClick={() => handleShare(friend)}>
-                    <img src={avatar} alt={friend.name} className="w-10 h-10 rounded-full object-cover" />
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-foreground">{friend.name}</p>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-2">Snapchat</label>
+                      <input 
+                        value={editData.snapId}
+                        onChange={e => setEditData({...editData, snapId: e.target.value})}
+                        className="w-full glass border border-white/5 rounded-2xl p-4 text-sm text-white focus:outline-none focus:border-purple-500/50 transition-all"
+                        placeholder="snap_user"
+                      />
                     </div>
-                    <button className="bg-primary text-white text-xs font-bold px-4 py-1.5 rounded-full hover:scale-105 transition-transform shadow-md shadow-primary/20">
-                      Send
-                    </button>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
+                </div>
 
-      {/* ── MODAL: Avatar Options (Instagram Style) ── */}
-      {modal === "avatar_options" && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={() => setModal(null)}>
-          <motion.div 
-            initial={{ y: "100%" }} 
-            animate={{ y: 0 }} 
-            className="w-full max-w-md bg-surface rounded-t-3xl p-6 space-y-4" 
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="font-bold text-lg text-foreground">Create</h3>
-              <button onClick={() => setModal(null)}><X size={20} className="text-muted" /></button>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <button 
-                onClick={() => document.getElementById('profilePicInput').click()}
-                className="flex flex-col items-center justify-center p-4 rounded-2xl bg-surface-hover border border-border/50 hover:border-primary/50 transition-all group"
-              >
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-2 group-hover:scale-110 transition-transform">
-                  <Plus size={24} />
+                {/* Option Toggles */}
+                <div className="space-y-4">
+                   <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-2">Interests</label>
+                   <div className="flex flex-wrap gap-2">
+                     {INTEREST_OPTIONS.map(i => (
+                       <button
+                        key={i}
+                        onClick={() => toggleInterest(i)}
+                        className={clsx(
+                          "px-4 py-2 rounded-full text-[10px] font-bold transition-all border",
+                          editData.interests.includes(i) ? "gradient-bg text-white border-transparent" : "glass text-white/40 border-white/5"
+                        )}
+                       >
+                         {i}
+                       </button>
+                     ))}
+                   </div>
                 </div>
-                <span className="text-sm font-bold text-foreground">Profile Pic</span>
-              </button>
-              
-              <button 
-                onClick={() => document.getElementById('storyInput').click()}
-                className="flex flex-col items-center justify-center p-4 rounded-2xl bg-surface-hover border border-border/50 hover:border-pink-500/50 transition-all group"
-              >
-                <div className="w-12 h-12 rounded-full bg-pink-500/10 flex items-center justify-center text-pink-500 mb-2 group-hover:scale-110 transition-transform">
-                  <Heart size={24} />
-                </div>
-                <span className="text-sm font-bold text-foreground">Add Story</span>
-              </button>
-            </div>
-            
-            <input 
-              type="file" 
-              id="profilePicInput" 
-              className="hidden" 
-              accept="image/*" 
-              onChange={async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                
-                // Convert to Base64
-                const reader = new FileReader();
-                reader.onloadend = async () => {
-                  const base64String = reader.result;
-                  try {
-                    const token = localStorage.getItem("collegeadda_token");
-                    const res = await fetch(`${apiUrl}/api/users/profile`, {
-                      method: 'PUT',
-                      headers: { 
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                      },
-                      body: JSON.stringify({ profilePic: base64String })
-                    });
-                    if (res.ok) {
-                      const updatedUser = await res.json();
-                      setUser(updatedUser);
-                      localStorage.setItem("collegeadda_user", JSON.stringify(updatedUser));
-                      setToastMsg("Profile picture updated!");
-                      setModal(null);
-                      setTimeout(() => setToastMsg(""), 2000);
-                    }
-                  } catch (err) {
-                    console.error(err);
-                    alert("Failed to update profile picture");
-                  }
-                };
-                reader.readAsDataURL(file);
-              }}
-            />
-            
-            <input 
-              type="file" 
-              id="storyInput" 
-              className="hidden" 
-              accept="image/*,video/*" 
-              onChange={async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                
-                const reader = new FileReader();
-                reader.onloadend = async () => {
-                  const base64String = reader.result;
-                  try {
-                    const token = localStorage.getItem("collegeadda_token");
-                    const res = await fetch(`${apiUrl}/api/stories`, {
-                      method: 'POST',
-                      headers: { 
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                      },
-                      body: JSON.stringify({ 
-                        mediaUrl: base64String,
-                        mediaType: file.type.startsWith('video') ? 'video' : 'image'
-                      })
-                    });
-                    if (res.ok) {
-                      setToastMsg("Story shared for 24 hours! 🌟");
-                      setModal(null);
-                      setTimeout(() => setToastMsg(""), 2000);
-                    }
-                  } catch (err) {
-                    console.error(err);
-                    alert("Failed to post story");
-                  }
-                };
-                reader.readAsDataURL(file);
-              }}
-            />
+
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={saveProfile}
+                  className="w-full gradient-bg py-5 rounded-[2rem] text-sm font-black text-white uppercase tracking-widest shadow-xl shadow-purple-500/20"
+                >
+                  {saved ? "Saved! ⚡" : "Update Profile"}
+                </motion.button>
+              </div>
+            </motion.div>
           </motion.div>
-        </div>
-      )}
+        )}
 
-      {/* Toast Notification */}
-      {toastMsg && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-surface border border-border/50 px-6 py-3 rounded-full shadow-2xl z-[120] animate-fade-in flex items-center space-x-2">
-          <div className="bg-green-500/20 text-green-500 p-1 rounded-full">
-            <Check size={14} strokeWidth={3} />
-          </div>
-          <span className="text-sm font-bold text-foreground whitespace-nowrap">{toastMsg}</span>
-        </div>
-      )}
+        {/* Post Detail Modal */}
+        {modal === "post" && activePostIndex !== null && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl"
+            onClick={() => setModal(null)}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="w-full max-w-md glass-card rounded-[3rem] border border-white/10 overflow-hidden flex flex-col max-h-[90vh]"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Post Header */}
+              <div className="p-5 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-2xl p-[1.5px] gradient-bg">
+                    <img src={user.profilePic} className="w-full h-full rounded-[0.9rem] object-cover" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-white">{user.name}</p>
+                    <p className="text-[10px] text-white/30 font-bold uppercase">Memories</p>
+                  </div>
+                </div>
+                <button onClick={() => setModal(null)} className="p-2 glass rounded-full text-white/30"><X size={20} /></button>
+              </div>
+
+              {/* Post Image */}
+              <div className="relative aspect-square">
+                 <img src={userPosts[activePostIndex].img} className="w-full h-full object-cover" />
+                 {/* Navigation buttons */}
+                 <div className="absolute inset-y-0 left-0 flex items-center px-2">
+                   <button onClick={(e) => { e.stopPropagation(); if(activePostIndex > 0) setActivePostIndex(activePostIndex-1); }} className="p-2 glass rounded-full text-white/50 hover:text-white"><ChevronLeft size={20}/></button>
+                 </div>
+                 <div className="absolute inset-y-0 right-0 flex items-center px-2">
+                   <button onClick={(e) => { e.stopPropagation(); if(activePostIndex < userPosts.length-1) setActivePostIndex(activePostIndex+1); }} className="p-2 glass rounded-full text-white/50 hover:text-white"><ChevronRight size={20}/></button>
+                 </div>
+              </div>
+
+              {/* Post Actions */}
+              <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
+                <div className="flex items-center justify-between">
+                  <div className="flex space-x-4">
+                    <Heart size={24} className={clsx("cursor-pointer transition-all", userPosts[activePostIndex].isLiked ? "text-red-500 fill-red-500 scale-110" : "text-white/40 hover:text-red-500")} />
+                    <MessageCircle size={24} className="text-white/40 hover:text-purple-400" />
+                    <Send size={24} className="text-white/40 hover:text-cyan-400" />
+                  </div>
+                  <div className="text-xs font-black text-white/30 uppercase tracking-widest">{userPosts[activePostIndex].likes} Vibes</div>
+                </div>
+                
+                <div className="space-y-4">
+                   <p className="text-sm text-white/80 leading-relaxed font-medium">
+                     <span className="font-black mr-2">{user.name}</span>
+                     {userPosts[activePostIndex].content || "No caption provided."}
+                   </p>
+                   
+                   <div className="space-y-3 pt-4 border-t border-white/5">
+                      {userPosts[activePostIndex].commentsList.map(c => (
+                        <div key={c.id} className="flex items-start space-x-2 text-sm">
+                          <span className="font-black text-white whitespace-nowrap">{c.author}</span>
+                          <span className="text-white/60">{c.text}</span>
+                        </div>
+                      ))}
+                   </div>
+                </div>
+              </div>
+
+              {/* Add Comment Input */}
+              <div className="p-4 glass-panel border-t border-white/5 flex items-center space-x-3">
+                 <input 
+                  value={commentInput}
+                  onChange={e => setCommentInput(e.target.value)}
+                  placeholder="Drop a vibe..."
+                  className="flex-1 bg-transparent text-sm text-white focus:outline-none font-medium"
+                 />
+                 <button className="text-purple-500 font-black uppercase text-[10px] tracking-widest">Post</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
