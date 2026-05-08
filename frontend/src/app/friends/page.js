@@ -56,7 +56,17 @@ export default function FriendsPage() {
     const stored = localStorage.getItem("collegeadda_user");
     const token = getToken();
     if (!stored || !token) { router.push("/login"); return; }
-    const u = JSON.parse(stored);
+    
+    let u;
+    try {
+      u = JSON.parse(stored);
+    } catch (e) {
+      console.error("Failed to parse user data", e);
+      router.push("/login");
+      return;
+    }
+    
+    if (!u) { router.push("/login"); return; }
     setUser(u);
 
     try {
@@ -78,7 +88,7 @@ export default function FriendsPage() {
 
       if (suggestedRes.ok) {
         const data = await suggestedRes.json();
-        setSuggestedUsers(data);
+        setSuggestedUsers(Array.isArray(data) ? data : []);
       }
     } catch (err) {
       console.error("Error loading friends data:", err);
@@ -115,7 +125,7 @@ export default function FriendsPage() {
         headers: { Authorization: `Bearer ${token}` }
       })
         .then(r => r.ok ? r.json() : [])
-        .then(data => setSuggestedUsers(data))
+        .then(data => setSuggestedUsers(Array.isArray(data) ? data : []))
         .catch(console.error)
         .finally(() => setSearching(false));
       return;
@@ -130,7 +140,7 @@ export default function FriendsPage() {
         });
         if (res.ok) {
           const data = await res.json();
-          setSuggestedUsers(data);
+          setSuggestedUsers(Array.isArray(data) ? data : []);
         }
       } catch (err) {
         console.error(err);

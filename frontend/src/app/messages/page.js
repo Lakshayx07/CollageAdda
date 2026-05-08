@@ -7,6 +7,7 @@ import clsx from "clsx";
 import { io } from "socket.io-client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Suspense } from "react";
+import VerifiedBadge from "@/components/VerifiedBadge";
 
 function MessagesContent() {
   const router = useRouter();
@@ -27,7 +28,20 @@ function MessagesContent() {
       router.push("/login");
       return;
     }
-    const u = JSON.parse(storedUser);
+    
+    let u;
+    try {
+      u = JSON.parse(storedUser);
+    } catch (e) {
+      console.error("Auth error", e);
+      router.push("/login");
+      return;
+    }
+    
+    if (!u) {
+      router.push("/login");
+      return;
+    }
     setUser(u);
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
@@ -91,6 +105,10 @@ function MessagesContent() {
         });
         if (res.ok) {
           const data = await res.json();
+          if (!Array.isArray(data)) {
+            setChats([]);
+            return;
+          }
           const formattedRooms = data.map(room => ({
             id: room._id,
             name: room.isGroup ? (room.groupName || `${room.university} Hub`) : (room.participants.find(p => p._id !== u._id)?.name || "Chat"),
