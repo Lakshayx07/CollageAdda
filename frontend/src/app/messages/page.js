@@ -125,10 +125,50 @@ function MessagesContent() {
           }));
           
           setChats(formattedRooms);
+
+          // Handle ?chat=roomId (direct room link)
           const chatParam = searchParams.get("chat");
           if (chatParam) {
             const found = formattedRooms.find(c => c.id === chatParam);
-            if (found) setActiveChat(found);
+            if (found) { setActiveChat(found); return; }
+          }
+
+          // Handle ?userId=X (open/create DM from Squad page)
+          const userIdParam = searchParams.get("userId");
+          if (userIdParam) {
+            // Check if a private room with this user already exists
+            const existingRoom = formattedRooms.find(r => r.type === "private" && r.id.includes(userIdParam));
+            if (existingRoom) {
+              setActiveChat(existingRoom);
+            } else {
+              // Create a new private DM room
+              try {
+                const createRes = await fetch(`${apiUrl}/api/chat/rooms`, {
+                  method: "POST",
+                  headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+                  body: JSON.stringify({ participantId: userIdParam })
+                });
+                if (createRes.ok) {
+                  const newRoom = await createRes.json();
+                  const formatted = {
+                    id: newRoom._id,
+                    name: newRoom.participants?.find(p => p._id !== u._id)?.name || "Chat",
+                    type: "private",
+                    avatar: newRoom.participants?.find(p => p._id !== u._id)?.profilePic || `https://ui-avatars.com/api/?name=User&background=7C3AED&color=fff`,
+                    lastMsg: "No messages yet",
+                    time: "",
+                    unreadCount: 0
+                  };
+                  setChats(prev => {
+                    const exists = prev.find(c => c.id === formatted.id);
+                    return exists ? prev : [formatted, ...prev];
+                  });
+                  setActiveChat(formatted);
+                }
+              } catch (err) {
+                console.error("Error creating DM room:", err);
+              }
+            }
           }
         }
       } catch (err) {
