@@ -81,11 +81,13 @@ router.get('/search/query', protect, async (req, res) => {
   try {
     const { q } = req.query;
     if (!q) return res.json([]);
+    const cleanQuery = q.replace(/^#/, ''); // Remove # if they search for an interest tag directly
     const users = await User.find({
       _id: { $ne: req.user._id },
       $or: [
-        { name: { $regex: q, $options: 'i' } },
-        { university: { $regex: q, $options: 'i' } }
+        { name: { $regex: cleanQuery, $options: 'i' } },
+        { university: { $regex: cleanQuery, $options: 'i' } },
+        { interests: { $regex: cleanQuery, $options: 'i' } }
       ]
     }).select('-password').sort({ createdAt: -1 }).limit(20);
     res.json(users);

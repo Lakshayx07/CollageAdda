@@ -163,12 +163,14 @@ export default function ExplorePage() {
       if (res.ok) {
         const data = await res.json();
 
-        // Sort: non-connections first, existing connections last
+        // Sort: non-connections first, existing connections last. For non-connections, newest first.
         if (data.studentsData && data.studentsData.length > 0) {
           data.studentsData = [...data.studentsData].sort((a, b) => {
-            const aFollowed = myFollowing.includes(a._id);
-            const bFollowed = myFollowing.includes(b._id);
-            if (aFollowed === bFollowed) return 0;
+            const aFollowed = myFollowing.includes(a._id || a.id);
+            const bFollowed = myFollowing.includes(b._id || b.id);
+            if (aFollowed === bFollowed) {
+              return new Date(b.createdAt || 0) - new Date(a.createdAt || 0); // newest first
+            }
             return aFollowed ? 1 : -1; // already followed → go to end
           });
         }
@@ -229,7 +231,18 @@ export default function ExplorePage() {
   }, [search, colleges]);
 
   const toggleFollow = (id) => {
-    setFollowed(prev => ({ ...prev, [id]: !prev[id] }));
+    setFollowed(prev => {
+      const isCurrentlyFollowing = prev[id];
+      setSelectedCollege(curr => {
+        if (!curr || curr.id !== id && curr._id !== id) return curr;
+        let currentStudents = parseInt(curr.students) || 0;
+        return {
+          ...curr,
+          students: isCurrentlyFollowing ? currentStudents - 1 : currentStudents + 1
+        };
+      });
+      return { ...prev, [id]: !isCurrentlyFollowing };
+    });
   };
 
   const toggleAddStudent = (id) => {
@@ -655,7 +668,7 @@ export default function ExplorePage() {
 
                               {/* Details Area - only for top card */}
                               {isTop && (
-                                <div className="flex-1 p-5 space-y-4 bg-surface overflow-y-auto custom-scrollbar flex flex-col relative z-10">
+                                <div className="flex-1 p-5 space-y-4 bg-[#0A0A0F] overflow-y-auto custom-scrollbar flex flex-col relative z-10">
                                   <div>
                                     <h2 className="text-2xl font-black text-foreground flex items-center gap-2 tracking-tight line-clamp-1">
                                       {student.name}
@@ -736,10 +749,22 @@ export default function ExplorePage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="flex flex-col items-center justify-center py-20 text-muted w-full"
+                    className="w-full"
                   >
-                    <Bookmark size={48} className="mb-4 opacity-20" />
-                    <p>No campus memories shared yet. Be the first!</p>
+                    {selectedCollege.postsData && selectedCollege.postsData.filter(p => p.image).length > 0 ? (
+                      <div className="grid grid-cols-3 gap-1 md:gap-2 p-2">
+                        {selectedCollege.postsData.filter(p => p.image).map((post, i) => (
+                          <div key={post._id || i} className="aspect-square relative group overflow-hidden bg-white/5 rounded-lg">
+                            <img src={post.image} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-20 text-muted">
+                        <Bookmark size={48} className="mb-4 opacity-20" />
+                        <p>No campus memories shared yet. Be the first!</p>
+                      </div>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>

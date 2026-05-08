@@ -565,56 +565,43 @@ export default function ProfilePage() {
                 <button onClick={() => setModal(null)} className="p-2 glass rounded-full text-white/30"><X size={20} /></button>
               </div>
               <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
-                {/* Inputs */}
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-2">Profile Avatar URL</label>
-                    <input 
-                      value={editData.profilePic}
-                      onChange={e => setEditData({...editData, profilePic: e.target.value})}
-                      className="w-full glass border border-white/5 rounded-2xl p-4 text-sm text-white focus:outline-none focus:border-purple-500/50 transition-all"
-                      placeholder="Paste image link..."
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-2">Instagram</label>
-                      <input 
-                        value={editData.instaId}
-                        onChange={e => setEditData({...editData, instaId: e.target.value})}
-                        className="w-full glass border border-white/5 rounded-2xl p-4 text-sm text-white focus:outline-none focus:border-purple-500/50 transition-all"
-                        placeholder="@username"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-2">Snapchat</label>
-                      <input 
-                        value={editData.snapId}
-                        onChange={e => setEditData({...editData, snapId: e.target.value})}
-                        className="w-full glass border border-white/5 rounded-2xl p-4 text-sm text-white focus:outline-none focus:border-purple-500/50 transition-all"
-                        placeholder="snap_user"
-                      />
-                    </div>
-                  </div>
-                </div>
 
-                {/* Option Toggles */}
-                <div className="space-y-4">
-                   <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-2">Interests</label>
-                   <div className="flex flex-wrap gap-2">
-                     {INTEREST_OPTIONS.map(i => (
-                       <button
+                {/* Interests */}
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-2">Interests</label>
+                  <div className="flex flex-wrap gap-2">
+                    {INTEREST_OPTIONS.map(i => (
+                      <button
                         key={i}
                         onClick={() => toggleInterest(i)}
                         className={clsx(
                           "px-4 py-2 rounded-full text-[10px] font-bold transition-all border",
                           editData.interests.includes(i) ? "gradient-bg text-white border-transparent" : "glass text-white/40 border-white/5"
                         )}
-                       >
-                         {i}
-                       </button>
-                     ))}
-                   </div>
+                      >
+                        {i}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Sports */}
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-2">Sports</label>
+                  <div className="flex flex-wrap gap-2">
+                    {SPORT_OPTIONS.map(s => (
+                      <button
+                        key={s}
+                        onClick={() => toggleSport(s)}
+                        className={clsx(
+                          "px-4 py-2 rounded-full text-[10px] font-bold transition-all border",
+                          editData.sports.includes(s) ? "bg-yellow-500 text-black border-transparent font-black" : "glass text-white/40 border-white/5"
+                        )}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <motion.button
@@ -789,24 +776,36 @@ export default function ProfilePage() {
               {/* Preview */}
               {editData.profilePic && (
                 <div className="flex justify-center">
-                  <div className="w-24 h-24 rounded-[1.5rem] overflow-hidden border-2 border-purple-500/50">
-                    <img src={editData.profilePic} className="w-full h-full object-cover" onError={e => e.target.style.display='none'} />
+                  <div className="w-28 h-28 rounded-[2rem] overflow-hidden border-2 border-purple-500/50 shadow-xl">
+                    <img src={editData.profilePic} className="w-full h-full object-cover" />
                   </div>
                 </div>
               )}
-              <div className="space-y-2">
-                <label className="text-[11px] text-white/30 font-bold uppercase tracking-widest">Image URL</label>
+              {/* File picker button */}
+              <label className="block cursor-pointer">
                 <input
-                  value={editData.profilePic}
-                  onChange={e => setEditData(prev => ({ ...prev, profilePic: e.target.value }))}
-                  placeholder="https://example.com/your-photo.jpg"
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-sm text-white focus:outline-none focus:border-purple-500/50 transition-colors placeholder-white/20"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onloadend = () => setEditData(prev => ({ ...prev, profilePic: reader.result }));
+                    reader.readAsDataURL(file);
+                  }}
                 />
-              </div>
+                <div className="w-full flex flex-col items-center justify-center gap-3 py-8 rounded-2xl border-2 border-dashed border-purple-500/30 bg-purple-500/5 hover:bg-purple-500/10 transition-all">
+                  <Camera size={32} className="text-purple-400" />
+                  <p className="text-sm font-black text-white/60">Tap to choose from gallery</p>
+                  <p className="text-[10px] text-white/30">JPG, PNG, WEBP — visible to everyone</p>
+                </div>
+              </label>
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={saveProfile}
-                className="w-full gradient-bg py-4 rounded-2xl text-sm font-black text-white uppercase tracking-widest shadow-xl shadow-purple-500/20"
+                disabled={!editData.profilePic}
+                className="w-full gradient-bg py-4 rounded-2xl text-sm font-black text-white uppercase tracking-widest shadow-xl shadow-purple-500/20 disabled:opacity-40"
               >
                 {saved ? "Saved! ✅" : "Save Picture"}
               </motion.button>
@@ -841,7 +840,7 @@ export default function ProfilePage() {
               {/* Preview */}
               {storyInput.imageUrl && (
                 <div className="relative w-full aspect-[9/16] max-h-64 rounded-2xl overflow-hidden border border-white/10">
-                  <img src={storyInput.imageUrl} className="w-full h-full object-cover" onError={e => e.target.style.display='none'} />
+                  <img src={storyInput.imageUrl} className="w-full h-full object-cover" />
                   {storyInput.caption && (
                     <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
                       <p className="text-white text-sm font-bold text-center">{storyInput.caption}</p>
@@ -849,25 +848,38 @@ export default function ProfilePage() {
                   )}
                 </div>
               )}
-              <div className="space-y-3">
-                <div className="space-y-1">
-                  <label className="text-[11px] text-white/30 font-bold uppercase tracking-widest">Story Image URL</label>
-                  <input
-                    value={storyInput.imageUrl}
-                    onChange={e => setStoryInput(prev => ({ ...prev, imageUrl: e.target.value }))}
-                    placeholder="https://example.com/story-image.jpg"
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-pink-500/50 transition-colors placeholder-white/20"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[11px] text-white/30 font-bold uppercase tracking-widest">Caption (optional)</label>
-                  <input
-                    value={storyInput.caption}
-                    onChange={e => setStoryInput(prev => ({ ...prev, caption: e.target.value }))}
-                    placeholder="Write something..."
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-pink-500/50 transition-colors placeholder-white/20"
-                  />
-                </div>
+              {/* File picker */}
+              <label className="block cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onloadend = () => setStoryInput(prev => ({ ...prev, imageUrl: reader.result }));
+                    reader.readAsDataURL(file);
+                  }}
+                />
+                {!storyInput.imageUrl ? (
+                  <div className="w-full flex flex-col items-center justify-center gap-3 py-10 rounded-2xl border-2 border-dashed border-pink-500/30 bg-pink-500/5 hover:bg-pink-500/10 transition-all">
+                    <ImageIcon size={32} className="text-pink-400" />
+                    <p className="text-sm font-black text-white/60">Tap to choose from gallery</p>
+                    <p className="text-[10px] text-white/30">JPG, PNG, WEBP — disappears in 24h</p>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-pink-400 text-center font-bold">Tap to change photo</p>
+                )}
+              </label>
+              <div className="space-y-1">
+                <label className="text-[11px] text-white/30 font-bold uppercase tracking-widest">Caption (optional)</label>
+                <input
+                  value={storyInput.caption}
+                  onChange={e => setStoryInput(prev => ({ ...prev, caption: e.target.value }))}
+                  placeholder="Write something..."
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-pink-500/50 transition-colors placeholder-white/20"
+                />
               </div>
               <motion.button
                 whileTap={{ scale: 0.97 }}

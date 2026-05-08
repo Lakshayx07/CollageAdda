@@ -299,7 +299,7 @@ export default function FriendsPage() {
           className="space-y-6"
         >
           <div className="text-center space-y-2">
-            <h2 className="text-4xl font-black text-white tracking-tighter">Find Your <span className="text-transparent bg-clip-text gradient-bg">Campus Squad</span></h2>
+            <h2 className="text-4xl font-black text-white tracking-tighter">Find Your <span className="gradient-text">Campus Squad</span></h2>
             <p className="text-white/40 text-sm font-medium">Connect with the coolest minds in your university</p>
           </div>
 

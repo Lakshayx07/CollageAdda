@@ -252,6 +252,60 @@ export default function Home() {
     }
   };
 
+  const handleDeletePost = async (postId) => {
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const res = await fetch(`${apiUrl}/api/posts/${postId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setPosts(prev => prev.filter(p => p.id !== postId));
+        setToastMsg("Post deleted 🗑️");
+        setTimeout(() => setToastMsg(""), 2000);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleShareToFriend = async (friendId, postId) => {
+    const postToShare = posts.find(p => p.id === postId);
+    if (!postToShare) return;
+
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      // 1. Get or create private room
+      const roomRes = await fetch(`${apiUrl}/api/chat/rooms`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ participantId: friendId, isGroup: false })
+      });
+      
+      if (!roomRes.ok) return;
+      const room = await roomRes.json();
+
+      // 2. Send message
+      let messageText = `Check out this post by ${postToShare.author}: ${postToShare.content || ""}`;
+      
+      await fetch(`${apiUrl}/api/chat/rooms/${room._id}/messages`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          text: messageText,
+          mediaUrl: postToShare.mediaUrl || '',
+          mediaType: postToShare.mediaType || 'none'
+        })
+      });
+
+      setShareModal(null);
+      setToastMsg("Post shared successfully! ✈️");
+      setTimeout(() => setToastMsg(""), 2000);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
@@ -465,8 +519,6 @@ export default function Home() {
             <motion.article 
               key={post.id} 
               variants={itemVariants}
-              onMouseEnter={() => setHoveredPost(post.id)}
-              onMouseLeave={() => setHoveredPost(null)}
               className="glass-card rounded-[2rem] p-6 relative group border-l-[3px] border-l-transparent hover:border-l-purple-500 transition-all duration-500"
             >
               {/* Post Header */}
@@ -487,16 +539,37 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <motion.button 
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="text-[11px] font-bold px-4 py-1.5 rounded-full border border-white/10 hover:bg-white/5 transition-all"
-                  >
-                    Follow
-                  </motion.button>
-                  <button onClick={() => setPostMenu(postMenu === post.id ? null : post.id)} className="text-white/40 hover:text-white p-1">
-                    <MoreHorizontal size={20} />
-                  </button>
+                  {friendsList.some(f => f.id === post.authorId) ? (
+                    <span className="text-[10px] font-black uppercase tracking-widest text-purple-400 bg-purple-500/10 px-3 py-1 rounded-full border border-purple-500/20">
+                      Your Squad
+                    </span>
+                  ) : currentUser?._id !== post.authorId && currentUser?.id !== post.authorId ? (
+                    <motion.button 
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="text-[11px] font-bold px-4 py-1.5 rounded-full border border-white/10 hover:bg-white/5 transition-all text-white"
+                    >
+                      Follow
+                    </motion.button>
+                  ) : null}
+                  <div className="relative">
+                    <button onClick={() => setPostMenu(postMenu === post.id ? null : post.id)} className="text-white/40 hover:text-white p-1">
+                      <MoreHorizontal size={20} />
+                    </button>
+                    {postMenu === post.id && (
+                      <div className="absolute right-0 top-full mt-2 w-40 bg-[#1A1A1F] border border-white/10 rounded-xl shadow-2xl py-1 z-50">
+                        {currentUser?._id === post.authorId || currentUser?.id === post.authorId ? (
+                          <button onClick={() => { handleDeletePost(post.id); setPostMenu(null); }} className="w-full text-left px-4 py-2 text-[13px] font-bold text-red-500 hover:bg-white/5 transition-colors">
+                            Delete Post
+                          </button>
+                        ) : (
+                          <button className="w-full text-left px-4 py-2 text-[13px] font-bold text-white/60 hover:bg-white/5 hover:text-white transition-colors">
+                            Report Post
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
               
@@ -532,19 +605,6 @@ export default function Home() {
                       <Heart size={22} className={clsx("transition-all", post.isLiked && "fill-pink-500")} />
                       <span className="text-sm font-bold">{post.likes}</span>
                     </motion.button>
-                    
-                    {/* Emoji Reaction Bar on Hover */}
-                    {hoveredPost === post.id && !post.isLiked && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: 10, scale: 0.8 }}
-                        animate={{ opacity: 1, y: -45, scale: 1 }}
-                        className="absolute left-0 glass px-3 py-1.5 rounded-full flex space-x-3 shadow-xl border border-white/10 z-10"
-                      >
-                        {["❤️", "😂", "🔥", "😮", "🙌"].map(emoji => (
-                          <span key={emoji} className="cursor-pointer hover:scale-125 transition-transform text-lg">{emoji}</span>
-                        ))}
-                      </motion.div>
-                    )}
                   </div>
 
                   <button 
@@ -650,7 +710,10 @@ export default function Home() {
                     <img src={friend.avatar} alt={friend.name} className="w-11 h-11 rounded-full object-cover border border-white/10" />
                     <p className="text-sm font-bold text-white/90">{friend.name}</p>
                   </div>
-                  <button className="gradient-bg text-white text-[11px] font-bold px-5 py-2 rounded-full shadow-lg shadow-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button 
+                    onClick={() => handleShareToFriend(friend.id, shareModal)}
+                    className="gradient-bg text-white text-[11px] font-bold px-5 py-2 rounded-full shadow-lg shadow-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
                     Send Now
                   </button>
                 </div>

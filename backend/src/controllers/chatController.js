@@ -65,24 +65,39 @@ export const markAsSeen = async (req, res) => {
 };
 
 /**
- * @desc    Get or create a private room with a user
+ * @desc    Get or create a private room or create a group room
  * @route   POST /api/chat/rooms
  * @access  Private
  */
 export const getOrCreatePrivateRoom = async (req, res) => {
-  const { targetUserId } = req.body;
-  
-  if (!targetUserId) return res.status(400).json({ message: 'Target user ID is required' });
+  const { targetUserId, participantId, isGroup, groupName, participantIds } = req.body;
+  const target = targetUserId || participantId;
 
   try {
+    if (isGroup) {
+      if (!groupName || !participantIds || participantIds.length === 0) {
+        return res.status(400).json({ message: 'Group name and participants are required' });
+      }
+      const room = await ChatRoom.create({
+        participants: [req.user._id, ...participantIds],
+        isGroup: true,
+        groupName: groupName
+      });
+      const populatedRoom = await ChatRoom.findById(room._id).populate('participants', 'name profilePic university');
+      return res.status(201).json(populatedRoom);
+    }
+
+    // Private Room Logic
+    if (!target) return res.status(400).json({ message: 'Target user ID is required for private rooms' });
+
     let room = await ChatRoom.findOne({
       isGroup: false,
-      participants: { $all: [req.user._id, targetUserId] }
+      participants: { $all: [req.user._id, target] }
     }).populate('participants', 'name profilePic university');
 
     if (!room) {
       room = await ChatRoom.create({
-        participants: [req.user._id, targetUserId],
+        participants: [req.user._id, target],
         isGroup: false
       });
       room = await ChatRoom.findById(room._id).populate('participants', 'name profilePic university');

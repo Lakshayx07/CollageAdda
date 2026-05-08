@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Search, Send, Users, ChevronLeft, Info, MessageSquare, Plus, Image as ImageIcon, Smile, MoreVertical } from "lucide-react";
+import { Search, Send, Users, ChevronLeft, Info, MessageSquare, Plus, Image as ImageIcon, Smile, MoreVertical, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import clsx from "clsx";
 import { io } from "socket.io-client";
@@ -23,6 +23,12 @@ function MessagesContent() {
   const [messages, setMessages] = useState({});
   const [input, setInput] = useState("");
   const [showAttachments, setShowAttachments] = useState(false);
+  const [chatSearch, setChatSearch] = useState("");
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [newGroupName, setNewGroupName] = useState("");
+  const [selectedMembers, setSelectedMembers] = useState([]);
+  const [connections, setConnections] = useState([]);
+  const [creatingGroup, setCreatingGroup] = useState(false);
   const socketRef = useRef(null);
   const fileInputRef = useRef(null);
   const scrollRef = useRef(null);
@@ -121,7 +127,8 @@ function MessagesContent() {
             avatar: room.isGroup ? "🏫" : (room.participants.find(p => p._id !== u._id)?.profilePic || `https://ui-avatars.com/api/?name=User&background=7C3AED&color=fff`),
             lastMsg: room.lastMessage?.text || "No messages yet",
             time: room.lastMessage ? new Date(room.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "",
-            unreadCount: room.unreadCounts?.[u._id] || 0
+            unreadCount: room.unreadCounts?.[u._id] || 0,
+            participants: room.participants?.map(p => p._id || p.id) || []
           }));
           
           setChats(formattedRooms);
@@ -137,7 +144,7 @@ function MessagesContent() {
           const userIdParam = searchParams.get("userId");
           if (userIdParam) {
             // Check if a private room with this user already exists
-            const existingRoom = formattedRooms.find(r => r.type === "private" && r.id.includes(userIdParam));
+            const existingRoom = formattedRooms.find(r => r.type === "private" && r.participants.includes(userIdParam));
             if (existingRoom) {
               setActiveChat(existingRoom);
             } else {
@@ -270,6 +277,70 @@ function MessagesContent() {
     setInput("");
   };
 
+  const fetchConnections = async () => {
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+      const [f1, f2] = await Promise.all([
+        fetch(`${apiUrl}/api/users/me/following`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+        fetch(`${apiUrl}/api/users/me/followers`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json())
+      ]);
+      const combined = [...(Array.isArray(f1) ? f1 : []), ...(Array.isArray(f2) ? f2 : [])];
+      // Deduplicate
+      const unique = combined.filter((v, i, a) => a.findIndex(t => (t._id === v._id)) === i);
+      setConnections(unique);
+    } catch (err) {
+      console.error("Error fetching connections:", err);
+    }
+  };
+
+  const handleCreateGroup = async () => {
+    if (!newGroupName.trim() || selectedMembers.length === 0) return;
+    setCreatingGroup(true);
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+      const res = await fetch(`${apiUrl}/api/chat/rooms`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          isGroup: true, 
+          groupName: newGroupName, 
+          participantIds: selectedMembers
+        })
+      });
+      
+      if (res.ok) {
+        const newRoom = await res.json();
+        const formatted = {
+          id: newRoom._id,
+          name: newRoom.groupName,
+          type: "group",
+          avatar: "🏫",
+          lastMsg: "Group created",
+          time: "",
+          unreadCount: 0,
+          participants: newRoom.participants?.map(p => p._id || p.id) || []
+        };
+        setChats(prev => [formatted, ...prev]);
+        setActiveChat(formatted);
+        setShowCreateGroup(false);
+        setNewGroupName("");
+        setSelectedMembers([]);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setCreatingGroup(false);
+    }
+  };
+
+  const toggleMemberSelection = (id) => {
+    setSelectedMembers(prev => prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id]);
+  };
+
+  const filteredChats = chats.filter(c => c.name.toLowerCase().includes(chatSearch.toLowerCase()));
+
   if (!isMounted || !user) return null;
 
   return (
@@ -289,6 +360,10 @@ function MessagesContent() {
             <motion.button 
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
+              onClick={() => {
+                setShowCreateGroup(true);
+                fetchConnections();
+              }}
               className="p-3 glass rounded-2xl text-purple-400 border border-white/10"
             >
               <Plus size={22} />
@@ -299,6 +374,8 @@ function MessagesContent() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-purple-400 transition-colors" size={20} />
             <input
               type="text"
+              value={chatSearch}
+              onChange={e => setChatSearch(e.target.value)}
               placeholder="Search conversations..."
               className="w-full bg-white/5 border border-white/5 rounded-[1.25rem] py-3.5 pl-12 pr-4 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all"
             />
@@ -306,7 +383,7 @@ function MessagesContent() {
         </header>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar px-3 space-y-1 pb-20 lg:pb-4">
-          {chats.map(chat => (
+          {filteredChats.map(chat => (
             <motion.button
               key={chat.id}
               whileHover={{ x: 4 }}
@@ -590,6 +667,86 @@ function MessagesContent() {
           </div>
         )}
       </div>
+
+      {/* --- CREATE GROUP MODAL --- */}
+      <AnimatePresence>
+        {showCreateGroup && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-end justify-center p-4 bg-black/80 backdrop-blur-sm"
+            onClick={() => setShowCreateGroup(false)}
+          >
+            <motion.div 
+              initial={{ y: 100 }}
+              animate={{ y: 0 }}
+              exit={{ y: 100 }}
+              className="w-full max-w-md bg-[#111118] rounded-[2.5rem] border border-white/10 overflow-hidden flex flex-col max-h-[85vh]"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="p-6 border-b border-white/5 flex items-center justify-between shrink-0">
+                <h3 className="text-lg font-black text-white">Create Squad Group</h3>
+                <button onClick={() => setShowCreateGroup(false)} className="p-2 glass rounded-full text-white/30"><X size={20} /></button>
+              </div>
+              <div className="p-6 space-y-5 overflow-y-auto custom-scrollbar">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-2">Group Name</label>
+                  <input 
+                    value={newGroupName}
+                    onChange={e => setNewGroupName(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white focus:outline-none focus:border-purple-500/50 transition-all"
+                    placeholder="E.g. Weekend Hackers..."
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-2 flex justify-between">
+                    <span>Select Members ({selectedMembers.length})</span>
+                  </label>
+                  <div className="space-y-2 max-h-[40vh] overflow-y-auto custom-scrollbar bg-white/[0.02] p-2 rounded-2xl border border-white/5">
+                    {connections.length === 0 ? (
+                      <p className="text-white/30 text-xs text-center py-4 font-medium italic">No connections found. Follow people first!</p>
+                    ) : (
+                      connections.map(c => (
+                        <div 
+                          key={c._id}
+                          onClick={() => toggleMemberSelection(c._id)}
+                          className={clsx(
+                            "flex items-center space-x-3 p-3 rounded-[1.5rem] cursor-pointer transition-all border",
+                            selectedMembers.includes(c._id) ? "bg-purple-500/10 border-purple-500/50" : "bg-white/5 border-transparent hover:bg-white/10"
+                          )}
+                        >
+                          <img src={c.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=7C3AED&color=fff`} className="w-10 h-10 rounded-full object-cover" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-white truncate">{c.name}</p>
+                            <p className="text-[10px] text-white/40 truncate">{c.university}</p>
+                          </div>
+                          {selectedMembers.includes(c._id) && (
+                            <div className="w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center">
+                              <span className="text-white text-xs font-black">✓</span>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+                
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={handleCreateGroup}
+                  disabled={creatingGroup || !newGroupName.trim() || selectedMembers.length === 0}
+                  className="w-full gradient-bg py-4 rounded-2xl text-sm font-black text-white uppercase tracking-widest shadow-xl shadow-purple-500/20 disabled:opacity-40"
+                >
+                  {creatingGroup ? "Creating..." : "Create Group"}
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
