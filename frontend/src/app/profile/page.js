@@ -1,7 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LogOut, Edit3, X, Check, Plus, Grid, Heart, MessageCircle, Send, ChevronLeft, ChevronRight, Share2, Instagram, Ghost, MapPin, Zap, Star } from "lucide-react";
+import { LogOut, Edit3, X, Check, Plus, Grid, Heart, MessageCircle, Send, ChevronLeft, ChevronRight, Share2, Ghost, MapPin, Zap, Star } from "lucide-react";
+
+const InstagramIcon = ({ size = 20 }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+  >
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+  </svg>
+);
+
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import UniversityBadges from "@/components/UniversityBadges";
@@ -316,7 +334,7 @@ export default function ProfilePage() {
                 className="glass-card p-4 rounded-3xl border border-white/5 flex items-center space-x-3"
               >
                 <div className="w-10 h-10 bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] rounded-2xl flex items-center justify-center text-white">
-                  <Instagram size={20} />
+                  <InstagramIcon size={20} />
                 </div>
                 <div className="min-w-0">
                   <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest">Instagram</p>
