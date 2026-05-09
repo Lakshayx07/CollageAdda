@@ -5,6 +5,17 @@ import Post from '../models/Post.js';
 import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
+ 
+// @route   GET /api/colleges/public
+// @desc    Get all colleges (public, for login/register)
+router.get('/public', async (req, res) => {
+  try {
+    const colleges = await College.find({}).select('name');
+    res.json(colleges);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 
 // @route   GET /api/colleges
 // @desc    Get all colleges

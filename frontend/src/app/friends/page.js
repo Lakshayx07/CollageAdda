@@ -121,11 +121,18 @@ export default function FriendsPage() {
   }, []);
 
   useEffect(() => {
+    const stored = localStorage.getItem("collegeadda_user");
+    const token = getToken();
+    if (!token || !stored) return;
+
+    let u;
+    try {
+      u = JSON.parse(stored);
+    } catch (e) { return; }
+
+    if (!u) return;
+
     if (!search.trim()) {
-      const token = getToken();
-      const stored = localStorage.getItem("collegeadda_user");
-      if (!token || !stored) return;
-      const u = JSON.parse(stored);
       setSearching(true);
       fetch(`${apiUrl}/api/users/search/query?q=${encodeURIComponent(u.university || "")}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -140,7 +147,6 @@ export default function FriendsPage() {
     const timeout = setTimeout(async () => {
       setSearching(true);
       try {
-        const token = getToken();
         const res = await fetch(`${apiUrl}/api/users/search/query?q=${encodeURIComponent(search)}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -153,7 +159,7 @@ export default function FriendsPage() {
       } finally {
         setSearching(false);
       }
-    }, 400);
+    }, 300);
 
     return () => clearTimeout(timeout);
   }, [search, apiUrl]);
@@ -304,15 +310,15 @@ export default function FriendsPage() {
           </div>
 
           <div className="relative group">
-            <div className="absolute -inset-1 gradient-bg rounded-[2rem] blur opacity-10 group-focus-within:opacity-30 transition-opacity" />
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-purple-400 transition-colors" size={20} />
+            <div className="absolute -inset-1 gradient-bg rounded-[2rem] blur opacity-10 group-focus-within:opacity-30 transition-opacity pointer-events-none" />
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-purple-400 transition-colors pointer-events-none" size={20} />
             {searching && <Loader2 className="absolute right-5 top-1/2 -translate-y-1/2 text-purple-500 animate-spin" size={18} />}
             <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search by name, university or #interest..."
-              className="w-full glass-card border border-white/10 rounded-[2rem] py-5 pl-14 pr-12 text-[15px] text-white placeholder:text-white/20 focus:outline-none focus:border-purple-500/50 transition-all shadow-2xl"
+              className="w-full bg-transparent glass-card border border-white/10 rounded-[2rem] py-5 pl-14 pr-12 text-[15px] text-white placeholder:text-white/20 focus:outline-none focus:border-purple-500/50 transition-all shadow-2xl"
             />
           </div>
         </motion.div>

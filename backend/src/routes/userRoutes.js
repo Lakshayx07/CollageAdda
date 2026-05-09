@@ -80,16 +80,18 @@ router.put('/profile', protect, async (req, res) => {
 router.get('/search/query', protect, async (req, res) => {
   try {
     const { q } = req.query;
-    if (!q) return res.json([]);
-    const cleanQuery = q.replace(/^#/, ''); // Remove # if they search for an interest tag directly
-    const users = await User.find({
-      _id: { $ne: req.user._id },
-      $or: [
+    let query = { _id: { $ne: req.user._id } };
+    
+    if (q) {
+      const cleanQuery = q.replace(/^#/, '');
+      query.$or = [
         { name: { $regex: cleanQuery, $options: 'i' } },
         { university: { $regex: cleanQuery, $options: 'i' } },
         { interests: { $regex: cleanQuery, $options: 'i' } }
-      ]
-    }).select('-password').sort({ createdAt: -1 }).limit(20);
+      ];
+    }
+    
+    const users = await User.find(query).select('-password').sort({ createdAt: -1 }).limit(20);
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: error.message });

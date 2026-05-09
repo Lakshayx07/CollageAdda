@@ -329,7 +329,10 @@ export default function Home() {
           Campus Adda
         </h1>
         <div className="flex items-center space-x-4">
-          <button className="p-2 rounded-full hover:bg-white/5 transition-colors text-white/70">
+          <button 
+            onClick={() => router.push('/explore')}
+            className="p-2 rounded-full hover:bg-white/5 transition-colors text-white/70"
+          >
             <Search size={22} />
           </button>
           <NotificationBell />

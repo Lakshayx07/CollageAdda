@@ -7,27 +7,37 @@ import { supabase } from "../../utils/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
 
-const UNIVERSITIES = [
-  "Rishihood University, Sonipat",
-  "Delhi University (DU)",
-  "Jawaharlal Nehru University (JNU)",
-  "Amity University, Noida",
-  "Ashoka University, Sonipat",
-  "SRM University, Delhi-NCR",
-  "IIT Delhi",
-  "DTU (Delhi Technological University)",
-  "Other"
-];
-
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [colleges, setColleges] = useState([]);
 
   // Form State
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [university, setUniversity] = useState("");
+
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+
+  useEffect(() => {
+    const fetchColleges = async () => {
+      try {
+        // Fetch colleges without auth token since login is public
+        const res = await fetch(`${apiUrl}/api/colleges/public`);
+        // If public route doesn't exist, try the standard one (though it might require protect)
+        const targetRes = res.ok ? res : await fetch(`${apiUrl}/api/colleges`);
+        
+        if (targetRes.ok) {
+          const data = await targetRes.json();
+          setColleges(data);
+        }
+      } catch (err) {
+        console.error("Error fetching colleges:", err);
+      }
+    };
+    fetchColleges();
+  }, [apiUrl]);
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -214,9 +224,11 @@ export default function LoginPage() {
                       : "glass border border-white/5 text-white focus:border-purple-500/50"
                   )}
                 >
-                  <option value="" disabled className="bg-[#0A0A0F] text-gray-400">Select University</option>
-                  {UNIVERSITIES.map(uni => (
-                    <option key={uni} value={uni} className="bg-[#0A0A0F] text-white">{uni}</option>
+                  <option value="" disabled className="bg-[#0A0A0F] text-gray-400">
+                    {colleges.length > 0 ? "Select Your University" : "Fetching Universities..."}
+                  </option>
+                  {colleges.map(c => (
+                    <option key={c._id || c.id} value={c.name} className="bg-[#0A0A0F] text-white">{c.name}</option>
                   ))}
                 </select>
                 <div className={clsx("absolute inset-y-0 right-5 flex items-center pointer-events-none z-10", !university ? "text-gray-800" : "text-white/20")}>
