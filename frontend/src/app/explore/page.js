@@ -259,6 +259,43 @@ export default function ExplorePage() {
     setAddedStudents(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
+  const handleDirectMessage = async (student) => {
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const userId = student._id || student.id;
+      
+      // 1. Follow if not already followed
+      if (!myFollowing.includes(userId)) {
+        await fetch(`${apiUrl}/api/users/${userId}/follow`, {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setMyFollowing(prev => [...prev, userId]);
+      }
+
+      // 2. Get or Create Room
+      const res = await fetch(`${apiUrl}/api/chat/rooms`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ targetUserId: userId })
+      });
+
+      if (res.ok) {
+        const room = await res.json();
+        setToastMessage("Room connected! Opening chat...");
+        router.push(`/messages?chat=${room._id}`);
+      } else {
+        setToastMessage("Failed to start chat.");
+      }
+      setTimeout(() => setToastMessage(null), 2000);
+    } catch (err) {
+      console.error("Error starting direct message:", err);
+    }
+  };
+
 
 
   return (
@@ -719,10 +756,20 @@ export default function ExplorePage() {
                                       </div>
                                     </div>
                                   )}
-                                  <div className="pt-2 mt-auto">
+                                  <div className="pt-2 mt-auto space-y-3">
                                     <p className="text-[13px] text-foreground/80 italic leading-relaxed font-medium bg-surface-hover p-3 rounded-xl border border-border/50">
                                       "{student.bio}"
                                     </p>
+                                    
+                                    <motion.button
+                                      whileHover={{ scale: 1.02 }}
+                                      whileTap={{ scale: 0.98 }}
+                                      onClick={() => handleDirectMessage(student)}
+                                      className="w-full py-4 gradient-bg rounded-2xl text-xs font-black text-white uppercase tracking-widest shadow-xl flex items-center justify-center space-x-2"
+                                    >
+                                      <MessageSquare size={16} />
+                                      <span>{myFollowing.includes(student._id || student.id) ? "Send Message" : "Connect & Message"}</span>
+                                    </motion.button>
                                   </div>
                                 </div>
                               )}

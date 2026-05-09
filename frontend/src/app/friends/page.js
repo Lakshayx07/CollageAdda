@@ -173,6 +173,38 @@ export default function FriendsPage() {
     }
   };
 
+  const handleDirectMessage = async (targetId) => {
+    try {
+      const token = getToken();
+      
+      // 1. Follow if not already followed
+      if (followStatus[targetId] !== "connected") {
+        await fetch(`${apiUrl}/api/users/${targetId}/follow`, {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setFollowStatus(prev => ({ ...prev, [targetId]: "connected" }));
+      }
+
+      // 2. Get or Create Room
+      const res = await fetch(`${apiUrl}/api/chat/rooms`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ targetUserId: targetId })
+      });
+
+      if (res.ok) {
+        const room = await res.json();
+        router.push(`/messages?chat=${room._id}`);
+      }
+    } catch (err) {
+      console.error("Error starting direct message:", err);
+    }
+  };
+
   const toggleFollow = async (targetId) => {
     const currentStatus = followStatus[targetId];
     setFollowStatus(prev => ({ ...prev, [targetId]: currentStatus === "connected" ? null : "connected" }));
@@ -282,7 +314,7 @@ export default function FriendsPage() {
                           </p>
                         </div>
                         <button
-                          onClick={() => router.push(`/messages?userId=${follower._id}`)}
+                          onClick={() => handleDirectMessage(follower._id)}
                           className="p-2 rounded-xl glass hover:bg-purple-500/10 text-purple-400"
                         >
                           <MessageCircle size={16} />
@@ -413,31 +445,26 @@ export default function FriendsPage() {
                           <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            onClick={() => toggleFollow(person._id)}
-                            className={clsx(
-                              "flex-1 md:w-32 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl",
-                              status === "connected"
-                                ? "glass text-white/40 border-white/10"
-                                : "gradient-bg text-white shadow-purple-500/20"
-                            )}
+                            onClick={() => handleDirectMessage(person._id)}
+                            className="flex-1 md:w-32 py-3 gradient-bg rounded-2xl text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-purple-500/20"
                           >
-                            {status === "connected" ? (
-                              <span className="flex items-center justify-center gap-2"><UserCheck size={14} /> Squad</span>
-                            ) : (
-                              <span className="flex items-center justify-center gap-2"><UserPlus size={14} /> Connect</span>
-                            )}
+                            <span className="flex items-center justify-center gap-2">
+                              <MessageCircle size={14} /> 
+                              {status === "connected" ? "Message" : "Chat Now"}
+                            </span>
                           </motion.button>
                           
-                          {status === "connected" && (
-                            <motion.button
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              onClick={() => router.push(`/messages?userId=${person._id}`)}
-                              className="p-3.5 rounded-2xl glass text-purple-400 hover:text-white hover:bg-purple-500/20 transition-all border border-white/10"
-                            >
-                              <MessageCircle size={20} />
-                            </motion.button>
-                          )}
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => toggleFollow(person._id)}
+                            className={clsx(
+                              "p-3.5 rounded-2xl glass transition-all border border-white/10",
+                              status === "connected" ? "text-purple-400" : "text-white/40"
+                            )}
+                          >
+                            {status === "connected" ? <UserCheck size={20} /> : <UserPlus size={20} />}
+                          </motion.button>
                         </div>
                       </div>
                     </motion.div>
