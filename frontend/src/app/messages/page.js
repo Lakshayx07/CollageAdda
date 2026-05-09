@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Search, Send, Users, ChevronLeft, Info, MessageSquare, Plus, Image as ImageIcon, Smile, MoreVertical, X } from "lucide-react";
+import { Search, Send, Users, ChevronLeft, Info, MessageSquare, Plus, Image as ImageIcon, Smile, MoreVertical, X, Zap, Flame, TrendingUp } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import clsx from "clsx";
 import { io } from "socket.io-client";
@@ -22,6 +22,7 @@ function MessagesContent() {
   const [chats, setChats] = useState([]);
   const [messages, setMessages] = useState({});
   const [input, setInput] = useState("");
+  const [isSending, setIsSending] = useState(false);
   const [showAttachments, setShowAttachments] = useState(false);
   const [chatSearch, setChatSearch] = useState("");
   const [showCreateGroup, setShowCreateGroup] = useState(false);
@@ -86,9 +87,9 @@ function MessagesContent() {
             text: msg.text, 
             mediaUrl: msg.mediaUrl,
             mediaType: msg.mediaType,
-            sender: msg.senderId === (u.id || u._id) ? "me" : "them",
+            sender: String(msg.senderId) === String(u._id || u.id) ? "me" : "them",
             senderName: msg.senderName,
-            senderAvatar: msg.senderAvatar,
+            senderAvatar: msg.senderAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.senderName || "U")}&background=7C3AED&color=fff`,
             time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           }]
         };
@@ -124,7 +125,7 @@ function MessagesContent() {
             id: room._id,
             name: room.isGroup ? (room.groupName || `${room.university} Hub`) : (room.participants.find(p => p._id !== u._id)?.name || "Chat"),
             type: room.isGroup ? "group" : "private",
-            avatar: room.isGroup ? "🏫" : (room.participants.find(p => p._id !== u._id)?.profilePic || `https://ui-avatars.com/api/?name=User&background=7C3AED&color=fff`),
+            avatar: room.isGroup ? <Users size={20} className="text-purple-400" /> : (room.participants.find(p => p._id !== u._id)?.profilePic || `https://ui-avatars.com/api/?name=User&background=7C3AED&color=fff`),
             lastMsg: room.lastMessage?.text || "No messages yet",
             time: room.lastMessage ? new Date(room.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "",
             unreadCount: room.unreadCounts?.[u._id] || 0,
@@ -220,7 +221,7 @@ function MessagesContent() {
              const formattedMsgs = data.map(m => ({
                id: m._id,
                text: m.text,
-               sender: m.sender?._id === (u.id || u._id) ? "me" : "them",
+               sender: String(m.sender?._id || m.sender?.id) === String(u._id || u.id) ? "me" : "them",
                senderName: m.sender?.name || "Student",
                senderAvatar: m.sender?.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.sender?.name || "U")}&background=7C3AED&color=fff`,
                mediaUrl: m.mediaUrl,
@@ -242,8 +243,9 @@ function MessagesContent() {
   }, [messages, activeChat]);
 
   const sendMessage = () => {
-    if (!input.trim() || !activeChat) return;
+    if (!input.trim() || !activeChat || isSending) return;
 
+    setIsSending(true);
     const tempId = `temp-${Date.now()}`;
     const data = {
       room: activeChat.id,
@@ -275,6 +277,7 @@ function MessagesContent() {
     
     socketRef.current.emit('send_message', data);
     setInput("");
+    setIsSending(false);
   };
 
   const fetchConnections = async () => {
@@ -316,7 +319,7 @@ function MessagesContent() {
           id: newRoom._id,
           name: newRoom.groupName,
           type: "group",
-          avatar: "🏫",
+          avatar: <Users size={20} className="text-purple-400" />,
           lastMsg: "Group created",
           time: "",
           unreadCount: 0,
@@ -399,9 +402,13 @@ function MessagesContent() {
                 <div className="w-14 h-14 rounded-full p-[2px] gradient-bg shadow-lg">
                   <div className="w-full h-full rounded-full bg-[#0A0A0F] flex items-center justify-center overflow-hidden">
                     {chat.type === "group" ? (
-                      <span className="text-xl">{chat.avatar}</span>
+                      <div className="text-purple-400">{chat.avatar}</div>
                     ) : (
-                      <img src={chat.avatar} className="w-full h-full object-cover" />
+                      <img 
+                        src={chat.avatar} 
+                        className="w-full h-full object-cover" 
+                        onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(chat.name)}&background=7C3AED&color=fff`; }}
+                      />
                     )}
                   </div>
                 </div>
@@ -459,7 +466,11 @@ function MessagesContent() {
                         <div className="w-full h-full gradient-bg flex items-center justify-center text-white font-black text-lg">
                           {activeChat.name.charAt(0)}
                         </div>
-                      ) : <img src={activeChat.avatar} className="w-full h-full object-cover" />}
+                      ) : <img 
+                            src={activeChat.avatar} 
+                            className="w-full h-full object-cover" 
+                            onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(activeChat.name)}&background=7C3AED&color=fff`; }}
+                          />}
                     </div>
                   </div>
                   <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-[#0A0A0F] rounded-full" />
@@ -564,15 +575,22 @@ function MessagesContent() {
 
             {/* Quick Reply Pills */}
             <div className="px-6 py-3 flex space-x-2 overflow-x-auto no-scrollbar">
-              {["Sup? 🤘", "Let's meet!", "Class?", "Exam check 📚", "Canteen?"].map(pill => (
+              {[
+                { text: "Sup?", icon: <Zap size={14} className="text-yellow-400" /> },
+                { text: "Let's meet!", icon: <Users size={14} className="text-purple-400" /> },
+                { text: "Class?", icon: <TrendingUp size={14} className="text-cyan-400" /> },
+                { text: "Exam check", icon: <TrendingUp size={14} className="text-blue-400" /> },
+                { text: "Canteen?", icon: <Flame size={14} className="text-orange-400" /> }
+              ].map(pill => (
                 <motion.button
-                  key={pill}
+                  key={pill.text}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => setInput(pill)}
-                  className="whitespace-nowrap px-4 py-2 glass rounded-full text-[11px] font-bold text-white/60 hover:text-white hover:border-purple-500/50 transition-all border border-white/5"
+                  onClick={() => setInput(pill.text)}
+                  className="whitespace-nowrap px-4 py-2 glass rounded-full text-[11px] font-bold text-white/60 hover:text-white hover:border-purple-500/50 transition-all border border-white/5 flex items-center space-x-2"
                 >
-                  {pill}
+                  {pill.icon}
+                  <span>{pill.text}</span>
                 </motion.button>
               ))}
             </div>
@@ -605,9 +623,14 @@ function MessagesContent() {
                   whileHover={{ scale: 1.05, x: 2 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={sendMessage}
-                  className="gradient-bg text-white p-3.5 rounded-[1.5rem] shadow-xl shadow-purple-500/20"
+                  disabled={isSending || !input.trim()}
+                  className="gradient-bg text-white p-3.5 rounded-[1.5rem] shadow-xl shadow-purple-500/20 disabled:opacity-50 disabled:grayscale transition-all flex items-center justify-center min-w-[50px]"
                 >
-                  <Send size={20} />
+                  {isSending ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <Send size={20} />
+                  )}
                 </motion.button>
               </div>
             </div>

@@ -92,6 +92,8 @@ io.on('connection', (socket) => {
   socket.on('send_message', async (data) => {
     // data: { room, senderId, senderName, text, mediaUrl, mediaType }
     try {
+      console.log(`[WS] Message from ${data.senderName} in room ${data.room}`);
+      
       const message = await Message.create({
         room: data.room,
         sender: data.senderId,
@@ -119,15 +121,20 @@ io.on('connection', (socket) => {
         // Also emit to each participant's private room (for notifications/unread updates)
         room.participants.forEach(pId => {
           const participantId = pId.toString();
+          // We send to everyone including sender (for confirmation) or just others?
+          // The frontend replaces tempId, so it needs the message back.
           if (participantId !== data.senderId.toString()) {
             const current = room.unreadCounts.get(participantId) || 0;
             room.unreadCounts.set(participantId, current + 1);
             
             // Deliver to the participant's individual room
+            console.log(`[WS] Delivering to participant room: ${participantId}`);
             io.to(participantId).emit('receive_message', deliveryData);
           }
         });
         await room.save();
+      } else {
+        console.error(`[WS] Room not found: ${data.room}`);
       }
     } catch (err) {
       console.error('[WS] Error saving message:', err);

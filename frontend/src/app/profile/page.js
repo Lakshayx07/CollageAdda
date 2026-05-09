@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LogOut, Edit3, X, Check, Plus, Grid, Heart, MessageCircle, Send, ChevronLeft, ChevronRight, Share2, Ghost, MapPin, Zap, Star, Camera, Clock, Image as ImageIcon } from "lucide-react";
+import { LogOut, Edit3, X, Check, Plus, Grid, Heart, MessageCircle, Send, ChevronLeft, ChevronRight, Share2, Ghost, MapPin, Zap, Star, Camera, Clock, Image as ImageIcon, Music, Code, Palette, Plane, Gamepad2, Book, Dumbbell, Film, Utensils, Trophy } from "lucide-react";
 
 const InstagramIcon = ({ size = 20 }) => (
   <svg 
@@ -26,8 +26,30 @@ import UniversityBadges from "@/components/UniversityBadges";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import clsx from "clsx";
 
-const INTEREST_OPTIONS = ["Music 🎵", "Cricket 🏏", "Coding 💻", "Art 🎨", "Travel ✈️", "Gaming 🎮", "Books 📚", "Fitness 💪", "Movies 🎬", "Cooking 🍳"];
-const SPORT_OPTIONS = ["Football ⚽", "Basketball 🏀", "Cricket 🏏", "Tennis 🎾", "Badminton 🏸", "Volleyball 🏐", "Table Tennis 🏓", "Athletics 🏃", "Swimming 🏊", "Chess ♟️"];
+const INTEREST_OPTIONS = [
+  { name: "Music", icon: <Music size={12} /> },
+  { name: "Cricket", icon: <Trophy size={12} /> },
+  { name: "Coding", icon: <Code size={12} /> },
+  { name: "Art", icon: <Palette size={12} /> },
+  { name: "Travel", icon: <Plane size={12} /> },
+  { name: "Gaming", icon: <Gamepad2 size={12} /> },
+  { name: "Books", icon: <Book size={12} /> },
+  { name: "Fitness", icon: <Dumbbell size={12} /> },
+  { name: "Movies", icon: <Film size={12} /> },
+  { name: "Cooking", icon: <Utensils size={12} /> }
+];
+const SPORT_OPTIONS = [
+  { name: "Football", icon: <Trophy size={12} /> },
+  { name: "Basketball", icon: <Trophy size={12} /> },
+  { name: "Cricket", icon: <Trophy size={12} /> },
+  { name: "Tennis", icon: <Trophy size={12} /> },
+  { name: "Badminton", icon: <Trophy size={12} /> },
+  { name: "Volleyball", icon: <Trophy size={12} /> },
+  { name: "Table Tennis", icon: <Trophy size={12} /> },
+  { name: "Athletics", icon: <Trophy size={12} /> },
+  { name: "Swimming", icon: <Trophy size={12} /> },
+  { name: "Chess", icon: <Trophy size={12} /> }
+];
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -47,6 +69,8 @@ export default function ProfilePage() {
 
   const [editData, setEditData] = useState({ profilePic: "", instaId: "", snapId: "", interests: [], sports: [] });
   const [saved, setSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [unfollowingId, setUnfollowingId] = useState(null);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
@@ -142,6 +166,8 @@ export default function ProfilePage() {
   };
 
   const handleUnfollow = async (targetUserId) => {
+    if (unfollowingId) return;
+    setUnfollowingId(targetUserId);
     try {
       const token = localStorage.getItem("collegeadda_token");
       const res = await fetch(`${apiUrl}/api/users/${targetUserId}/follow`, {
@@ -155,10 +181,14 @@ export default function ProfilePage() {
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setUnfollowingId(null);
     }
   };
 
   const saveProfile = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
     try {
       const token = localStorage.getItem("collegeadda_token");
       const res = await fetch(`${apiUrl}/api/users/profile`, {
@@ -186,24 +216,26 @@ export default function ProfilePage() {
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const toggleInterest = (interest) => {
+  const toggleInterest = (interestName) => {
     setEditData(prev => ({
       ...prev,
-      interests: prev.interests.includes(interest)
-        ? prev.interests.filter(i => i !== interest)
-        : [...prev.interests, interest]
+      interests: prev.interests.includes(interestName)
+        ? prev.interests.filter(i => i !== interestName)
+        : [...prev.interests, interestName]
     }));
   };
 
-  const toggleSport = (sport) => {
+  const toggleSport = (sportName) => {
     setEditData(prev => ({
       ...prev,
-      sports: prev.sports.includes(sport)
-        ? prev.sports.filter(s => s !== sport)
-        : [...prev.sports, sport]
+      sports: prev.sports.includes(sportName)
+        ? prev.sports.filter(s => s !== sportName)
+        : [...prev.sports, sportName]
     }));
   };
 
@@ -295,7 +327,11 @@ export default function ProfilePage() {
                 className={`w-full h-full rounded-[2.7rem] bg-[#0A0A0F] flex items-center justify-center overflow-hidden ${hasActiveStory ? 'cursor-pointer active:scale-95 transition-transform' : ''}`}
               >
                 {user.profilePic ? (
-                  <img src={user.profilePic} className="w-full h-full object-cover" />
+                  <img 
+                    src={user.profilePic} 
+                    className="w-full h-full object-cover" 
+                    onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=7C3AED&color=fff`; }}
+                  />
                 ) : (
                   <span className="text-4xl font-black text-white">{user.name?.charAt(0)}</span>
                 )}
@@ -413,13 +449,15 @@ export default function ProfilePage() {
             </h3>
             <div className="flex flex-wrap gap-2">
               {(user.interests || []).map((i, idx) => (
-                <span key={idx} className="glass px-4 py-2 rounded-full text-[11px] font-bold text-white/60 border border-white/5 hover:border-purple-500/30 hover:text-purple-400 transition-all">
-                  {i}
+                <span key={idx} className="glass px-4 py-2 rounded-full text-[11px] font-bold text-white/60 border border-white/5 hover:border-purple-500/30 hover:text-purple-400 transition-all flex items-center space-x-2">
+                  <Star size={10} className="text-purple-400" />
+                  <span>{i}</span>
                 </span>
               ))}
               {(user.sports || []).map((s, idx) => (
-                <span key={idx} className="bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-wider">
-                  {s}
+                <span key={idx} className="bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-wider flex items-center space-x-2">
+                  <Trophy size={10} />
+                  <span>{s}</span>
                 </span>
               ))}
             </div>
@@ -531,9 +569,10 @@ export default function ProfilePage() {
                       {modal === "following" && (
                         <button 
                           onClick={() => handleUnfollow(f._id)}
-                          className="px-4 py-2 glass rounded-xl text-[10px] font-black uppercase text-red-400 border border-red-500/10"
+                          disabled={unfollowingId === f._id}
+                          className="px-4 py-2 glass rounded-xl text-[10px] font-black uppercase text-red-400 border border-red-500/10 disabled:opacity-50"
                         >
-                          Unfollow
+                          {unfollowingId === f._id ? "..." : "Unfollow"}
                         </button>
                       )}
                     </div>
@@ -572,14 +611,15 @@ export default function ProfilePage() {
                   <div className="flex flex-wrap gap-2">
                     {INTEREST_OPTIONS.map(i => (
                       <button
-                        key={i}
-                        onClick={() => toggleInterest(i)}
+                        key={i.name}
+                        onClick={() => toggleInterest(i.name)}
                         className={clsx(
-                          "px-4 py-2 rounded-full text-[10px] font-bold transition-all border",
-                          editData.interests.includes(i) ? "gradient-bg text-white border-transparent" : "glass text-white/40 border-white/5"
+                          "px-4 py-2 rounded-full text-[10px] font-bold transition-all border flex items-center space-x-2",
+                          editData.interests.includes(i.name) ? "gradient-bg text-white border-transparent" : "glass text-white/40 border-white/5"
                         )}
                       >
-                        {i}
+                        {i.icon}
+                        <span>{i.name}</span>
                       </button>
                     ))}
                   </div>
@@ -591,14 +631,15 @@ export default function ProfilePage() {
                   <div className="flex flex-wrap gap-2">
                     {SPORT_OPTIONS.map(s => (
                       <button
-                        key={s}
-                        onClick={() => toggleSport(s)}
+                        key={s.name}
+                        onClick={() => toggleSport(s.name)}
                         className={clsx(
-                          "px-4 py-2 rounded-full text-[10px] font-bold transition-all border",
-                          editData.sports.includes(s) ? "bg-yellow-500 text-black border-transparent font-black" : "glass text-white/40 border-white/5"
+                          "px-4 py-2 rounded-full text-[10px] font-bold transition-all border flex items-center space-x-2",
+                          editData.sports.includes(s.name) ? "bg-yellow-500 text-black border-transparent font-black" : "glass text-white/40 border-white/5"
                         )}
                       >
-                        {s}
+                        {s.icon}
+                        <span>{s.name}</span>
                       </button>
                     ))}
                   </div>
@@ -608,9 +649,16 @@ export default function ProfilePage() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={saveProfile}
-                  className="w-full gradient-bg py-5 rounded-[2rem] text-sm font-black text-white uppercase tracking-widest shadow-xl shadow-purple-500/20"
+                  disabled={isSaving}
+                  className="w-full gradient-bg py-5 rounded-[2rem] text-sm font-black text-white uppercase tracking-widest shadow-xl shadow-purple-500/20 disabled:opacity-50 flex justify-center items-center h-16"
                 >
-                  {saved ? "Saved! ⚡" : "Update Profile"}
+                  {isSaving ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : saved ? (
+                    "Saved!"
+                  ) : (
+                    "Update Profile"
+                  )}
                 </motion.button>
               </div>
             </motion.div>
@@ -888,7 +936,7 @@ export default function ProfilePage() {
                 className="w-full py-4 rounded-2xl text-sm font-black text-white uppercase tracking-widest shadow-xl disabled:opacity-40"
                 style={{ background: "linear-gradient(135deg, #f09433, #dc2743, #bc1888)" }}
               >
-                {storyUploading ? "Adding..." : "Share Story ✨"}
+                {storyUploading ? "Adding..." : "Share Story"}
               </motion.button>
             </motion.div>
           </motion.div>

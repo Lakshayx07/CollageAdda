@@ -13,7 +13,17 @@ import {
   Check,
   Building2,
   Bookmark,
-  Send
+  Send,
+  Zap,
+  Flame,
+  TrendingUp,
+  Hand,
+  GraduationCap,
+  Smile,
+  Library,
+  FlaskConical,
+  Trees,
+  Compass
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import VerifiedBadge from "@/components/VerifiedBadge";
@@ -195,14 +205,14 @@ export default function ExplorePage() {
           headers: { Authorization: `Bearer ${token}` }
         });
         
-        const autoMessage = `Hey! 👋 just connected with you on Campus Adda! Say hi back 🎓💕`;
+        const autoMessage = `Hey! just connected with you on Campus Adda! Say hi back`;
 
         setChatMessages(prev => ({
           ...prev,
           [student._id || student.id]: [...(prev[student._id || student.id] || []), { text: autoMessage, time: 'now' }]
         }));
 
-        setToastMessage("Connected successfully! They'll see your message 💕");
+        setToastMessage("Connected successfully! They'll see your message");
         toggleAddStudent(student._id || student.id);
         
         // Optimistically update following list
@@ -212,7 +222,7 @@ export default function ExplorePage() {
       }
       setTimeout(() => setToastMessage(null), 3000);
     } else {
-      setToastMessage("Skipped! Next up 👀");
+      setToastMessage("Skipped! Next up");
       setTimeout(() => setToastMessage(null), 2000);
     }
 
@@ -314,12 +324,12 @@ export default function ExplorePage() {
                   {/* Info Section Below Image */}
                   <div className="p-4 flex flex-col flex-1 space-y-3 bg-surface">
                     <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">{college.emoji}</span>
+                        <div className="bg-primary/10 p-1.5 rounded-lg mr-2">
+                          <Building2 size={16} style={{ color: college.accent }} />
+                        </div>
                         <h3 className="font-bold text-sm text-foreground leading-tight line-clamp-2">
                           {college.name}
                         </h3>
-                      </div>
                       <div className="flex items-center text-[11px] text-muted">
                         <MapPin size={12} className="mr-1 text-primary" />
                         <span className="truncate">{college.location}</span>
@@ -381,8 +391,8 @@ export default function ExplorePage() {
 
                 {/* College Info on Banner */}
                 <div className="absolute bottom-6 left-4 right-4 flex items-center space-x-4 z-10">
-                  <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-3xl shadow-2xl">
-                    {selectedCollege.emoji}
+                  <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-2xl">
+                    <Building2 size={32} className="text-white" />
                   </div>
                   <div className="flex-1">
                     <h2 className="text-2xl font-bold text-white drop-shadow-md leading-tight">{selectedCollege.name}</h2>
@@ -598,14 +608,18 @@ export default function ExplorePage() {
                           animate={{ opacity: 1, scale: 1 }}
                           className="flex flex-col items-center justify-center text-center p-6 space-y-5 bg-surface rounded-[32px] w-full h-full border border-border/50 shadow-lg"
                         >
-                          <div className="text-7xl mb-2">🎓</div>
+                          <div className="bg-primary/10 p-5 rounded-full mb-2">
+                            <GraduationCap size={48} className="text-primary" />
+                          </div>
                           <h3 className="font-bold text-foreground text-xl">You've seen everyone at {selectedCollege.name}!</h3>
                           <div className="space-y-3 w-full mt-4">
-                            <button onClick={() => router.push('/messages')} className="w-full py-3 bg-primary/10 text-primary font-bold rounded-xl text-sm hover:bg-primary/20 transition-colors shadow-sm">
-                              See who connected back →
+                            <button onClick={() => router.push('/messages')} className="w-full py-3 bg-primary/10 text-primary font-bold rounded-xl text-sm hover:bg-primary/20 transition-colors shadow-sm flex items-center justify-center space-x-2">
+                              <span>See who connected back</span>
+                              <TrendingUp size={16} />
                             </button>
-                            <button onClick={() => setSelectedCollege(null)} className="w-full py-3 bg-surface-hover border border-border/50 text-foreground font-bold rounded-xl text-sm hover:bg-surface-hover/80 transition-colors shadow-sm">
-                              Explore another college →
+                            <button onClick={() => setSelectedCollege(null)} className="w-full py-3 bg-surface-hover border border-border/50 text-foreground font-bold rounded-xl text-sm hover:bg-surface-hover/80 transition-colors shadow-sm flex items-center justify-center space-x-2">
+                              <span>Explore another college</span>
+                              <TrendingUp size={16} className="rotate-90" />
                             </button>
                           </div>
                         </motion.div>
@@ -677,18 +691,18 @@ export default function ExplorePage() {
                                     <div className="flex flex-col mt-2 space-y-1.5">
                                       {student.year && (
                                         <div className="flex items-center text-foreground/90 text-[13px] font-semibold">
-                                          🎓 {student.year}
+                                          <GraduationCap size={14} className="mr-2 text-primary" /> {student.year}
                                         </div>
                                       )}
                                       <div className="flex items-center text-foreground/80 text-[12px] font-medium">
-                                        🏫 {student.university || selectedCollege.name}
+                                        <Building2 size={12} className="mr-2 text-secondary" /> {student.university || selectedCollege.name}
                                       </div>
                                       <div className="flex items-center text-foreground/80 text-[12px] font-medium">
-                                        📍 {selectedCollege.location}
+                                        <MapPin size={12} className="mr-2 text-primary" /> {selectedCollege.location}
                                       </div>
                                       {myFollowing.includes(student._id || student.id) && (
-                                        <div className="mt-1 inline-flex bg-green-500/20 text-green-500 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider self-start items-center gap-1 shadow-sm">
-                                          🤝 Already Friends
+                                        <div className="mt-1 inline-flex bg-green-500/20 text-green-500 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider self-start items-center gap-2 shadow-sm">
+                                          <Users size={12} /> Already Friends
                                         </div>
                                       )}
                                     </div>
@@ -727,7 +741,9 @@ export default function ExplorePage() {
                           onClick={() => handleSwipe(selectedCollege.id, 'left', selectedCollege.studentsData[currentStudentIndices[selectedCollege.id] || 0])}
                           className="w-[70px] h-[70px] rounded-full bg-surface border-2 border-orange-500/20 flex items-center justify-center text-3xl shadow-[0_0_20px_rgba(249,115,22,0.15)] hover:shadow-[0_0_30px_rgba(249,115,22,0.3)] transition-shadow"
                         >
-                          🤪
+                          <div className="text-orange-500 hover:text-orange-600 transition-colors">
+                            <Smile size={40} strokeWidth={2.5} />
+                          </div>
                         </motion.button>
 
                         <motion.button
@@ -736,7 +752,9 @@ export default function ExplorePage() {
                           onClick={() => handleSwipe(selectedCollege.id, 'right', selectedCollege.studentsData[currentStudentIndices[selectedCollege.id] || 0])}
                           className="w-[84px] h-[84px] rounded-full bg-surface border-2 border-pink-500/20 flex items-center justify-center text-4xl shadow-[0_0_25px_rgba(236,72,153,0.2)] hover:shadow-[0_0_40px_rgba(236,72,153,0.4)] transition-shadow"
                         >
-                          💕
+                          <div className="text-pink-500 hover:text-pink-600 transition-colors">
+                            <Heart size={44} fill="currentColor" strokeWidth={0} />
+                          </div>
                         </motion.button>
                       </div>
                     )}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check, Plus, Flame, TrendingUp, Search } from "lucide-react";
+import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check, Plus, Flame, TrendingUp, Search, Zap } from "lucide-react";
 import Image from "next/image";
 import NotificationBell from "../components/NotificationBell";
 import VerifiedBadge from "../components/VerifiedBadge";
@@ -29,6 +29,7 @@ export default function Home() {
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [activeStory, setActiveStory] = useState(null);
   const [hoveredPost, setHoveredPost] = useState(null);
+  const [isPosting, setIsPosting] = useState(false);
   
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
   
@@ -36,7 +37,12 @@ export default function Home() {
   const videoInputRef = useRef(null);
 
   const trendingTopics = [
-    "Tech Fest 2024 🔥", "Exam Season 📚", "Campus Elections 🗳️", "Night Canteen 🍔", "Sports Meet ⚽", "Hackathon 💻"
+    { name: "Tech Fest 2024", icon: <Flame size={14} className="text-orange-500" /> },
+    { name: "Exam Season", icon: <TrendingUp size={14} className="text-blue-400" /> },
+    { name: "Campus Elections", icon: <TrendingUp size={14} className="text-purple-400" /> },
+    { name: "Night Canteen", icon: <Flame size={14} className="text-yellow-500" /> },
+    { name: "Sports Meet", icon: <Zap size={14} className="text-green-400" /> },
+    { name: "Hackathon", icon: <Search size={14} className="text-cyan-400" /> }
   ];
 
   useEffect(() => {
@@ -153,7 +159,8 @@ export default function Home() {
   };
 
   const handleCreatePost = async () => {
-    if (!newPostContent.trim() && !selectedMedia) return;
+    if ((!newPostContent.trim() && !selectedMedia) || isPosting) return;
+    setIsPosting(true);
     try {
       const token = localStorage.getItem("collegeadda_token");
       const res = await fetch(`${apiUrl}/api/posts`, {
@@ -185,11 +192,13 @@ export default function Home() {
         setNewPostContent("");
         setSelectedMedia(null);
         setMediaType('none');
-        setToastMsg("Post created! 🚀");
+        setToastMsg("Post created!");
         setTimeout(() => setToastMsg(""), 2000);
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setIsPosting(false);
     }
   };
 
@@ -261,7 +270,7 @@ export default function Home() {
       });
       if (res.ok) {
         setPosts(prev => prev.filter(p => p.id !== postId));
-        setToastMsg("Post deleted 🗑️");
+        setToastMsg("Post deleted");
         setTimeout(() => setToastMsg(""), 2000);
       }
     } catch (err) {
@@ -299,7 +308,7 @@ export default function Home() {
       });
 
       setShareModal(null);
-      setToastMsg("Post shared successfully! ✈️");
+      setToastMsg("Post shared successfully!");
       setTimeout(() => setToastMsg(""), 2000);
     } catch (err) {
       console.error(err);
@@ -419,9 +428,10 @@ export default function Home() {
             {trendingTopics.map((topic, i) => (
               <button 
                 key={i} 
-                className="flex-shrink-0 glass px-4 py-2 rounded-full text-xs font-medium text-white/80 border border-white/5 hover:border-white/20 hover:bg-white/10 transition-all flex items-center space-x-1"
+                className="flex-shrink-0 glass px-4 py-2 rounded-full text-xs font-medium text-white/80 border border-white/5 hover:border-white/20 hover:bg-white/10 transition-all flex items-center space-x-2"
               >
-                <span>{topic}</span>
+                {topic.icon}
+                <span>{topic.name}</span>
               </button>
             ))}
           </div>
@@ -446,7 +456,7 @@ export default function Home() {
             <textarea 
               value={newPostContent}
               onChange={(e) => setNewPostContent(e.target.value)}
-              placeholder="What's happening on campus today? ✨"
+              placeholder="What's happening on campus today?"
               className="flex-1 bg-transparent resize-none text-base focus:outline-none text-white placeholder:text-white/30 mt-2 min-h-[60px]"
             ></textarea>
           </div>
@@ -502,9 +512,14 @@ export default function Home() {
                whileHover={{ scale: 1.05 }}
                whileTap={{ scale: 0.95 }}
                onClick={handleCreatePost} 
-               className="gradient-bg text-white px-7 py-2.5 rounded-full text-sm font-bold shadow-xl shadow-purple-500/20"
+               disabled={isPosting || (!newPostContent.trim() && !selectedMedia)}
+               className="gradient-bg text-white px-7 py-2.5 rounded-full text-sm font-bold shadow-xl shadow-purple-500/20 disabled:opacity-50 flex items-center justify-center min-w-[120px]"
              >
-               Post to Feed
+               {isPosting ? (
+                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+               ) : (
+                 "Post to Feed"
+               )}
              </motion.button>
           </div>
         </motion.div>
@@ -529,7 +544,12 @@ export default function Home() {
                 <div className="flex items-center space-x-4">
                   <div className="relative">
                     <div className="w-12 h-12 rounded-full p-[2px] bg-white/10 overflow-hidden">
-                      <img src={post.avatar} alt={post.author} className="w-full h-full object-cover rounded-full" />
+                      <img 
+                        src={post.avatar} 
+                        alt={post.author} 
+                        className="w-full h-full object-cover rounded-full" 
+                        onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author)}&background=7C3AED&color=fff`; }}
+                      />
                     </div>
                     <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-[#0A0A0F] rounded-full animate-pulse"></div>
                   </div>
@@ -704,7 +724,7 @@ export default function Home() {
               {friendsList.length === 0 && (
                 <div className="text-center py-10 space-y-2">
                   <p className="text-white/30 text-sm">No connections found yet.</p>
-                  <button onClick={() => router.push('/friends')} className="text-purple-400 text-xs font-bold hover:underline">Find Campus Squad 🎯</button>
+                  <button onClick={() => router.push('/friends')} className="text-purple-400 text-xs font-bold hover:underline">Find Campus Squad</button>
                 </div>
               )}
               {friendsList.filter(f => f.name.toLowerCase().includes(shareSearchTerm.toLowerCase())).map(friend => (
