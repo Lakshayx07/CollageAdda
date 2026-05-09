@@ -10,7 +10,18 @@ import clsx from "clsx";
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
-  const [colleges, setColleges] = useState([]);
+  const [colleges, setColleges] = useState([
+    { name: "Rishihood University" },
+    { name: "School of Planning and Architecture (SPA)" },
+    { name: "IIT Delhi" },
+    { name: "Delhi Technological University (DTU)" },
+    { name: "Netaji Subhas University of Technology (NSUT)" },
+    { name: "IIIT Delhi" },
+    { name: "University of Delhi (DU)" },
+    { name: "Jawaharlal Nehru University (JNU)" },
+    { name: "Jamia Millia Islamia" },
+    { name: "Guru Gobind Singh Indraprastha University (IPU)" }
+  ]);
 
   // Form State
   const [name, setName] = useState("");
@@ -225,10 +236,10 @@ export default function LoginPage() {
                   )}
                 >
                   <option value="" disabled className="bg-[#0A0A0F] text-gray-400">
-                    {colleges.length > 0 ? "Select Your University" : "Fetching Universities..."}
+                    Select Your University
                   </option>
-                  {colleges.map(c => (
-                    <option key={c._id || c.id} value={c.name} className="bg-[#0A0A0F] text-white">{c.name}</option>
+                  {colleges.map((c, idx) => (
+                    <option key={c._id || c.id || idx} value={c.name} className="bg-[#0A0A0F] text-white">{c.name}</option>
                   ))}
                 </select>
                 <div className={clsx("absolute inset-y-0 right-5 flex items-center pointer-events-none z-10", !university ? "text-gray-800" : "text-white/20")}>
