@@ -442,29 +442,31 @@ export default function FriendsPage() {
                         </div>
 
                         <div className="flex md:flex-col items-center gap-3">
-                          <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => handleDirectMessage(person._id)}
-                            className="flex-1 md:w-32 py-3 gradient-bg rounded-2xl text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-purple-500/20"
-                          >
-                            <span className="flex items-center justify-center gap-2">
-                              <MessageCircle size={14} /> 
-                              {status === "connected" ? "Message" : "Chat Now"}
-                            </span>
-                          </motion.button>
-                          
-                          <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => toggleFollow(person._id)}
-                            className={clsx(
-                              "p-3.5 rounded-2xl glass transition-all border border-white/10",
-                              status === "connected" ? "text-purple-400" : "text-white/40"
-                            )}
-                          >
-                            {status === "connected" ? <UserCheck size={20} /> : <UserPlus size={20} />}
-                          </motion.button>
+                          {status === "connected" ? (
+                            <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => handleDirectMessage(person._id)}
+                              className="flex-1 md:w-32 py-3 gradient-bg rounded-2xl text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-purple-500/20"
+                            >
+                              <span className="flex items-center justify-center gap-2">
+                                <MessageCircle size={14} /> 
+                                Chat Now
+                              </span>
+                            </motion.button>
+                          ) : (
+                            <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => toggleFollow(person._id)}
+                              className="flex-1 md:w-32 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-xs font-black uppercase tracking-widest text-white shadow-xl"
+                            >
+                              <span className="flex items-center justify-center gap-2">
+                                <UserPlus size={14} /> 
+                                Connect
+                              </span>
+                            </motion.button>
+                          )}
                         </div>
                       </div>
                     </motion.div>

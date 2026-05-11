@@ -259,20 +259,30 @@ export default function ExplorePage() {
     setAddedStudents(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleDirectMessage = async (student) => {
+  const handleConnect = async (student) => {
     try {
       const token = localStorage.getItem("collegeadda_token");
       const userId = student._id || student.id;
       
-      // 1. Follow if not already followed
       if (!myFollowing.includes(userId)) {
         await fetch(`${apiUrl}/api/users/${userId}/follow`, {
           method: "PUT",
           headers: { Authorization: `Bearer ${token}` }
         });
         setMyFollowing(prev => [...prev, userId]);
+        setToastMessage("Connected! You can now chat.");
+        setTimeout(() => setToastMessage(null), 2000);
       }
+    } catch (err) {
+      console.error("Error connecting:", err);
+    }
+  };
 
+  const handleDirectMessage = async (student) => {
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const userId = student._id || student.id;
+      
       // 2. Get or Create Room
       const res = await fetch(`${apiUrl}/api/chat/rooms`, {
         method: 'POST',
@@ -285,7 +295,7 @@ export default function ExplorePage() {
 
       if (res.ok) {
         const room = await res.json();
-        setToastMessage("Room connected! Opening chat...");
+        setToastMessage("Opening chat...");
         router.push(`/messages?chat=${room._id}`);
       } else {
         setToastMessage("Failed to start chat.");
@@ -761,15 +771,27 @@ export default function ExplorePage() {
                                       "{student.bio}"
                                     </p>
                                     
-                                    <motion.button
-                                      whileHover={{ scale: 1.02 }}
-                                      whileTap={{ scale: 0.98 }}
-                                      onClick={() => handleDirectMessage(student)}
-                                      className="w-full py-4 gradient-bg rounded-2xl text-xs font-black text-white uppercase tracking-widest shadow-xl flex items-center justify-center space-x-2"
-                                    >
-                                      <MessageSquare size={16} />
-                                      <span>{myFollowing.includes(student._id || student.id) ? "Send Message" : "Connect & Message"}</span>
-                                    </motion.button>
+                                    {myFollowing.includes(student._id || student.id) ? (
+                                      <motion.button
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => handleDirectMessage(student)}
+                                        className="w-full py-4 gradient-bg rounded-2xl text-xs font-black text-white uppercase tracking-widest shadow-xl flex items-center justify-center space-x-2"
+                                      >
+                                        <MessageSquare size={16} />
+                                        <span>Chat Now</span>
+                                      </motion.button>
+                                    ) : (
+                                      <motion.button
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => handleConnect(student)}
+                                        className="w-full py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-xs font-black text-white uppercase tracking-widest shadow-xl flex items-center justify-center space-x-2"
+                                      >
+                                        <Plus size={16} />
+                                        <span>Connect</span>
+                                      </motion.button>
+                                    )}
                                   </div>
                                 </div>
                               )}
