@@ -35,15 +35,26 @@ router.get('/:id', protect, async (req, res) => {
     const college = await College.findById(req.params.id);
     if (!college) return res.status(404).json({ message: 'College not found' });
 
-    // Find students belonging to this university (flexible partial match)
-    const searchName = college.name.trim().split(',')[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Find students and posts belonging to this university
+    const baseName = college.name.trim().split(',')[0];
+    const escapedBaseName = baseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    
+    // Extract acronym if it exists in parentheses, e.g., "School of Planning and Architecture (SPA)" -> "SPA"
+    const acronymMatch = baseName.match(/\(([^)]+)\)/);
+    let searchPattern = escapedBaseName;
+    
+    if (acronymMatch && acronymMatch[1]) {
+      const escapedAcronym = acronymMatch[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      searchPattern = `(${escapedBaseName})|(${escapedAcronym})`;
+    }
+
     const students = await User.find({ 
-      university: { $regex: new RegExp(searchName, 'i') } 
+      university: { $regex: new RegExp(searchPattern, 'i') } 
     }).select('name profilePic bio university interests year');
     
-    // Find ALL posts by students of this university (flexible partial match)
+    // Find ALL posts by students of this university
     const posts = await Post.find({ 
-      university: { $regex: new RegExp(searchName, 'i') } 
+      university: { $regex: new RegExp(searchPattern, 'i') } 
     })
       .populate('author', 'name profilePic university')
       .sort({ createdAt: -1 });
