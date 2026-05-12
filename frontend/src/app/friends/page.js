@@ -231,7 +231,7 @@ export default function FriendsPage() {
       <div className="fixed bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-pink-600/10 blur-[120px] rounded-full z-0" />
 
       {/* Header */}
-      <header className="lg:hidden sticky top-0 z-40 glass border-b border-white/5 px-6 py-4 flex items-center justify-between">
+      <header className="sticky top-0 z-40 glass border-b border-white/5 px-6 py-4 flex items-center justify-between">
         <motion.div 
           initial={{ x: -20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}

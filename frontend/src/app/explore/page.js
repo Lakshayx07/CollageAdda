@@ -320,7 +320,7 @@ export default function ExplorePage() {
             exit={{ opacity: 0, x: -20 }}
             className="flex-1 flex flex-col"
           >
-            <header className="lg:hidden sticky top-0 z-40 glass-panel border-b border-border/50 px-4 py-4 flex flex-col space-y-4">
+            <header className="sticky top-0 z-40 glass-panel border-b border-border/50 px-4 py-4 flex flex-col space-y-4">
               <div className="flex items-center space-x-3">
                 <div className="bg-primary/20 p-2 rounded-xl">
                   <Building2 className="text-primary" size={20} />
