@@ -1,6 +1,7 @@
 import ChatRoom from '../models/ChatRoom.js';
 import Message from '../models/Message.js';
 import Notification from '../models/Notification.js';
+import User from '../models/User.js';
 
 /**
  * @desc    Get user's chat rooms
@@ -170,18 +171,9 @@ export const leaveRoom = async (req, res) => {
     // Remove user from participants
     room.participants = room.participants.filter(p => p.toString() !== req.user._id.toString());
     
-    // Create system message
-    const message = await Message.create({
-      room: room._id,
-      sender: req.user._id,
-      text: `${req.user.name} left the group`,
-      isSystem: true
-    });
-    
-    room.lastMessage = message._id;
     await room.save();
 
-    res.json({ message: 'Left room successfully', systemMessage: message });
+    res.json({ message: 'Left room successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -204,19 +196,10 @@ export const addMember = async (req, res) => {
 
     room.participants.push(participantId);
     
-    // Create system message
-    const message = await Message.create({
-      room: room._id,
-      sender: req.user._id,
-      text: `New member added to group`,
-      isSystem: true
-    });
-    
-    room.lastMessage = message._id;
     await room.save();
 
     const populatedRoom = await ChatRoom.findById(room._id).populate('participants', 'name profilePic university');
-    res.json({ message: 'Member added successfully', room: populatedRoom, systemMessage: message });
+    res.json({ message: 'Member added successfully', room: populatedRoom });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -423,7 +423,7 @@ function MessagesContent() {
           room: activeChat.id,
           senderId: user._id || user.id,
           senderName: 'System',
-          text: `New member added to Group`,
+          text: `${memberName} added to group`,
           isSystem: true
         });
 
@@ -541,7 +541,7 @@ function MessagesContent() {
 
       {/* Chat Area */}
       <div className={clsx(
-        "flex-1 flex flex-col transition-all relative pb-20 lg:pb-0",
+        "flex-1 flex flex-col transition-all relative pb-28 lg:pb-0",
         !activeChat ? "hidden lg:flex" : "flex"
       )}>
         {activeChat ? (
@@ -765,20 +765,20 @@ function MessagesContent() {
             </div>
 
             {/* Quick Reply Pills */}
-            <div className="px-6 py-3 flex space-x-2 overflow-x-auto no-scrollbar">
+            <div className="px-4 lg:px-6 py-2 overflow-x-auto no-scrollbar flex items-center space-x-2 mb-1">
               {[
-                { text: "Sup?", icon: <Zap size={14} className="text-yellow-400" /> },
-                { text: "Let's meet!", icon: <Users size={14} className="text-purple-400" /> },
-                { text: "Class?", icon: <TrendingUp size={14} className="text-cyan-400" /> },
-                { text: "Exam check", icon: <TrendingUp size={14} className="text-blue-400" /> },
-                { text: "Canteen?", icon: <Flame size={14} className="text-orange-400" /> }
+                { text: "Sup?", icon: <Zap size={12} className="text-yellow-400" /> },
+                { text: "Let's meet!", icon: <Users size={12} className="text-purple-400" /> },
+                { text: "Class?", icon: <TrendingUp size={12} className="text-cyan-400" /> },
+                { text: "Exam check", icon: <TrendingUp size={12} className="text-blue-400" /> },
+                { text: "Canteen?", icon: <Flame size={12} className="text-orange-400" /> }
               ].map(pill => (
                 <motion.button
                   key={pill.text}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setInput(pill.text)}
-                  className="whitespace-nowrap px-4 py-2 glass rounded-full text-[11px] font-bold text-white/60 hover:text-white hover:border-purple-500/50 transition-all border border-white/5 flex items-center space-x-2"
+                  className="whitespace-nowrap px-3 py-1.5 glass rounded-full text-[10px] font-bold text-white/50 hover:text-white hover:border-purple-500/50 transition-all border border-white/5 flex items-center space-x-2"
                 >
                   {pill.icon}
                   <span>{pill.text}</span>
