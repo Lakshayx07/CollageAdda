@@ -644,7 +644,7 @@ function MessagesContent() {
                 <input
                   value={input}
                   onChange={e => setInput(e.target.value)}
-                  onKeyPress={e => e.key === "Enter" && sendMessage()}
+                  onKeyDown={e => e.key === "Enter" && sendMessage()}
                   type="text"
                   placeholder="Share a campus moment..."
                   className="flex-1 bg-transparent py-3 px-2 text-sm text-white placeholder:text-white/20 focus:outline-none font-medium"
