@@ -32,11 +32,17 @@ function MessagesContent() {
   const [creatingGroup, setCreatingGroup] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   
-  const emojis = ["❤️", "🔥", "😂", "😍", "🙌", "👏", "✨", "💯", "🎉", "😎", "🚀", "💡", " campus", "📚", "🎓", "🍕", "🎸", "🎮"];
+  const emojis = ["❤️", "🔥", "😂", "😍", "🙌", "👏", "✨", "💯", "🎉", "😎", "🚀", "💡", "", "📚", "🎓", "🍕", "🎸", "🎮"];
   
   const socketRef = useRef(null);
   const fileInputRef = useRef(null);
   const scrollRef = useRef(null);
+
+  const isOnlyEmoji = (text) => {
+    if (!text) return false;
+    const emojiRegex = /^(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])$/;
+    return emojiRegex.test(text.trim());
+  };
 
   useEffect(() => {
     const storedUser = localStorage.getItem("collegeadda_user");
@@ -548,23 +554,43 @@ function MessagesContent() {
                             {msg.senderName.split(' ')[0]}
                           </span>
                         )}
-                        <div className={clsx(
-                          "px-4 py-3 text-[14px] leading-relaxed shadow-2xl relative",
-                          isMe 
-                            ? "gradient-bg text-white rounded-[1.5rem] rounded-tr-[0.25rem] shadow-purple-500/10" 
-                            : "glass text-white/90 rounded-[1.5rem] rounded-tl-[0.25rem] border-white/5"
-                        )}>
-                          {msg.mediaUrl && (
-                            <div className="mb-2 rounded-xl overflow-hidden border border-white/10">
-                              {msg.mediaType === 'video' ? (
-                                <video src={msg.mediaUrl} controls className="max-w-full h-auto max-h-64 object-cover" />
-                              ) : (
-                                <img src={msg.mediaUrl} alt="Media" className="max-w-full h-auto max-h-64 object-cover" />
-                              )}
-                            </div>
-                          )}
-                          <div className="relative z-10 font-medium">{msg.text}</div>
-                        </div>
+                        {isOnlyEmoji(msg.text) ? (
+                          <motion.div
+                            initial={{ scale: 0.5, opacity: 0 }}
+                            animate={{ 
+                              scale: [1, 1.15, 1],
+                              rotate: [0, 5, -5, 0],
+                              opacity: 1
+                            }}
+                            transition={{ 
+                              scale: { duration: 2, repeat: Infinity, ease: "easeInOut" },
+                              rotate: { duration: 3, repeat: Infinity, ease: "easeInOut" },
+                              opacity: { duration: 0.3 }
+                            }}
+                            className="text-6xl py-2 cursor-default select-none drop-shadow-2xl"
+                          >
+                            {msg.text}
+                          </motion.div>
+                        ) : (
+                          <div className={clsx(
+                            "px-4 py-3 text-[14px] leading-relaxed shadow-2xl relative",
+                            isMe 
+                              ? "gradient-bg text-white rounded-[1.5rem] rounded-tr-[0.25rem] shadow-purple-500/10" 
+                              : "glass text-white/90 rounded-[1.5rem] rounded-tl-[0.25rem] border-white/5"
+                          )}>
+                            {msg.mediaUrl && (
+                              <div className="mb-2 rounded-xl overflow-hidden border border-white/10">
+                                {msg.mediaType === 'video' ? (
+                                  <video src={msg.mediaUrl} controls className="max-w-full h-auto max-h-64 object-cover" />
+                                ) : (
+                                  <img src={msg.mediaUrl} alt="Media" className="max-w-full h-auto max-h-64 object-cover" />
+                                )}
+                              </div>
+                            )}
+                            <div className="relative z-10 font-medium">{msg.text}</div>
+                          </div>
+                        )}
+                        
                         <div className="flex items-center space-x-1.5 mt-1.5">
                           <span className="text-[9px] text-white/20 font-bold uppercase tracking-wider">{msg.time}</span>
                           {isMe && (
