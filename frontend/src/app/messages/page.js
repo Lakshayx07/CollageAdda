@@ -30,6 +30,10 @@ function MessagesContent() {
   const [selectedMembers, setSelectedMembers] = useState([]);
   const [connections, setConnections] = useState([]);
   const [creatingGroup, setCreatingGroup] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  
+  const emojis = ["❤️", "🔥", "😂", "😍", "🙌", "👏", "✨", "💯", "🎉", "😎", "🚀", "💡", " campus", "📚", "🎓", "🍕", "🎸", "🎮"];
+  
   const socketRef = useRef(null);
   const fileInputRef = useRef(null);
   const scrollRef = useRef(null);
@@ -278,6 +282,11 @@ function MessagesContent() {
     socketRef.current.emit('send_message', data);
     setInput("");
     setIsSending(false);
+  };
+
+  const addEmoji = (emoji) => {
+    setInput(prev => prev + emoji);
+    setShowEmojiPicker(false);
   };
 
   const fetchConnections = async () => {
@@ -615,9 +624,40 @@ function MessagesContent() {
                   className="flex-1 bg-transparent py-3 px-2 text-sm text-white placeholder:text-white/20 focus:outline-none font-medium"
                 />
 
-                <button className="p-3.5 text-white/40 hover:text-yellow-400 hover:bg-white/5 rounded-full transition-all">
-                  <Smile size={22} />
-                </button>
+                <div className="relative">
+                  <button 
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    className={clsx(
+                      "p-3.5 hover:bg-white/5 rounded-full transition-all",
+                      showEmojiPicker ? "text-yellow-400 bg-yellow-400/10" : "text-white/40"
+                    )}
+                  >
+                    <Smile size={22} />
+                  </button>
+
+                  <AnimatePresence>
+                    {showEmojiPicker && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                        className="absolute bottom-16 right-0 bg-[#16161D] border border-white/10 rounded-[2rem] shadow-2xl p-4 z-50 w-64"
+                      >
+                        <div className="grid grid-cols-5 gap-2">
+                          {emojis.map((emoji, i) => (
+                            <button
+                              key={i}
+                              onClick={() => addEmoji(emoji)}
+                              className="text-2xl hover:scale-125 transition-transform p-1"
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
 
                 <motion.button 
                   whileHover={{ scale: 1.05, x: 2 }}

@@ -278,6 +278,12 @@ export default function Home() {
     }
   };
 
+  const handleReportPost = (postId) => {
+    setPosts(prev => prev.filter(p => p.id !== postId));
+    setToastMsg("Post reported and hidden");
+    setTimeout(() => setToastMsg(""), 2000);
+  };
+
   const handleShareToFriend = async (friendId, postId) => {
     const postToShare = posts.find(p => p.id === postId);
     if (!postToShare) return;
@@ -586,7 +592,10 @@ export default function Home() {
                             Delete Post
                           </button>
                         ) : (
-                          <button className="w-full text-left px-4 py-2 text-[13px] font-bold text-white/60 hover:bg-white/5 hover:text-white transition-colors">
+                          <button 
+                            onClick={() => { handleReportPost(post.id); setPostMenu(null); }}
+                            className="w-full text-left px-4 py-2 text-[13px] font-bold text-white/60 hover:bg-white/5 hover:text-white transition-colors"
+                          >
                             Report Post
                           </button>
                         )}
@@ -823,7 +832,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.9 }}
-            className="fixed bottom-28 left-1/2 -translate-x-1/2 glass border border-white/10 px-8 py-3.5 rounded-full shadow-2xl z-[60] flex items-center space-x-3"
+            className="fixed bottom-28 left-1/2 -translate-x-1/2 bg-[#0A0A0F] border border-white/10 px-8 py-3.5 rounded-full shadow-2xl z-[60] flex items-center space-x-3"
           >
             <div className="gradient-bg text-white p-1 rounded-full">
               <Check size={14} strokeWidth={4} />
