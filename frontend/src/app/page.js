@@ -683,7 +683,7 @@ export default function Home() {
               )}
 
               {/* Poll Section */}
-              {post.poll && (
+              {post.poll && post.poll.options && post.poll.options.length > 0 && (
                 <div className="glass-card p-5 rounded-3xl border border-white/5 space-y-4 mb-5">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-bold text-white/80">{post.poll.allowMultiple ? "Select one or more" : "Select one"}</p>

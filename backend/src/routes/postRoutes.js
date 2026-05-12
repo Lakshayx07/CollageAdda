@@ -54,7 +54,7 @@ router.post('/', protect, verified, async (req, res) => {
       mediaUrl,
       mediaType,
       hashtags: hashtags.map(tag => tag.toLowerCase()),
-      poll: poll || undefined
+      poll: (poll && poll.options && poll.options.length > 0) ? poll : undefined
     });
     
     const populated = await post.populate('author', 'name profilePic university');
