@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check, Plus, Flame, TrendingUp, Search, Zap } from "lucide-react";
+import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check, Plus, Flame, TrendingUp, Search, Zap, BarChart2 } from "lucide-react";
 import Image from "next/image";
 import NotificationBell from "../components/NotificationBell";
 import VerifiedBadge from "../components/VerifiedBadge";
@@ -30,6 +30,10 @@ export default function Home() {
   const [activeStory, setActiveStory] = useState(null);
   const [hoveredPost, setHoveredPost] = useState(null);
   const [isPosting, setIsPosting] = useState(false);
+  const [showPollModal, setShowPollModal] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState(["", ""]);
+  const [pollAllowMultiple, setPollAllowMultiple] = useState(false);
   
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
   
@@ -88,6 +92,7 @@ export default function Home() {
           })) || [],
           mediaUrl: p.mediaUrl,
           mediaType: p.mediaType,
+          poll: p.poll,
           authorFollowers: p.author?.followers || [],
           authorFollowing: p.author?.following || []
         }));
@@ -199,6 +204,62 @@ export default function Home() {
       console.error(err);
     } finally {
       setIsPosting(false);
+    }
+  };
+
+  const handleCreatePoll = async () => {
+    if (!pollQuestion.trim() || pollOptions.filter(opt => opt.trim()).length < 2 || isPosting) return;
+    setIsPosting(true);
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const res = await fetch(`${apiUrl}/api/posts`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ 
+          content: pollQuestion,
+          poll: {
+            question: pollQuestion,
+            options: pollOptions.filter(opt => opt.trim()).map(text => ({ text, votes: [] })),
+            allowMultiple: pollAllowMultiple
+          }
+        })
+      });
+      if (res.ok) {
+        fetchPosts();
+        setShowPollModal(false);
+        setPollQuestion("");
+        setPollOptions(["", ""]);
+        setPollAllowMultiple(false);
+        setToastMsg("Poll created!");
+        setTimeout(() => setToastMsg(""), 2000);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsPosting(false);
+    }
+  };
+
+  const handleVote = async (postId, optionIndex) => {
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const res = await fetch(`${apiUrl}/api/posts/${postId}/vote`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ optionIndex })
+      });
+      if (res.ok) {
+        const updatedPoll = await res.json();
+        setPosts(prev => prev.map(p => p.id === postId ? { ...p, poll: updatedPoll } : p));
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -513,6 +574,15 @@ export default function Home() {
                  </div>
                  <span className="text-xs font-semibold">Video</span>
                </button>
+               <button 
+                 onClick={() => setShowPollModal(true)}
+                 className="flex items-center space-x-2 text-white/50 hover:text-white transition-all group"
+               >
+                 <div className="p-2 rounded-full group-hover:bg-green-500/10 transition-colors">
+                   <BarChart2 size={20} />
+                 </div>
+                 <span className="text-xs font-semibold">Poll</span>
+               </button>
              </div>
              <motion.button 
                whileHover={{ scale: 1.05 }}
@@ -612,6 +682,56 @@ export default function Home() {
                 </p>
               )}
 
+              {/* Poll Section */}
+              {post.poll && (
+                <div className="glass-card p-5 rounded-3xl border border-white/5 space-y-4 mb-5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-bold text-white/80">{post.poll.allowMultiple ? "Select one or more" : "Select one"}</p>
+                    <span className="text-[10px] text-white/30 font-black uppercase tracking-widest bg-white/5 px-3 py-1 rounded-full">Poll</span>
+                  </div>
+                  <div className="space-y-3">
+                    {post.poll.options.map((option, idx) => {
+                      const totalVotes = post.poll.options.reduce((sum, opt) => sum + (opt.votes?.length || 0), 0);
+                      const optionVotes = option.votes?.length || 0;
+                      const percentage = totalVotes === 0 ? 0 : Math.round((optionVotes / totalVotes) * 100);
+                      const hasVoted = option.votes?.includes(currentUser?._id || currentUser?.id);
+                      
+                      return (
+                        <div 
+                          key={idx}
+                          onClick={() => handleVote(post.id, idx)}
+                          className="relative cursor-pointer group"
+                        >
+                          <div className="absolute inset-0 bg-white/5 rounded-2xl overflow-hidden">
+                            <motion.div 
+                              initial={{ width: 0 }}
+                              animate={{ width: `${percentage}%` }}
+                              className="h-full bg-purple-500/20 border-r border-purple-500/30"
+                            />
+                          </div>
+                          <div className="relative flex items-center justify-between p-4 rounded-2xl border border-white/5 group-hover:border-white/10 transition-all">
+                            <div className="flex items-center space-x-3">
+                              <div className={clsx(
+                                "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
+                                hasVoted ? "border-purple-500 bg-purple-500 text-white" : "border-white/20"
+                              )}>
+                                {hasVoted && <Check size={12} strokeWidth={4} />}
+                              </div>
+                              <span className="text-sm font-bold text-white/90">{option.text}</span>
+                            </div>
+                            <span className="text-xs font-bold text-white/40">{optionVotes}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="flex items-center justify-between pt-2">
+                    <button className="text-[10px] font-black uppercase tracking-widest text-purple-400 hover:underline">View votes</button>
+                    <span className="text-[10px] text-white/20 font-bold">{post.poll.options.reduce((sum, opt) => sum + (opt.votes?.length || 0), 0)} total votes</span>
+                  </div>
+                </div>
+              )}
+
               {post.mediaUrl && (
                 <div className="rounded-2xl overflow-hidden mb-5 border border-white/5 bg-black/20 shadow-inner">
                   {post.mediaType === 'video' ? (
@@ -705,6 +825,109 @@ export default function Home() {
           ))}
         </div>
       </motion.div>
+
+      {/* Create Poll Modal */}
+      <AnimatePresence>
+        {showPollModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-xl px-4" onClick={() => setShowPollModal(false)}>
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="w-full max-w-md glass rounded-[3rem] p-8 shadow-2xl border border-white/10" 
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2.5 bg-green-500/10 rounded-2xl text-green-500">
+                    <BarChart2 size={24} />
+                  </div>
+                  <h2 className="text-2xl font-bold text-white tracking-tight">Create Poll</h2>
+                </div>
+                <button onClick={() => setShowPollModal(false)} className="p-2.5 hover:bg-white/5 rounded-full transition-colors text-white/40"><X size={24} /></button>
+              </div>
+
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">Question</label>
+                  <textarea 
+                    placeholder="Ask something to the campus..." 
+                    value={pollQuestion}
+                    onChange={(e) => setPollQuestion(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-[1.5rem] p-5 text-sm text-white focus:outline-none focus:border-green-500/50 transition-all min-h-[100px] resize-none"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">Options</label>
+                  {pollOptions.map((opt, i) => (
+                    <div key={i} className="relative group">
+                      <input 
+                        type="text" 
+                        placeholder={`Option ${i + 1}`}
+                        value={opt}
+                        onChange={(e) => {
+                          const newOpts = [...pollOptions];
+                          newOpts[i] = e.target.value;
+                          setPollOptions(newOpts);
+                        }}
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-5 pr-12 text-sm text-white focus:outline-none focus:border-green-500/50 transition-all"
+                      />
+                      {pollOptions.length > 2 && (
+                        <button 
+                          onClick={() => setPollOptions(prev => prev.filter((_, idx) => idx !== i))}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 hover:text-red-500 p-1"
+                        >
+                          <X size={16} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  
+                  {pollOptions.length < 5 && (
+                    <button 
+                      onClick={() => setPollOptions(prev => [...prev, ""])}
+                      className="w-full py-4 rounded-2xl border border-dashed border-white/10 text-white/30 text-xs font-bold hover:bg-white/5 hover:text-white transition-all flex items-center justify-center space-x-2"
+                    >
+                      <Plus size={14} />
+                      <span>Add Option</span>
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-white/5 rounded-3xl border border-white/5">
+                  <div className="flex items-center space-x-3">
+                    <Check size={18} className={pollAllowMultiple ? "text-green-500" : "text-white/20"} />
+                    <span className="text-sm font-bold text-white/70">Allow multiple answers</span>
+                  </div>
+                  <button 
+                    onClick={() => setPollAllowMultiple(!pollAllowMultiple)}
+                    className={clsx(
+                      "w-12 h-6 rounded-full p-1 transition-all duration-300",
+                      pollAllowMultiple ? "bg-green-500" : "bg-white/10"
+                    )}
+                  >
+                    <div className={clsx(
+                      "w-4 h-4 bg-white rounded-full shadow-lg transition-all transform",
+                      pollAllowMultiple ? "translate-x-6" : "translate-x-0"
+                    )} />
+                  </button>
+                </div>
+
+                <motion.button 
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleCreatePoll}
+                  disabled={!pollQuestion.trim() || pollOptions.filter(opt => opt.trim()).length < 2 || isPosting}
+                  className="w-full bg-green-500 py-4 rounded-[1.5rem] text-sm font-black text-white uppercase tracking-widest shadow-xl shadow-green-500/20 disabled:opacity-40 transition-all"
+                >
+                  {isPosting ? "Creating..." : "Launch Poll"}
+                </motion.button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Campus Adda Share Modal */}
       {shareModal && (

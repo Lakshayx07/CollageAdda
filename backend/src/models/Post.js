@@ -18,7 +18,8 @@ const postSchema = mongoose.Schema({
     options: [{
       text: { type: String },
       votes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
-    }]
+    }],
+    allowMultiple: { type: Boolean, default: false }
   }
 }, { timestamps: true });
 

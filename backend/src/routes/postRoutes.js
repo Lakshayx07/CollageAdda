@@ -72,11 +72,35 @@ router.post('/:id/vote', protect, verified, async (req, res) => {
     const post = await Post.findById(req.params.id);
     if (!post || !post.poll) return res.status(404).json({ message: 'Poll not found' });
 
-    // Check if user already voted in any option
-    const alreadyVoted = post.poll.options.some(opt => opt.votes.includes(req.user._id));
-    if (alreadyVoted) return res.status(400).json({ message: 'You have already voted' });
+    const userId = req.user._id;
 
-    post.poll.options[optionIndex].votes.push(req.user._id);
+    if (post.poll.allowMultiple) {
+      // Toggle vote for this specific option
+      const option = post.poll.options[optionIndex];
+      const hasVoted = option.votes.includes(userId);
+      
+      if (hasVoted) {
+        option.votes = option.votes.filter(v => v.toString() !== userId.toString());
+      } else {
+        option.votes.push(userId);
+      }
+    } else {
+      // Single choice logic
+      const alreadyVotedAny = post.poll.options.some(opt => opt.votes.includes(userId));
+      
+      if (alreadyVotedAny) {
+        // If already voted, check if it's the same option to toggle/unvote
+        const currentlyVotedIdx = post.poll.options.findIndex(opt => opt.votes.includes(userId));
+        if (currentlyVotedIdx === optionIndex) {
+          post.poll.options[optionIndex].votes = post.poll.options[optionIndex].votes.filter(v => v.toString() !== userId.toString());
+        } else {
+          return res.status(400).json({ message: 'You can only vote for one option' });
+        }
+      } else {
+        post.poll.options[optionIndex].votes.push(userId);
+      }
+    }
+
     await post.save();
     res.json(post.poll);
   } catch (error) {
