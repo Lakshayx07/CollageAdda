@@ -124,7 +124,7 @@ const delhiColleges = [
     departments: 40,
     emoji: "🏛️",
     accent: "#059669",
-    banner: "https://www.shiksha.com/resizer/view?url=https%3A%2F%2Fimages.shiksha.com%2Fmediadata%2Fimages%2F1553594236phpQ6P0D0.jpeg&width=680&height=377",
+    banner: "https://notopedia-uploads.s3.us-east-2.amazonaws.com/clg-photo/pic-202212220610052590.jpg",
     description: "One of the premier educational institutions of India, located in the holy city of Kurukshetra."
   },
   {
@@ -135,7 +135,7 @@ const delhiColleges = [
     departments: 12,
     emoji: "⚙️",
     accent: "#3B82F6",
-    banner: "https://edufever.in/colleges/wp-content/uploads/2021/04/YMCA-Faridabad.jpg",
+    banner: "https://images.shiksha.com/mediadata/images/1741266149phpfUjSPk.jpeg",
     description: "J.C. Bose University of Science and Technology, YMCA, formerly YMCA University of Science and Technology."
   }
 ];

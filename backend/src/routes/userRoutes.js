@@ -84,10 +84,11 @@ router.get('/search/query', protect, async (req, res) => {
     
     if (q) {
       const cleanQuery = q.replace(/^#/, '');
+      const escapedQuery = cleanQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       query.$or = [
-        { name: { $regex: cleanQuery, $options: 'i' } },
-        { university: { $regex: cleanQuery, $options: 'i' } },
-        { interests: { $regex: cleanQuery, $options: 'i' } }
+        { name: { $regex: escapedQuery, $options: 'i' } },
+        { university: { $regex: escapedQuery, $options: 'i' } },
+        { interests: { $regex: escapedQuery, $options: 'i' } }
       ];
     }
     
