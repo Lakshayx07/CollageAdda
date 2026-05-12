@@ -31,6 +31,7 @@ function MessagesContent() {
   const [connections, setConnections] = useState([]);
   const [creatingGroup, setCreatingGroup] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showMemberCount, setShowMemberCount] = useState(false);
   
   const emojis = ["❤️", "🔥", "😂", "😍", "🙌", "👏", "✨", "💯", "🎉", "😎", "🚀", "💡", "", "📚", "🎓", "🍕", "🎸", "🎮"];
   
@@ -502,8 +503,35 @@ function MessagesContent() {
                 </div>
               </div>
               <div className="flex items-center space-x-2">
-                <button className="p-2.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl transition-all">
-                  <Users size={20} />
+                <button 
+                  onClick={() => {
+                    setShowMemberCount(true);
+                    setTimeout(() => setShowMemberCount(false), 10000);
+                  }}
+                  className="p-2.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl transition-all flex items-center justify-center min-w-[40px]"
+                >
+                  <AnimatePresence mode="wait">
+                    {showMemberCount ? (
+                      <motion.span
+                        key="count"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        className="text-purple-400 font-black text-sm"
+                      >
+                        {activeChat.participants?.length || 0}
+                      </motion.span>
+                    ) : (
+                      <motion.div
+                        key="icon"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                      >
+                        <Users size={20} />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </button>
                 <button className="p-2.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl transition-all">
                   <MoreVertical size={20} />
