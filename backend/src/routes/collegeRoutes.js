@@ -36,13 +36,14 @@ router.get('/:id', protect, async (req, res) => {
     if (!college) return res.status(404).json({ message: 'College not found' });
 
     // Find students belonging to this university (flexible partial match)
+    const searchName = college.name.trim().split(',')[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const students = await User.find({ 
-      university: { $regex: new RegExp(college.name.trim().split(',')[0], 'i') } 
+      university: { $regex: new RegExp(searchName, 'i') } 
     }).select('name profilePic bio university interests year');
     
     // Find ALL posts by students of this university (flexible partial match)
     const posts = await Post.find({ 
-      university: { $regex: new RegExp(college.name.trim().split(',')[0], 'i') } 
+      university: { $regex: new RegExp(searchName, 'i') } 
     })
       .populate('author', 'name profilePic university')
       .sort({ createdAt: -1 });
