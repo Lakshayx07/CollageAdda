@@ -686,7 +686,7 @@ export default function Home() {
                         type="text" 
                         value={commentInputs[post.id] || ""}
                         onChange={(e) => setCommentInputs(prev => ({ ...prev, [post.id]: e.target.value }))}
-                        onKeyPress={(e) => e.key === "Enter" && handleComment(post.id)}
+                        onKeyDown={(e) => e.key === "Enter" && handleComment(post.id)}
                         placeholder={`Reply to ${post.author}...`} 
                         className="flex-1 bg-transparent px-4 py-1.5 text-sm focus:outline-none text-white placeholder:text-white/20" 
                       />

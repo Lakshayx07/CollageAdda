@@ -156,3 +156,68 @@ export const sendMessage = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+/**
+ * @desc    Leave a room
+ * @route   PUT /api/chat/rooms/:id/leave
+ * @access  Private
+ */
+export const leaveRoom = async (req, res) => {
+  try {
+    const room = await ChatRoom.findById(req.params.id);
+    if (!room) return res.status(404).json({ message: 'Room not found' });
+
+    // Remove user from participants
+    room.participants = room.participants.filter(p => p.toString() !== req.user._id.toString());
+    
+    // Create system message
+    const message = await Message.create({
+      room: room._id,
+      sender: req.user._id,
+      text: `${req.user.name} left the group`,
+      isSystem: true
+    });
+    
+    room.lastMessage = message._id;
+    await room.save();
+
+    res.json({ message: 'Left room successfully', systemMessage: message });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * @desc    Add member to a room
+ * @route   PUT /api/chat/rooms/:id/add
+ * @access  Private
+ */
+export const addMember = async (req, res) => {
+  const { participantId } = req.body;
+  try {
+    const room = await ChatRoom.findById(req.params.id);
+    if (!room) return res.status(404).json({ message: 'Room not found' });
+
+    if (room.participants.includes(participantId)) {
+      return res.status(400).json({ message: 'User already in room' });
+    }
+
+    room.participants.push(participantId);
+    
+    // Create system message
+    const message = await Message.create({
+      room: room._id,
+      sender: req.user._id,
+      text: `New member added to group`,
+      isSystem: true
+    });
+    
+    room.lastMessage = message._id;
+    await room.save();
+
+    const populatedRoom = await ChatRoom.findById(room._id).populate('participants', 'name profilePic university');
+    res.json({ message: 'Member added successfully', room: populatedRoom, systemMessage: message });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

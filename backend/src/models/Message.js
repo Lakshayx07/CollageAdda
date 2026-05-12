@@ -14,6 +14,7 @@ const messageSchema = mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     seenAt: { type: Date, default: Date.now }
   }],
+  isSystem: { type: Boolean, default: false },
 }, { timestamps: true });
 
 const Message = mongoose.model('Message', messageSchema);

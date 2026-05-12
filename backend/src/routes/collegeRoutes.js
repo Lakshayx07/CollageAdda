@@ -50,7 +50,7 @@ router.get('/:id', protect, async (req, res) => {
 
     const students = await User.find({ 
       university: { $regex: new RegExp(searchPattern, 'i') } 
-    }).select('name profilePic bio university interests year');
+    }).select('name profilePic bio university interests year createdAt').sort({ createdAt: -1 });
     
     // Find ALL posts by students of this university
     const posts = await Post.find({ 

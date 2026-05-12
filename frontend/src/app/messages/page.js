@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Search, Send, Users, ChevronLeft, Info, MessageSquare, Plus, Image as ImageIcon, Smile, MoreVertical, X, Zap, Flame, TrendingUp } from "lucide-react";
+import { Search, Send, Users, ChevronLeft, Info, MessageSquare, Plus, Image as ImageIcon, Smile, MoreVertical, X, Zap, Flame, TrendingUp, LogOut, UserPlus } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import clsx from "clsx";
 import { io } from "socket.io-client";
@@ -32,8 +32,10 @@ function MessagesContent() {
   const [creatingGroup, setCreatingGroup] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showMemberCount, setShowMemberCount] = useState(false);
+  const [showChatOptions, setShowChatOptions] = useState(false);
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   
-  const emojis = ["❤️", "🔥", "😂", "😍", "🙌", "👏", "✨", "💯", "🎉", "😎", "🚀", "💡", "", "📚", "🎓", "🍕", "🎸", "🎮"];
+  const emojis = ["❤️", "🔥", "😂", "😍", "🙌", "👏", "✨", "💯", "🎉", "😎", "🚀", "💡", "☕", "📚", "🎓", "🍕", "🎸", "🎮", "🏀", "🧪"];
   
   const socketRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -41,8 +43,10 @@ function MessagesContent() {
 
   const isOnlyEmoji = (text) => {
     if (!text) return false;
-    const emojiRegex = /^(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])$/;
-    return emojiRegex.test(text.trim());
+    const cleanText = text.trim().replace(/\s/g, '');
+    // Improved regex to handle common emojis, variation selectors, skin tones, and ZWJ sequences
+    const emojiRegex = /^(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff]|\ufe0f|\u200d)+$/;
+    return emojiRegex.test(cleanText) && cleanText.length <= 15;
   };
 
   useEffect(() => {
@@ -101,7 +105,8 @@ function MessagesContent() {
             sender: String(msg.senderId) === String(u._id || u.id) ? "me" : "them",
             senderName: msg.senderName,
             senderAvatar: msg.senderAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.senderName || "U")}&background=7C3AED&color=fff`,
-            time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            isSystem: msg.isSystem
           }]
         };
       });
@@ -237,7 +242,8 @@ function MessagesContent() {
                senderAvatar: m.sender?.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.sender?.name || "U")}&background=7C3AED&color=fff`,
                mediaUrl: m.mediaUrl,
                mediaType: m.mediaType,
-               time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+               time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+               isSystem: m.isSystem
              }));
              setMessages(prev => ({ ...prev, [activeChat.id]: formattedMsgs }));
           }
@@ -358,12 +364,83 @@ function MessagesContent() {
     setSelectedMembers(prev => prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id]);
   };
 
+  const handleLeaveGroup = async () => {
+    if (!activeChat || activeChat.type !== 'group') return;
+    
+    if (!window.confirm("Are you sure you want to leave this group?")) return;
+
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+      
+      const res = await fetch(`${apiUrl}/api/chat/rooms/${activeChat.id}/leave`, {
+        method: "PUT",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      
+      if (res.ok) {
+        // Emit leave message via socket
+        socketRef.current?.emit('send_message', {
+          room: activeChat.id,
+          senderId: user._id || user.id,
+          senderName: 'System',
+          text: `${user.name} left the group`,
+          isSystem: true
+        });
+
+        setChats(prev => prev.filter(c => c.id !== activeChat.id));
+        setActiveChat(null);
+        setShowChatOptions(false);
+      }
+    } catch (err) {
+      console.error("Error leaving group:", err);
+    }
+  };
+
+  const handleAddMember = async (memberId, memberName) => {
+    if (!activeChat || activeChat.type !== 'group') return;
+
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+      
+      const res = await fetch(`${apiUrl}/api/chat/rooms/${activeChat.id}/add`, {
+        method: "PUT",
+        headers: { 
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ participantId: memberId })
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        // Update local chat info
+        setChats(prev => prev.map(c => c.id === activeChat.id ? { ...c, participants: [...c.participants, memberId] } : c));
+        
+        // Emit system message via socket
+        socketRef.current?.emit('send_message', {
+          room: activeChat.id,
+          senderId: user._id || user.id,
+          senderName: 'System',
+          text: `New member added to Group`,
+          isSystem: true
+        });
+
+        setShowAddMemberModal(false);
+        setShowChatOptions(false);
+      }
+    } catch (err) {
+      console.error("Error adding member:", err);
+    }
+  };
+
   const filteredChats = chats.filter(c => c.name.toLowerCase().includes(chatSearch.toLowerCase()));
 
   if (!isMounted || !user) return null;
 
   return (
-    <div className="flex h-screen bg-[#0A0A0F] overflow-hidden">
+    <div className="flex h-full bg-[#0A0A0F] overflow-hidden">
       {/* Chat List Sidebar */}
       <motion.div 
         initial={{ x: -20, opacity: 0 }}
@@ -464,7 +541,7 @@ function MessagesContent() {
 
       {/* Chat Area */}
       <div className={clsx(
-        "flex-1 flex flex-col transition-all relative",
+        "flex-1 flex flex-col transition-all relative pb-20 lg:pb-0",
         !activeChat ? "hidden lg:flex" : "flex"
       )}>
         {activeChat ? (
@@ -535,9 +612,48 @@ function MessagesContent() {
                     </AnimatePresence>
                   </button>
                 )}
-                <button className="p-2.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl transition-all">
-                  <MoreVertical size={20} />
-                </button>
+                <div className="relative">
+                  <button 
+                    onClick={() => setShowChatOptions(!showChatOptions)}
+                    className="p-2.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl transition-all"
+                  >
+                    <MoreVertical size={20} />
+                  </button>
+                  
+                  <AnimatePresence>
+                    {showChatOptions && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                        className="absolute right-0 mt-2 w-48 glass rounded-2xl border border-white/5 shadow-2xl py-2 z-50 overflow-hidden"
+                      >
+                        {activeChat.type === 'group' ? (
+                          <>
+                            <button 
+                              onClick={() => { setShowAddMemberModal(true); setShowChatOptions(false); fetchConnections(); }}
+                              className="w-full text-left px-4 py-3 text-sm font-bold text-green-500 hover:bg-green-500/10 flex items-center space-x-2 transition-colors border-b border-white/5"
+                            >
+                              <UserPlus size={16} />
+                              <span>Add Member</span>
+                            </button>
+                            <button 
+                              onClick={handleLeaveGroup}
+                              className="w-full text-left px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-500/10 flex items-center space-x-2 transition-colors"
+                            >
+                              <LogOut size={16} />
+                              <span>Exit Group</span>
+                            </button>
+                          </>
+                        ) : (
+                          <div className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-white/20">
+                            No options available
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
             </header>
 
@@ -551,10 +667,20 @@ function MessagesContent() {
 
               <AnimatePresence initial={false}>
                 {(messages[activeChat.id] || []).map((msg, idx, arr) => {
-                  const isMe = msg.sender === "me";
-                  const showAvatar = !isMe && (idx === 0 || arr[idx-1].sender !== "them");
-                  
-                  return (
+                    const isMe = msg.sender === "me";
+                    const showAvatar = !isMe && (idx === 0 || arr[idx-1].sender !== "them");
+                    
+                    if (msg.isSystem) {
+                      return (
+                        <div key={msg.id} className="flex justify-center w-full my-4">
+                          <span className="text-[10px] glass px-4 py-1.5 rounded-full text-white/30 font-bold uppercase tracking-[0.2em] border border-white/5">
+                            {msg.text}
+                          </span>
+                        </div>
+                      );
+                    }
+                    
+                    return (
                     <motion.div 
                       key={msg.id}
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -865,7 +991,59 @@ function MessagesContent() {
           </motion.div>
         )}
       </AnimatePresence>
-
+      {/* Add Member Modal */}
+      <AnimatePresence>
+        {showAddMemberModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+            onClick={() => setShowAddMemberModal(false)}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="w-full max-w-md glass rounded-[2.5rem] border border-white/10 overflow-hidden shadow-2xl"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
+                <h3 className="text-xl font-bold text-white tracking-tight">Add to Group</h3>
+                <button onClick={() => setShowAddMemberModal(false)} className="p-2 hover:bg-white/10 rounded-full transition-all text-white/40"><X size={20} /></button>
+              </div>
+              <div className="max-h-[60vh] overflow-y-auto p-4 space-y-2 custom-scrollbar">
+                {connections.length === 0 ? (
+                  <div className="py-10 text-center text-white/20 font-bold uppercase tracking-widest text-[10px]">No friends found</div>
+                ) : (
+                  connections
+                    .filter(f => !activeChat.participants.includes(f._id || f.id))
+                    .map((f, i) => (
+                      <div key={i} className="flex items-center justify-between p-3 hover:bg-white/5 rounded-2xl transition-all border border-transparent hover:border-white/5 group">
+                        <div className="flex items-center space-x-4">
+                          <img 
+                            src={f.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(f.name)}&background=7C3AED&color=fff`} 
+                            className="w-11 h-11 rounded-full object-cover border border-white/10" 
+                          />
+                          <div>
+                            <p className="text-sm font-bold text-white">{f.name}</p>
+                            <p className="text-[10px] text-white/30 font-bold uppercase tracking-wider">{f.university}</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => handleAddMember(f._id || f.id, f.name)}
+                          className="px-4 py-2 bg-green-500/10 hover:bg-green-500 text-green-500 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-green-500/20 transition-all"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    ))
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

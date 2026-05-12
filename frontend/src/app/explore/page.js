@@ -639,7 +639,7 @@ export default function ExplorePage() {
                           initial={{ opacity: 0, y: -20, scale: 0.9 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: -20, scale: 0.9 }}
-                          className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] bg-surface/90 backdrop-blur-md border border-border/50 shadow-xl px-6 py-3 rounded-full text-sm font-bold flex items-center text-foreground"
+                          className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] bg-[#0A0A0F] border border-border/50 shadow-xl px-6 py-3 rounded-full text-sm font-bold flex items-center text-foreground"
                         >
                           {toastMessage}
                         </motion.div>

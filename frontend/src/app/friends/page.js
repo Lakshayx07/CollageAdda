@@ -275,7 +275,7 @@ export default function FriendsPage() {
                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                className="absolute right-0 top-16 w-[320px] glass-card border border-white/10 rounded-[2rem] shadow-2xl z-50 overflow-hidden"
+                className="absolute right-0 top-16 w-[320px] bg-[#0A0A0F] border border-white/10 rounded-[2rem] shadow-2xl z-50 overflow-hidden"
               >
                 <div className="p-5 border-b border-white/5 flex items-center justify-between">
                   <h3 className="font-bold text-white text-sm flex items-center gap-2">
