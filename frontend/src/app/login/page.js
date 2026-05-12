@@ -20,7 +20,9 @@ export default function LoginPage() {
     { name: "University of Delhi (DU)" },
     { name: "Jawaharlal Nehru University (JNU)" },
     { name: "Jamia Millia Islamia" },
-    { name: "Guru Gobind Singh Indraprastha University (IPU)" }
+    { name: "Guru Gobind Singh Indraprastha University (IPU)" },
+    { name: "Kurukshetra University" },
+    { name: "YMCA Faridabad" }
   ]);
 
   // Form State

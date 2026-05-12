@@ -115,6 +115,28 @@ const delhiColleges = [
     accent: "#EA580C",
     banner: "https://images.indianexpress.com/2025/02/ggsipu-1.jpg",
     description: "A state university with numerous affiliated colleges across Delhi."
+  },
+  {
+    name: "Kurukshetra University",
+    location: "Kurukshetra, Haryana",
+    students: "15,000+",
+    posts: "450+",
+    departments: 40,
+    emoji: "🏛️",
+    accent: "#059669",
+    banner: "https://www.shiksha.com/resizer/view?url=https%3A%2F%2Fimages.shiksha.com%2Fmediadata%2Fimages%2F1553594236phpQ6P0D0.jpeg&width=680&height=377",
+    description: "One of the premier educational institutions of India, located in the holy city of Kurukshetra."
+  },
+  {
+    name: "YMCA Faridabad",
+    location: "Faridabad, Haryana",
+    students: "5,000+",
+    posts: "300+",
+    departments: 12,
+    emoji: "⚙️",
+    accent: "#3B82F6",
+    banner: "https://edufever.in/colleges/wp-content/uploads/2021/04/YMCA-Faridabad.jpg",
+    description: "J.C. Bose University of Science and Technology, YMCA, formerly YMCA University of Science and Technology."
   }
 ];
 
