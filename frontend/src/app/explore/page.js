@@ -23,7 +23,8 @@ import {
   Library,
   FlaskConical,
   Trees,
-  Compass
+  Compass,
+  Trophy
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import VerifiedBadge from "@/components/VerifiedBadge";
@@ -41,6 +42,9 @@ export default function ExplorePage() {
   const [search, setSearch] = useState("");
   const [selectedCollege, setSelectedCollege] = useState(null);
   const [activeTab, setActiveTab] = useState("posts");
+  const [exploreMode, setExploreMode] = useState("colleges"); // "colleges" | "arena"
+  const [arenaSportFilter, setArenaSportFilter] = useState("All");
+  const [arenaTab, setArenaTab] = useState("posts"); // "posts" | "players" | "matches"
   const [followed, setFollowed] = useState({});
   const [addedStudents, setAddedStudents] = useState({});
   const [likes, setLikes] = useState({});
@@ -325,25 +329,77 @@ export default function ExplorePage() {
           >
             <header className="sticky top-0 z-40 glass-panel border-b border-border/50 px-4 py-4 flex flex-col space-y-4">
               <div className="flex items-center space-x-3">
-                <div className="bg-primary/20 p-2 rounded-xl">
-                  <Building2 className="text-primary" size={20} />
+                <div className={clsx("p-2 rounded-xl", exploreMode === "colleges" ? "bg-primary/20" : "gradient-bg")}>
+                  {exploreMode === "colleges" ? <Building2 className="text-primary" size={20} /> : <Trophy className="text-white" size={20} />}
                 </div>
-                <h1 className="text-xl font-bold text-foreground">Explore Colleges</h1>
+                <h1 className="text-xl font-bold text-foreground">
+                  {exploreMode === "colleges" ? "Explore Colleges" : "Campus Arena"}
+                </h1>
               </div>
 
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
-                <input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  type="text"
-                  placeholder="Search your dream college..."
-                  className="w-full bg-surface-hover border border-border/50 rounded-xl py-2.5 pl-10 pr-4 text-sm text-foreground focus:outline-none focus:border-primary transition-colors"
-                />
+              <div className="flex items-center space-x-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
+                  <input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    type="text"
+                    placeholder={exploreMode === "colleges" ? "Search your dream college..." : "Search players or matches..."}
+                    className="w-full bg-surface-hover border border-border/50 rounded-xl py-2.5 pl-10 pr-4 text-sm text-foreground focus:outline-none focus:border-primary transition-colors"
+                  />
+                </div>
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    setExploreMode(exploreMode === "colleges" ? "arena" : "colleges");
+                    setSearch("");
+                  }}
+                  className={clsx(
+                    "flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl border transition-all text-sm font-bold shadow-sm whitespace-nowrap",
+                    exploreMode === "arena" 
+                      ? "gradient-bg text-white border-transparent shadow-[0_0_20px_rgba(236,72,153,0.3)]" 
+                      : "glass border-border/50 text-foreground hover:bg-surface-hover"
+                  )}
+                >
+                  {exploreMode === "arena" ? <Trophy size={16} className="text-white" /> : <Building2 size={16} />}
+                  <span>{exploreMode === "arena" ? "🏆 Arena" : "🏫 Colleges"}</span>
+                </motion.button>
               </div>
+
+              {exploreMode === "arena" && (
+                <div className="flex overflow-x-auto space-x-2 pb-2 custom-scrollbar no-scrollbar -mx-4 px-4">
+                  <button
+                    onClick={() => setArenaSportFilter("All")}
+                    className={clsx(
+                      "shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all border",
+                      arenaSportFilter === "All" 
+                        ? "bg-foreground text-background border-foreground shadow-md" 
+                        : "glass border-border/50 text-muted hover:text-foreground hover:border-border"
+                    )}
+                  >
+                    All Sports
+                  </button>
+                  {["🎮 Esports", "🏸 Badminton", "⚽ Football", "🏀 Basketball", "🏐 Volleyball", "🏏 Cricket", "🎾 Tennis", "🏊 Swimming", "🏅 Athletics"].map(sport => (
+                    <button
+                      key={sport}
+                      onClick={() => setArenaSportFilter(sport)}
+                      className={clsx(
+                        "shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all border",
+                        arenaSportFilter === sport 
+                          ? "bg-foreground text-background border-foreground shadow-md" 
+                          : "glass border-border/50 text-muted hover:text-foreground hover:border-border"
+                      )}
+                    >
+                      {sport}
+                    </button>
+                  ))}
+                </div>
+              )}
             </header>
 
-            <div className="p-4 grid grid-cols-2 gap-6">
+            {exploreMode === "colleges" ? (
+              <>
+                <div className="p-4 grid grid-cols-2 gap-6">
               {loading && (
                 <div className="col-span-2 flex justify-center py-20">
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
@@ -413,6 +469,92 @@ export default function ExplorePage() {
               <div className="flex-1 flex flex-col items-center justify-center py-20 text-muted">
                 <Search size={48} className="mb-4 opacity-20" />
                 <p>No colleges found matching "{search}"</p>
+              </div>
+            )}
+              </>
+            ) : (
+              /* --- ARENA VIEW --- */
+              <div className="flex flex-col flex-1 relative">
+                {/* Arena Tabs Navigation */}
+                <div className="px-4 flex border-b border-border/50 bg-background/80 backdrop-blur-md sticky top-0 z-30">
+                  {["posts", "players", "matches"].map(tab => (
+                    <button
+                      key={tab}
+                      onClick={() => setArenaTab(tab)}
+                      className={clsx(
+                        "flex-1 py-3 text-sm font-bold capitalize transition-all relative",
+                        arenaTab === tab ? "text-transparent bg-clip-text gradient-bg" : "text-muted hover:text-foreground"
+                      )}
+                    >
+                      {tab}
+                      {arenaTab === tab && (
+                        <motion.div
+                          layoutId="arenaTab"
+                          className="absolute bottom-0 left-0 right-0 h-0.5 gradient-bg"
+                        />
+                      )}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Arena Content */}
+                <div className="p-4 flex-1 overflow-y-auto custom-scrollbar">
+                  <AnimatePresence mode="wait">
+                    {arenaTab === "posts" && (
+                      <motion.div
+                        key="arena-posts"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="flex flex-col items-center justify-center py-20 text-center space-y-4"
+                      >
+                        <div className="w-16 h-16 rounded-full gradient-bg flex items-center justify-center opacity-20">
+                          <Flame size={32} className="text-white" />
+                        </div>
+                        <div>
+                          <p className="text-lg font-bold text-foreground">No posts yet for {arenaSportFilter}</p>
+                          <p className="text-sm text-muted">Be the first to share your sports highlights!</p>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {arenaTab === "players" && (
+                      <motion.div
+                        key="arena-players"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="flex flex-col items-center justify-center py-20 text-center space-y-4"
+                      >
+                        <div className="w-16 h-16 rounded-full gradient-bg flex items-center justify-center opacity-20">
+                          <Users size={32} className="text-white" />
+                        </div>
+                        <div>
+                          <p className="text-lg font-bold text-foreground">No players found for {arenaSportFilter}</p>
+                          <p className="text-sm text-muted">Update your profile to show up here!</p>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {arenaTab === "matches" && (
+                      <motion.div
+                        key="arena-matches"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="flex flex-col items-center justify-center py-20 text-center space-y-4"
+                      >
+                        <div className="w-16 h-16 rounded-full gradient-bg flex items-center justify-center opacity-20">
+                          <Trophy size={32} className="text-white" />
+                        </div>
+                        <div>
+                          <p className="text-lg font-bold text-foreground">No upcoming matches</p>
+                          <p className="text-sm text-muted">Stay tuned for campus tournaments!</p>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
             )}
           </motion.div>
