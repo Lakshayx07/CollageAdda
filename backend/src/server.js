@@ -47,8 +47,8 @@ const io = new Server(httpServer, { cors: corsOptions });
 
 // Middleware
 app.use(cors(corsOptions));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // API Routes
 app.get('/api/health', (req, res) => {
@@ -99,7 +99,8 @@ io.on('connection', (socket) => {
         sender: data.senderId,
         text: data.text,
         mediaUrl: data.mediaUrl,
-        mediaType: data.mediaType || 'none'
+        mediaType: data.mediaType || 'none',
+        isSystem: data.isSystem || false
       });
 
       // Update room's last message, timestamps and unread counts

@@ -34,6 +34,8 @@ function MessagesContent() {
   const [showMemberCount, setShowMemberCount] = useState(false);
   const [showChatOptions, setShowChatOptions] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [selectedMedia, setSelectedMedia] = useState(null);
+  const [mediaType, setMediaType] = useState('none');
   
   const emojis = ["❤️", "🔥", "😂", "😍", "🙌", "👏", "✨", "💯", "🎉", "😎", "🚀", "💡", "☕", "📚", "🎓", "🍕", "🎸", "🎮", "🏀", "🧪"];
   
@@ -145,7 +147,8 @@ function MessagesContent() {
             lastMsg: room.lastMessage?.text || "No messages yet",
             time: room.lastMessage ? new Date(room.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "",
             unreadCount: room.unreadCounts?.[u._id] || 0,
-            participants: room.participants?.map(p => p._id || p.id) || []
+            participants: room.participants?.map(p => p._id || p.id) || [],
+            partner: room.isGroup ? null : room.participants.find(p => p._id !== u._id)
           }));
           
           setChats(formattedRooms);
@@ -181,7 +184,8 @@ function MessagesContent() {
                     avatar: newRoom.participants?.find(p => p._id !== u._id)?.profilePic || `https://ui-avatars.com/api/?name=User&background=7C3AED&color=fff`,
                     lastMsg: "No messages yet",
                     time: "",
-                    unreadCount: 0
+                    unreadCount: 0,
+                    partner: newRoom.participants?.find(p => p._id !== u._id)
                   };
                   setChats(prev => {
                     const exists = prev.find(c => c.id === formatted.id);
@@ -259,8 +263,21 @@ function MessagesContent() {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, activeChat]);
 
+  const handleMediaSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const type = file.type.startsWith('video') ? 'video' : 'image';
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setSelectedMedia(reader.result);
+      setMediaType(type);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const sendMessage = () => {
-    if (!input.trim() || !activeChat || isSending) return;
+    if ((!input.trim() && !selectedMedia) || !activeChat || isSending) return;
 
     setIsSending(true);
     const tempId = `temp-${Date.now()}`;
@@ -270,8 +287,8 @@ function MessagesContent() {
       senderName: user.name,
       senderAvatar: user.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=7C3AED&color=fff`,
       text: input,
-      mediaUrl: '',
-      mediaType: 'none',
+      mediaUrl: selectedMedia || '',
+      mediaType: mediaType,
       tempId // Add tempId to track optimistic message
     };
 
@@ -286,6 +303,8 @@ function MessagesContent() {
           sender: "me",
           senderName: data.senderName,
           senderAvatar: data.senderAvatar,
+          mediaUrl: data.mediaUrl,
+          mediaType: data.mediaType,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           status: 'sending'
         }
@@ -294,6 +313,8 @@ function MessagesContent() {
     
     socketRef.current.emit('send_message', data);
     setInput("");
+    setSelectedMedia(null);
+    setMediaType('none');
     setIsSending(false);
   };
 
@@ -571,7 +592,7 @@ function MessagesContent() {
                 <div>
                   <div className="flex items-center space-x-2">
                     <h2 className="font-bold text-white text-[15px]">{activeChat.name}</h2>
-                    <VerifiedBadge user={{ followers: [], following: [] }} size={14} />
+                    {activeChat.partner && <VerifiedBadge user={activeChat.partner} size={14} />}
                   </div>
                   <p className="text-[10px] text-green-500 font-bold uppercase tracking-widest flex items-center">
                     <span className="w-1 h-1 rounded-full bg-green-500 mr-1.5" />
@@ -845,7 +866,7 @@ function MessagesContent() {
                   whileHover={{ scale: 1.05, x: 2 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={sendMessage}
-                  disabled={isSending || !input.trim()}
+                  disabled={isSending || (!input.trim() && !selectedMedia)}
                   className="gradient-bg text-white p-3.5 rounded-[1.5rem] shadow-xl shadow-purple-500/20 disabled:opacity-50 disabled:grayscale transition-all flex items-center justify-center min-w-[50px]"
                 >
                   {isSending ? (
@@ -855,6 +876,28 @@ function MessagesContent() {
                   )}
                 </motion.button>
               </div>
+              <AnimatePresence>
+                {selectedMedia && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-4 relative rounded-2xl overflow-hidden border border-white/10 max-h-48"
+                  >
+                    {mediaType === 'video' ? (
+                      <video src={selectedMedia} controls className="w-full h-full object-cover" />
+                    ) : (
+                      <img src={selectedMedia} className="w-full h-full object-cover" alt="Preview" />
+                    )}
+                    <button 
+                      onClick={() => { setSelectedMedia(null); setMediaType('none'); }}
+                      className="absolute top-2 right-2 bg-black/60 backdrop-blur-md text-white p-1.5 rounded-full hover:bg-black/80 transition-all"
+                    >
+                      <X size={14} />
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
             
             {/* Attachment Menu Popup */}
@@ -886,7 +929,7 @@ function MessagesContent() {
                 </motion.div>
               )}
             </AnimatePresence>
-            <input type="file" ref={fileInputRef} accept="image/*,video/*" className="hidden" />
+            <input type="file" ref={fileInputRef} accept="image/*,video/*" className="hidden" onChange={handleMediaSelect} />
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-8 space-y-8">

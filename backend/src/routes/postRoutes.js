@@ -44,7 +44,7 @@ router.post('/', protect, verified, async (req, res) => {
   const { content, mediaUrl, mediaType, poll } = req.body;
   
   // Extract hashtags from content
-  const hashtags = content.match(/#[\w\u0590-\u05ff]+/g) || [];
+  const hashtags = content ? (content.match(/#[\w\u0590-\u05ff]+/g) || []) : [];
 
   try {
     const post = await Post.create({
@@ -57,7 +57,7 @@ router.post('/', protect, verified, async (req, res) => {
       poll: (poll && poll.options && poll.options.length > 0) ? poll : undefined
     });
     
-    const populated = await post.populate('author', 'name profilePic university');
+    const populated = await post.populate('author', 'name profilePic university followers following');
     res.status(201).json(populated);
   } catch (error) {
     res.status(500).json({ message: error.message });

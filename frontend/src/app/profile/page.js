@@ -212,7 +212,8 @@ export default function ProfilePage() {
         setSaved(true);
         setTimeout(() => { setSaved(false); setModal(null); }, 1200);
       } else {
-        alert("Failed to update profile");
+        const errorData = await res.json().catch(() => ({}));
+        alert(`Failed to update profile: ${errorData.message || res.statusText}`);
       }
     } catch (err) {
       console.error(err);

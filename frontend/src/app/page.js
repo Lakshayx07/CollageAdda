@@ -181,19 +181,7 @@ export default function Home() {
         })
       });
       if (res.ok) {
-        const newPost = await res.json();
-        setPosts(prev => [{
-          id: newPost._id,
-          author: currentUser?.name || "You",
-          university: currentUser?.university || "",
-          content: newPost.content,
-          time: "Just now",
-          likes: 0,
-          comments: 0,
-          isLiked: false,
-          mediaUrl: newPost.mediaUrl,
-          mediaType: newPost.mediaType
-        }, ...prev]);
+        fetchPosts();
         setNewPostContent("");
         setSelectedMedia(null);
         setMediaType('none');
@@ -523,6 +511,12 @@ export default function Home() {
             <textarea 
               value={newPostContent}
               onChange={(e) => setNewPostContent(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleCreatePost();
+                }
+              }}
               placeholder="What's happening on campus today?"
               className="flex-1 bg-transparent resize-none text-base focus:outline-none text-white placeholder:text-white/30 mt-2 min-h-[60px]"
             ></textarea>
