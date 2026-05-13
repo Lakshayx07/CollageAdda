@@ -37,7 +37,75 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import PlayerCard from "@/components/PlayerCard";
+import PlayerCardForm from "@/components/PlayerCardForm";
 import clsx from "clsx";
+
+const mockEsportsPlayers = [
+  {
+    category: 'esports',
+    name: 'Viper_X',
+    username: 'Viper_X#123',
+    game_or_sport: 'BGMI',
+    role_or_position: 'IGL / Assaulter',
+    rank: 'Ace Master',
+    experience_level: 'Tournaments',
+    availability: 'Casual',
+    bio: 'IGL main, 3000+ matches BGMI. LF serious squad.',
+    photo_url: 'https://i.pravatar.cc/150?img=11',
+    college: 'Rishihood',
+    overallRating: 94,
+    skills: { accuracy: 9, gamesense: 10, clutch: 8, teamwork: 9, comms: 9 }
+  },
+  {
+    category: 'esports',
+    name: 'JettMain',
+    username: 'Jett#444',
+    game_or_sport: 'Valorant',
+    role_or_position: 'Entry Fragger',
+    rank: 'Diamond 3',
+    experience_level: 'State Level',
+    availability: 'Both',
+    bio: 'Ascendant peak. I dash in and click heads.',
+    photo_url: 'https://i.pravatar.cc/150?img=12',
+    college: 'DTU',
+    overallRating: 88,
+    skills: { accuracy: 8, gamesense: 7, clutch: 9, teamwork: 6, comms: 7 }
+  }
+];
+
+const mockSportsPlayers = [
+  {
+    category: 'sports',
+    name: 'Arjun K.',
+    username: 'Arjun',
+    game_or_sport: 'Football',
+    role_or_position: 'Striker',
+    rank: 'Top Scorer',
+    experience_level: 'State Level',
+    availability: 'Weekends',
+    bio: '14 goals this season. Fast pace, good finishing.',
+    photo_url: 'https://i.pravatar.cc/150?img=51',
+    college: 'Rishihood',
+    overallRating: 92,
+    skills: { speed: 9, stamina: 8, technique: 9, teamwork: 7, leadership: 6 }
+  },
+  {
+    category: 'sports',
+    name: 'Rahul V.',
+    username: 'RahulV',
+    game_or_sport: 'Cricket',
+    role_or_position: 'All-Rounder',
+    rank: 'Captain',
+    experience_level: 'National',
+    availability: 'Both',
+    bio: 'Fast bowler & middle order batsman.',
+    photo_url: 'https://i.pravatar.cc/150?img=53',
+    college: 'SRM',
+    overallRating: 89,
+    skills: { speed: 8, stamina: 9, technique: 8, teamwork: 9, leadership: 9 }
+  }
+];
 
 
 export default function ExplorePage() {
@@ -55,6 +123,7 @@ export default function ExplorePage() {
   const [arenaCategory, setArenaCategory] = useState("esports"); // "esports" | "sports"
   const [arenaSportFilter, setArenaSportFilter] = useState("All");
   const [arenaTab, setArenaTab] = useState("posts"); // legacy fallback
+  const [showPlayerCardForm, setShowPlayerCardForm] = useState(false);
   const [followed, setFollowed] = useState({});
   const [addedStudents, setAddedStudents] = useState({});
   const [likes, setLikes] = useState({});
@@ -531,6 +600,15 @@ export default function ExplorePage() {
                         exit={{ opacity: 0, x: 20 }}
                         className="space-y-8"
                       >
+                        {/* Action Bar */}
+                        <div className="flex justify-end">
+                          <button 
+                            onClick={() => setShowPlayerCardForm(true)}
+                            className="bg-gradient-to-r from-cyan-500 to-purple-500 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-cyan-500/20 hover:scale-105 transition"
+                          >
+                            + Create My Card
+                          </button>
+                        </div>
                         {/* 1. Game Rooms */}
                         <section>
                           <h3 className="text-white font-black uppercase tracking-wider mb-3 flex items-center text-sm">
@@ -574,48 +652,9 @@ export default function ExplorePage() {
                             <Target className="mr-2 text-pink-500" size={16} /> Top Players
                           </h3>
                           <div className="grid grid-cols-2 gap-4">
-                             {/* Player Card 1 */}
-                             <div className="rounded-2xl bg-gradient-to-br from-indigo-900 to-purple-900 border border-purple-500/30 p-1 relative overflow-hidden shadow-lg shadow-purple-900/30 group cursor-pointer hover:scale-105 transition-transform">
-                               <div className="absolute -right-4 -top-4 w-16 h-16 bg-yellow-400/20 blur-xl rounded-full" />
-                               <div className="bg-black/40 rounded-xl p-3 h-full backdrop-blur-sm border border-white/5">
-                                  <div className="flex justify-between items-start mb-2">
-                                     <span className="text-2xl font-black text-yellow-400 drop-shadow-md">94</span>
-                                     <span className="text-[9px] font-black uppercase text-white/50 bg-white/10 px-1.5 py-0.5 rounded border border-white/5">BGMI</span>
-                                  </div>
-                                  <div className="flex flex-col items-center mb-3">
-                                     <div className="w-12 h-12 rounded-full bg-surface mb-2 border-2 border-yellow-400 overflow-hidden shadow-lg">
-                                        <img src="https://i.pravatar.cc/100?img=11" alt="avatar" />
-                                     </div>
-                                     <span className="text-white font-black text-xs tracking-wide">Viper_X</span>
-                                     <span className="text-[9px] text-white/50 font-bold uppercase tracking-widest mt-0.5">Rishihood</span>
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-1 text-center">
-                                     <div className="bg-white/5 rounded p-1 border border-white/5"><span className="block text-[9px] text-white/40 uppercase tracking-widest">K/D</span><span className="text-xs font-black text-white">4.2</span></div>
-                                     <div className="bg-white/5 rounded p-1 border border-white/5"><span className="block text-[9px] text-white/40 uppercase tracking-widest">Rank</span><span className="text-xs font-black text-purple-400">Ace</span></div>
-                                  </div>
-                               </div>
-                             </div>
-                             
-                             {/* Player Card 2 */}
-                             <div className="rounded-2xl bg-gradient-to-br from-slate-800 to-zinc-900 border border-slate-500/30 p-1 relative overflow-hidden shadow-lg group cursor-pointer hover:scale-105 transition-transform">
-                               <div className="bg-black/40 rounded-xl p-3 h-full backdrop-blur-sm border border-white/5">
-                                  <div className="flex justify-between items-start mb-2">
-                                     <span className="text-2xl font-black text-slate-300 drop-shadow-md">88</span>
-                                     <span className="text-[9px] font-black uppercase text-white/50 bg-white/10 px-1.5 py-0.5 rounded border border-white/5">VALO</span>
-                                  </div>
-                                  <div className="flex flex-col items-center mb-3">
-                                     <div className="w-12 h-12 rounded-full bg-surface mb-2 border-2 border-slate-400 overflow-hidden shadow-lg">
-                                        <img src="https://i.pravatar.cc/100?img=12" alt="avatar" />
-                                     </div>
-                                     <span className="text-white font-black text-xs tracking-wide">JettMain</span>
-                                     <span className="text-[9px] text-white/50 font-bold uppercase tracking-widest mt-0.5">DTU</span>
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-1 text-center">
-                                     <div className="bg-white/5 rounded p-1 border border-white/5"><span className="block text-[9px] text-white/40 uppercase tracking-widest">HS%</span><span className="text-xs font-black text-white">32%</span></div>
-                                     <div className="bg-white/5 rounded p-1 border border-white/5"><span className="block text-[9px] text-white/40 uppercase tracking-widest">Rank</span><span className="text-xs font-black text-cyan-400">Dia</span></div>
-                                  </div>
-                               </div>
-                             </div>
+                            {mockEsportsPlayers.map(player => (
+                              <PlayerCard key={player.username} player={player} />
+                            ))}
                           </div>
                         </section>
 
@@ -663,6 +702,15 @@ export default function ExplorePage() {
                         exit={{ opacity: 0, x: -20 }}
                         className="space-y-8"
                       >
+                        {/* Action Bar */}
+                        <div className="flex justify-end">
+                          <button 
+                            onClick={() => setShowPlayerCardForm(true)}
+                            className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-orange-500/20 hover:scale-105 transition"
+                          >
+                            + Create My Card
+                          </button>
+                        </div>
                         {/* 1. College Rivalry Score */}
                         <section>
                           <h3 className="text-white font-black uppercase tracking-wider mb-3 flex items-center text-sm">
@@ -754,31 +802,26 @@ export default function ExplorePage() {
                           <h3 className="text-white font-black uppercase tracking-wider mb-3 flex items-center text-sm">
                             <Users className="mr-2 text-orange-400" size={16} /> Top Athletes
                           </h3>
-                          <div className="rounded-2xl bg-gradient-to-br from-orange-600 to-red-600 border border-orange-500/30 p-1 relative overflow-hidden shadow-lg shadow-orange-900/30 w-1/2 group cursor-pointer hover:scale-105 transition-transform">
-                             <div className="bg-[#050508]/80 rounded-xl p-3 h-full backdrop-blur-sm border border-white/5">
-                                <div className="flex justify-between items-start mb-2">
-                                   <span className="text-2xl font-black text-white drop-shadow-md">92</span>
-                                   <span className="text-[9px] font-black uppercase text-white/90 bg-white/10 px-1.5 py-0.5 rounded border border-white/10">⚽ ST</span>
-                                </div>
-                                <div className="flex flex-col items-center mb-3">
-                                   <div className="w-12 h-12 rounded-full bg-surface mb-2 border-2 border-orange-400 overflow-hidden shadow-lg">
-                                      <img src="https://i.pravatar.cc/100?img=51" alt="avatar" />
-                                   </div>
-                                   <span className="text-white font-black text-xs tracking-wide">Arjun K.</span>
-                                   <span className="text-[9px] text-white/70 font-bold uppercase tracking-widest mt-0.5">Rishihood</span>
-                                </div>
-                                <div className="grid grid-cols-2 gap-1 text-center">
-                                   <div className="bg-white/5 rounded p-1 border border-white/5"><span className="block text-[9px] text-white/50 uppercase tracking-widest">Goals</span><span className="text-xs font-black text-white">14</span></div>
-                                   <div className="bg-white/5 rounded p-1 border border-white/5"><span className="block text-[9px] text-white/50 uppercase tracking-widest">Pace</span><span className="text-xs font-black text-orange-400">89</span></div>
-                                </div>
-                             </div>
-                           </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            {mockSportsPlayers.map(player => (
+                              <PlayerCard key={player.username} player={player} />
+                            ))}
+                          </div>
                         </section>
 
                       </motion.div>
-                    )}
                   </AnimatePresence>
                 </div>
+                
+                {/* Form Overlay */}
+                <AnimatePresence>
+                  {showPlayerCardForm && (
+                    <PlayerCardForm 
+                      initialCategory={arenaCategory} 
+                      onClose={() => setShowPlayerCardForm(false)} 
+                    />
+                  )}
+                </AnimatePresence>
               </div>
             )}
           </motion.div>
