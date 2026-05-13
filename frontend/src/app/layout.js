@@ -29,7 +29,7 @@ export default function RootLayout({ children }) {
         <Sidebar />
 
         {/* Main content - offset by sidebar on desktop */}
-        <main className="flex flex-col flex-1 overflow-x-hidden pb-20 lg:pb-0 lg:ml-64">
+        <main className="flex flex-col flex-1 overflow-x-hidden overflow-y-auto pb-20 lg:pb-0 lg:ml-64">
           {children}
         </main>
 
