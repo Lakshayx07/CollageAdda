@@ -270,7 +270,7 @@ export default function ProfilePage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-[#0A0A0F] pb-24 relative overflow-hidden">
+    <div className="min-h-screen bg-[#0A0A0F] relative overflow-x-hidden">
       {/* Background Decorative Glows */}
       <div className="fixed top-[-10%] right-[-10%] w-[60%] h-[60%] bg-purple-600/10 blur-[150px] rounded-full z-0" />
       <div className="fixed bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-pink-600/10 blur-[150px] rounded-full z-0" />

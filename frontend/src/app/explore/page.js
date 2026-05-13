@@ -49,9 +49,11 @@ export default function ExplorePage() {
   const [loading, setLoading] = useState(true);
 
   const [currentStudentIndices, setCurrentStudentIndices] = useState({});
+  const [studentSearch, setStudentSearch] = useState("");
   const [swipeDirection, setSwipeDirection] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
   const [dragX, setDragX] = useState(0);
+  const [viewMode, setViewMode] = useState("cards"); // 'cards' or 'list'
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
 
@@ -244,7 +246,8 @@ export default function ExplorePage() {
     setFollowed(prev => {
       const isCurrentlyFollowing = prev[id];
       setSelectedCollege(curr => {
-        if (!curr || curr.id !== id && curr._id !== id) return curr;
+        const currId = curr?._id || curr?.id;
+        if (currId !== id) return curr;
         let currentStudents = parseInt(curr.students) || 0;
         return {
           ...curr,
@@ -420,7 +423,7 @@ export default function ExplorePage() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
-            className="flex-1 flex flex-col pb-20"
+            className="flex-1 flex flex-col"
           >
             {/* Profile Header */}
             <div className="relative">
@@ -623,14 +626,48 @@ export default function ExplorePage() {
                     className="flex flex-col items-center"
                   >
                     {/* Top Bar */}
-                    <div className="w-full flex items-center justify-between mb-4">
-                      <h4 className="text-sm font-bold text-foreground">
-                        Discover Students
-                      </h4>
-                      <div className="text-[10px] text-muted font-bold bg-surface-hover px-3 py-1 rounded-full border border-border/50 shadow-sm">
-                        {Math.min((currentStudentIndices[selectedCollege.id] || 0) + 1, selectedCollege.studentsData.length)} of {selectedCollege.studentsData.length}
+                    <div className="w-full flex items-center justify-between mb-6">
+                      <div className="flex flex-col">
+                        <h4 className="text-sm font-bold text-foreground">
+                          {viewMode === 'cards' ? 'Discover Students' : 'Student Directory'}
+                        </h4>
+                        <p className="text-[10px] text-muted font-medium mt-0.5">
+                          {selectedCollege.studentsData.length} students found
+                        </p>
+                      </div>
+                      <div className="flex bg-surface-hover p-1 rounded-xl border border-border/50">
+                        <button 
+                          onClick={() => setViewMode('cards')}
+                          className={clsx(
+                            "px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all",
+                            viewMode === 'cards' ? "bg-primary text-white shadow-sm" : "text-muted hover:text-foreground"
+                          )}
+                        >
+                          Cards
+                        </button>
+                        <button 
+                          onClick={() => setViewMode('list')}
+                          className={clsx(
+                            "px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all",
+                            viewMode === 'list' ? "bg-primary text-white shadow-sm" : "text-muted hover:text-foreground"
+                          )}
+                        >
+                          List
+                        </button>
                       </div>
                     </div>
+
+                    {viewMode === 'list' && (
+                      <div className="w-full mb-6 relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={14} />
+                        <input
+                          value={studentSearch}
+                          onChange={(e) => setStudentSearch(e.target.value)}
+                          placeholder="Search students by name or interest..."
+                          className="w-full bg-surface-hover border border-border/50 rounded-xl py-2 pl-9 pr-4 text-xs text-foreground focus:outline-none focus:border-primary transition-all"
+                        />
+                      </div>
+                    )}
 
                     {/* Toast Notification */}
                     <AnimatePresence>
@@ -647,162 +684,174 @@ export default function ExplorePage() {
                     </AnimatePresence>
 
                     {/* Tinder Card Stack */}
-                    <div className="relative w-full max-w-[340px] aspect-[4/5] flex items-center justify-center overflow-hidden">
-                      {/* Empty State */}
-                      {(currentStudentIndices[selectedCollege.id] || 0) >= selectedCollege.studentsData.length && (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          className="flex flex-col items-center justify-center text-center p-6 space-y-5 bg-surface rounded-[32px] w-full h-full border border-border/50 shadow-lg"
-                        >
-                          <div className="bg-primary/10 p-5 rounded-full mb-2">
-                            <GraduationCap size={48} className="text-primary" />
-                          </div>
-                          <h3 className="font-bold text-foreground text-xl">You've seen everyone at {selectedCollege.name}!</h3>
-                          <div className="space-y-3 w-full mt-4">
-                            <button onClick={() => router.push('/messages')} className="w-full py-3 bg-primary/10 text-primary font-bold rounded-xl text-sm hover:bg-primary/20 transition-colors shadow-sm flex items-center justify-center space-x-2">
-                              <span>See who connected back</span>
-                              <TrendingUp size={16} />
-                            </button>
-                            <button onClick={() => setSelectedCollege(null)} className="w-full py-3 bg-surface-hover border border-border/50 text-foreground font-bold rounded-xl text-sm hover:bg-surface-hover/80 transition-colors shadow-sm flex items-center justify-center space-x-2">
-                              <span>Explore another college</span>
-                              <TrendingUp size={16} className="rotate-90" />
-                            </button>
-                          </div>
-                        </motion.div>
-                      )}
+                    {viewMode === 'cards' ? (
+                      <div className="relative w-full max-w-[340px] aspect-[4/5] flex items-center justify-center overflow-hidden mb-10">
+                        {/* Empty State */}
+                        {(currentStudentIndices[selectedCollege.id] || 0) >= selectedCollege.studentsData.length && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="flex flex-col items-center justify-center text-center p-6 space-y-5 bg-surface rounded-[32px] w-full h-full border border-border/50 shadow-lg"
+                          >
+                            <div className="bg-primary/10 p-5 rounded-full mb-2">
+                              <GraduationCap size={48} className="text-primary" />
+                            </div>
+                            <h3 className="font-bold text-foreground text-xl">You've seen everyone at {selectedCollege.name}!</h3>
+                            <div className="space-y-3 w-full mt-4">
+                              <button onClick={() => setViewMode('list')} className="w-full py-3 bg-primary/10 text-primary font-bold rounded-xl text-sm hover:bg-primary/20 transition-colors shadow-sm flex items-center justify-center space-x-2">
+                                <span>Switch to List View</span>
+                                <Users size={16} />
+                              </button>
+                            </div>
+                          </motion.div>
+                        )}
 
-                      {/* Cards */}
-                      <AnimatePresence>
-                        {selectedCollege.studentsData.map((student, idx) => {
-                          const currentIndex = currentStudentIndices[selectedCollege.id] || 0;
-                          if (idx < currentIndex) return null;
-                          if (idx > currentIndex + 2) return null; // Only render top 3 cards
+                        {/* Cards */}
+                        <AnimatePresence>
+                          {selectedCollege.studentsData.map((student, idx) => {
+                            const currentIndex = currentStudentIndices[selectedCollege.id] || 0;
+                            if (idx < currentIndex) return null;
+                            if (idx > currentIndex + 2) return null; // Only render top 3 cards
 
-                          const isTop = idx === currentIndex;
-                          const offset = idx - currentIndex;
+                            const isTop = idx === currentIndex;
+                            const offset = idx - currentIndex;
 
-                          return (
-                            <motion.div
-                              key={student.id}
-                              drag={isTop ? "x" : false}
-                              dragConstraints={{ left: 0, right: 0 }}
-                              onDrag={(e, info) => isTop && setDragX(info.offset.x)}
-                              onDragEnd={(e, info) => {
-                                if (!isTop) return;
-                                setDragX(0);
-                                if (info.offset.x > 100) handleSwipe(selectedCollege.id, 'right', student);
-                                else if (info.offset.x < -100) handleSwipe(selectedCollege.id, 'left', student);
-                              }}
-                              initial={false}
-                              animate={{
-                                scale: isTop ? 1 : 1 - offset * 0.06,
-                                y: isTop ? 0 : offset * 25,
-                                zIndex: 10 - offset,
-                                rotate: isTop && swipeDirection === 'right' ? 15 : isTop && swipeDirection === 'left' ? -15 : isTop ? dragX * 0.05 : 0,
-                                x: isTop && swipeDirection === 'right' ? 400 : isTop && swipeDirection === 'left' ? -400 : isTop ? dragX : 0,
-                                opacity: isTop && swipeDirection ? 0 : 1
-                              }}
-                              transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                              className="absolute w-full h-full bg-surface border border-border/50 rounded-[32px] overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] flex flex-col cursor-grab active:cursor-grabbing"
-                            >
-                              {/* Stamps */}
-                              {isTop && dragX > 20 && (
-                                <div className="absolute top-12 left-6 z-20 rotate-[-15deg] border-4 border-green-500 text-green-500 font-black text-3xl px-4 py-1 rounded-xl uppercase tracking-widest bg-green-500/10 backdrop-blur-sm" style={{ opacity: Math.min(dragX / 100, 1) }}>
-                                  CONNECT 💕
+                            return (
+                              <motion.div
+                                key={student._id || student.id}
+                                drag={isTop ? "x" : false}
+                                dragConstraints={{ left: 0, right: 0 }}
+                                onDrag={(e, info) => isTop && setDragX(info.offset.x)}
+                                onDragEnd={(e, info) => {
+                                  if (!isTop) return;
+                                  setDragX(0);
+                                  if (info.offset.x > 100) handleSwipe(selectedCollege.id, 'right', student);
+                                  else if (info.offset.x < -100) handleSwipe(selectedCollege.id, 'left', student);
+                                }}
+                                initial={false}
+                                animate={{
+                                  scale: isTop ? 1 : 1 - offset * 0.06,
+                                  y: isTop ? 0 : offset * 25,
+                                  zIndex: 10 - offset,
+                                  rotate: isTop && swipeDirection === 'right' ? 15 : isTop && swipeDirection === 'left' ? -15 : isTop ? dragX * 0.05 : 0,
+                                  x: isTop && swipeDirection === 'right' ? 400 : isTop && swipeDirection === 'left' ? -400 : isTop ? dragX : 0,
+                                  opacity: isTop && swipeDirection ? 0 : 1
+                                }}
+                                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                                className="absolute w-full h-full bg-surface border border-border/50 rounded-[32px] overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] flex flex-col cursor-grab active:cursor-grabbing"
+                              >
+                                {/* Student Profile Photo Area - always shown */}
+                                <div className="relative w-full bg-muted pointer-events-none" style={{ height: isTop ? '50%' : '100%' }}>
+                                  <img src={student.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=6366f1&color=fff`} alt={student.name} className="w-full h-full object-cover" />
+                                  {!isTop && <div className="absolute inset-0 bg-black/30" />}
                                 </div>
-                              )}
-                              {isTop && dragX < -20 && (
-                                <div className="absolute top-12 right-6 z-20 rotate-[15deg] border-4 border-red-500 text-red-500 font-black text-3xl px-4 py-1 rounded-xl uppercase tracking-widest bg-red-500/10 backdrop-blur-sm" style={{ opacity: Math.min(Math.abs(dragX) / 100, 1) }}>
-                                  SKIP 🤪
-                                </div>
-                              )}
 
-                              {/* Student Profile Photo Area - always shown */}
-                              <div className="relative w-full bg-muted pointer-events-none" style={{ height: isTop ? '50%' : '100%' }}>
-                                <img src={student.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=6366f1&color=fff`} alt={student.name} className="w-full h-full object-cover" />
-                                {/* Overlay for background cards */}
-                                {!isTop && (
-                                  <div className="absolute inset-0 bg-black/30" />
-                                )}
-                              </div>
-
-                              {/* Details Area - only for top card */}
-                              {isTop && (
-                                <div className="flex-1 p-5 space-y-4 bg-[#0A0A0F] overflow-y-auto custom-scrollbar flex flex-col relative z-10">
-                                  <div>
-                                    <h2 className="text-2xl font-black text-foreground flex items-center gap-2 tracking-tight line-clamp-1">
-                                      {student.name}
-                                      <VerifiedBadge user={student} size={20} />
-                                    </h2>
-                                    <div className="flex flex-col mt-2 space-y-1.5">
-                                      {student.year && (
-                                        <div className="flex items-center text-foreground/90 text-[13px] font-semibold">
-                                          <GraduationCap size={14} className="mr-2 text-primary" /> {student.year}
-                                        </div>
-                                      )}
-                                      <div className="flex items-center text-foreground/80 text-[12px] font-medium">
-                                        <Building2 size={12} className="mr-2 text-secondary" /> {student.university || selectedCollege.name}
-                                      </div>
-                                      <div className="flex items-center text-foreground/80 text-[12px] font-medium">
-                                        <MapPin size={12} className="mr-2 text-primary" /> {selectedCollege.location}
-                                      </div>
-                                      {myFollowing.includes(student._id || student.id) && (
-                                        <div className="mt-1 inline-flex bg-green-500/20 text-green-500 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider self-start items-center gap-2 shadow-sm">
-                                          <Users size={12} /> Already Friends
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                  {student.interests && student.interests.length > 0 && (
+                                {/* Details Area - only for top card */}
+                                {isTop && (
+                                  <div className="flex-1 p-5 space-y-4 bg-[#0A0A0F] overflow-y-auto custom-scrollbar flex flex-col relative z-10">
                                     <div>
-                                      <h4 className="text-[10px] font-bold text-muted uppercase tracking-widest mb-2.5">Interests</h4>
-                                      <div className="flex flex-wrap gap-2">
-                                        {student.interests.map((interest, i) => (
-                                          <span key={i} className="px-3 py-1.5 bg-surface-hover border border-border/50 rounded-lg text-[11px] font-bold text-foreground shadow-sm">
-                                            {interest}
-                                          </span>
-                                        ))}
+                                      <h2 className="text-2xl font-black text-foreground flex items-center gap-2 tracking-tight line-clamp-1">
+                                        {student.name}
+                                        <VerifiedBadge user={student} size={20} />
+                                      </h2>
+                                      <div className="flex flex-col mt-2 space-y-1.5">
+                                        <div className="flex items-center text-foreground/80 text-[12px] font-medium">
+                                          <Building2 size={12} className="mr-2 text-secondary" /> {student.university || selectedCollege.name}
+                                        </div>
+                                        {myFollowing.includes(student._id || student.id) && (
+                                          <div className="mt-1 inline-flex bg-green-500/20 text-green-500 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider self-start items-center gap-2 shadow-sm">
+                                            <Users size={12} /> Already Friends
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
-                                  )}
-                                  <div className="pt-2 mt-auto space-y-3">
                                     <p className="text-[13px] text-foreground/80 italic leading-relaxed font-medium bg-surface-hover p-3 rounded-xl border border-border/50">
-                                      "{student.bio}"
+                                      "{student.bio || "No bio yet."}"
                                     </p>
-                                    
-                                    {myFollowing.includes(student._id || student.id) ? (
-                                      <motion.button
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                        onClick={() => handleDirectMessage(student)}
-                                        className="w-full py-4 gradient-bg rounded-2xl text-xs font-black text-white uppercase tracking-widest shadow-xl flex items-center justify-center space-x-2"
-                                      >
-                                        <MessageSquare size={16} />
-                                        <span>Chat Now</span>
-                                      </motion.button>
-                                    ) : (
-                                      <motion.button
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                        onClick={() => handleConnect(student)}
-                                        className="w-full py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-xs font-black text-white uppercase tracking-widest shadow-xl flex items-center justify-center space-x-2"
-                                      >
-                                        <Plus size={16} />
-                                        <span>Connect</span>
-                                      </motion.button>
-                                    )}
+                                    <div className="pt-2 mt-auto">
+                                      {myFollowing.includes(student._id || student.id) ? (
+                                        <motion.button
+                                          whileTap={{ scale: 0.98 }}
+                                          onClick={() => handleDirectMessage(student)}
+                                          className="w-full py-4 gradient-bg rounded-2xl text-xs font-black text-white uppercase tracking-widest shadow-xl flex items-center justify-center space-x-2"
+                                        >
+                                          <MessageSquare size={16} />
+                                          <span>Chat Now</span>
+                                        </motion.button>
+                                      ) : (
+                                        <motion.button
+                                          whileTap={{ scale: 0.98 }}
+                                          onClick={() => handleConnect(student)}
+                                          className="w-full py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-xs font-black text-white uppercase tracking-widest flex items-center justify-center space-x-2"
+                                        >
+                                          <Plus size={16} />
+                                          <span>Connect</span>
+                                        </motion.button>
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
+                                )}
+                              </motion.div>
+                            );
+                          }).reverse()}
+                        </AnimatePresence>
+                      </div>
+                    ) : (
+                      /* --- LIST VIEW --- */
+                      <div className="w-full space-y-3 pb-10">
+                        {selectedCollege.studentsData
+                          .filter(s => 
+                            s.name.toLowerCase().includes(studentSearch.toLowerCase()) || 
+                            s.interests?.some(i => i.toLowerCase().includes(studentSearch.toLowerCase()))
+                          )
+                          .map((student) => (
+                          <motion.div
+                            key={student._id || student.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-surface border border-border/50 p-4 rounded-2xl flex items-center justify-between group hover:border-primary/30 transition-all shadow-sm"
+                          >
+                            <div className="flex items-center space-x-4">
+                              <div className="w-14 h-14 rounded-2xl overflow-hidden bg-muted flex-shrink-0">
+                                <img src={student.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=6366f1&color=fff`} className="w-full h-full object-cover" alt="" />
+                              </div>
+                              <div className="min-w-0">
+                                <h4 className="font-bold text-foreground text-sm flex items-center gap-1.5 truncate">
+                                  {student.name}
+                                  <VerifiedBadge user={student} size={14} />
+                                </h4>
+                                <p className="text-[11px] text-muted truncate mt-0.5">{student.university || selectedCollege.name}</p>
+                                <p className="text-[11px] text-muted/60 truncate mt-0.5 italic">"{student.bio?.substring(0, 30) || "Campus student"}..."</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              {myFollowing.includes(student._id || student.id) ? (
+                                <button 
+                                  onClick={() => handleDirectMessage(student)}
+                                  className="p-2.5 bg-primary/10 text-primary rounded-xl hover:bg-primary hover:text-white transition-all shadow-sm"
+                                  title="Message"
+                                >
+                                  <MessageSquare size={18} />
+                                </button>
+                              ) : (
+                                <button 
+                                  onClick={() => handleConnect(student)}
+                                  className="p-2.5 bg-surface-hover text-muted hover:text-primary hover:bg-primary/10 rounded-xl transition-all border border-border/30"
+                                  title="Connect"
+                                >
+                                  <Plus size={18} />
+                                </button>
                               )}
-                            </motion.div>
-                          );
-                        }).reverse()}
-                      </AnimatePresence>
-                    </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
-                    {/* Action Buttons */}
-                    {(currentStudentIndices[selectedCollege.id] || 0) < selectedCollege.studentsData.length && (
+                    {/* Action Buttons - Only show in Card View and if not finished */}
+                    {viewMode === 'cards' && (currentStudentIndices[selectedCollege._id || selectedCollege.id] || 0) < selectedCollege.studentsData.length && (
                       <div className="flex items-center justify-center space-x-8 mt-8 w-full">
                         <motion.button
                           whileHover={{ scale: 1.1 }}

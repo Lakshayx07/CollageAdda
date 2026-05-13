@@ -36,16 +36,18 @@ router.get('/:id', protect, async (req, res) => {
     if (!college) return res.status(404).json({ message: 'College not found' });
 
     // Find students and posts belonging to this university
-    const baseName = college.name.trim().split(',')[0];
+    const fullName = college.name.trim();
+    const baseName = fullName.split(',')[0].trim();
     const escapedBaseName = baseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escapedFullName = fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     
     // Extract acronym if it exists in parentheses, e.g., "School of Planning and Architecture (SPA)" -> "SPA"
-    const acronymMatch = baseName.match(/\(([^)]+)\)/);
-    let searchPattern = escapedBaseName;
+    const acronymMatch = fullName.match(/\(([^)]+)\)/);
+    let searchPattern = `(${escapedBaseName})|(${escapedFullName})`;
     
     if (acronymMatch && acronymMatch[1]) {
       const escapedAcronym = acronymMatch[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      searchPattern = `(${escapedBaseName})|(${escapedAcronym})`;
+      searchPattern += `|(${escapedAcronym})`;
     }
 
     const students = await User.find({ 
