@@ -337,15 +337,15 @@ export default function ExplorePage() {
                 </h1>
               </div>
 
-              <div className="flex items-center space-x-3">
-                <div className="relative flex-1">
+              <div className="flex items-center space-x-3 w-full">
+                <div className="relative w-1/2">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
                   <input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     type="text"
-                    placeholder={exploreMode === "colleges" ? "Search your dream college..." : "Search players or matches..."}
-                    className="w-full bg-surface-hover border border-border/50 rounded-xl py-2.5 pl-10 pr-4 text-sm text-foreground focus:outline-none focus:border-primary transition-colors"
+                    placeholder={exploreMode === "colleges" ? "Search college..." : "Search players..."}
+                    className="w-full bg-surface-hover border border-border/50 rounded-2xl py-3 pl-10 pr-4 text-sm text-foreground focus:outline-none focus:border-primary transition-colors"
                   />
                 </div>
                 <motion.button
@@ -355,14 +355,23 @@ export default function ExplorePage() {
                     setSearch("");
                   }}
                   className={clsx(
-                    "flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl border transition-all text-sm font-bold shadow-sm whitespace-nowrap",
-                    exploreMode === "arena" 
-                      ? "gradient-bg text-white border-transparent shadow-[0_0_20px_rgba(236,72,153,0.3)]" 
+                    "flex items-center justify-center space-x-2 px-4 py-3 rounded-2xl border transition-all text-sm font-black shadow-lg whitespace-nowrap w-1/2",
+                    exploreMode === "colleges" 
+                      ? "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white border-transparent shadow-purple-500/30 hover:shadow-purple-500/50" 
                       : "glass border-border/50 text-foreground hover:bg-surface-hover"
                   )}
                 >
-                  {exploreMode === "arena" ? <Trophy size={16} className="text-white" /> : <Building2 size={16} />}
-                  <span>{exploreMode === "arena" ? "🏆 Arena" : "🏫 Colleges"}</span>
+                  {exploreMode === "colleges" ? (
+                    <>
+                      <Trophy size={18} className="text-yellow-300 drop-shadow-md" />
+                      <span className="tracking-widest uppercase text-[10px] sm:text-xs">Arena</span>
+                    </>
+                  ) : (
+                    <>
+                      <Building2 size={18} className="text-primary" />
+                      <span className="tracking-widest uppercase text-[10px] sm:text-xs">Colleges</span>
+                    </>
+                  )}
                 </motion.button>
               </div>
 
