@@ -2,6 +2,7 @@ import express from 'express';
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
 import { protect } from '../middleware/authMiddleware.js';
+import { ensureUniversityGroup } from '../utils/universityUtils.js';
 
 const router = express.Router();
 
@@ -55,6 +56,12 @@ router.put('/profile', protect, async (req, res) => {
     if (password) user.password = password; // pre-save hook will hash it
 
     const updated = await user.save();
+    
+    // Ensure user joins their university group if they changed it
+    if (university) {
+      await ensureUniversityGroup(updated);
+    }
+
     res.json({
       _id: updated._id,
       name: updated.name,

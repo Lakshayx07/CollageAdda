@@ -3,48 +3,12 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import ChatRoom from '../models/ChatRoom.js';
 
+import { ensureUniversityGroup } from '../utils/universityUtils.js';
+
 const router = express.Router();
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
-};
-
-// Single source of truth: university group identified by name ONLY
-const ensureUniversityGroup = async (user) => {
-  // Normalize university name — trim whitespace, consistent casing key
-  const universityName = (user.university || '').trim();
-  if (!universityName || universityName === 'Other') return;
-
-  try {
-    // Find by exact university name — this is the ONLY key used
-    let universityRoom = await ChatRoom.findOne({
-      university: universityName,
-      isGroup: true
-    });
-
-    if (!universityRoom) {
-      // Create the one canonical group for this university
-      universityRoom = await ChatRoom.create({
-        groupName: `${universityName} Common Group`,
-        university: universityName,
-        isGroup: true,
-        participants: [user._id]
-      });
-      console.log(`Created university group for: ${universityName}`);
-    } else {
-      // Add user if not already a member — safe to call multiple times
-      const alreadyMember = universityRoom.participants.some(
-        id => id.toString() === user._id.toString()
-      );
-      if (!alreadyMember) {
-        universityRoom.participants.push(user._id);
-        await universityRoom.save();
-        console.log(`Added ${user.email} to existing group: ${universityName}`);
-      }
-    }
-  } catch (err) {
-    console.error("Error joining university room:", err);
-  }
 };
 
 // @route   POST /api/auth/register
