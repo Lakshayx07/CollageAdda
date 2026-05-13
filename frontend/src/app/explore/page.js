@@ -24,7 +24,16 @@ import {
   FlaskConical,
   Trees,
   Compass,
-  Trophy
+  Trophy,
+  Gamepad2,
+  Swords,
+  MonitorPlay,
+  Target,
+  Shield,
+  Crosshair,
+  Activity,
+  Medal,
+  Play
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import VerifiedBadge from "@/components/VerifiedBadge";
@@ -43,8 +52,9 @@ export default function ExplorePage() {
   const [selectedCollege, setSelectedCollege] = useState(null);
   const [activeTab, setActiveTab] = useState("posts");
   const [exploreMode, setExploreMode] = useState("colleges"); // "colleges" | "arena"
+  const [arenaCategory, setArenaCategory] = useState("esports"); // "esports" | "sports"
   const [arenaSportFilter, setArenaSportFilter] = useState("All");
-  const [arenaTab, setArenaTab] = useState("posts"); // "posts" | "players" | "matches"
+  const [arenaTab, setArenaTab] = useState("posts"); // legacy fallback
   const [followed, setFollowed] = useState({});
   const [addedStudents, setAddedStudents] = useState({});
   const [likes, setLikes] = useState({});
@@ -483,83 +493,288 @@ export default function ExplorePage() {
               </>
             ) : (
               /* --- ARENA VIEW --- */
-              <div className="flex flex-col flex-1 relative">
-                {/* Arena Tabs Navigation */}
-                <div className="px-4 flex border-b border-border/50 bg-background/80 backdrop-blur-md sticky top-0 z-30">
-                  {["posts", "players", "matches"].map(tab => (
-                    <button
-                      key={tab}
-                      onClick={() => setArenaTab(tab)}
-                      className={clsx(
-                        "flex-1 py-3 text-sm font-bold capitalize transition-all relative",
-                        arenaTab === tab ? "text-transparent bg-clip-text gradient-bg" : "text-muted hover:text-foreground"
-                      )}
-                    >
-                      {tab}
-                      {arenaTab === tab && (
-                        <motion.div
-                          layoutId="arenaTab"
-                          className="absolute bottom-0 left-0 right-0 h-0.5 gradient-bg"
-                        />
-                      )}
-                    </button>
-                  ))}
+              <div className="flex flex-col flex-1 relative bg-[#050508]">
+                {/* Top Toggle: Esports vs Sports */}
+                <div className="px-4 py-3 flex space-x-2 bg-background/80 backdrop-blur-md sticky top-0 z-30 border-b border-white/5">
+                  <button
+                    onClick={() => setArenaCategory("esports")}
+                    className={clsx(
+                      "flex-1 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all",
+                      arenaCategory === "esports"
+                        ? "bg-gradient-to-r from-cyan-500 to-emerald-500 text-black shadow-[0_0_20px_rgba(6,182,212,0.4)]"
+                        : "glass text-white/50 hover:text-white border border-white/10"
+                    )}
+                  >
+                    🎮 Esports
+                  </button>
+                  <button
+                    onClick={() => setArenaCategory("sports")}
+                    className={clsx(
+                      "flex-1 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all",
+                      arenaCategory === "sports"
+                        ? "bg-gradient-to-r from-purple-600 to-orange-500 text-white shadow-[0_0_20px_rgba(147,51,234,0.4)]"
+                        : "glass text-white/50 hover:text-white border border-white/10"
+                    )}
+                  >
+                    ⚽ Sports
+                  </button>
                 </div>
 
-                {/* Arena Content */}
-                <div className="p-4 flex-1 overflow-y-auto custom-scrollbar">
+                {/* Arena Content Scrollable Area */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-8 pb-20">
                   <AnimatePresence mode="wait">
-                    {arenaTab === "posts" && (
+                    {arenaCategory === "esports" ? (
                       <motion.div
-                        key="arena-posts"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="flex flex-col items-center justify-center py-20 text-center space-y-4"
+                        key="esports"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20 }}
+                        className="space-y-8"
                       >
-                        <div className="w-16 h-16 rounded-full gradient-bg flex items-center justify-center opacity-20">
-                          <Flame size={32} className="text-white" />
-                        </div>
-                        <div>
-                          <p className="text-lg font-bold text-foreground">No posts yet for {arenaSportFilter}</p>
-                          <p className="text-sm text-muted">Be the first to share your sports highlights!</p>
-                        </div>
-                      </motion.div>
-                    )}
+                        {/* 1. Game Rooms */}
+                        <section>
+                          <h3 className="text-white font-black uppercase tracking-wider mb-3 flex items-center text-sm">
+                            <Gamepad2 className="mr-2 text-cyan-400" size={16} /> Game Rooms
+                          </h3>
+                          <div className="flex overflow-x-auto space-x-4 pb-4 no-scrollbar -mx-4 px-4">
+                            {['BGMI', 'Valorant', 'Free Fire', 'Chess', 'FIFA'].map((game) => (
+                              <div key={game} className="min-w-[140px] h-28 rounded-2xl border border-white/10 bg-[#0A0A0F] relative overflow-hidden group cursor-pointer shadow-lg shadow-black/50">
+                                <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <div className="p-4 h-full flex flex-col justify-between relative z-10">
+                                  <span className="text-white font-bold text-sm tracking-wide">{game}</span>
+                                  <div className="flex items-center text-xs text-emerald-400 font-bold bg-emerald-500/10 w-fit px-2 py-1 rounded-full border border-emerald-500/20">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse" />
+                                    {Math.floor(Math.random() * 50 + 5)} Playing
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </section>
 
-                    {arenaTab === "players" && (
-                      <motion.div
-                        key="arena-players"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="flex flex-col items-center justify-center py-20 text-center space-y-4"
-                      >
-                        <div className="w-16 h-16 rounded-full gradient-bg flex items-center justify-center opacity-20">
-                          <Users size={32} className="text-white" />
-                        </div>
-                        <div>
-                          <p className="text-lg font-bold text-foreground">No players found for {arenaSportFilter}</p>
-                          <p className="text-sm text-muted">Update your profile to show up here!</p>
-                        </div>
-                      </motion.div>
-                    )}
+                        {/* 2. Tournament Bracket (Placeholder) */}
+                        <section>
+                          <h3 className="text-white font-black uppercase tracking-wider mb-3 flex items-center text-sm">
+                            <Trophy className="mr-2 text-yellow-400" size={16} /> Live Tournaments
+                          </h3>
+                          <div className="w-full bg-[#0A0A0F] border border-white/10 rounded-2xl p-4 flex flex-col items-center justify-center py-10 relative overflow-hidden shadow-lg shadow-black/50">
+                             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-emerald-500" />
+                             <Swords size={32} className="text-white/20 mb-3" />
+                             <p className="text-white font-black text-center tracking-wide">Valorant Campus Cup</p>
+                             <p className="text-xs text-white/40 mb-4 font-bold tracking-widest uppercase mt-1">Semi-Finals Ongoing</p>
+                             <button className="px-6 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-cyan-400 hover:bg-white/10 transition-colors uppercase tracking-widest">
+                               View Bracket
+                             </button>
+                          </div>
+                        </section>
 
-                    {arenaTab === "matches" && (
+                        {/* 3. Player Profile Card (FIFA Style) */}
+                        <section>
+                          <h3 className="text-white font-black uppercase tracking-wider mb-3 flex items-center text-sm">
+                            <Target className="mr-2 text-pink-500" size={16} /> Top Players
+                          </h3>
+                          <div className="grid grid-cols-2 gap-4">
+                             {/* Player Card 1 */}
+                             <div className="rounded-2xl bg-gradient-to-br from-indigo-900 to-purple-900 border border-purple-500/30 p-1 relative overflow-hidden shadow-lg shadow-purple-900/30 group cursor-pointer hover:scale-105 transition-transform">
+                               <div className="absolute -right-4 -top-4 w-16 h-16 bg-yellow-400/20 blur-xl rounded-full" />
+                               <div className="bg-black/40 rounded-xl p-3 h-full backdrop-blur-sm border border-white/5">
+                                  <div className="flex justify-between items-start mb-2">
+                                     <span className="text-2xl font-black text-yellow-400 drop-shadow-md">94</span>
+                                     <span className="text-[9px] font-black uppercase text-white/50 bg-white/10 px-1.5 py-0.5 rounded border border-white/5">BGMI</span>
+                                  </div>
+                                  <div className="flex flex-col items-center mb-3">
+                                     <div className="w-12 h-12 rounded-full bg-surface mb-2 border-2 border-yellow-400 overflow-hidden shadow-lg">
+                                        <img src="https://i.pravatar.cc/100?img=11" alt="avatar" />
+                                     </div>
+                                     <span className="text-white font-black text-xs tracking-wide">Viper_X</span>
+                                     <span className="text-[9px] text-white/50 font-bold uppercase tracking-widest mt-0.5">Rishihood</span>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-1 text-center">
+                                     <div className="bg-white/5 rounded p-1 border border-white/5"><span className="block text-[9px] text-white/40 uppercase tracking-widest">K/D</span><span className="text-xs font-black text-white">4.2</span></div>
+                                     <div className="bg-white/5 rounded p-1 border border-white/5"><span className="block text-[9px] text-white/40 uppercase tracking-widest">Rank</span><span className="text-xs font-black text-purple-400">Ace</span></div>
+                                  </div>
+                               </div>
+                             </div>
+                             
+                             {/* Player Card 2 */}
+                             <div className="rounded-2xl bg-gradient-to-br from-slate-800 to-zinc-900 border border-slate-500/30 p-1 relative overflow-hidden shadow-lg group cursor-pointer hover:scale-105 transition-transform">
+                               <div className="bg-black/40 rounded-xl p-3 h-full backdrop-blur-sm border border-white/5">
+                                  <div className="flex justify-between items-start mb-2">
+                                     <span className="text-2xl font-black text-slate-300 drop-shadow-md">88</span>
+                                     <span className="text-[9px] font-black uppercase text-white/50 bg-white/10 px-1.5 py-0.5 rounded border border-white/5">VALO</span>
+                                  </div>
+                                  <div className="flex flex-col items-center mb-3">
+                                     <div className="w-12 h-12 rounded-full bg-surface mb-2 border-2 border-slate-400 overflow-hidden shadow-lg">
+                                        <img src="https://i.pravatar.cc/100?img=12" alt="avatar" />
+                                     </div>
+                                     <span className="text-white font-black text-xs tracking-wide">JettMain</span>
+                                     <span className="text-[9px] text-white/50 font-bold uppercase tracking-widest mt-0.5">DTU</span>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-1 text-center">
+                                     <div className="bg-white/5 rounded p-1 border border-white/5"><span className="block text-[9px] text-white/40 uppercase tracking-widest">HS%</span><span className="text-xs font-black text-white">32%</span></div>
+                                     <div className="bg-white/5 rounded p-1 border border-white/5"><span className="block text-[9px] text-white/40 uppercase tracking-widest">Rank</span><span className="text-xs font-black text-cyan-400">Dia</span></div>
+                                  </div>
+                               </div>
+                             </div>
+                          </div>
+                        </section>
+
+                        {/* 4. Team Finder & Live Streams */}
+                        <section className="space-y-4">
+                           <div className="bg-[#0A0A0F] border border-white/10 rounded-2xl p-4 shadow-lg shadow-black/50">
+                              <h3 className="text-white font-black uppercase tracking-wider mb-3 flex items-center text-sm">
+                                <Users className="mr-2 text-emerald-400" size={16} /> Team Finder
+                              </h3>
+                              <div className="bg-white/5 rounded-xl p-4 border border-white/5">
+                                 <div className="flex items-center justify-between mb-3">
+                                   <span className="text-[10px] font-black uppercase tracking-widest text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-1 rounded-md">BGMI</span>
+                                   <span className="text-[10px] text-white/40 font-bold uppercase">2h ago</span>
+                                 </div>
+                                 <p className="text-sm text-white/80 mb-4 font-medium leading-relaxed">"Need 1 player for BGMI Campus Tourney — must have Diamond rank or above. DM fast!"</p>
+                                 <button className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-black text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 transition">Apply to Join</button>
+                              </div>
+                           </div>
+
+                           <div className="bg-[#0A0A0F] border border-white/10 rounded-2xl p-4 shadow-lg shadow-black/50">
+                              <h3 className="text-white font-black uppercase tracking-wider mb-3 flex items-center text-sm">
+                                <Play className="mr-2 text-red-500" size={16} /> Live Streams
+                              </h3>
+                              <div className="aspect-video bg-black rounded-xl border border-white/10 relative overflow-hidden flex items-center justify-center group cursor-pointer">
+                                 <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2940" alt="stream" className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 group-hover:scale-105 transition duration-700" />
+                                 <div className="absolute top-3 left-3 bg-red-600 text-white text-[9px] font-black uppercase px-2 py-1 rounded flex items-center shadow-lg">
+                                   <div className="w-1.5 h-1.5 bg-white rounded-full mr-1.5 animate-pulse" /> LIVE
+                                 </div>
+                                 <div className="absolute top-3 right-3 bg-black/60 border border-white/10 text-white/90 text-[10px] font-bold px-2 py-1 rounded flex items-center backdrop-blur-md">
+                                   <Users size={12} className="mr-1.5 text-white/50"/> 1.2k
+                                 </div>
+                                 <div className="z-10 w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-xl group-hover:bg-white/20 transition group-hover:scale-110">
+                                   <Play size={24} className="text-white ml-1" />
+                                 </div>
+                              </div>
+                           </div>
+                        </section>
+                      </motion.div>
+                    ) : (
+                      /* ================= SPORTS SECTION ================= */
                       <motion.div
-                        key="arena-matches"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="flex flex-col items-center justify-center py-20 text-center space-y-4"
+                        key="sports"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        className="space-y-8"
                       >
-                        <div className="w-16 h-16 rounded-full gradient-bg flex items-center justify-center opacity-20">
-                          <Trophy size={32} className="text-white" />
+                        {/* 1. College Rivalry Score */}
+                        <section>
+                          <h3 className="text-white font-black uppercase tracking-wider mb-3 flex items-center text-sm">
+                            <Flame className="mr-2 text-orange-500" size={16} /> Campus Rivalry
+                          </h3>
+                          <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-purple-900 rounded-2xl p-1 shadow-lg shadow-purple-900/30">
+                             <div className="bg-[#050508]/80 rounded-xl p-5 backdrop-blur-sm flex items-center justify-between border border-white/5">
+                                <div className="flex flex-col items-center">
+                                  <div className="w-12 h-12 rounded-full bg-surface mb-2 overflow-hidden border-2 border-orange-500 shadow-lg shadow-orange-500/20">
+                                     <img src="https://ui-avatars.com/api/?name=RU&background=random" alt="RU" />
+                                  </div>
+                                  <span className="text-[10px] font-black text-white uppercase tracking-widest">Rishihood</span>
+                                </div>
+                                <div className="flex flex-col items-center px-4">
+                                   <span className="text-3xl font-black text-white drop-shadow-md">5 - 3</span>
+                                   <span className="text-[9px] text-orange-400 font-black uppercase tracking-widest mt-1 bg-orange-400/10 px-2 py-0.5 rounded-full border border-orange-400/20">Overall Leads</span>
+                                </div>
+                                <div className="flex flex-col items-center">
+                                  <div className="w-12 h-12 rounded-full bg-surface mb-2 overflow-hidden border-2 border-white/10 shadow-lg">
+                                     <img src="https://ui-avatars.com/api/?name=DTU&background=random" alt="DTU" />
+                                  </div>
+                                  <span className="text-[10px] font-black text-white/50 uppercase tracking-widest">DTU</span>
+                                </div>
+                             </div>
+                          </div>
+                        </section>
+
+                        {/* 2. Match Challenge System */}
+                        <section>
+                          <h3 className="text-white font-black uppercase tracking-wider mb-3 flex items-center text-sm">
+                            <Swords className="mr-2 text-purple-400" size={16} /> Open Challenges
+                          </h3>
+                          <div className="bg-[#0A0A0F] border border-white/10 rounded-2xl p-4 shadow-lg shadow-black/50">
+                             <div className="flex items-start mb-4">
+                                <div className="w-10 h-10 rounded-full bg-surface mr-3 border border-white/10 overflow-hidden flex-shrink-0 shadow-md">
+                                  <img src="https://ui-avatars.com/api/?name=RU&background=random" alt="Avatar" />
+                                </div>
+                                <div>
+                                  <p className="text-sm text-white/90 leading-relaxed font-medium">
+                                    <strong className="text-white font-black">Rishihood</strong> challenges <strong className="text-white font-black">DTU</strong> in <span className="text-purple-400 font-black px-1 py-0.5 bg-purple-500/10 rounded border border-purple-500/20 ml-1">Badminton 🏸</span>
+                                  </p>
+                                  <p className="text-[10px] text-white/40 mt-2 flex items-center font-bold uppercase tracking-wider"><MapPin size={12} className="mr-1.5 text-white/30"/> Saturday 4PM • Campus Court</p>
+                                </div>
+                             </div>
+                             <div className="flex space-x-3">
+                               <button className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-purple-600/20 hover:shadow-purple-600/40 transition">Accept</button>
+                               <button className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/50 text-xs font-black uppercase tracking-widest transition border border-white/5">Decline</button>
+                             </div>
+                          </div>
+                        </section>
+
+                        {/* 3. Live Score Updates & Achievements */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <section className="bg-gradient-to-br from-red-900/30 to-[#0A0A0F] border border-red-500/20 rounded-2xl p-4 relative overflow-hidden shadow-lg shadow-black/50">
+                             <div className="absolute top-3 right-3 flex items-center bg-red-500/10 px-2 py-0.5 rounded border border-red-500/20">
+                               <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse mr-1.5" />
+                               <span className="text-[9px] font-black text-red-500 uppercase tracking-widest">Live</span>
+                             </div>
+                             <h3 className="text-white font-black uppercase tracking-wider mb-4 flex items-center text-sm">
+                                <Activity className="mr-2 text-red-400" size={16} /> Scores
+                             </h3>
+                             <div className="text-center mt-2">
+                               <p className="text-[9px] text-white/50 font-black uppercase tracking-widest mb-2">Badminton Finals</p>
+                               <div className="flex justify-center items-center space-x-4 mb-3">
+                                 <span className="font-black text-white text-sm">RU</span>
+                                 <span className="text-2xl font-black text-red-400 drop-shadow-md">21 - 18</span>
+                                 <span className="font-black text-white/50 text-sm">SRM</span>
+                               </div>
+                               <p className="text-[10px] text-emerald-400 font-black uppercase tracking-widest bg-emerald-500/10 w-fit mx-auto px-2 py-0.5 rounded border border-emerald-500/20">Match Point!</p>
+                             </div>
+                          </section>
+
+                          <section className="bg-[#0A0A0F] border border-white/10 rounded-2xl p-4 shadow-lg shadow-black/50">
+                             <h3 className="text-white font-black uppercase tracking-wider mb-4 flex items-center text-sm">
+                                <Medal className="mr-2 text-yellow-400" size={16} /> Badges
+                             </h3>
+                             <div className="flex flex-col items-center justify-center text-center">
+                               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400/20 to-orange-500/20 flex items-center justify-center mb-3 border border-yellow-500/30 shadow-lg shadow-yellow-500/10">
+                                 <span className="text-2xl drop-shadow-md">🥇</span>
+                               </div>
+                               <p className="text-[10px] font-black text-white leading-snug uppercase tracking-wide">Inter-College Cricket</p>
+                               <span className="text-[9px] font-black uppercase tracking-widest text-yellow-400 bg-yellow-400/10 border border-yellow-400/20 px-2 py-0.5 rounded mt-2">Verified</span>
+                             </div>
+                          </section>
                         </div>
-                        <div>
-                          <p className="text-lg font-bold text-foreground">No upcoming matches</p>
-                          <p className="text-sm text-muted">Stay tuned for campus tournaments!</p>
-                        </div>
+
+                        {/* 4. Player Cards (Sports) */}
+                        <section>
+                          <h3 className="text-white font-black uppercase tracking-wider mb-3 flex items-center text-sm">
+                            <Users className="mr-2 text-orange-400" size={16} /> Top Athletes
+                          </h3>
+                          <div className="rounded-2xl bg-gradient-to-br from-orange-600 to-red-600 border border-orange-500/30 p-1 relative overflow-hidden shadow-lg shadow-orange-900/30 w-1/2 group cursor-pointer hover:scale-105 transition-transform">
+                             <div className="bg-[#050508]/80 rounded-xl p-3 h-full backdrop-blur-sm border border-white/5">
+                                <div className="flex justify-between items-start mb-2">
+                                   <span className="text-2xl font-black text-white drop-shadow-md">92</span>
+                                   <span className="text-[9px] font-black uppercase text-white/90 bg-white/10 px-1.5 py-0.5 rounded border border-white/10">⚽ ST</span>
+                                </div>
+                                <div className="flex flex-col items-center mb-3">
+                                   <div className="w-12 h-12 rounded-full bg-surface mb-2 border-2 border-orange-400 overflow-hidden shadow-lg">
+                                      <img src="https://i.pravatar.cc/100?img=51" alt="avatar" />
+                                   </div>
+                                   <span className="text-white font-black text-xs tracking-wide">Arjun K.</span>
+                                   <span className="text-[9px] text-white/70 font-bold uppercase tracking-widest mt-0.5">Rishihood</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-1 text-center">
+                                   <div className="bg-white/5 rounded p-1 border border-white/5"><span className="block text-[9px] text-white/50 uppercase tracking-widest">Goals</span><span className="text-xs font-black text-white">14</span></div>
+                                   <div className="bg-white/5 rounded p-1 border border-white/5"><span className="block text-[9px] text-white/50 uppercase tracking-widest">Pace</span><span className="text-xs font-black text-orange-400">89</span></div>
+                                </div>
+                             </div>
+                           </div>
+                        </section>
+
                       </motion.div>
                     )}
                   </AnimatePresence>
