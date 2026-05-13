@@ -810,6 +810,7 @@ export default function ExplorePage() {
                         </section>
 
                       </motion.div>
+                    )}
                   </AnimatePresence>
                 </div>
                 
