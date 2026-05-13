@@ -847,16 +847,14 @@ export default function ExplorePage() {
                         ))}
                       </div>
                     )}
-                  </div>
-                )}
 
                     {/* Action Buttons - Only show in Card View and if not finished */}
-                    {viewMode === 'cards' && (currentStudentIndices[selectedCollege._id || selectedCollege.id] || 0) < selectedCollege.studentsData.length && (
+                    {viewMode === 'cards' && (currentStudentIndices[selectedCollege?._id || selectedCollege?.id] || 0) < (selectedCollege?.studentsData?.length || 0) && (
                       <div className="flex items-center justify-center space-x-8 mt-8 w-full">
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
-                          onClick={() => handleSwipe(selectedCollege.id, 'left', selectedCollege.studentsData[currentStudentIndices[selectedCollege.id] || 0])}
+                          onClick={() => handleSwipe(selectedCollege?._id || selectedCollege?.id, 'left', selectedCollege.studentsData[currentStudentIndices[selectedCollege?._id || selectedCollege?.id] || 0])}
                           className="w-[70px] h-[70px] rounded-full bg-surface border-2 border-orange-500/20 flex items-center justify-center text-3xl shadow-[0_0_20px_rgba(249,115,22,0.15)] hover:shadow-[0_0_30px_rgba(249,115,22,0.3)] transition-shadow"
                         >
                           <div className="text-orange-500 hover:text-orange-600 transition-colors">
@@ -867,7 +865,7 @@ export default function ExplorePage() {
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
-                          onClick={() => handleSwipe(selectedCollege.id, 'right', selectedCollege.studentsData[currentStudentIndices[selectedCollege.id] || 0])}
+                          onClick={() => handleSwipe(selectedCollege?._id || selectedCollege?.id, 'right', selectedCollege.studentsData[currentStudentIndices[selectedCollege?._id || selectedCollege?.id] || 0])}
                           className="w-[84px] h-[84px] rounded-full bg-surface border-2 border-pink-500/20 flex items-center justify-center text-4xl shadow-[0_0_25px_rgba(236,72,153,0.2)] hover:shadow-[0_0_40px_rgba(236,72,153,0.4)] transition-shadow"
                         >
                           <div className="text-pink-500 hover:text-pink-600 transition-colors">
