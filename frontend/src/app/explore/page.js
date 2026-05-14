@@ -41,72 +41,6 @@ import PlayerCard from "@/components/PlayerCard";
 import PlayerCardForm from "@/components/PlayerCardForm";
 import clsx from "clsx";
 
-const mockEsportsPlayers = [
-  {
-    category: 'esports',
-    name: 'Viper_X',
-    username: 'Viper_X#123',
-    game_or_sport: 'BGMI',
-    role_or_position: 'IGL / Assaulter',
-    rank: 'Ace Master',
-    experience_level: 'Tournaments',
-    availability: 'Casual',
-    bio: 'IGL main, 3000+ matches BGMI. LF serious squad.',
-    photo_url: 'https://i.pravatar.cc/150?img=11',
-    college: 'Rishihood',
-    overallRating: 94,
-    skills: { accuracy: 9, gamesense: 10, clutch: 8, teamwork: 9, comms: 9 }
-  },
-  {
-    category: 'esports',
-    name: 'JettMain',
-    username: 'Jett#444',
-    game_or_sport: 'Valorant',
-    role_or_position: 'Entry Fragger',
-    rank: 'Diamond 3',
-    experience_level: 'State Level',
-    availability: 'Both',
-    bio: 'Ascendant peak. I dash in and click heads.',
-    photo_url: 'https://i.pravatar.cc/150?img=12',
-    college: 'DTU',
-    overallRating: 88,
-    skills: { accuracy: 8, gamesense: 7, clutch: 9, teamwork: 6, comms: 7 }
-  }
-];
-
-const mockSportsPlayers = [
-  {
-    category: 'sports',
-    name: 'Arjun K.',
-    username: 'Arjun',
-    game_or_sport: 'Football',
-    role_or_position: 'Striker',
-    rank: 'Top Scorer',
-    experience_level: 'State Level',
-    availability: 'Weekends',
-    bio: '14 goals this season. Fast pace, good finishing.',
-    photo_url: 'https://i.pravatar.cc/150?img=51',
-    college: 'Rishihood',
-    overallRating: 92,
-    skills: { speed: 9, stamina: 8, technique: 9, teamwork: 7, leadership: 6 }
-  },
-  {
-    category: 'sports',
-    name: 'Rahul V.',
-    username: 'RahulV',
-    game_or_sport: 'Cricket',
-    role_or_position: 'All-Rounder',
-    rank: 'Captain',
-    experience_level: 'National',
-    availability: 'Both',
-    bio: 'Fast bowler & middle order batsman.',
-    photo_url: 'https://i.pravatar.cc/150?img=53',
-    college: 'SRM',
-    overallRating: 89,
-    skills: { speed: 8, stamina: 9, technique: 8, teamwork: 9, leadership: 9 }
-  }
-];
-
 
 export default function ExplorePage() {
   const [isMounted, setIsMounted] = useState(false);
@@ -609,88 +543,18 @@ export default function ExplorePage() {
                             + Create My Card
                           </button>
                         </div>
-                        {/* 1. Game Rooms */}
-                        <section>
-                          <h3 className="text-white font-black uppercase tracking-wider mb-3 flex items-center text-sm">
-                            <Gamepad2 className="mr-2 text-cyan-400" size={16} /> Game Rooms
-                          </h3>
-                          <div className="flex overflow-x-auto space-x-4 pb-4 no-scrollbar -mx-4 px-4">
-                            {['BGMI', 'Valorant', 'Free Fire', 'Chess', 'FIFA'].map((game) => (
-                              <div key={game} className="min-w-[140px] h-28 rounded-2xl border border-white/10 bg-[#0A0A0F] relative overflow-hidden group cursor-pointer shadow-lg shadow-black/50">
-                                <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                <div className="p-4 h-full flex flex-col justify-between relative z-10">
-                                  <span className="text-white font-bold text-sm tracking-wide">{game}</span>
-                                  <div className="flex items-center text-xs text-emerald-400 font-bold bg-emerald-500/10 w-fit px-2 py-1 rounded-full border border-emerald-500/20">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse" />
-                                    {Math.floor(Math.random() * 50 + 5)} Playing
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </section>
-
-                        {/* 2. Tournament Bracket (Placeholder) */}
-                        <section>
-                          <h3 className="text-white font-black uppercase tracking-wider mb-3 flex items-center text-sm">
-                            <Trophy className="mr-2 text-yellow-400" size={16} /> Live Tournaments
-                          </h3>
-                          <div className="w-full bg-[#0A0A0F] border border-white/10 rounded-2xl p-4 flex flex-col items-center justify-center py-10 relative overflow-hidden shadow-lg shadow-black/50">
-                             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-emerald-500" />
-                             <Swords size={32} className="text-white/20 mb-3" />
-                             <p className="text-white font-black text-center tracking-wide">Valorant Campus Cup</p>
-                             <p className="text-xs text-white/40 mb-4 font-bold tracking-widest uppercase mt-1">Semi-Finals Ongoing</p>
-                             <button className="px-6 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-cyan-400 hover:bg-white/10 transition-colors uppercase tracking-widest">
-                               View Bracket
-                             </button>
-                          </div>
-                        </section>
-
-                        {/* 3. Player Profile Card (FIFA Style) */}
+                        {/* Player Profile Card (FIFA Style) */}
                         <section>
                           <h3 className="text-white font-black uppercase tracking-wider mb-3 flex items-center text-sm">
                             <Target className="mr-2 text-pink-500" size={16} /> Top Players
                           </h3>
                           <div className="grid grid-cols-2 gap-4">
-                            {mockEsportsPlayers.map(player => (
-                              <PlayerCard key={player.username} player={player} />
-                            ))}
+                            {/* We will map real data here soon */}
+                            {/* {realEsportsPlayers.map(player => ( ... ))} */}
                           </div>
-                        </section>
-
-                        {/* 4. Team Finder & Live Streams */}
-                        <section className="space-y-4">
-                           <div className="bg-[#0A0A0F] border border-white/10 rounded-2xl p-4 shadow-lg shadow-black/50">
-                              <h3 className="text-white font-black uppercase tracking-wider mb-3 flex items-center text-sm">
-                                <Users className="mr-2 text-emerald-400" size={16} /> Team Finder
-                              </h3>
-                              <div className="bg-white/5 rounded-xl p-4 border border-white/5">
-                                 <div className="flex items-center justify-between mb-3">
-                                   <span className="text-[10px] font-black uppercase tracking-widest text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-1 rounded-md">BGMI</span>
-                                   <span className="text-[10px] text-white/40 font-bold uppercase">2h ago</span>
-                                 </div>
-                                 <p className="text-sm text-white/80 mb-4 font-medium leading-relaxed">"Need 1 player for BGMI Campus Tourney — must have Diamond rank or above. DM fast!"</p>
-                                 <button className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-black text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 transition">Apply to Join</button>
-                              </div>
-                           </div>
-
-                           <div className="bg-[#0A0A0F] border border-white/10 rounded-2xl p-4 shadow-lg shadow-black/50">
-                              <h3 className="text-white font-black uppercase tracking-wider mb-3 flex items-center text-sm">
-                                <Play className="mr-2 text-red-500" size={16} /> Live Streams
-                              </h3>
-                              <div className="aspect-video bg-black rounded-xl border border-white/10 relative overflow-hidden flex items-center justify-center group cursor-pointer">
-                                 <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2940" alt="stream" className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 group-hover:scale-105 transition duration-700" />
-                                 <div className="absolute top-3 left-3 bg-red-600 text-white text-[9px] font-black uppercase px-2 py-1 rounded flex items-center shadow-lg">
-                                   <div className="w-1.5 h-1.5 bg-white rounded-full mr-1.5 animate-pulse" /> LIVE
-                                 </div>
-                                 <div className="absolute top-3 right-3 bg-black/60 border border-white/10 text-white/90 text-[10px] font-bold px-2 py-1 rounded flex items-center backdrop-blur-md">
-                                   <Users size={12} className="mr-1.5 text-white/50"/> 1.2k
-                                 </div>
-                                 <div className="z-10 w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-xl group-hover:bg-white/20 transition group-hover:scale-110">
-                                   <Play size={24} className="text-white ml-1" />
-                                 </div>
-                              </div>
-                           </div>
+                          <div className="text-center py-10">
+                            <p className="text-white/40 text-xs font-bold uppercase tracking-widest">No players yet. Create your card!</p>
+                          </div>
                         </section>
                       </motion.div>
                     ) : (
@@ -711,101 +575,17 @@ export default function ExplorePage() {
                             + Create My Card
                           </button>
                         </div>
-                        {/* 1. College Rivalry Score */}
-                        <section>
-                          <h3 className="text-white font-black uppercase tracking-wider mb-3 flex items-center text-sm">
-                            <Flame className="mr-2 text-orange-500" size={16} /> Campus Rivalry
-                          </h3>
-                          <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-purple-900 rounded-2xl p-1 shadow-lg shadow-purple-900/30">
-                             <div className="bg-[#050508]/80 rounded-xl p-5 backdrop-blur-sm flex items-center justify-between border border-white/5">
-                                <div className="flex flex-col items-center">
-                                  <div className="w-12 h-12 rounded-full bg-surface mb-2 overflow-hidden border-2 border-orange-500 shadow-lg shadow-orange-500/20">
-                                     <img src="https://ui-avatars.com/api/?name=RU&background=random" alt="RU" />
-                                  </div>
-                                  <span className="text-[10px] font-black text-white uppercase tracking-widest">Rishihood</span>
-                                </div>
-                                <div className="flex flex-col items-center px-4">
-                                   <span className="text-3xl font-black text-white drop-shadow-md">5 - 3</span>
-                                   <span className="text-[9px] text-orange-400 font-black uppercase tracking-widest mt-1 bg-orange-400/10 px-2 py-0.5 rounded-full border border-orange-400/20">Overall Leads</span>
-                                </div>
-                                <div className="flex flex-col items-center">
-                                  <div className="w-12 h-12 rounded-full bg-surface mb-2 overflow-hidden border-2 border-white/10 shadow-lg">
-                                     <img src="https://ui-avatars.com/api/?name=DTU&background=random" alt="DTU" />
-                                  </div>
-                                  <span className="text-[10px] font-black text-white/50 uppercase tracking-widest">DTU</span>
-                                </div>
-                             </div>
-                          </div>
-                        </section>
-
-                        {/* 2. Match Challenge System */}
-                        <section>
-                          <h3 className="text-white font-black uppercase tracking-wider mb-3 flex items-center text-sm">
-                            <Swords className="mr-2 text-purple-400" size={16} /> Open Challenges
-                          </h3>
-                          <div className="bg-[#0A0A0F] border border-white/10 rounded-2xl p-4 shadow-lg shadow-black/50">
-                             <div className="flex items-start mb-4">
-                                <div className="w-10 h-10 rounded-full bg-surface mr-3 border border-white/10 overflow-hidden flex-shrink-0 shadow-md">
-                                  <img src="https://ui-avatars.com/api/?name=RU&background=random" alt="Avatar" />
-                                </div>
-                                <div>
-                                  <p className="text-sm text-white/90 leading-relaxed font-medium">
-                                    <strong className="text-white font-black">Rishihood</strong> challenges <strong className="text-white font-black">DTU</strong> in <span className="text-purple-400 font-black px-1 py-0.5 bg-purple-500/10 rounded border border-purple-500/20 ml-1">Badminton 🏸</span>
-                                  </p>
-                                  <p className="text-[10px] text-white/40 mt-2 flex items-center font-bold uppercase tracking-wider"><MapPin size={12} className="mr-1.5 text-white/30"/> Saturday 4PM • Campus Court</p>
-                                </div>
-                             </div>
-                             <div className="flex space-x-3">
-                               <button className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-purple-600/20 hover:shadow-purple-600/40 transition">Accept</button>
-                               <button className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/50 text-xs font-black uppercase tracking-widest transition border border-white/5">Decline</button>
-                             </div>
-                          </div>
-                        </section>
-
-                        {/* 3. Live Score Updates & Achievements */}
-                        <div className="grid grid-cols-2 gap-4">
-                          <section className="bg-gradient-to-br from-red-900/30 to-[#0A0A0F] border border-red-500/20 rounded-2xl p-4 relative overflow-hidden shadow-lg shadow-black/50">
-                             <div className="absolute top-3 right-3 flex items-center bg-red-500/10 px-2 py-0.5 rounded border border-red-500/20">
-                               <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse mr-1.5" />
-                               <span className="text-[9px] font-black text-red-500 uppercase tracking-widest">Live</span>
-                             </div>
-                             <h3 className="text-white font-black uppercase tracking-wider mb-4 flex items-center text-sm">
-                                <Activity className="mr-2 text-red-400" size={16} /> Scores
-                             </h3>
-                             <div className="text-center mt-2">
-                               <p className="text-[9px] text-white/50 font-black uppercase tracking-widest mb-2">Badminton Finals</p>
-                               <div className="flex justify-center items-center space-x-4 mb-3">
-                                 <span className="font-black text-white text-sm">RU</span>
-                                 <span className="text-2xl font-black text-red-400 drop-shadow-md">21 - 18</span>
-                                 <span className="font-black text-white/50 text-sm">SRM</span>
-                               </div>
-                               <p className="text-[10px] text-emerald-400 font-black uppercase tracking-widest bg-emerald-500/10 w-fit mx-auto px-2 py-0.5 rounded border border-emerald-500/20">Match Point!</p>
-                             </div>
-                          </section>
-
-                          <section className="bg-[#0A0A0F] border border-white/10 rounded-2xl p-4 shadow-lg shadow-black/50">
-                             <h3 className="text-white font-black uppercase tracking-wider mb-4 flex items-center text-sm">
-                                <Medal className="mr-2 text-yellow-400" size={16} /> Badges
-                             </h3>
-                             <div className="flex flex-col items-center justify-center text-center">
-                               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400/20 to-orange-500/20 flex items-center justify-center mb-3 border border-yellow-500/30 shadow-lg shadow-yellow-500/10">
-                                 <span className="text-2xl drop-shadow-md">🥇</span>
-                               </div>
-                               <p className="text-[10px] font-black text-white leading-snug uppercase tracking-wide">Inter-College Cricket</p>
-                               <span className="text-[9px] font-black uppercase tracking-widest text-yellow-400 bg-yellow-400/10 border border-yellow-400/20 px-2 py-0.5 rounded mt-2">Verified</span>
-                             </div>
-                          </section>
-                        </div>
-
-                        {/* 4. Player Cards (Sports) */}
+                        {/* Player Cards (Sports) */}
                         <section>
                           <h3 className="text-white font-black uppercase tracking-wider mb-3 flex items-center text-sm">
                             <Users className="mr-2 text-orange-400" size={16} /> Top Athletes
                           </h3>
                           <div className="grid grid-cols-2 gap-4">
-                            {mockSportsPlayers.map(player => (
-                              <PlayerCard key={player.username} player={player} />
-                            ))}
+                            {/* We will map real data here soon */}
+                            {/* {realSportsPlayers.map(player => ( ... ))} */}
+                          </div>
+                          <div className="text-center py-10">
+                            <p className="text-white/40 text-xs font-bold uppercase tracking-widest">No athletes yet. Create your card!</p>
                           </div>
                         </section>
 
