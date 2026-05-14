@@ -543,6 +543,25 @@ export default function ExplorePage() {
                             + Create My Card
                           </button>
                         </div>
+                        {/* Esports Teams */}
+                        <section>
+                          <h3 className="text-white font-black uppercase tracking-wider mb-3 flex items-center text-sm">
+                            <Swords className="mr-2 text-cyan-400" size={16} /> Esports Squads
+                          </h3>
+                          <div className="flex overflow-x-auto space-x-4 pb-4 no-scrollbar -mx-4 px-4">
+                            {['BGMI', 'Valorant', 'FIFA'].map(game => (
+                              <button 
+                                key={game} 
+                                onClick={() => router.push(`/arena/sport/${game.toLowerCase()}`)}
+                                className="min-w-[120px] h-24 rounded-2xl border border-white/10 bg-[#0A0A0F] hover:bg-white/5 transition flex flex-col items-center justify-center relative overflow-hidden group shadow-lg"
+                              >
+                                <span className="text-2xl mb-1 group-hover:scale-110 transition-transform">🎮</span>
+                                <span className="text-[10px] font-black text-white uppercase tracking-widest">{game}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </section>
+
                         {/* Player Profile Card (FIFA Style) */}
                         <section>
                           <h3 className="text-white font-black uppercase tracking-wider mb-3 flex items-center text-sm">
@@ -575,6 +594,33 @@ export default function ExplorePage() {
                             + Create My Card
                           </button>
                         </div>
+                        {/* Sports Teams */}
+                        <section>
+                          <h3 className="text-white font-black uppercase tracking-wider mb-3 flex items-center text-sm">
+                            <Flame className="mr-2 text-orange-400" size={16} /> Campus Teams
+                          </h3>
+                          <div className="flex overflow-x-auto space-x-4 pb-4 no-scrollbar -mx-4 px-4">
+                            {[
+                              { name: 'Volleyball', icon: '🏐' },
+                              { name: 'Football', icon: '⚽' },
+                              { name: 'Badminton', icon: '🏸' },
+                              { name: 'Basketball', icon: '🏀' },
+                              { name: 'Cricket', icon: '🏏' },
+                              { name: 'Tennis', icon: '🎾' },
+                              { name: 'Swimming', icon: '🏊' }
+                            ].map(sport => (
+                              <button 
+                                key={sport.name} 
+                                onClick={() => router.push(`/arena/sport/${sport.name.toLowerCase()}`)}
+                                className="min-w-[120px] h-24 rounded-2xl border border-white/10 bg-[#0A0A0F] hover:bg-white/5 transition flex flex-col items-center justify-center relative overflow-hidden group shadow-lg"
+                              >
+                                <span className="text-2xl mb-1 group-hover:scale-110 transition-transform">{sport.icon}</span>
+                                <span className="text-[10px] font-black text-white uppercase tracking-widest">{sport.name}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </section>
+
                         {/* Player Cards (Sports) */}
                         <section>
                           <h3 className="text-white font-black uppercase tracking-wider mb-3 flex items-center text-sm">
