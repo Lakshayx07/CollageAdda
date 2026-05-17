@@ -1,16 +1,71 @@
 "use client";
 import React, { useState } from "react";
-import { Compass, ShoppingBag, Briefcase, Plus, Filter, MessageSquare, ChevronRight } from "lucide-react";
-import { motion } from "framer-motion";
+import { Compass, ShoppingBag, Briefcase, Plus, Filter, MessageSquare, ChevronRight, X, Image as ImageIcon } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
-
 
 export default function HustleHubPage() {
   const [activeTab, setActiveTab] = useState("thrift"); // 'thrift' or 'gigs'
-  
-  // Real data will be fetched here
-  const thriftItems = [];
-  const gigItems = [];
+  const [thriftItems, setThriftItems] = useState([]);
+  const [gigItems, setGigItems] = useState([]);
+  const [showPostModal, setShowPostModal] = useState(false);
+
+  // Form Fields
+  const [listingType, setListingType] = useState("thrift"); // 'thrift' or 'gig'
+  const [title, setTitle] = useState("");
+  const [price, setPrice] = useState("");
+  const [condition, setCondition] = useState("Like New"); // for thrift
+  const [gigType, setGigType] = useState("Tech"); // for gig
+  const [imagePreview, setImagePreview] = useState("");
+
+  const presetImages = [
+    "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&q=80&w=400&h=300", // drafter / study
+    "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=400&h=300", // book
+    "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?auto=format&fit=crop&q=80&w=400&h=300", // shoes
+    "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=400&h=300", // headphones
+  ];
+
+  const handlePost = (e) => {
+    e.preventDefault();
+    if (!title || !price) {
+      alert("Please fill in the required fields");
+      return;
+    }
+
+    if (listingType === "thrift") {
+      const newItem = {
+        id: Date.now(),
+        title,
+        price: price.startsWith("₹") ? price : `₹${price}`,
+        condition,
+        seller: "Lakshay Y.",
+        college: "Rishihood",
+        image: imagePreview || presetImages[Math.floor(Math.random() * presetImages.length)],
+      };
+      setThriftItems([newItem, ...thriftItems]);
+      setActiveTab("thrift");
+    } else {
+      const newGig = {
+        id: Date.now(),
+        title,
+        price: price.startsWith("₹") ? price : `₹${price}`,
+        type: gigType,
+        seller: "Lakshay Y.",
+        rating: 5.0,
+        jobs: 0,
+      };
+      setGigItems([newGig, ...gigItems]);
+      setActiveTab("gigs");
+    }
+
+    // Reset Form & Close
+    setTitle("");
+    setPrice("");
+    setCondition("Like New");
+    setGigType("Tech");
+    setImagePreview("");
+    setShowPostModal(false);
+  };
 
   return (
     <div className="flex-1 flex flex-col h-full bg-[#050508] relative overflow-hidden">
@@ -28,7 +83,13 @@ export default function HustleHubPage() {
             The hyper-local campus marketplace. Buy/sell thrift items or offer your skills for quick cash.
           </p>
         </div>
-        <button className="mt-4 md:mt-0 bg-white text-black px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs flex items-center hover:scale-105 transition shadow-lg shadow-white/10">
+        <button 
+          onClick={() => {
+            setListingType(activeTab === "thrift" ? "thrift" : "gig");
+            setShowPostModal(true);
+          }}
+          className="mt-4 md:mt-0 bg-white text-black px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs flex items-center hover:scale-105 transition shadow-lg shadow-white/10"
+        >
           <Plus size={16} className="mr-2" /> Post Listing
         </button>
       </div>
@@ -129,6 +190,136 @@ export default function HustleHubPage() {
           )
         )}
       </div>
+
+      {/* Post Modal Form */}
+      <AnimatePresence>
+        {showPostModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-[#0A0A0F] border border-white/10 rounded-3xl w-full max-w-md overflow-hidden flex flex-col"
+            >
+              <div className="p-5 border-b border-white/10 flex justify-between items-center bg-white/5">
+                <h3 className="font-black uppercase tracking-widest text-sm text-white flex items-center">
+                  <Plus size={16} className="mr-2 text-emerald-400" /> Create New Listing
+                </h3>
+                <button onClick={() => setShowPostModal(false)} className="text-white/50 hover:text-white"><X size={18}/></button>
+              </div>
+
+              <form onSubmit={handlePost} className="p-6 space-y-4">
+                {/* Type Selection */}
+                <div>
+                  <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">Listing Category</label>
+                  <div className="flex space-x-2 bg-black p-1 rounded-xl border border-white/10">
+                    <button 
+                      type="button"
+                      onClick={() => setListingType("thrift")}
+                      className={clsx("flex-1 py-2 rounded-lg text-xs font-bold transition-all", listingType === "thrift" ? "bg-emerald-500 text-black font-black" : "text-white/50 hover:text-white")}
+                    >
+                      Thrift Item
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => setListingType("gig")}
+                      className={clsx("flex-1 py-2 rounded-lg text-xs font-bold transition-all", listingType === "gig" ? "bg-emerald-500 text-black font-black" : "text-white/50 hover:text-white")}
+                    >
+                      Student Gig
+                    </button>
+                  </div>
+                </div>
+
+                {/* Title */}
+                <div>
+                  <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">
+                    {listingType === "thrift" ? "Item Name" : "Gig Title (e.g. I will do...)"}
+                  </label>
+                  <input 
+                    type="text" 
+                    placeholder={listingType === "thrift" ? "Engineering Drafter, Scientific Calculator..." : "I will review your code / design UI / edit videos..."}
+                    value={title} 
+                    onChange={e => setTitle(e.target.value)} 
+                    className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:outline-none transition" 
+                  />
+                </div>
+
+                {/* Price */}
+                <div>
+                  <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">Price (INR)</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. ₹500 or ₹200/hr"
+                    value={price} 
+                    onChange={e => setPrice(e.target.value)} 
+                    className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:outline-none transition" 
+                  />
+                </div>
+
+                {/* Category specific fields */}
+                {listingType === "thrift" ? (
+                  <>
+                    <div>
+                      <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">Condition</label>
+                      <select 
+                        value={condition} 
+                        onChange={e => setCondition(e.target.value)}
+                        className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:outline-none transition appearance-none"
+                      >
+                        <option>Brand New</option>
+                        <option>Like New</option>
+                        <option>Good</option>
+                        <option>Fair</option>
+                      </select>
+                    </div>
+
+                    {/* Choose preset image */}
+                    <div>
+                      <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">Choose Visual Preset</label>
+                      <div className="grid grid-cols-4 gap-2">
+                        {presetImages.map((img, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setImagePreview(img)}
+                            className={clsx(
+                              "aspect-video rounded-lg overflow-hidden border-2 relative",
+                              imagePreview === img ? "border-emerald-500" : "border-transparent"
+                            )}
+                          >
+                            <img src={img} className="w-full h-full object-cover" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div>
+                    <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">Gig Category</label>
+                    <select 
+                      value={gigType} 
+                      onChange={e => setGigType(e.target.value)}
+                      className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:outline-none transition appearance-none"
+                    >
+                      <option>Tech</option>
+                      <option>Creative</option>
+                      <option>Skill</option>
+                      <option>Academic</option>
+                    </select>
+                  </div>
+                )}
+
+                <button 
+                  type="submit"
+                  className="w-full py-4 bg-emerald-500 text-black rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-400 transition-colors shadow-lg shadow-emerald-500/20"
+                >
+                  Publish Listing 🚀
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
