@@ -15,6 +15,8 @@ export default function Sidebar() {
     { name: "Explore", path: "/explore", icon: Search },
     { name: "Live Hub", path: "/messages", icon: MessageSquare },
     { name: "Squad", path: "/friends", icon: Users },
+    { name: "Hustle", path: "/hustle", icon: Compass },
+    { name: "Collab", path: "/collab", icon: Zap },
     { name: "Profile", path: "/profile", icon: User },
   ];
 
