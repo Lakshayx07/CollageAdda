@@ -3,38 +3,8 @@ import React, { useState } from "react";
 import { Zap, Code, Shield, Palette, X, Check, Search, Filter } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const mockProjects = [
-  { 
-    id: 1, 
-    title: "Smart India Hackathon 2024", 
-    roleNeeded: "Frontend Dev (React/Next.js)", 
-    host: "Rahul (DTU)",
-    description: "Building an AI-based traffic management system. Need someone who can build sleek dashboards fast. Backend is ready in Node.js.",
-    urgency: "High",
-    tags: ["React", "Tailwind", "Hackathon"]
-  },
-  { 
-    id: 2, 
-    title: "Fintech Mobile App Startup", 
-    roleNeeded: "UI/UX Designer", 
-    host: "Sneha (Rishihood)",
-    description: "Pre-seed funded startup looking for a creative designer. You'll get equity and stipend. Must know Figma.",
-    urgency: "Medium",
-    tags: ["Figma", "Fintech", "Startup"]
-  },
-  { 
-    id: 3, 
-    title: "Campus Events Platform", 
-    roleNeeded: "Backend Dev (Node/Postgres)", 
-    host: "Karan (SRM)",
-    description: "I have the UI ready. Need someone to write the APIs and manage the database. Easy project for resume.",
-    urgency: "Low",
-    tags: ["Node.js", "Postgres", "Side Project"]
-  }
-];
-
 export default function CollabPage() {
-  const [cards, setCards] = useState(mockProjects);
+  const [cards, setCards] = useState([]);
   const [direction, setDirection] = useState("");
 
   const handleSwipe = (isAccept) => {
@@ -133,12 +103,6 @@ export default function CollabPage() {
                 <Search size={48} className="mb-4 opacity-20" />
                 <h3 className="font-bold text-lg mb-1">No more projects</h3>
                 <p className="text-xs">Check back later for new teams.</p>
-                <button 
-                  onClick={() => setCards(mockProjects)}
-                  className="mt-6 px-4 py-2 border border-white/10 rounded-xl text-xs hover:bg-white/5 text-white/50"
-                >
-                  Reload Mock Data
-                </button>
               </div>
             )}
           </AnimatePresence>

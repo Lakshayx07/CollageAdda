@@ -3,15 +3,11 @@ import React, { useState } from "react";
 import { GraduationCap, Briefcase, Coffee, Building2, ChevronRight, MessageSquare, Star } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const mockAlumni = [
-  { id: 1, name: "Priya Sharma", college: "Rishihood", gradYear: "2021", company: "Google", role: "SDE-II", image: "https://i.pravatar.cc/150?img=47", available: true },
-  { id: 2, name: "Ankit Verma", college: "DTU", gradYear: "2019", company: "Microsoft", role: "Product Manager", image: "https://i.pravatar.cc/150?img=60", available: false },
-  { id: 3, name: "Siddharth Jain", college: "SRM", gradYear: "2022", company: "McKinsey", role: "Business Analyst", image: "https://i.pravatar.cc/150?img=11", available: true },
-  { id: 4, name: "Neha Gupta", college: "Rishihood", gradYear: "2020", company: "Amazon", role: "UX Designer", image: "https://i.pravatar.cc/150?img=5", available: true },
-];
-
 export default function AlumniAngelsPage() {
   const [selectedAlumni, setSelectedAlumni] = useState(null);
+  
+  // Real data will be fetched here
+  const alumniList = [];
 
   return (
     <div className="flex-1 flex flex-col h-full bg-[#050508] relative overflow-hidden">
@@ -34,58 +30,66 @@ export default function AlumniAngelsPage() {
       </div>
 
       <div className="flex-1 overflow-y-auto p-6 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {mockAlumni.map(alumni => (
-            <motion.div 
-              key={alumni.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-[#0A0A0F] border border-white/10 rounded-3xl p-6 flex flex-col sm:flex-row items-center sm:items-start group hover:border-amber-500/30 transition shadow-lg relative overflow-hidden"
-            >
-              {alumni.company === "Google" && <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/10 rounded-bl-full blur-xl pointer-events-none" />}
-              {alumni.company === "Microsoft" && <div className="absolute top-0 right-0 w-16 h-16 bg-blue-400/10 rounded-bl-full blur-xl pointer-events-none" />}
-              
-              <div className="relative mb-4 sm:mb-0 sm:mr-6 shrink-0">
-                <img src={alumni.image} className="w-20 h-20 rounded-2xl object-cover border-2 border-white/10" alt={alumni.name} />
-                <div className="absolute -bottom-2 -right-2 bg-amber-500 text-black text-[9px] font-black uppercase px-2 py-0.5 rounded shadow-md border border-amber-400">
-                  ALUMNI
-                </div>
-              </div>
-
-              <div className="flex-1 text-center sm:text-left w-full">
-                <h3 className="text-xl font-black text-white leading-tight flex items-center justify-center sm:justify-start">
-                  {alumni.name} 
-                  {alumni.available && <div className="w-2 h-2 rounded-full bg-green-500 ml-2 animate-pulse" title="Available for Chats" />}
-                </h3>
-                <p className="text-sm text-white/50 font-bold mb-3">{alumni.college} ' {alumni.gradYear.slice(2)}</p>
+        {alumniList.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {alumniList.map(alumni => (
+              <motion.div 
+                key={alumni.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-[#0A0A0F] border border-white/10 rounded-3xl p-6 flex flex-col sm:flex-row items-center sm:items-start group hover:border-amber-500/30 transition shadow-lg relative overflow-hidden"
+              >
+                {alumni.company === "Google" && <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/10 rounded-bl-full blur-xl pointer-events-none" />}
+                {alumni.company === "Microsoft" && <div className="absolute top-0 right-0 w-16 h-16 bg-blue-400/10 rounded-bl-full blur-xl pointer-events-none" />}
                 
-                <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-2 sm:space-y-0 sm:space-x-3 mb-5">
-                  <div className="flex items-center bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg">
-                    <Building2 size={14} className="text-amber-400 mr-2" />
-                    <span className="text-xs font-bold text-white">{alumni.company}</span>
-                  </div>
-                  <div className="flex items-center bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg">
-                    <Briefcase size={14} className="text-amber-400 mr-2" />
-                    <span className="text-xs font-bold text-white/70">{alumni.role}</span>
+                <div className="relative mb-4 sm:mb-0 sm:mr-6 shrink-0">
+                  <img src={alumni.image} className="w-20 h-20 rounded-2xl object-cover border-2 border-white/10" alt={alumni.name} />
+                  <div className="absolute -bottom-2 -right-2 bg-amber-500 text-black text-[9px] font-black uppercase px-2 py-0.5 rounded shadow-md border border-amber-400">
+                    ALUMNI
                   </div>
                 </div>
 
-                <div className="flex space-x-3 w-full">
-                  <button 
-                    onClick={() => setSelectedAlumni(alumni)}
-                    disabled={!alumni.available}
-                    className="flex-1 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-black rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 transition flex items-center justify-center disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
-                  >
-                    <Coffee size={14} className="mr-2" /> Coffee Chat
-                  </button>
-                  <button className="px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white transition flex items-center justify-center">
-                    <MessageSquare size={16} />
-                  </button>
+                <div className="flex-1 text-center sm:text-left w-full">
+                  <h3 className="text-xl font-black text-white leading-tight flex items-center justify-center sm:justify-start">
+                    {alumni.name} 
+                    {alumni.available && <div className="w-2 h-2 rounded-full bg-green-500 ml-2 animate-pulse" title="Available for Chats" />}
+                  </h3>
+                  <p className="text-sm text-white/50 font-bold mb-3">{alumni.college} ' {alumni.gradYear.slice(2)}</p>
+                  
+                  <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-2 sm:space-y-0 sm:space-x-3 mb-5">
+                    <div className="flex items-center bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg">
+                      <Building2 size={14} className="text-amber-400 mr-2" />
+                      <span className="text-xs font-bold text-white">{alumni.company}</span>
+                    </div>
+                    <div className="flex items-center bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg">
+                      <Briefcase size={14} className="text-amber-400 mr-2" />
+                      <span className="text-xs font-bold text-white/70">{alumni.role}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex space-x-3 w-full">
+                    <button 
+                      onClick={() => setSelectedAlumni(alumni)}
+                      disabled={!alumni.available}
+                      className="flex-1 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-black rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 transition flex items-center justify-center disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
+                    >
+                      <Coffee size={14} className="mr-2" /> Coffee Chat
+                    </button>
+                    <button className="px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white transition flex items-center justify-center">
+                      <MessageSquare size={16} />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+              </motion.div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full text-center text-white/30 pt-20">
+            <GraduationCap size={48} className="mb-4 opacity-20" />
+            <h3 className="font-bold text-lg mb-1">No Alumni Registered</h3>
+            <p className="text-xs">Be the first to join the network.</p>
+          </div>
+        )}
       </div>
 
       {/* Coffee Chat Modal */}
