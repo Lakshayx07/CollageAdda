@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check, Plus, Flame, TrendingUp, Search, Zap, BarChart2 } from "lucide-react";
+import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check, Plus, Flame, TrendingUp, Search, Zap, BarChart2, Compass } from "lucide-react";
 import Image from "next/image";
 import NotificationBell from "../components/NotificationBell";
 import VerifiedBadge from "../components/VerifiedBadge";
@@ -34,6 +34,12 @@ export default function Home() {
   const [pollQuestion, setPollQuestion] = useState("");
   const [pollOptions, setPollOptions] = useState(["", ""]);
   const [pollAllowMultiple, setPollAllowMultiple] = useState(false);
+  const [selectedTopic, setSelectedTopic] = useState(null);
+
+  const filteredPosts = posts.filter(post => {
+    if (!selectedTopic) return true;
+    return post.content.toLowerCase().includes(selectedTopic.toLowerCase());
+  });
   
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
   
@@ -56,6 +62,24 @@ export default function Home() {
     } else {
       const u = JSON.parse(localStorage.getItem('collegeadda_user') || '{}');
       setCurrentUser(u);
+
+      // Sync user profile from backend
+      const fetchLatestProfile = async () => {
+        try {
+          const res = await fetch(`${apiUrl}/api/users/profile`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const profileData = await res.json();
+            setCurrentUser(profileData);
+            localStorage.setItem('collegeadda_user', JSON.stringify(profileData));
+          }
+        } catch (err) {
+          console.error("Error syncing profile:", err);
+        }
+      };
+      fetchLatestProfile();
+
       fetchPosts();
       fetchFriends();
       fetchStories();
@@ -475,15 +499,33 @@ export default function Home() {
 
         {/* Trending on Campus Chips */}
         <section className="space-y-2">
-          <div className="flex items-center space-x-2 text-white/70 px-1">
-            <Flame size={16} className="text-orange-500" />
-            <span className="text-xs font-bold uppercase tracking-wider">Trending on Campus</span>
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center space-x-2 text-white/70">
+              <Flame size={16} className="text-orange-500 animate-pulse" />
+              <span className="text-xs font-bold uppercase tracking-wider">
+                {selectedTopic ? `Filtered by: #${selectedTopic}` : "Trending on Campus"}
+              </span>
+            </div>
+            {selectedTopic && (
+              <button 
+                onClick={() => setSelectedTopic(null)}
+                className="text-[10px] font-black uppercase tracking-widest text-purple-400 hover:text-purple-300"
+              >
+                Show All
+              </button>
+            )}
           </div>
           <div className="flex space-x-2 overflow-x-auto no-scrollbar py-1">
             {trendingTopics.map((topic, i) => (
               <button 
                 key={i} 
-                className="flex-shrink-0 glass px-4 py-2 rounded-full text-xs font-medium text-white/80 border border-white/5 hover:border-white/20 hover:bg-white/10 transition-all flex items-center space-x-2"
+                onClick={() => setSelectedTopic(selectedTopic === topic.name ? null : topic.name)}
+                className={clsx(
+                  "flex-shrink-0 px-4 py-2 rounded-full text-xs font-medium border transition-all flex items-center space-x-2",
+                  selectedTopic === topic.name 
+                    ? "bg-purple-600/20 text-purple-300 border-purple-500 shadow-md shadow-purple-500/10" 
+                    : "glass text-white/80 border-white/5 hover:border-white/20 hover:bg-white/10"
+                )}
               >
                 {topic.icon}
                 <span>{topic.name}</span>
@@ -597,13 +639,68 @@ export default function Home() {
         {/* Posts List */}
         <div className="space-y-6">
           {loadingPosts && (
-            <div className="flex flex-col items-center justify-center py-20 space-y-4">
-              <div className="w-10 h-10 border-4 border-white/5 border-t-purple-500 rounded-full animate-spin"></div>
-              <p className="text-sm text-white/30 font-medium">Fetching campus vibes...</p>
+            <div className="space-y-6">
+              {[1, 2, 3].map((n) => (
+                <div key={n} className="glass-card rounded-[2rem] p-6 space-y-4 animate-pulse border border-white/5 bg-white/5">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 rounded-full bg-white/5" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-white/10 rounded w-1/3" />
+                      <div className="h-3 bg-white/5 rounded w-1/4" />
+                    </div>
+                  </div>
+                  <div className="space-y-2 pt-2">
+                    <div className="h-4 bg-white/10 rounded w-full" />
+                    <div className="h-4 bg-white/10 rounded w-5/6" />
+                  </div>
+                  <div className="h-40 bg-white/5 rounded-2xl w-full" />
+                  <div className="flex justify-between pt-2 border-t border-white/5">
+                    <div className="h-6 bg-white/5 rounded w-12" />
+                    <div className="h-6 bg-white/5 rounded w-12" />
+                    <div className="h-6 bg-white/5 rounded w-8" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!loadingPosts && posts.length === 0 && (
+            <div className="glass-card rounded-[2rem] p-8 text-center border-dashed border-2 border-white/10 flex flex-col items-center justify-center space-y-4">
+              <div className="w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400">
+                <Compass size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-white">Welcome to Campus Adda!</h3>
+              <p className="text-sm text-white/50 max-w-sm">
+                Your feed is currently empty. Follow students at your college or explore other campuses to see posts and start connecting!
+              </p>
+              <button 
+                onClick={() => router.push('/explore')}
+                className="gradient-bg text-white px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest shadow-lg shadow-purple-500/20 hover:scale-105 transition-transform animate-[pulse_2s_ease-in-out_infinite]"
+              >
+                Explore Campuses
+              </button>
+            </div>
+          )}
+
+          {!loadingPosts && posts.length > 0 && filteredPosts.length === 0 && (
+            <div className="glass-card rounded-[2rem] p-8 text-center border-dashed border-2 border-white/10 flex flex-col items-center justify-center space-y-4">
+              <div className="w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400">
+                <Flame size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-white">No posts for #{selectedTopic}</h3>
+              <p className="text-sm text-white/50 max-w-sm">
+                Be the first one to post about this topic on your campus!
+              </p>
+              <button 
+                onClick={() => setSelectedTopic(null)}
+                className="gradient-bg text-white px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest shadow-lg shadow-purple-500/20 hover:scale-105 transition-transform"
+              >
+                Show All Posts
+              </button>
             </div>
           )}
           
-          {!loadingPosts && posts.map((post) => (
+          {!loadingPosts && filteredPosts.map((post) => (
             <motion.article 
               key={post.id} 
               variants={itemVariants}

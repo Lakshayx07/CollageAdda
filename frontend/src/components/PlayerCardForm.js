@@ -26,6 +26,17 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
     setFormData(prev => ({ ...prev, skills: { ...prev.skills, [key]: val } }));
   };
 
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData({ ...formData, photo_url: reader.result });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     alert('Card Created Successfully! (Mock)');
@@ -46,7 +57,7 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
         {/* Header */}
         <div className={clsx("p-6 border-b border-white/10 relative overflow-hidden")}>
           <div className={clsx("absolute inset-0 bg-gradient-to-r opacity-20", themeColors)} />
-          <button onClick={onClose} className="absolute top-6 right-6 text-white/50 hover:text-white z-10 bg-black/50 p-2 rounded-full backdrop-blur-md">
+          <button type="button" onClick={onClose} className="absolute top-6 right-6 text-white/50 hover:text-white z-50 bg-black/50 p-2 rounded-full backdrop-blur-md cursor-pointer pointer-events-auto">
             <X size={20} />
           </button>
           
@@ -68,11 +79,18 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Left Column */}
             <div className="space-y-4">
-              {/* Photo Upload Placeholder */}
-              <div className={clsx("w-32 h-32 rounded-full mx-auto border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 transition", bgTheme)}>
-                <Upload size={24} className={isEsports ? "text-cyan-400 mb-2" : "text-orange-400 mb-2"} />
-                <span className="text-[10px] text-white/50 uppercase font-bold tracking-widest">Upload Photo</span>
-              </div>
+              {/* Photo Upload */}
+              <label className={clsx("w-32 h-32 rounded-full mx-auto border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 transition relative overflow-hidden", bgTheme)}>
+                {formData.photo_url ? (
+                  <img src={formData.photo_url} alt="Profile" className="absolute inset-0 w-full h-full object-cover" />
+                ) : (
+                  <>
+                    <Upload size={24} className={isEsports ? "text-cyan-400 mb-2" : "text-orange-400 mb-2"} />
+                    <span className="text-[10px] text-white/50 uppercase font-bold tracking-widest text-center px-2">Upload<br/>Photo</span>
+                  </>
+                )}
+                <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+              </label>
 
               <div>
                 <label className="block text-[10px] font-bold text-white/50 uppercase tracking-widest mb-1">Full Name</label>

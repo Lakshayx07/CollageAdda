@@ -13,7 +13,7 @@ export default function Sidebar() {
   const navItems = [
     { name: "Home", path: "/", icon: Home },
     { name: "Explore", path: "/explore", icon: Search },
-    { name: "Live Hub", path: "/messages", icon: MessageSquare },
+    { name: "Messages", path: "/messages", icon: MessageSquare },
     { name: "Squad", path: "/friends", icon: Users },
     { name: "Hustle", path: "/hustle", icon: Compass },
     { name: "Collab", path: "/collab", icon: Zap },
@@ -108,7 +108,7 @@ export default function Sidebar() {
           className="flex items-center space-x-4 px-5 py-4 w-full rounded-[1.5rem] text-red-500/50 hover:text-red-500 hover:bg-red-500/10 transition-all font-black uppercase tracking-widest text-[11px]"
         >
           <LogOut size={20} />
-          <span>Logout System</span>
+          <span>Logout</span>
         </motion.button>
       </div>
     </aside>

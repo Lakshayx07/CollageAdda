@@ -461,7 +461,7 @@ function MessagesContent() {
   if (!isMounted || !user) return null;
 
   return (
-    <div className="flex h-full bg-[#0A0A0F] overflow-hidden">
+    <div className="fixed inset-x-0 top-0 bottom-20 lg:static lg:flex-1 lg:h-full flex bg-[#0A0A0F] overflow-hidden">
       {/* Chat List Sidebar */}
       <motion.div 
         initial={{ x: -20, opacity: 0 }}
@@ -562,22 +562,22 @@ function MessagesContent() {
 
       {/* Chat Area */}
       <div className={clsx(
-        "flex-1 flex flex-col transition-all relative pb-28 lg:pb-0",
+        "flex-1 flex flex-col h-full transition-all relative overflow-hidden bg-[#0A0A0F]",
         !activeChat ? "hidden lg:flex" : "flex"
       )}>
         {activeChat ? (
           <>
             {/* Chat Header */}
-            <header className="px-6 py-4 glass border-b border-white/5 flex items-center justify-between relative z-10">
-              <div className="flex items-center space-x-4">
-                <button onClick={() => setActiveChat(null)} className="lg:hidden p-2 text-white/40 hover:text-white bg-white/5 rounded-full">
-                  <ChevronLeft size={22} />
+            <header className="h-[60px] shrink-0 px-4 md:px-6 py-0 glass border-b border-white/5 flex items-center justify-between relative z-10">
+              <div className="flex items-center space-x-3 min-w-0">
+                <button onClick={() => setActiveChat(null)} className="lg:hidden p-2 text-white/40 hover:text-white bg-white/5 rounded-full mr-1 flex-shrink-0">
+                  <ChevronLeft size={20} />
                 </button>
-                <div className="relative">
-                  <div className="w-11 h-11 rounded-full p-[2px] gradient-bg">
+                <div className="relative flex-shrink-0">
+                  <div className="w-9 h-9 rounded-full p-[2px] gradient-bg">
                     <div className="w-full h-full rounded-full bg-[#0A0A0F] flex items-center justify-center overflow-hidden">
                       {activeChat.type === "group" ? (
-                        <div className="w-full h-full gradient-bg flex items-center justify-center text-white font-black text-lg">
+                        <div className="w-full h-full gradient-bg flex items-center justify-center text-white font-black text-sm">
                           {activeChat.name.charAt(0)}
                         </div>
                       ) : <img 
@@ -587,27 +587,28 @@ function MessagesContent() {
                           />}
                     </div>
                   </div>
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-[#0A0A0F] rounded-full" />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-[#0A0A0F] rounded-full" />
                 </div>
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <h2 className="font-bold text-white text-[15px]">{activeChat.name}</h2>
-                    {activeChat.partner && <VerifiedBadge user={activeChat.partner} size={14} />}
+                <div className="min-w-0">
+                  <div className="flex items-center space-x-1.5 min-w-0">
+                    <h2 className="font-bold text-white text-[14px] truncate max-w-[120px] xs:max-w-[150px] sm:max-w-none leading-tight">{activeChat.name}</h2>
+                    {activeChat.partner && <VerifiedBadge user={activeChat.partner} size={12} />}
                   </div>
-                  <p className="text-[10px] text-green-500 font-bold uppercase tracking-widest flex items-center">
-                    <span className="w-1 h-1 rounded-full bg-green-500 mr-1.5" />
+                  <p className="text-[9px] text-green-500 font-bold uppercase tracking-wider flex items-center leading-none mt-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1 flex-shrink-0" />
                     Active Now
                   </p>
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
+              
+              <div className="flex items-center space-x-2 flex-shrink-0">
                 {activeChat.type === "group" && (
                   <button 
                     onClick={() => {
                       setShowMemberCount(true);
                       setTimeout(() => setShowMemberCount(false), 10000);
                     }}
-                    className="p-2.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl transition-all flex items-center justify-center min-w-[40px]"
+                    className="p-2 text-white/40 hover:text-white hover:bg-white/5 rounded-xl transition-all flex items-center justify-center min-w-[32px]"
                   >
                     <AnimatePresence mode="wait">
                       {showMemberCount ? (
@@ -616,7 +617,7 @@ function MessagesContent() {
                           initial={{ opacity: 0, scale: 0.8 }}
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0, scale: 0.8 }}
-                          className="text-purple-400 font-black text-sm"
+                          className="text-purple-400 font-black text-xs"
                         >
                           {activeChat.participants?.length || 0}
                         </motion.span>
@@ -627,7 +628,7 @@ function MessagesContent() {
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
                         >
-                          <Users size={20} />
+                          <Users size={18} />
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -636,9 +637,9 @@ function MessagesContent() {
                 <div className="relative">
                   <button 
                     onClick={() => setShowChatOptions(!showChatOptions)}
-                    className="p-2.5 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl transition-all"
+                    className="p-2 text-white/40 hover:text-white hover:bg-white/5 rounded-xl transition-all"
                   >
-                    <MoreVertical size={20} />
+                    <MoreVertical size={18} />
                   </button>
                   
                   <AnimatePresence>
@@ -679,8 +680,8 @@ function MessagesContent() {
             </header>
 
             {/* Chat Messages */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar relative">
-              <div className="flex justify-center mb-8">
+            <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4 custom-scrollbar relative">
+              <div className="flex justify-center mb-6">
                 <span className="text-[10px] glass px-4 py-1.5 rounded-full text-white/30 font-bold uppercase tracking-[0.2em] border border-white/5">
                   Begin your secure campus connection
                 </span>
@@ -707,7 +708,7 @@ function MessagesContent() {
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       className={clsx(
-                        "flex w-full group",
+                        "flex w-full group mb-2",
                         isMe ? "justify-end" : "justify-start"
                       )}
                     >
@@ -727,7 +728,7 @@ function MessagesContent() {
                         isMe ? "items-end" : "items-start"
                       )}>
                         {!isMe && showAvatar && (
-                          <span className="text-[10px] text-white/30 font-bold mb-1.5 ml-1">
+                          <span className="text-[10px] text-white/30 font-bold mb-1 ml-1">
                             {msg.senderName.split(' ')[0]}
                           </span>
                         )}
@@ -744,23 +745,23 @@ function MessagesContent() {
                               rotate: { duration: 3, repeat: Infinity, ease: "easeInOut" },
                               opacity: { duration: 0.3 }
                             }}
-                            className="text-6xl py-2 cursor-default select-none drop-shadow-2xl"
+                            className="text-5xl py-1 cursor-default select-none drop-shadow-2xl"
                           >
                             {msg.text}
                           </motion.div>
                         ) : (
                           <div className={clsx(
-                            "px-4 py-3 text-[14px] leading-relaxed shadow-2xl relative",
+                            "px-3.5 py-2.5 text-[14px] leading-relaxed shadow-2xl relative",
                             isMe 
-                              ? "gradient-bg text-white rounded-[1.5rem] rounded-tr-[0.25rem] shadow-purple-500/10" 
-                              : "glass text-white/90 rounded-[1.5rem] rounded-tl-[0.25rem] border-white/5"
+                              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-[18px] rounded-tr-[4px] shadow-purple-500/10" 
+                              : "bg-white/[0.05] backdrop-blur-md text-white rounded-[18px] rounded-tl-[4px] border border-white/5"
                           )}>
                             {msg.mediaUrl && (
                               <div className="mb-2 rounded-xl overflow-hidden border border-white/10">
                                 {msg.mediaType === 'video' ? (
-                                  <video src={msg.mediaUrl} controls className="max-w-full h-auto max-h-64 object-cover" />
+                                  <video src={msg.mediaUrl} controls className="max-w-full h-auto max-h-48 object-cover" />
                                 ) : (
-                                  <img src={msg.mediaUrl} alt="Media" className="max-w-full h-auto max-h-64 object-cover" />
+                                  <img src={msg.mediaUrl} alt="Media" className="max-w-full h-auto max-h-48 object-cover" />
                                 )}
                               </div>
                             )}
@@ -768,8 +769,8 @@ function MessagesContent() {
                           </div>
                         )}
                         
-                        <div className="flex items-center space-x-1.5 mt-1.5">
-                          <span className="text-[9px] text-white/20 font-bold uppercase tracking-wider">{msg.time}</span>
+                        <div className="flex items-center space-x-1 mt-1">
+                          <span className="text-[11px] text-white/40 font-semibold">{msg.time}</span>
                           {isMe && (
                             <div className={clsx(
                               "w-1 h-1 rounded-full",
@@ -785,8 +786,34 @@ function MessagesContent() {
               <div ref={scrollRef} />
             </div>
 
+            {/* Selected Media Preview */}
+            <AnimatePresence>
+              {selectedMedia && (
+                <div className="px-4 py-2 shrink-0 bg-[#0A0A0F] border-t border-white/5 relative z-20">
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="relative rounded-2xl overflow-hidden border border-white/10 max-h-32 w-32"
+                  >
+                    {mediaType === 'video' ? (
+                      <video src={selectedMedia} className="w-full h-full object-cover" />
+                    ) : (
+                      <img src={selectedMedia} className="w-full h-full object-cover" alt="Preview" />
+                    )}
+                    <button 
+                      onClick={() => { setSelectedMedia(null); setMediaType('none'); }}
+                      className="absolute top-1 right-1 bg-black/60 backdrop-blur-md text-white p-1 rounded-full hover:bg-black/80 transition-all"
+                    >
+                      <X size={12} />
+                    </button>
+                  </motion.div>
+                </div>
+              )}
+            </AnimatePresence>
+
             {/* Quick Reply Pills */}
-            <div className="px-4 lg:px-6 py-2 overflow-x-auto no-scrollbar flex items-center space-x-2 mb-1">
+            <div className="h-11 shrink-0 px-4 py-1.5 overflow-x-auto no-scrollbar flex items-center space-x-2 bg-transparent z-10 border-t border-white/[0.02]">
               {[
                 { text: "Sup?", icon: <Zap size={12} className="text-yellow-400" /> },
                 { text: "Let's meet!", icon: <Users size={12} className="text-purple-400" /> },
@@ -799,7 +826,7 @@ function MessagesContent() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setInput(pill.text)}
-                  className="whitespace-nowrap px-3 py-1.5 glass rounded-full text-[10px] font-bold text-white/50 hover:text-white hover:border-purple-500/50 transition-all border border-white/5 flex items-center space-x-2"
+                  className="whitespace-nowrap px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-full text-[10px] font-bold text-white/55 hover:text-white transition-all border border-white/5 flex items-center space-x-1.5 shrink-0"
                 >
                   {pill.icon}
                   <span>{pill.text}</span>
@@ -808,34 +835,26 @@ function MessagesContent() {
             </div>
 
             {/* Message Input */}
-            <div className="p-6 pt-2">
-              <div className="glass-card p-2 rounded-[2rem] border border-white/10 flex items-center space-x-2 shadow-2xl group focus-within:border-purple-500/30 transition-all">
-                <motion.button 
-                  whileTap={{ scale: 0.9 }}
+            <div className="h-[60px] shrink-0 w-full px-4 py-2.5 bg-[#0a0a0f] border-t border-white/5 flex items-center justify-between relative z-20">
+              <div className="w-full h-full bg-white/[0.04] border border-white/5 rounded-full flex items-center px-1.5 py-0.5 shadow-2xl focus-within:border-purple-500/30 transition-all">
+                {/* Plus button */}
+                <button 
                   onClick={() => setShowAttachments(!showAttachments)}
-                  className="p-3.5 text-white/40 hover:text-purple-400 hover:bg-white/5 rounded-full transition-all"
+                  className="p-2 text-white/40 hover:text-purple-400 hover:bg-white/5 rounded-full transition-all flex items-center justify-center shrink-0"
                 >
-                  <Plus size={22} className={clsx("transition-transform duration-500", showAttachments && "rotate-45")} />
-                </motion.button>
-                
-                <input
-                  value={input}
-                  onChange={e => setInput(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && sendMessage()}
-                  type="text"
-                  placeholder="Share a campus moment..."
-                  className="flex-1 bg-transparent py-3 px-2 text-sm text-white placeholder:text-white/20 focus:outline-none font-medium"
-                />
+                  <Plus size={20} className={clsx("transition-transform duration-500", showAttachments && "rotate-45")} />
+                </button>
 
-                <div className="relative">
+                {/* Emoji button */}
+                <div className="relative flex items-center">
                   <button 
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                     className={clsx(
-                      "p-3.5 hover:bg-white/5 rounded-full transition-all",
-                      showEmojiPicker ? "text-yellow-400 bg-yellow-400/10" : "text-white/40"
+                      "p-2 hover:bg-white/5 rounded-full transition-all flex items-center justify-center shrink-0",
+                      showEmojiPicker ? "text-yellow-400" : "text-white/40"
                     )}
                   >
-                    <Smile size={22} />
+                    <Smile size={20} />
                   </button>
 
                   <AnimatePresence>
@@ -844,14 +863,14 @@ function MessagesContent() {
                         initial={{ opacity: 0, y: 10, scale: 0.9 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                        className="absolute bottom-16 right-0 bg-[#16161D] border border-white/10 rounded-[2rem] shadow-2xl p-4 z-50 w-64"
+                        className="absolute bottom-12 left-0 bg-[#16161D] border border-white/10 rounded-[1.5rem] shadow-2xl p-3 z-50 w-56"
                       >
-                        <div className="grid grid-cols-5 gap-2">
+                        <div className="grid grid-cols-5 gap-1.5">
                           {emojis.map((emoji, i) => (
                             <button
                               key={i}
                               onClick={() => addEmoji(emoji)}
-                              className="text-2xl hover:scale-125 transition-transform p-1"
+                              className="text-xl hover:scale-125 transition-transform p-0.5"
                             >
                               {emoji}
                             </button>
@@ -862,42 +881,30 @@ function MessagesContent() {
                   </AnimatePresence>
                 </div>
 
+                {/* Input Field */}
+                <input
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && sendMessage()}
+                  type="text"
+                  placeholder="Share a campus moment..."
+                  className="flex-1 bg-transparent py-1 px-2 text-[14px] text-white placeholder:text-white/30 focus:outline-none font-medium min-w-0"
+                />
+
+                {/* Send Button */}
                 <motion.button 
-                  whileHover={{ scale: 1.05, x: 2 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={sendMessage}
                   disabled={isSending || (!input.trim() && !selectedMedia)}
-                  className="gradient-bg text-white p-3.5 rounded-[1.5rem] shadow-xl shadow-purple-500/20 disabled:opacity-50 disabled:grayscale transition-all flex items-center justify-center min-w-[50px]"
+                  className="gradient-bg text-white p-2.5 rounded-full shadow-lg shadow-purple-500/20 disabled:opacity-50 disabled:grayscale transition-all flex items-center justify-center shrink-0 w-9 h-9"
                 >
                   {isSending ? (
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (
-                    <Send size={20} />
+                    <Send size={16} />
                   )}
                 </motion.button>
               </div>
-              <AnimatePresence>
-                {selectedMedia && (
-                  <motion.div 
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="mt-4 relative rounded-2xl overflow-hidden border border-white/10 max-h-48"
-                  >
-                    {mediaType === 'video' ? (
-                      <video src={selectedMedia} controls className="w-full h-full object-cover" />
-                    ) : (
-                      <img src={selectedMedia} className="w-full h-full object-cover" alt="Preview" />
-                    )}
-                    <button 
-                      onClick={() => { setSelectedMedia(null); setMediaType('none'); }}
-                      className="absolute top-2 right-2 bg-black/60 backdrop-blur-md text-white p-1.5 rounded-full hover:bg-black/80 transition-all"
-                    >
-                      <X size={14} />
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </div>
             
             {/* Attachment Menu Popup */}
@@ -907,7 +914,7 @@ function MessagesContent() {
                   initial={{ opacity: 0, y: 10, scale: 0.9 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                  className="absolute bottom-28 left-8 bg-[#16161D] border border-white/10 rounded-[2rem] shadow-2xl overflow-hidden z-50 w-56"
+                  className="absolute bottom-16 left-4 bg-[#16161D] border border-white/10 rounded-[1.5rem] shadow-2xl overflow-hidden z-50 w-56"
                 >
                   <button 
                     onClick={() => { setShowAttachments(false); fileInputRef.current?.click(); }}

@@ -427,12 +427,7 @@ export default function ExplorePage() {
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
                 </div>
               )}
-              {!loading && filteredColleges.length === 0 && (
-                <div className="col-span-2 text-center py-20 text-muted">
-                  <Search size={48} className="mx-auto mb-4 opacity-20" />
-                  <p>No colleges found. Try searching for something else!</p>
-                </div>
-              )}
+
               {filteredColleges.map(college => (
                 <motion.button
                   whileTap={{ scale: 0.98 }}
@@ -487,7 +482,7 @@ export default function ExplorePage() {
               ))}
             </div>
 
-            {filteredColleges.length === 0 && (
+            {!loading && filteredColleges.length === 0 && (
               <div className="flex-1 flex flex-col items-center justify-center py-20 text-muted">
                 <Search size={48} className="mb-4 opacity-20" />
                 <p>No colleges found matching "{search}"</p>

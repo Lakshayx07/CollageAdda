@@ -90,6 +90,7 @@ export default function ProfilePage() {
         if (profileRes.ok) {
           const profileData = await profileRes.json();
           setUser(profileData);
+          localStorage.setItem("collegeadda_user", JSON.stringify(profileData));
           setEditData({ 
             profilePic: profileData.profilePic || "",
             instaId: profileData.instagram || "", 
