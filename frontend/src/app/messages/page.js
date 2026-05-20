@@ -50,6 +50,66 @@ function MessagesContent() {
     const emojiRegex = /^(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff]|\ufe0f|\u200d)+$/;
     return emojiRegex.test(cleanText) && cleanText.length <= 15;
   };
+  
+  const sendAutoInterestMessage = async (roomId, productTitle) => {
+    const storedUser = localStorage.getItem("collegeadda_user");
+    if (!storedUser) return;
+    let u;
+    try {
+      u = JSON.parse(storedUser);
+    } catch (e) {
+      return;
+    }
+    const textMsg = `👋 Hi! ${u.name} is interested in your listing: "${productTitle}"`;
+    const token = localStorage.getItem("collegeadda_token");
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+    
+    try {
+      const res = await fetch(`${apiUrl}/api/chat/rooms/${roomId}/messages`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ text: textMsg })
+      });
+      if (res.ok) {
+        const savedMsg = await res.json();
+        if (socketRef.current) {
+          socketRef.current.emit("send_message", {
+            room: roomId,
+            senderId: u._id || u.id,
+            senderName: u.name,
+            text: textMsg,
+            mediaUrl: "",
+            mediaType: "none"
+          });
+        }
+        setMessages(prev => {
+          const currentRoomMsgs = prev[roomId] || [];
+          if (currentRoomMsgs.some(m => m.id === savedMsg._id)) return prev;
+          return {
+            ...prev,
+            [roomId]: [...currentRoomMsgs, {
+              id: savedMsg._id,
+              text: textMsg,
+              sender: "me",
+              senderName: u.name,
+              senderAvatar: u.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=7C3AED&color=fff`,
+              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            }]
+          };
+        });
+      }
+    } catch (error) {
+      console.error("Error sending auto interest message:", error);
+    }
+    
+    const url = new URL(window.location.href);
+    url.searchParams.delete("interestProduct");
+    url.searchParams.delete("userId");
+    window.history.replaceState({}, document.title, url.pathname + url.search);
+  };
 
   useEffect(() => {
     const storedUser = localStorage.getItem("collegeadda_user");
@@ -167,6 +227,10 @@ function MessagesContent() {
             const existingRoom = formattedRooms.find(r => r.type === "private" && r.participants.includes(userIdParam));
             if (existingRoom) {
               setActiveChat(existingRoom);
+              const interestParam = searchParams.get("interestProduct");
+              if (interestParam) {
+                sendAutoInterestMessage(existingRoom.id, interestParam);
+              }
             } else {
               // Create a new private DM room
               try {
@@ -192,6 +256,10 @@ function MessagesContent() {
                     return exists ? prev : [formatted, ...prev];
                   });
                   setActiveChat(formatted);
+                  const interestParam = searchParams.get("interestProduct");
+                  if (interestParam) {
+                    sendAutoInterestMessage(formatted.id, interestParam);
+                  }
                 }
               } catch (err) {
                 console.error("Error creating DM room:", err);

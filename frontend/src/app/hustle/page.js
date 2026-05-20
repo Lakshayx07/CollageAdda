@@ -1,10 +1,13 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Compass, ShoppingBag, Briefcase, Plus, Filter, MessageSquare, ChevronRight, X, Image as ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
 import clsx from "clsx";
 
 export default function HustleHubPage() {
+  const router = useRouter();
+  const [currentUser, setCurrentUser] = useState(null);
   const [activeTab, setActiveTab] = useState("thrift"); // 'thrift' or 'gigs'
   const [thriftItems, setThriftItems] = useState([]);
   const [gigItems, setGigItems] = useState([]);
@@ -20,43 +23,111 @@ export default function HustleHubPage() {
   const [comment, setComment] = useState("");
   const [selectedItem, setSelectedItem] = useState(null);
 
-  const handlePost = (e) => {
+  useEffect(() => {
+    // Load logged-in user
+    const storedUser = localStorage.getItem("collegeadda_user");
+    if (storedUser) {
+      try {
+        setCurrentUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // Fetch postings from backend
+    const fetchListings = async () => {
+      const token = localStorage.getItem("collegeadda_token");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+      try {
+        const res = await fetch(`${apiUrl}/api/hustle`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setThriftItems(data.filter(item => item.type === 'thrift'));
+          setGigItems(data.filter(item => item.type === 'gig'));
+        }
+      } catch (err) {
+        console.error("Error fetching listings:", err);
+      }
+    };
+
+    fetchListings();
+  }, []);
+
+  const handlePost = async (e) => {
     e.preventDefault();
+
+    const token = localStorage.getItem("collegeadda_token");
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
     if (listingType === "thrift") {
       if (!title.trim() || !price.trim() || !condition || !imagePreview || !comment.trim()) {
         alert("Please fill in all columns (Item name, Price, Condition, Photo, and Comment) to create your public listing.");
         return;
       }
-      const newItem = {
-        id: Date.now(),
-        title,
-        price: price.startsWith("₹") ? price : `₹${price}`,
-        condition,
-        comment,
-        seller: "Lakshay Y.",
-        college: "Rishihood",
-        image: imagePreview,
-      };
-      setThriftItems([newItem, ...thriftItems]);
-      setActiveTab("thrift");
+
+      try {
+        const res = await fetch(`${apiUrl}/api/hustle`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            title,
+            price: price.startsWith("₹") ? price : `₹${price}`,
+            condition,
+            type: "thrift",
+            comment,
+            image: imagePreview
+          })
+        });
+        if (res.ok) {
+          const newListing = await res.json();
+          setThriftItems(prev => [newListing, ...prev]);
+          setActiveTab("thrift");
+        } else {
+          alert("Failed to save listing to server.");
+        }
+      } catch (error) {
+        console.error(error);
+        alert("Error saving listing.");
+      }
     } else {
       if (!title.trim() || !price.trim() || !gigType || !comment.trim()) {
         alert("Please fill in all columns (Gig Title, Price, Category, and Comment) to publish your gig.");
         return;
       }
-      const newGig = {
-        id: Date.now(),
-        title,
-        price: price.startsWith("₹") ? price : `₹${price}`,
-        type: gigType,
-        comment,
-        seller: "Lakshay Y.",
-        rating: 5.0,
-        jobs: 0,
-      };
-      setGigItems([newGig, ...gigItems]);
-      setActiveTab("gigs");
+
+      try {
+        const res = await fetch(`${apiUrl}/api/hustle`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            title,
+            price: price.startsWith("₹") ? price : `₹${price}`,
+            gigType,
+            type: "gig",
+            comment
+          })
+        });
+        if (res.ok) {
+          const newListing = await res.json();
+          setGigItems(prev => [newListing, ...prev]);
+          setActiveTab("gigs");
+        } else {
+          alert("Failed to save gig to server.");
+        }
+      } catch (error) {
+        console.error(error);
+        alert("Error saving gig.");
+      }
     }
 
     // Reset Form & Close
@@ -67,6 +138,19 @@ export default function HustleHubPage() {
     setImagePreview("");
     setComment("");
     setShowPostModal(false);
+  };
+
+  const handleMessageSeller = (listing) => {
+    const sellerId = listing.seller?._id || listing.seller?.id || listing.seller;
+    if (!sellerId) {
+      alert("Cannot message seller: seller profile not found.");
+      return;
+    }
+    if (currentUser && (sellerId === currentUser._id || sellerId === currentUser.id)) {
+      alert("You cannot chat with yourself.");
+      return;
+    }
+    router.push(`/messages?userId=${sellerId}&interestProduct=${encodeURIComponent(listing.title)}`);
   };
 
   return (
@@ -125,27 +209,43 @@ export default function HustleHubPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {thriftItems.map(item => (
                 <motion.div 
-                  key={item.id} 
+                  key={item._id || item.id} 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   onClick={() => setSelectedItem(item)}
-                  className="bg-[#0A0A0F] border border-white/10 rounded-3xl overflow-hidden group hover:border-white/20 transition cursor-pointer"
+                  className="bg-[#0A0A0F] border border-white/10 rounded-3xl overflow-hidden group hover:border-white/20 transition cursor-pointer flex flex-col justify-between"
                 >
-                  <div className="h-48 overflow-hidden relative">
-                    <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                    <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-white font-black text-sm">
-                      {item.price}
+                  <div>
+                    <div className="h-48 overflow-hidden relative">
+                      {item.image ? (
+                        <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                      ) : (
+                        <div className="w-full h-full bg-white/5 flex items-center justify-center">
+                          <ShoppingBag className="text-white/20" size={32} />
+                        </div>
+                      )}
+                      <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-white font-black text-sm">
+                        {item.price}
+                      </div>
+                    </div>
+                    <div className="p-5 space-y-2">
+                      <span className="inline-block text-[9px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">{item.condition}</span>
+                      <h3 className="text-white font-bold text-lg leading-tight">{item.title}</h3>
+                      {item.comment && (
+                        <p className="text-white/60 text-xs line-clamp-2 italic font-medium">"{item.comment}"</p>
+                      )}
                     </div>
                   </div>
-                  <div className="p-5">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">{item.condition}</span>
-                    <h3 className="text-white font-bold text-lg mt-3 leading-tight">{item.title}</h3>
-                    <div className="flex items-center justify-between mt-4 text-xs text-white/40">
-                      <span className="flex items-center"><div className="w-4 h-4 rounded-full bg-white/20 mr-2" /> {item.seller} • {item.college}</span>
+                  <div className="p-5 pt-0">
+                    <div className="flex items-center justify-between mt-2 mb-4 text-xs text-white/40">
+                      <span className="flex items-center">
+                        <div className="w-4 h-4 rounded-full bg-white/20 mr-2" />
+                        {item.seller?.name || item.seller || "Lakshay Y."} • {item.seller?.university || item.college || "Rishihood"}
+                      </span>
                     </div>
                     <button 
-                      onClick={(e) => { e.stopPropagation(); setSelectedItem(item); }}
-                      className="w-full mt-5 py-3 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-white text-xs font-black uppercase tracking-widest transition flex items-center justify-center"
+                      onClick={(e) => { e.stopPropagation(); handleMessageSeller(item); }}
+                      className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-white text-xs font-black uppercase tracking-widest transition flex items-center justify-center"
                     >
                       Message Seller <MessageSquare size={14} className="ml-2" />
                     </button>
@@ -165,7 +265,7 @@ export default function HustleHubPage() {
             <div className="space-y-4 max-w-3xl">
               {gigItems.map(gig => (
                 <motion.div 
-                  key={gig.id} 
+                  key={gig._id || gig.id} 
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   onClick={() => setSelectedItem(gig)}
@@ -173,16 +273,19 @@ export default function HustleHubPage() {
                 >
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
-                      <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">{gig.type}</span>
-                      <span className="text-xs text-white/40 font-bold flex items-center">⭐ {gig.rating} ({gig.jobs} completed)</span>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">{gig.type || gig.gigType}</span>
+                      <span className="text-xs text-white/40 font-bold flex items-center">⭐ {gig.rating || 5.0} ({gig.jobs || 0} completed)</span>
                     </div>
                     <h3 className="text-white font-black text-lg mb-1">{gig.title}</h3>
-                    <p className="text-sm text-white/50">Offered by {gig.seller}</p>
+                    {gig.comment && (
+                      <p className="text-white/60 text-xs mb-3 line-clamp-2 italic font-medium">"{gig.comment}"</p>
+                    )}
+                    <p className="text-xs text-white/40">Offered by <span className="text-white/70 font-bold">{gig.seller?.name || gig.seller || "Lakshay Y."}</span> • {gig.seller?.university || "Rishihood"}</p>
                   </div>
                   <div className="mt-4 sm:mt-0 flex flex-col items-start sm:items-end sm:ml-6 border-t sm:border-t-0 sm:border-l border-white/10 pt-4 sm:pt-0 sm:pl-6">
                     <span className="text-2xl font-black text-white">{gig.price}</span>
                     <button 
-                      onClick={(e) => { e.stopPropagation(); setSelectedItem(gig); }}
+                      onClick={(e) => { e.stopPropagation(); handleMessageSeller(gig); }}
                       className="mt-3 px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black rounded-xl text-xs font-black uppercase tracking-widest transition flex items-center"
                     >
                       Hire <ChevronRight size={14} className="ml-1" />
@@ -423,14 +526,18 @@ export default function HustleHubPage() {
                   )}
 
                   <div className="pt-4 flex items-center justify-between text-xs text-white/40 border-t border-white/5">
-                    <span className="flex items-center"><div className="w-4 h-4 rounded-full bg-white/20 mr-2" /> {selectedItem.seller}</span>
-                    {selectedItem.college && <span>{selectedItem.college}</span>}
+                    <span className="flex items-center">
+                      <div className="w-4 h-4 rounded-full bg-white/20 mr-2" /> 
+                      {selectedItem.seller?.name || selectedItem.seller || "Lakshay Y."}
+                    </span>
+                    <span>{selectedItem.seller?.university || selectedItem.college || "Rishihood"}</span>
                   </div>
 
                   <button 
                     onClick={() => {
+                      const item = selectedItem;
                       setSelectedItem(null);
-                      alert(`Contacting ${selectedItem.seller} regarding "${selectedItem.title}"`);
+                      handleMessageSeller(item);
                     }}
                     className="w-full mt-2 py-4 bg-emerald-500 hover:bg-emerald-400 text-black rounded-xl text-xs font-black uppercase tracking-widest transition flex items-center justify-center shadow-lg shadow-emerald-500/20"
                   >
