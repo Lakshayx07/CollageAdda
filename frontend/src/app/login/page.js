@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { MapPin, Mail, Lock, School, User as UserIcon, ArrowRight, Zap, Star } from "lucide-react";
-import { supabase } from "../../utils/supabase";
+import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
 
@@ -94,11 +94,7 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    if (!supabase) {
-      alert("Supabase is not configured.");
-      return;
-    }
+  const handleGoogleSuccess = async (credentialResponse) => {
     if (!university) {
       alert("Please select your university first.");
       return;
@@ -106,21 +102,38 @@ export default function LoginPage() {
 
     try {
       setIsLoading(true);
-      localStorage.setItem('pending_university', university);
-
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+      
+      const res = await fetch(`${apiUrl}/api/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          credential: credentialResponse.credential,
+          university: university
+        })
       });
-      if (error) throw error;
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Google Authentication failed');
+      }
+
+      localStorage.setItem('collegeadda_token', data.token);
+      localStorage.setItem('collegeadda_user', JSON.stringify(data));
+
+      window.location.href = '/';
+
+    } catch (error) {
+      console.error("Google Auth Error:", error.message);
+      alert(error.message);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
+    <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID"}>
     <div className="min-h-screen bg-[#0A0A0F] flex items-center justify-center px-4 relative overflow-hidden py-10">
       {/* Background Decorative Glows */}
       <div className="fixed top-[-10%] right-[-10%] w-[60%] h-[60%] bg-purple-600/10 blur-[150px] rounded-full z-0" />
@@ -158,25 +171,18 @@ export default function LoginPage() {
           
           <div className="space-y-8">
             {/* 1. Google Login at the TOP */}
-            <motion.button
-              type="button"
-              whileHover={{ y: -2 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleGoogleLogin}
-              disabled={isLoading}
-              className="w-full gradient-bg flex items-center justify-center space-x-4 py-5 rounded-[2rem] shadow-xl shadow-purple-500/20 hover:shadow-purple-500/40 transition-all disabled:opacity-50"
-            >
-              <div className="w-6 h-6 bg-white rounded-full p-1 flex items-center justify-center shadow-md">
-                <Image
-                  src="https://www.svgrepo.com/show/475656/google-color.svg"
-                  alt="Google"
-                  width={16}
-                  height={16}
-                  className="object-contain"
-                />
-              </div>
-              <span className="text-xs font-black text-white uppercase tracking-widest">Sign in with Google</span>
-            </motion.button>
+            <div className="flex justify-center w-full">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => alert('Google Login Failed')}
+                useOneTap
+                theme="filled_black"
+                shape="pill"
+                size="large"
+                text="signin_with"
+                width="100%"
+              />
+            </div>
 
             <div className="relative flex items-center justify-center">
               <div className="absolute inset-0 flex items-center">
@@ -339,5 +345,6 @@ export default function LoginPage() {
         </motion.div>
       </div>
     </div>
+    </GoogleOAuthProvider>
   );
 }

@@ -4,6 +4,9 @@ import User from '../models/User.js';
 import ChatRoom from '../models/ChatRoom.js';
 
 import { ensureUniversityGroup } from '../utils/universityUtils.js';
+import { OAuth2Client } from 'google-auth-library';
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const router = express.Router();
 
@@ -100,6 +103,80 @@ router.post('/login', async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+// @route   POST /api/auth/google
+// @desc    Login or register user via Google
+router.post('/google', async (req, res) => {
+  const { credential, university, referralCode } = req.body;
+  try {
+    if (!credential) {
+      return res.status(400).json({ message: 'Google credential missing' });
+    }
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const { email, name, sub, picture } = payload;
+
+    let user = await User.findOne({ email });
+
+    if (user) {
+      // Login existing user
+      if (university && university !== 'Other' && (!user.university || user.university === 'Other')) {
+        user.university = university.trim();
+        await user.save();
+      }
+      await ensureUniversityGroup(user);
+    } else {
+      // Register new user
+      if (!university) {
+        return res.status(400).json({ message: 'University is required for registration' });
+      }
+
+      const genCode = `${name.split(' ')[0].toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      let referredBy = null;
+      if (referralCode) {
+        const inviter = await User.findOne({ referralCode: referralCode.toUpperCase() });
+        if (inviter) {
+          referredBy = inviter._id;
+          inviter.points += 100;
+          inviter.inviteCount += 1;
+          await inviter.save();
+        }
+      }
+
+      // We use 'sub' as a dummy password for Google users since we don't need a real one
+      user = await User.create({
+        name,
+        email,
+        password: sub, // Dummy password
+        university: university.trim(),
+        referralCode: genCode,
+        referredBy,
+        points: 50,
+        profilePic: picture
+      });
+      await ensureUniversityGroup(user);
+    }
+
+    res.status(user.isNew ? 201 : 200).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      university: user.university,
+      referralCode: user.referralCode,
+      points: user.points,
+      isPremium: user.isPremium,
+      profilePic: user.profilePic || picture,
+      token: generateToken(user._id),
+    });
+  } catch (error) {
+    console.error("Google Auth Error:", error);
+    res.status(500).json({ message: 'Failed to authenticate with Google' });
   }
 });
 
