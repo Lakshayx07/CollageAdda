@@ -95,11 +95,6 @@ export default function LoginPage() {
   };
 
   const handleGoogleSuccess = async (credentialResponse) => {
-    if (!university) {
-      alert("Please select your university first.");
-      return;
-    }
-
     try {
       setIsLoading(true);
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
@@ -109,13 +104,17 @@ export default function LoginPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           credential: credentialResponse.credential,
-          university: university
+          university: university || undefined
         })
       });
 
       const data = await res.json();
 
       if (!res.ok) {
+        if (res.status === 400 && data.message === 'University is required for registration') {
+          alert("Welcome to Campus Adda! Since this is your first time, please select your university/campus from the dropdown below to complete your registration.");
+          return;
+        }
         throw new Error(data.message || 'Google Authentication failed');
       }
 
@@ -175,7 +174,6 @@ export default function LoginPage() {
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
                 onError={() => alert('Google Login Failed')}
-                useOneTap
                 theme="filled_black"
                 shape="pill"
                 size="large"

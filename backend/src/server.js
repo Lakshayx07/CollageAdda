@@ -1,5 +1,5 @@
+import 'dotenv/config';
 import express from 'express';
-import dotenv from 'dotenv';
 import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
@@ -16,8 +16,6 @@ import collegeRoutes from './routes/collegeRoutes.js';
 import storyRoutes from './routes/storyRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import hustleRoutes from './routes/hustleRoutes.js';
-
-dotenv.config();
 
 // Connect to database
 connectDB();
