@@ -529,13 +529,13 @@ function MessagesContent() {
   if (!isMounted || !user) return null;
 
   return (
-    <div className="fixed inset-x-0 top-0 bottom-20 lg:static lg:flex-1 lg:h-full flex bg-[#0A0A0F] overflow-hidden">
+    <div className="fixed inset-x-0 top-0 bottom-20 lg:static lg:flex-1 lg:h-full flex bg-transparent overflow-hidden">
       {/* Chat List Sidebar */}
       <motion.div 
         initial={{ x: -20, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         className={clsx(
-          "w-full lg:w-[380px] flex flex-col border-r border-white/5 transition-all relative z-20",
+          "app-panel w-full lg:w-[380px] flex flex-col border-r border-white/5 transition-all relative z-20 rounded-none lg:rounded-[1.5rem] lg:m-4 lg:mr-0 overflow-hidden",
           activeChat ? "hidden lg:flex" : "flex"
         )}
       >
@@ -549,7 +549,7 @@ function MessagesContent() {
                 setShowCreateGroup(true);
                 fetchConnections();
               }}
-              className="p-3 glass rounded-2xl text-purple-400 border border-white/10"
+              className="p-3 rounded-2xl text-purple-300 border border-white/10 bg-white/[0.05] hover:bg-white/[0.08]"
             >
               <Plus size={22} />
             </motion.button>
@@ -562,7 +562,7 @@ function MessagesContent() {
               value={chatSearch}
               onChange={e => setChatSearch(e.target.value)}
               placeholder="Search conversations..."
-              className="w-full bg-white/5 border border-white/5 rounded-[1.25rem] py-3.5 pl-12 pr-4 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all"
+              className="input-surface w-full rounded-[1.25rem] py-3.5 pl-12 pr-4 text-sm placeholder:text-white/25"
             />
           </div>
         </header>
@@ -582,7 +582,7 @@ function MessagesContent() {
             >
               <div className="relative">
                 <div className="w-14 h-14 rounded-full p-[2px] gradient-bg shadow-lg">
-                  <div className="w-full h-full rounded-full bg-[#0A0A0F] flex items-center justify-center overflow-hidden">
+                  <div className="w-full h-full rounded-full bg-background flex items-center justify-center overflow-hidden">
                     {chat.type === "group" ? (
                       <div className="text-purple-400">{chat.avatar}</div>
                     ) : (
@@ -630,20 +630,20 @@ function MessagesContent() {
 
       {/* Chat Area */}
       <div className={clsx(
-        "flex-1 flex flex-col h-full transition-all relative overflow-hidden bg-[#0A0A0F]",
+        "flex-1 flex flex-col h-full transition-all relative overflow-hidden bg-transparent",
         !activeChat ? "hidden lg:flex" : "flex"
       )}>
         {activeChat ? (
           <>
             {/* Chat Header */}
-            <header className="h-[60px] shrink-0 px-4 md:px-6 py-0 glass border-b border-white/5 flex items-center justify-between relative z-10">
+            <header className="h-[60px] shrink-0 px-4 md:px-6 py-0 page-header flex items-center justify-between relative z-10">
               <div className="flex items-center space-x-3 min-w-0">
                 <button onClick={() => setActiveChat(null)} className="lg:hidden p-2 text-white/40 hover:text-white bg-white/5 rounded-full mr-1 flex-shrink-0">
                   <ChevronLeft size={20} />
                 </button>
                 <div className="relative flex-shrink-0">
                   <div className="w-9 h-9 rounded-full p-[2px] gradient-bg">
-                    <div className="w-full h-full rounded-full bg-[#0A0A0F] flex items-center justify-center overflow-hidden">
+                    <div className="w-full h-full rounded-full bg-background flex items-center justify-center overflow-hidden">
                       {activeChat.type === "group" ? (
                         <div className="w-full h-full gradient-bg flex items-center justify-center text-white font-black text-sm">
                           {activeChat.name.charAt(0)}
@@ -857,7 +857,7 @@ function MessagesContent() {
             {/* Selected Media Preview */}
             <AnimatePresence>
               {selectedMedia && (
-                <div className="px-4 py-2 shrink-0 bg-[#0A0A0F] border-t border-white/5 relative z-20">
+                <div className="px-4 py-2 shrink-0 bg-background/80 backdrop-blur-xl border-t border-white/5 relative z-20">
                   <motion.div 
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -1169,7 +1169,7 @@ function MessagesContent() {
 export default function MessagesPage() {
   return (
     <Suspense fallback={
-      <div className="flex h-screen items-center justify-center bg-[#0A0A0F]">
+      <div className="flex h-screen items-center justify-center bg-background">
         <div className="w-12 h-12 border-4 border-white/5 border-t-purple-500 rounded-full animate-spin"></div>
       </div>
     }>

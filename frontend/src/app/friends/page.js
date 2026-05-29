@@ -224,14 +224,14 @@ export default function FriendsPage() {
 
   return (
     <Suspense fallback={null}>
-    <div className="min-h-screen bg-[#0A0A0F] relative overflow-x-hidden">
+    <div className="page-shell relative overflow-x-hidden">
       {/* Background Noise & Glows */}
       <div className="fixed inset-0 opacity-[0.03] pointer-events-none z-0" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' }} />
       <div className="fixed top-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-600/10 blur-[120px] rounded-full z-0" />
       <div className="fixed bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-pink-600/10 blur-[120px] rounded-full z-0" />
 
       {/* Header */}
-      <header className="sticky top-0 z-40 glass border-b border-white/5 px-6 py-4 flex items-center justify-between">
+      <header className="page-header sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
         <motion.div 
           initial={{ x: -20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
@@ -275,7 +275,7 @@ export default function FriendsPage() {
                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                className="absolute right-0 top-16 w-[320px] bg-[#0A0A0F] border border-white/10 rounded-[2rem] shadow-2xl z-50 overflow-hidden"
+                className="app-panel absolute right-0 top-16 w-[320px] rounded-[1.5rem] z-50 overflow-hidden"
               >
                 <div className="p-5 border-b border-white/5 flex items-center justify-between">
                   <h3 className="font-bold text-white text-sm flex items-center gap-2">
@@ -350,7 +350,7 @@ export default function FriendsPage() {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search by name, university or #interest..."
-              className="w-full bg-transparent glass-card border border-white/10 rounded-[2rem] py-5 pl-14 pr-12 text-[15px] text-white placeholder:text-white/20 focus:outline-none focus:border-purple-500/50 transition-all shadow-2xl"
+              className="input-surface w-full rounded-[1.5rem] py-5 pl-14 pr-12 text-[15px] text-white placeholder:text-white/25"
             />
           </div>
         </motion.div>
@@ -382,7 +382,7 @@ export default function FriendsPage() {
               className="grid gap-6"
             >
               {suggestedUsers.length === 0 ? (
-                <div className="text-center py-20 glass-card rounded-[3rem] border-white/5 border-dashed">
+                <div className="text-center py-20 app-panel rounded-[1.75rem] border-white/5 border-dashed">
                   <p className="text-2xl font-black text-white/10 mb-2">Squad Not Found 🛸</p>
                   <p className="text-sm text-white/20 font-medium">Try searching for #Tech, #Design or a name</p>
                 </div>

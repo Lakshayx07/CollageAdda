@@ -82,25 +82,23 @@ export default function SportTeamsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050508] text-white overflow-hidden relative">
-      {/* Background Effect */}
-      <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-orange-600/10 to-transparent pointer-events-none" />
-
-      {/* Header */}
-      <div className="sticky top-0 z-40 bg-[#050508]/80 backdrop-blur-md border-b border-white/10 px-4 py-4 flex items-center">
+    <div className="page-shell text-white overflow-hidden">
+      <header className="page-header sticky top-0 z-40 px-4 py-4">
+        <div className="mx-auto flex max-w-3xl items-center">
         <button onClick={() => router.back()} className="mr-3 p-2 bg-white/5 rounded-full hover:bg-white/10 transition">
           <ChevronLeft size={20} />
         </button>
         <h1 className="text-xl font-black uppercase tracking-widest flex items-center">
           <span className="mr-2 text-2xl">{sportData.icon}</span> {sportName}
         </h1>
-      </div>
+        </div>
+      </header>
 
       <div className="p-4 max-w-2xl mx-auto space-y-6 pb-24 relative z-10">
         
         {/* MY TEAM SECTION */}
         {!hasMyTeam ? (
-          <div className="bg-gradient-to-br from-orange-500/20 to-red-600/10 border border-orange-500/30 rounded-2xl p-8 flex flex-col items-center justify-center text-center relative overflow-hidden">
+          <div className="app-panel border-orange-500/30 rounded-[1.5rem] p-8 flex flex-col items-center justify-center text-center relative overflow-hidden">
             <div className="w-16 h-16 rounded-full bg-orange-500/20 flex items-center justify-center mb-4 shadow-[0_0_30px_rgba(249,115,22,0.3)] border border-orange-500/50">
               <Users size={28} className="text-orange-400" />
             </div>
@@ -118,7 +116,7 @@ export default function SportTeamsPage() {
             <h3 className="text-[10px] text-white/40 font-black uppercase tracking-widest pl-1">Your Squad</h3>
             <div className="bg-white/5 border border-orange-500/30 rounded-2xl p-1 shadow-[0_0_20px_rgba(249,115,22,0.1)] relative">
               <div className="absolute top-0 right-4 bg-orange-500 text-black text-[9px] font-black uppercase px-2 py-0.5 rounded-b-md shadow-lg">Your Team ✅</div>
-              <div className="bg-[#050508]/80 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="app-panel rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                   <h4 className="font-black text-lg text-white uppercase tracking-wider">{myTeamName}</h4>
                   <div className="flex items-center space-x-2 mt-2">
@@ -148,7 +146,7 @@ export default function SportTeamsPage() {
           <h3 className="text-[10px] text-white/40 font-black uppercase tracking-widest pl-1 border-t border-white/10 pt-6">Other College Teams</h3>
           
           {mockTeams.map((team) => (
-            <div key={team.id} className="bg-[#0A0A0F] border border-white/10 rounded-2xl p-4 shadow-lg hover:border-white/20 transition group">
+            <div key={team.id} className="app-panel rounded-[1.35rem] p-4 hover:border-primary/30 transition group">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h4 className="font-black text-sm text-white uppercase tracking-wider group-hover:text-cyan-400 transition">{team.college} {sportName}</h4>
@@ -179,7 +177,7 @@ export default function SportTeamsPage() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#0A0A0F] border border-white/10 rounded-3xl w-full max-w-md overflow-hidden flex flex-col"
+              className="app-panel rounded-[1.75rem] w-full max-w-md overflow-hidden flex flex-col"
             >
               <div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
                 <h3 className="font-black uppercase tracking-widest text-sm text-white">Register Team {newTeam.letter}</h3>
@@ -278,7 +276,7 @@ export default function SportTeamsPage() {
             <motion.div 
               initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }}
               onClick={e => e.stopPropagation()}
-              className="bg-[#050508] border border-white/10 rounded-3xl w-full max-w-sm overflow-hidden flex flex-col shadow-2xl"
+              className="app-panel rounded-[1.75rem] w-full max-w-sm overflow-hidden flex flex-col"
             >
               <div className="p-6 border-b border-white/10 bg-gradient-to-b from-white/5 to-transparent relative overflow-hidden">
                 <button onClick={() => setShowSeeTeamModal(false)} className="absolute top-4 right-4 text-white/40 hover:text-white bg-black/50 p-1.5 rounded-full"><X size={16}/></button>
@@ -289,7 +287,7 @@ export default function SportTeamsPage() {
                 <p className="text-center text-[10px] text-white/50 font-bold uppercase tracking-widest mt-1">8 / 12 Players</p>
               </div>
               
-              <div className="p-4 max-h-64 overflow-y-auto custom-scrollbar bg-[#0A0A0F]">
+              <div className="p-4 max-h-64 overflow-y-auto custom-scrollbar bg-white/[0.03]">
                 <div className="space-y-2">
                   <div className="flex items-center p-3 bg-gradient-to-r from-yellow-500/10 to-transparent border border-yellow-500/20 rounded-xl">
                     <div className="w-10 h-10 rounded-full bg-surface mr-3 border border-yellow-500/50 shadow-[0_0_10px_rgba(234,179,8,0.2)]" />
@@ -322,7 +320,7 @@ export default function SportTeamsPage() {
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
               onClick={e => e.stopPropagation()}
-              className="bg-[#050508] border border-purple-500/30 rounded-3xl w-full max-w-sm overflow-hidden flex flex-col shadow-[0_0_50px_rgba(147,51,234,0.15)] relative"
+              className="app-panel border-purple-500/30 rounded-[1.75rem] w-full max-w-sm overflow-hidden flex flex-col relative"
             >
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-indigo-500" />
               <div className="p-6 text-center">

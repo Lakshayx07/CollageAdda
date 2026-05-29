@@ -51,7 +51,7 @@ export default function PlayerCard({ player }) {
           themeColors
         )}>
           {/* Inner Card content */}
-          <div className="bg-[#050508]/90 rounded-xl h-full w-full relative overflow-hidden backdrop-blur-md flex flex-col border border-white/20">
+          <div className="bg-background/90 rounded-xl h-full w-full relative overflow-hidden backdrop-blur-md flex flex-col border border-white/20">
             {/* Holographic Shimmer Overlay */}
             <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 opacity-0 group-hover:opacity-100 group-hover:animate-shimmer pointer-events-none" style={{ backgroundSize: '200% 200%' }} />
             
@@ -109,7 +109,7 @@ export default function PlayerCard({ player }) {
           "absolute inset-0 backface-hidden rounded-2xl p-1 bg-gradient-to-br rotate-y-180",
           themeColors
         )}>
-          <div className="bg-[#050508]/95 rounded-xl h-full w-full relative overflow-hidden backdrop-blur-md flex flex-col border border-white/20 p-4">
+          <div className="bg-background/95 rounded-xl h-full w-full relative overflow-hidden backdrop-blur-md flex flex-col border border-white/20 p-4">
             <h3 className="text-white font-black uppercase tracking-widest text-sm mb-3 border-b border-white/10 pb-2 text-center">Player Stats</h3>
             
             {/* Skills */}

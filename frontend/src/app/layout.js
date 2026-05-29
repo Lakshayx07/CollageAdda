@@ -24,16 +24,11 @@ export default function RootLayout({ children }) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
     >
-      <body className="h-full flex flex-col bg-background">
-        {/* Desktop Sidebar - visible lg+ */}
+      <body className="app-shell h-full bg-background text-foreground">
         <Sidebar />
-
-        {/* Main content - offset by sidebar on desktop */}
-        <main className="flex flex-col flex-1 overflow-x-hidden overflow-y-auto pb-20 lg:pb-0 lg:ml-64">
+        <main className="app-surface flex min-h-screen flex-col overflow-x-hidden overflow-y-auto pb-24 lg:ml-72 lg:pb-0">
           {children}
         </main>
-
-        {/* Mobile Bottom Nav - hidden on lg+ */}
         <BottomNav />
       </body>
     </html>

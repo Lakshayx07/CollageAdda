@@ -271,14 +271,14 @@ export default function ProfilePage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-[#0A0A0F] relative overflow-x-hidden">
+    <div className="page-shell relative overflow-x-hidden">
       {/* Background Decorative Glows */}
       <div className="fixed top-[-10%] right-[-10%] w-[60%] h-[60%] bg-purple-600/10 blur-[150px] rounded-full z-0" />
       <div className="fixed bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-pink-600/10 blur-[150px] rounded-full z-0" />
       <div className="fixed inset-0 opacity-[0.03] pointer-events-none z-0" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' }} />
 
       {/* Header - only show on mobile, sidebar handles desktop nav */}
-      <header className="lg:hidden sticky top-0 z-40 glass border-b border-white/5 px-6 py-4 flex items-center justify-between">
+      <header className="lg:hidden page-header sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
         <motion.h1 
           initial={{ x: -20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
@@ -320,13 +320,13 @@ export default function ProfilePage() {
               <div className="absolute -inset-1.5 rounded-[3rem] p-[3px] z-10 pointer-events-none"
                 style={{ background: "conic-gradient(from 0deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888, #a855f7, #7c3aed, #f09433)" }}
               >
-                <div className="w-full h-full rounded-[2.7rem] bg-[#0A0A0F]" />
+                <div className="w-full h-full rounded-[2.7rem] bg-background" />
               </div>
             )}
             <div className="relative w-32 h-32 rounded-[2.8rem] p-[3px] gradient-bg shadow-2xl z-20">
               <div 
                 onClick={() => hasActiveStory ? setModal("viewStory") : null}
-                className={`w-full h-full rounded-[2.7rem] bg-[#0A0A0F] flex items-center justify-center overflow-hidden ${hasActiveStory ? 'cursor-pointer active:scale-95 transition-transform' : ''}`}
+                className={`w-full h-full rounded-[2.7rem] bg-background flex items-center justify-center overflow-hidden ${hasActiveStory ? 'cursor-pointer active:scale-95 transition-transform' : ''}`}
               >
                 {user.profilePic ? (
                   <img 

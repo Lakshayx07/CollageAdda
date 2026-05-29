@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Zap, Code, Shield, Palette, X, Check, Search, Filter } from "lucide-react";
+import { Check, Code, Palette, Search, Shield, X, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function CollabPage() {
@@ -23,22 +23,29 @@ export default function CollabPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#050508] relative overflow-hidden">
-      {/* Background ambient light */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
+    <div className="page-shell flex flex-col overflow-hidden">
+      <header className="page-header sticky top-0 z-40 px-5 py-5">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 text-left sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="icon-tile h-12 w-12">
+              <Zap size={24} className="text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
+                Team Matchmaker<span className="text-primary">.</span>
+              </h1>
+              <p className="mt-1 text-sm font-medium text-muted">Hackathons, side projects, societies, and startup teams.</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <span className="app-chip text-xs font-bold"><Code size={13} /> Dev</span>
+            <span className="app-chip text-xs font-bold"><Palette size={13} /> Design</span>
+            <span className="app-chip text-xs font-bold"><Shield size={13} /> Ops</span>
+          </div>
+        </div>
+      </header>
 
-      {/* Header */}
-      <div className="px-6 py-8 relative z-10 text-center border-b border-white/5">
-        <h1 className="text-3xl font-black text-white tracking-tighter flex items-center justify-center mb-2">
-          <Zap className="mr-3 text-blue-500" size={32} /> 
-          Team Matchmaker<span className="text-blue-500">.</span>
-        </h1>
-        <p className="text-white/50 text-sm font-medium">
-          Swipe to find your next co-founder, hackathon teammate, or project partner.
-        </p>
-      </div>
-
-      <div className="flex-1 flex flex-col items-center justify-center p-6 relative z-10">
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center justify-center px-5 py-8">
         <div className="relative w-full max-w-sm aspect-[3/4] perspective-1000">
           <AnimatePresence>
             {cards.length > 0 ? (
@@ -54,7 +61,7 @@ export default function CollabPage() {
                 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                className="absolute inset-0 bg-[#0A0A0F] border border-white/10 rounded-[2rem] shadow-2xl shadow-black p-6 flex flex-col"
+                className="app-panel absolute inset-0 rounded-[1.75rem] p-6 flex flex-col"
               >
                 <div className="flex justify-between items-start mb-6">
                   <span className="text-[10px] font-black uppercase tracking-widest text-blue-400 bg-blue-500/10 px-3 py-1.5 rounded-lg border border-blue-500/20">
@@ -99,15 +106,26 @@ export default function CollabPage() {
                 </div>
               </motion.div>
             ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white/30">
-                <Search size={48} className="mb-4 opacity-20" />
-                <h3 className="font-bold text-lg mb-1">No more projects</h3>
-                <p className="text-xs">Check back later for new teams.</p>
+              <div className="app-panel absolute inset-0 flex flex-col items-center justify-center rounded-[1.75rem] p-7 text-center">
+                <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-primary/10 text-primary">
+                  <Search size={34} />
+                </div>
+                <h3 className="text-2xl font-black tracking-tight text-white">Project deck is empty</h3>
+                <p className="mt-3 text-sm leading-6 text-muted">
+                  Team cards will appear here with roles, skills, urgency, and swipe actions.
+                </p>
+                <div className="mt-6 grid w-full grid-cols-3 gap-2">
+                  {["Build", "Pitch", "Ship"].map((label) => (
+                    <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-4 text-xs font-black uppercase tracking-wider text-white/70">
+                      {label}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </AnimatePresence>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

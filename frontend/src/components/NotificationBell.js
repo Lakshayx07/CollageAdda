@@ -126,7 +126,7 @@ export default function NotificationBell() {
             initial={{ opacity: 0, y: 15, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 15, scale: 0.95 }}
-            className="absolute right-0 mt-4 w-80 bg-[#0A0A0F] rounded-[2rem] shadow-2xl z-[100] overflow-hidden border border-white/10"
+            className="app-panel absolute right-0 mt-4 w-80 rounded-[1.5rem] z-[100] overflow-hidden"
           >
             <div className="p-5 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
               <h3 className="text-xs font-black text-white uppercase tracking-widest">Recent Activity</h3>
@@ -168,7 +168,7 @@ export default function NotificationBell() {
                             className="w-full h-full rounded-[0.9rem] object-cover border-2 border-[#0A0A0F]"
                           />
                         </div>
-                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-[#0A0A0F] rounded-lg border border-white/10 flex items-center justify-center shadow-lg">
+                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-background rounded-lg border border-white/10 flex items-center justify-center shadow-lg">
                           {getIcon(notif.type)}
                         </div>
                       </div>

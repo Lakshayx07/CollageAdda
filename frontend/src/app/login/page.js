@@ -40,13 +40,13 @@ export default function LoginPage() {
         const res = await fetch(`${apiUrl}/api/colleges/public`);
         // If public route doesn't exist, try the standard one (though it might require protect)
         const targetRes = res.ok ? res : await fetch(`${apiUrl}/api/colleges`);
-        
+
         if (targetRes.ok) {
           const data = await targetRes.json();
           setColleges(data);
         }
-      } catch (err) {
-        console.error("Error fetching colleges:", err);
+      } catch {
+        // Keep the curated fallback list when the backend is unavailable in dev.
       }
     };
     fetchColleges();
@@ -98,11 +98,11 @@ export default function LoginPage() {
     try {
       setIsLoading(true);
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
-      
+
       const res = await fetch(`${apiUrl}/api/auth/google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           credential: credentialResponse.credential,
           university: university || undefined
         })
@@ -133,42 +133,92 @@ export default function LoginPage() {
 
   return (
     <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID"}>
-    <div className="min-h-screen bg-[#0A0A0F] flex items-center justify-center px-4 relative overflow-hidden py-10">
-      {/* Background Decorative Glows */}
-      <div className="fixed top-[-10%] right-[-10%] w-[60%] h-[60%] bg-purple-600/10 blur-[150px] rounded-full z-0" />
-      <div className="fixed bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-pink-600/10 blur-[150px] rounded-full z-0" />
-      <div className="fixed inset-0 opacity-[0.03] pointer-events-none z-0" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' }} />
-
-      <div className="w-full max-w-lg z-10">
-        {/* Logo/Brand Section */}
-        <motion.div 
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="text-center mb-10"
+    <div className="min-h-screen px-4 py-8 sm:px-6 lg:px-10">
+      <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
+        <motion.section
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="hidden lg:block"
         >
-          <div className="inline-flex items-center justify-center p-3 glass rounded-3xl mb-4 border border-white/10 shadow-2xl">
-            <div className="w-12 h-12 gradient-bg rounded-2xl flex items-center justify-center text-white shadow-lg">
-              <Zap size={24} fill="currentColor" />
+          <div className="max-w-xl">
+            <div className="app-chip mb-6 text-[11px] font-bold uppercase tracking-[0.2em]">
+              <Zap size={14} className="text-cyan-300" />
+              India&apos;s student discovery network
+            </div>
+            <div className="mb-6 flex items-center gap-4">
+              <div className="brand-mark flex h-16 w-16 items-center justify-center rounded-[1.6rem] text-white">
+                <Zap size={28} fill="currentColor" />
+              </div>
+              <div>
+                <h1 className="text-5xl font-black tracking-tight text-white">
+                  Campus Adda<span className="text-cyan-300">.</span>
+                </h1>
+                <p className="mt-2 text-sm font-semibold uppercase tracking-[0.22em] text-white/38">
+                  Meet your campus people faster
+                </p>
+              </div>
+            </div>
+            <p className="max-w-lg text-lg leading-8 text-white/72">
+              A place for Indian college students to discover campuses, connect with people who match their vibe, and stay close to the pulse of student life.
+            </p>
+
+            <div className="mt-8 grid gap-4 sm:grid-cols-3">
+              <div className="app-panel rounded-[1.6rem] p-5">
+                <p className="text-2xl font-black text-white">50+</p>
+                <p className="mt-2 text-sm leading-6 text-white/55">Colleges ready to explore and compare.</p>
+              </div>
+              <div className="app-panel rounded-[1.6rem] p-5">
+                <p className="text-2xl font-black text-white">Swipe</p>
+                <p className="mt-2 text-sm leading-6 text-white/55">Discover students without awkward follow culture.</p>
+              </div>
+              <div className="app-panel rounded-[1.6rem] p-5">
+                <p className="text-2xl font-black text-white">Private</p>
+                <p className="mt-2 text-sm leading-6 text-white/55">Verified, campus-focused conversations inside the app.</p>
+              </div>
             </div>
           </div>
-          <h1 className="text-4xl font-black text-white tracking-tighter mb-2">
-            Campus Adda<span className="text-purple-500">.</span>
-          </h1>
-          <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px]">
-            Join the exclusive student network
-          </p>
-        </motion.div>
+        </motion.section>
 
-        {/* Auth Card */}
-        <motion.div 
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="glass-card rounded-[3rem] p-8 sm:p-12 border border-white/5 relative overflow-hidden"
-        >
+        <div className="w-full max-w-xl justify-self-center lg:max-w-lg z-10">
+          <motion.div
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="mb-8 text-center lg:hidden"
+          >
+            <div className="mb-4 inline-flex items-center justify-center rounded-3xl border border-white/10 p-3 shadow-2xl glass">
+              <div className="brand-mark flex h-12 w-12 items-center justify-center rounded-2xl text-white">
+                <Zap size={24} fill="currentColor" />
+              </div>
+            </div>
+            <h1 className="mb-2 text-4xl font-black tracking-tight text-white">
+              Campus Adda<span className="text-cyan-300">.</span>
+            </h1>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">
+              Join the exclusive student network
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.1 }}
+            className="glass-card relative overflow-hidden rounded-[2rem] border border-white/6 p-7 sm:p-9"
+          >
           <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/10 blur-3xl -z-10" />
-          
+
           <div className="space-y-8">
+            <div className="space-y-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-300/80">
+                Start here
+              </p>
+              <h2 className="text-2xl font-black tracking-tight text-white">
+                Step into your college circle
+              </h2>
+              <p className="text-sm leading-6 text-white/54">
+                Sign in with Google for the fastest setup, then choose your campus to unlock the student network.
+              </p>
+            </div>
+
             {/* 1. Google Login at the TOP */}
             <div className="flex justify-center w-full">
               <GoogleLogin
@@ -186,7 +236,7 @@ export default function LoginPage() {
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-white/5"></div>
               </div>
-              <div className="relative glass px-6 py-1 text-[9px] text-white/20 font-black uppercase tracking-widest rounded-full border border-white/5">
+              <div className="relative glass rounded-full border border-white/5 px-6 py-1 text-[9px] font-black uppercase tracking-widest text-white/20">
                 Join Campus
               </div>
             </div>
@@ -204,10 +254,10 @@ export default function LoginPage() {
                     value={university}
                     onChange={(e) => setUniversity(e.target.value)}
                     className={clsx(
-                      "w-full rounded-2xl py-4 pl-14 pr-12 text-sm font-bold focus:outline-none transition-all appearance-none cursor-pointer",
-                      !university 
-                        ? "bg-gradient-to-r from-gray-200 to-gray-400 text-gray-900 border-[3px] border-gray-300 animate-[pulse_2s_ease-in-out_infinite] shadow-[0_0_25px_rgba(209,213,219,0.3)] hover:shadow-[0_0_35px_rgba(209,213,219,0.5)]"
-                        : "glass border border-white/5 text-white focus:border-purple-500/50"
+                      "w-full appearance-none rounded-2xl py-4 pl-14 pr-12 text-sm font-bold transition-all focus:outline-none cursor-pointer",
+                      !university
+                        ? "border border-cyan-200/45 bg-[linear-gradient(90deg,rgba(240,248,255,0.88),rgba(217,244,247,0.92))] text-slate-900 shadow-[0_0_28px_rgba(34,199,214,0.18)]"
+                        : "glass border border-white/5 text-white focus:border-cyan-300/45"
                     )}
                   >
                     <option value="" disabled className="bg-[#0A0A0F] text-gray-400">
@@ -229,7 +279,7 @@ export default function LoginPage() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 disabled={isLoading}
-                className="w-full glass py-5 rounded-[2rem] text-[11px] font-black text-white uppercase tracking-[0.2em] shadow-xl border border-white/10 hover:border-white/20 flex justify-center items-center h-16 disabled:opacity-50"
+                className="flex h-16 w-full items-center justify-center rounded-[1.5rem] border border-white/10 bg-[linear-gradient(135deg,rgba(124,92,255,0.22),rgba(34,199,214,0.2))] py-5 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-xl transition-all hover:border-white/20 disabled:opacity-50"
               >
                 {isLoading ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -245,7 +295,7 @@ export default function LoginPage() {
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-white/5 border-dashed"></div>
                 </div>
-                <div className="relative bg-[#0A0A0F] px-4 py-1 text-[8px] text-white/10 font-bold uppercase tracking-widest">
+                <div className="relative bg-[#0F1420] px-4 py-1 text-[8px] font-bold uppercase tracking-widest text-white/10">
                   Or use email access
                 </div>
               </div>
@@ -331,7 +381,7 @@ export default function LoginPage() {
         </motion.div>
 
         {/* Footer info */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
@@ -342,6 +392,7 @@ export default function LoginPage() {
           <div className="flex items-center"><Star size={10} className="mr-1" /> Help</div>
         </motion.div>
       </div>
+    </div>
     </div>
     </GoogleOAuthProvider>
   );

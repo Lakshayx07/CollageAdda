@@ -52,7 +52,7 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="w-full max-w-2xl bg-[#050508] border border-white/10 rounded-3xl shadow-2xl relative overflow-hidden my-auto"
+        className="app-panel w-full max-w-2xl rounded-[1.75rem] relative overflow-hidden my-auto"
       >
         {/* Header */}
         <div className={clsx("p-6 border-b border-white/10 relative overflow-hidden")}>

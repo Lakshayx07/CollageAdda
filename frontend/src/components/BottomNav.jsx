@@ -37,8 +37,8 @@ export default function BottomNav() {
   }, []);
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-4 pt-2">
-      <div className="glass border border-white/10 rounded-[2.2rem] shadow-2xl shadow-black/50 p-1.5 flex justify-between items-center bg-[#0A0A0F]/90 backdrop-blur-xl">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 px-3 pb-3 pt-2">
+      <div className="app-panel mx-auto flex max-w-xl items-center justify-between rounded-[2rem] px-1.5 py-1.5 backdrop-blur-xl">
         {navItems.map((item) => {
           const isActive = pathname === item.path;
           const Icon = item.icon;
@@ -52,17 +52,22 @@ export default function BottomNav() {
               className="relative flex-1"
             >
               <div className={clsx(
-                "flex flex-col items-center justify-center py-2.5 px-0.5 rounded-2xl transition-all duration-300 relative z-10",
-                isActive ? "text-white" : "text-white/30"
+                "relative z-10 flex flex-col items-center justify-center rounded-[1.35rem] px-1 py-2.5 transition-all duration-300",
+                isActive ? "text-white" : "text-white/35"
               )}>
                 <div className="relative">
-                  <Icon size={20} strokeWidth={isActive ? 2.5 : 2} className="transition-transform duration-300 group-hover:scale-115" />
+                  <div className={clsx(
+                    "flex h-10 w-10 items-center justify-center rounded-2xl border transition-all",
+                    isActive ? "border-white/12 bg-white/9" : "border-transparent bg-transparent"
+                  )}>
+                    <Icon size={19} strokeWidth={isActive ? 2.5 : 2} />
+                  </div>
                   {isFriends && hasRequest && (
-                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#0A0A0F] shadow-lg"></span>
+                    <span className="absolute -right-0.5 top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#0f1420] bg-orange-400 shadow-[0_0_10px_rgba(251,146,60,0.55)]"></span>
                   )}
                 </div>
                 <span className={clsx(
-                  "text-[8px] font-black uppercase tracking-wider mt-1 transition-all duration-300 overflow-hidden leading-none",
+                  "mt-1 overflow-hidden text-[8px] font-black uppercase leading-none tracking-[0.16em] transition-all duration-300",
                   isActive ? "opacity-100 max-h-4 scale-100" : "opacity-0 max-h-0 scale-75"
                 )}>
                   {item.name}
@@ -71,7 +76,7 @@ export default function BottomNav() {
                 {isActive && (
                   <motion.div 
                     layoutId="bottom-nav-active"
-                    className="absolute inset-0 gradient-bg rounded-2xl -z-10 shadow-lg shadow-purple-500/20"
+                    className="absolute inset-0 -z-10 rounded-[1.35rem] bg-[linear-gradient(135deg,rgba(124,92,255,0.22),rgba(34,199,214,0.18))] ring-1 ring-white/10"
                     initial={false}
                     transition={{ type: "spring", stiffness: 350, damping: 30 }}
                   />

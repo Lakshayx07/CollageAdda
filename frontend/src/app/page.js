@@ -410,25 +410,30 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background relative overflow-x-hidden">
-      {/* Top Header */}
-      <header className="sticky top-0 z-40 glass border-b border-white/10 px-6 py-4 flex justify-between items-center">
-        <h1 className="text-2xl font-bold gradient-text tracking-tight">
-          Campus Adda
-        </h1>
+    <div className="relative flex min-h-screen flex-col overflow-x-hidden bg-transparent">
+      <header className="sticky top-0 z-40 border-b app-divider bg-[rgba(11,15,23,0.78)] px-4 py-4 backdrop-blur-xl sm:px-6">
+        <div className="mx-auto flex max-w-6xl items-center justify-between">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-300/78">
+              Campus pulse
+            </p>
+            <h1 className="mt-1 text-2xl font-black tracking-tight text-white">
+              Campus Adda
+            </h1>
+          </div>
         <div className="flex items-center space-x-4">
           <button 
             onClick={() => router.push('/explore')}
-            className="p-2 rounded-full hover:bg-white/5 transition-colors text-white/70"
+            className="rounded-2xl border border-white/8 bg-white/[0.04] p-2.5 text-white/70 transition-colors hover:bg-white/[0.08]"
           >
             <Search size={22} />
           </button>
           <NotificationBell />
           <div 
             onClick={() => router.push('/profile')}
-            className="w-9 h-9 rounded-full p-[2px] gradient-bg cursor-pointer hover:scale-110 transition-transform"
+            className="brand-mark h-10 w-10 cursor-pointer rounded-2xl p-[2px] transition-transform hover:scale-105"
           >
-            <div className="w-full h-full rounded-full bg-[#0A0A0F] flex items-center justify-center overflow-hidden">
+            <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-[0.95rem] bg-[#0F1420]">
               {currentUser?.profilePic ? (
                 <img src={currentUser.profilePic} className="w-full h-full object-cover" alt="Me" />
               ) : (
@@ -437,18 +442,18 @@ export default function Home() {
             </div>
           </div>
         </div>
+        </div>
       </header>
 
-      {/* Main Feed Container */}
       <motion.div 
         variants={containerVariants}
         initial="hidden"
         animate="show"
-        className="flex-1 max-w-xl mx-auto w-full p-4 space-y-8"
+        className="mx-auto flex-1 w-full max-w-6xl p-4 sm:p-6"
       >
-        
-        {/* Stories Section */}
-        <section className="space-y-3">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="space-y-8">
+        <section className="app-panel rounded-[2rem] p-4 sm:p-5 space-y-3">
           <div className="flex space-x-5 overflow-x-auto no-scrollbar py-2">
             {/* Your Story */}
             <div 
@@ -457,7 +462,7 @@ export default function Home() {
             >
               <div className="relative">
                 <div className="w-20 h-20 rounded-full p-[3px] bg-white/10 group-hover:bg-white/20 transition-all">
-                  <div className="w-full h-full rounded-full bg-[#0A0A0F] flex items-center justify-center overflow-hidden border border-white/5">
+                  <div className="w-full h-full rounded-full bg-background flex items-center justify-center overflow-hidden border border-white/5">
                      {currentUser?.profilePic ? (
                        <img src={currentUser.profilePic} className="w-full h-full object-cover" alt="You" />
                      ) : (
@@ -481,7 +486,7 @@ export default function Home() {
                 onClick={() => setActiveStory(group)}
               >
                 <div className="w-20 h-20 rounded-full p-[3px] gradient-bg animate-rotate-gradient">
-                  <div className="w-full h-full rounded-full bg-[#0A0A0F] p-[2px]">
+                  <div className="w-full h-full rounded-full bg-background p-[2px]">
                     <div className="w-full h-full rounded-full bg-[#1A1A1F] flex items-center justify-center overflow-hidden border border-white/10 shadow-inner">
                       <img 
                         src={group.author.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(group.author.name)}&background=7C3AED&color=fff`} 
@@ -497,7 +502,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Trending on Campus Chips */}
         <section className="space-y-2">
           <div className="flex items-center justify-between px-1">
             <div className="flex items-center space-x-2 text-white/70">
@@ -542,7 +546,7 @@ export default function Home() {
           <div className="absolute top-0 left-0 w-full h-1 gradient-bg opacity-30 group-focus-within:opacity-100 transition-opacity" />
           <div className="flex items-start space-x-4">
             <div className="w-12 h-12 rounded-full gradient-bg p-[2px] flex-shrink-0">
-              <div className="w-full h-full bg-[#0A0A0F] rounded-full flex items-center justify-center overflow-hidden">
+              <div className="w-full h-full bg-background rounded-full flex items-center justify-center overflow-hidden">
                 {currentUser?.profilePic ? (
                   <img src={currentUser.profilePic} className="w-full h-full object-cover" alt="You" />
                 ) : (
@@ -915,6 +919,8 @@ export default function Home() {
             </motion.article>
           ))}
         </div>
+        </div>
+        </div>
       </motion.div>
 
       {/* Create Poll Modal */}
@@ -1071,7 +1077,7 @@ export default function Home() {
 
       {/* Story Viewer (Keep logic but update UI) */}
       {activeStory && (
-        <div className="fixed inset-0 z-[100] bg-[#0A0A0F] flex flex-col items-center justify-center" onClick={() => setActiveStory(null)}>
+        <div className="fixed inset-0 z-[100] bg-background flex flex-col items-center justify-center" onClick={() => setActiveStory(null)}>
            <div className="relative w-full max-w-lg aspect-[9/16] bg-black shadow-2xl overflow-hidden md:rounded-3xl border border-white/10">
               {/* Progress Bars */}
               <div className="absolute top-6 left-6 right-6 flex space-x-1.5 z-20">
@@ -1146,7 +1152,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.9 }}
-            className="fixed bottom-28 left-1/2 -translate-x-1/2 bg-[#0A0A0F] border border-white/10 px-8 py-3.5 rounded-full shadow-2xl z-[60] flex items-center space-x-3"
+            className="app-panel fixed bottom-28 left-1/2 -translate-x-1/2 px-8 py-3.5 rounded-full z-[60] flex items-center space-x-3"
           >
             <div className="gradient-bg text-white p-1 rounded-full">
               <Check size={14} strokeWidth={4} />

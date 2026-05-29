@@ -154,35 +154,33 @@ export default function HustleHubPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#050508] relative overflow-hidden">
-      {/* Background ambient light */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none" />
-
-      {/* Header */}
-      <div className="px-6 py-8 relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end border-b border-white/5">
-        <div>
-          <h1 className="text-3xl font-black text-white tracking-tighter flex items-center mb-2">
-            <Compass className="mr-3 text-emerald-400" size={32} /> 
-            Hustle Hub<span className="text-emerald-500">.</span>
-          </h1>
-          <p className="text-white/50 text-sm font-medium max-w-md">
-            The hyper-local campus marketplace. Buy/sell thrift items or offer your skills for quick cash.
-          </p>
+    <div className="page-shell flex flex-col overflow-hidden">
+      <header className="page-header sticky top-0 z-40 px-5 py-5">
+        <div className="mx-auto flex w-full max-w-6xl flex-col md:flex-row justify-between items-start md:items-end gap-4">
+          <div>
+            <h1 className="text-3xl font-black text-white tracking-tight flex items-center mb-2">
+              <Compass className="mr-3 text-emerald-400" size={32} />
+              Hustle Hub<span className="text-emerald-500">.</span>
+            </h1>
+            <p className="text-muted text-sm font-medium max-w-md">
+              Campus marketplace for thrift finds, used books, services, and student gigs.
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              setListingType(activeTab === "thrift" ? "thrift" : "gig");
+              setShowPostModal(true);
+            }}
+            className="primary-button px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center hover:scale-[1.03] transition"
+          >
+            <Plus size={16} className="mr-2" /> Post Listing
+          </button>
         </div>
-        <button 
-          onClick={() => {
-            setListingType(activeTab === "thrift" ? "thrift" : "gig");
-            setShowPostModal(true);
-          }}
-          className="mt-4 md:mt-0 bg-white text-black px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs flex items-center hover:scale-105 transition shadow-lg shadow-white/10"
-        >
-          <Plus size={16} className="mr-2" /> Post Listing
-        </button>
-      </div>
+      </header>
 
       {/* Tabs */}
-      <div className="px-6 py-4 flex space-x-2 border-b border-white/5 relative z-10">
-        <button 
+      <div className="mx-auto w-full max-w-6xl px-5 py-4 flex space-x-2 relative z-10">
+        <button
           onClick={() => setActiveTab("thrift")}
           className={clsx(
             "px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition flex items-center",
@@ -191,7 +189,7 @@ export default function HustleHubPage() {
         >
           <ShoppingBag size={14} className="mr-2" /> Thrift Store
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab("gigs")}
           className={clsx(
             "px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition flex items-center",
@@ -203,17 +201,17 @@ export default function HustleHubPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6 relative z-10">
+      <main className="mx-auto w-full max-w-6xl flex-1 overflow-y-auto px-5 pb-8 relative z-10">
         {activeTab === "thrift" ? (
           thriftItems.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {thriftItems.map(item => (
-                <motion.div 
-                  key={item._id || item.id} 
+                <motion.div
+                  key={item._id || item.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   onClick={() => setSelectedItem(item)}
-                  className="bg-[#0A0A0F] border border-white/10 rounded-3xl overflow-hidden group hover:border-white/20 transition cursor-pointer flex flex-col justify-between"
+                  className="app-panel rounded-[1.5rem] overflow-hidden group hover:border-emerald-400/30 transition cursor-pointer flex flex-col justify-between"
                 >
                   <div>
                     <div className="h-48 overflow-hidden relative">
@@ -243,7 +241,7 @@ export default function HustleHubPage() {
                         {item.seller?.name || item.seller || "Lakshay Y."} • {item.seller?.university || item.college || "Rishihood"}
                       </span>
                     </div>
-                    <button 
+                    <button
                       onClick={(e) => { e.stopPropagation(); handleMessageSeller(item); }}
                       className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-white text-xs font-black uppercase tracking-widest transition flex items-center justify-center"
                     >
@@ -254,22 +252,22 @@ export default function HustleHubPage() {
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-full text-center text-white/30 pt-20">
-              <ShoppingBag size={48} className="mb-4 opacity-20" />
-              <h3 className="font-bold text-lg mb-1">No items for sale</h3>
-              <p className="text-xs">Be the first to list an item!</p>
+            <div className="app-panel mx-auto flex min-h-[360px] max-w-xl flex-col items-center justify-center rounded-[1.75rem] p-8 text-center">
+              <ShoppingBag size={42} className="mb-4 text-emerald-300" />
+              <h3 className="text-xl font-black text-white mb-1">No thrift listings yet</h3>
+              <p className="text-sm text-muted">Listings will appear here by newest campus activity.</p>
             </div>
           )
         ) : (
           gigItems.length > 0 ? (
             <div className="space-y-4 max-w-3xl">
               {gigItems.map(gig => (
-                <motion.div 
-                  key={gig._id || gig.id} 
+                <motion.div
+                  key={gig._id || gig.id}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   onClick={() => setSelectedItem(gig)}
-                  className="bg-[#0A0A0F] border border-white/10 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between group hover:border-white/20 transition cursor-pointer shadow-lg"
+                  className="app-panel rounded-[1.5rem] p-5 flex flex-col sm:flex-row sm:items-center justify-between group hover:border-emerald-400/30 transition cursor-pointer"
                 >
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
@@ -284,7 +282,7 @@ export default function HustleHubPage() {
                   </div>
                   <div className="mt-4 sm:mt-0 flex flex-col items-start sm:items-end sm:ml-6 border-t sm:border-t-0 sm:border-l border-white/10 pt-4 sm:pt-0 sm:pl-6">
                     <span className="text-2xl font-black text-white">{gig.price}</span>
-                    <button 
+                    <button
                       onClick={(e) => { e.stopPropagation(); handleMessageSeller(gig); }}
                       className="mt-3 px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black rounded-xl text-xs font-black uppercase tracking-widest transition flex items-center"
                     >
@@ -295,24 +293,24 @@ export default function HustleHubPage() {
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-full text-center text-white/30 pt-20">
-              <Briefcase size={48} className="mb-4 opacity-20" />
-              <h3 className="font-bold text-lg mb-1">No gigs posted</h3>
-              <p className="text-xs">Post a gig and start hustling.</p>
+            <div className="app-panel mx-auto flex min-h-[360px] max-w-xl flex-col items-center justify-center rounded-[1.75rem] p-8 text-center">
+              <Briefcase size={42} className="mb-4 text-emerald-300" />
+              <h3 className="text-xl font-black text-white mb-1">No gigs posted yet</h3>
+              <p className="text-sm text-muted">Student services and quick jobs will appear here.</p>
             </div>
           )
         )}
-      </div>
+      </main>
 
       {/* Post Modal Form */}
       <AnimatePresence>
         {showPostModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#0A0A0F] border border-white/10 rounded-3xl w-full max-w-md overflow-hidden flex flex-col"
+              className="app-panel rounded-[1.75rem] w-full max-w-md overflow-hidden flex flex-col"
             >
               <div className="p-5 border-b border-white/10 flex justify-between items-center bg-white/5">
                 <h3 className="font-black uppercase tracking-widest text-sm text-white flex items-center">
@@ -326,14 +324,14 @@ export default function HustleHubPage() {
                 <div>
                   <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">Listing Category</label>
                   <div className="flex space-x-2 bg-black p-1 rounded-xl border border-white/10">
-                    <button 
+                    <button
                       type="button"
                       onClick={() => setListingType("thrift")}
                       className={clsx("flex-1 py-2 rounded-lg text-xs font-bold transition-all", listingType === "thrift" ? "bg-emerald-500 text-black font-black" : "text-white/50 hover:text-white")}
                     >
                       Thrift Item
                     </button>
-                    <button 
+                    <button
                       type="button"
                       onClick={() => setListingType("gig")}
                       className={clsx("flex-1 py-2 rounded-lg text-xs font-bold transition-all", listingType === "gig" ? "bg-emerald-500 text-black font-black" : "text-white/50 hover:text-white")}
@@ -348,24 +346,24 @@ export default function HustleHubPage() {
                   <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">
                     {listingType === "thrift" ? "Item Name" : "Gig Title (e.g. I will do...)"}
                   </label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     placeholder={listingType === "thrift" ? "Engineering Drafter, Scientific Calculator..." : "I will review your code / design UI / edit videos..."}
-                    value={title} 
-                    onChange={e => setTitle(e.target.value)} 
-                    className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:outline-none transition" 
+                    value={title}
+                    onChange={e => setTitle(e.target.value)}
+                    className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:outline-none transition"
                   />
                 </div>
 
                 {/* Price */}
                 <div>
                   <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">Price (INR)</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     placeholder="e.g. ₹500 or ₹200/hr"
-                    value={price} 
-                    onChange={e => setPrice(e.target.value)} 
-                    className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:outline-none transition" 
+                    value={price}
+                    onChange={e => setPrice(e.target.value)}
+                    className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:outline-none transition"
                   />
                 </div>
 
@@ -374,8 +372,8 @@ export default function HustleHubPage() {
                   <>
                     <div>
                       <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">Condition</label>
-                      <select 
-                        value={condition} 
+                      <select
+                        value={condition}
                         onChange={e => setCondition(e.target.value)}
                         className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:outline-none transition appearance-none"
                       >
@@ -388,9 +386,9 @@ export default function HustleHubPage() {
 
                     <div>
                       <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">Comment / Description</label>
-                      <textarea 
+                      <textarea
                         placeholder="Tell us about your product (e.g., age, defects, reason for selling)..."
-                        value={comment} 
+                        value={comment}
                         onChange={e => setComment(e.target.value)}
                         rows={3}
                         className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:outline-none transition resize-none"
@@ -400,8 +398,8 @@ export default function HustleHubPage() {
                     {/* Add Photo option */}
                     <div>
                       <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">Item Photo</label>
-                      <input 
-                        type="file" 
+                      <input
+                        type="file"
                         accept="image/*"
                         id="item-photo-upload"
                         className="hidden"
@@ -416,16 +414,16 @@ export default function HustleHubPage() {
                           }
                         }}
                       />
-                      <label 
-                        htmlFor="item-photo-upload" 
+                      <label
+                        htmlFor="item-photo-upload"
                         className="w-full flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-2xl p-6 hover:border-emerald-500/50 hover:bg-white/[0.02] cursor-pointer transition"
                       >
                         {imagePreview ? (
                           <div className="relative w-full aspect-video rounded-xl overflow-hidden">
                             <img src={imagePreview} className="w-full h-full object-cover" />
-                            <button 
-                              type="button" 
-                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setImagePreview(""); }} 
+                            <button
+                              type="button"
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setImagePreview(""); }}
                               className="absolute top-2 right-2 bg-black/60 p-1.5 rounded-full hover:bg-black/80 text-white z-10"
                             >
                               <X size={14} />
@@ -445,8 +443,8 @@ export default function HustleHubPage() {
                   <>
                     <div>
                       <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">Gig Category</label>
-                      <select 
-                        value={gigType} 
+                      <select
+                        value={gigType}
                         onChange={e => setGigType(e.target.value)}
                         className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:outline-none transition appearance-none"
                       >
@@ -459,9 +457,9 @@ export default function HustleHubPage() {
 
                     <div>
                       <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">Comment / Description</label>
-                      <textarea 
+                      <textarea
                         placeholder="Describe the service or skills you offer..."
-                        value={comment} 
+                        value={comment}
                         onChange={e => setComment(e.target.value)}
                         rows={3}
                         className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:outline-none transition resize-none"
@@ -470,7 +468,7 @@ export default function HustleHubPage() {
                   </>
                 )}
 
-                <button 
+                <button
                   type="submit"
                   className="w-full py-4 bg-emerald-500 text-black rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-400 transition-colors shadow-lg shadow-emerald-500/20"
                 >
@@ -486,11 +484,11 @@ export default function HustleHubPage() {
       <AnimatePresence>
         {selectedItem && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#0A0A0F] border border-white/10 rounded-3xl w-full max-w-md overflow-hidden flex flex-col"
+              className="app-panel rounded-[1.75rem] w-full max-w-md overflow-hidden flex flex-col"
             >
               <div className="p-5 border-b border-white/10 flex justify-between items-center bg-white/5">
                 <h3 className="font-black uppercase tracking-widest text-xs text-white/60">
@@ -505,7 +503,7 @@ export default function HustleHubPage() {
                     <img src={selectedItem.image} alt={selectedItem.title} className="w-full h-full object-cover" />
                   </div>
                 )}
-                
+
                 <div className="p-6 space-y-4">
                   <div>
                     <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">
@@ -527,13 +525,13 @@ export default function HustleHubPage() {
 
                   <div className="pt-4 flex items-center justify-between text-xs text-white/40 border-t border-white/5">
                     <span className="flex items-center">
-                      <div className="w-4 h-4 rounded-full bg-white/20 mr-2" /> 
+                      <div className="w-4 h-4 rounded-full bg-white/20 mr-2" />
                       {selectedItem.seller?.name || selectedItem.seller || "Lakshay Y."}
                     </span>
                     <span>{selectedItem.seller?.university || selectedItem.college || "Rishihood"}</span>
                   </div>
 
-                  <button 
+                  <button
                     onClick={() => {
                       const item = selectedItem;
                       setSelectedItem(null);

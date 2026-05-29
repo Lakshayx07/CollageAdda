@@ -45,7 +45,7 @@ import clsx from "clsx";
 export default function ExplorePage() {
   const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
-  
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -82,7 +82,7 @@ export default function ExplorePage() {
     const fetchInitialData = async () => {
       try {
         const token = localStorage.getItem("collegeadda_token");
-        
+
         // Fetch colleges
         const res = await fetch(`${apiUrl}/api/colleges`, {
           headers: { Authorization: `Bearer ${token}` }
@@ -122,7 +122,7 @@ export default function ExplorePage() {
         postsData: prev.postsData.map(post => {
           if (post._id === postId) {
             const isLiked = post.likes?.includes(userId);
-            const newLikes = isLiked 
+            const newLikes = isLiked
               ? post.likes.filter(id => id !== userId)
               : [...(post.likes || []), userId];
             return { ...post, likes: newLikes };
@@ -147,10 +147,10 @@ export default function ExplorePage() {
     try {
       const token = localStorage.getItem("collegeadda_token");
       const user = JSON.parse(localStorage.getItem('collegeadda_user') || '{}');
-      
+
       const res = await fetch(`${apiUrl}/api/posts/${postId}/comment`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
@@ -159,7 +159,7 @@ export default function ExplorePage() {
 
       if (res.ok) {
         const updatedPost = await res.json();
-        // The API might return the new comment or the whole post. 
+        // The API might return the new comment or the whole post.
         // Based on chatController, it usually returns the created comment or similar.
         // But for Explore, let's just update the local state optimistically or re-fetch if needed.
         // Actually, let's just update local state with what we know.
@@ -168,9 +168,9 @@ export default function ExplorePage() {
           postsData: prev.postsData.map(post => {
             if (post._id === postId) {
               const newComment = { _id: Date.now(), user: { name: user.name, profilePic: user.profilePic }, text };
-              return { 
-                ...post, 
-                comments: [...(post.comments || []), newComment] 
+              return {
+                ...post,
+                comments: [...(post.comments || []), newComment]
               };
             }
             return post;
@@ -223,7 +223,7 @@ export default function ExplorePage() {
           method: "PUT",
           headers: { Authorization: `Bearer ${token}` }
         });
-        
+
         const autoMessage = `Hey! just connected with you on Campus Adda! Say hi back`;
 
         setChatMessages(prev => ({
@@ -233,7 +233,7 @@ export default function ExplorePage() {
 
         setToastMessage("Connected successfully! They'll see your message");
         toggleAddStudent(student._id || student.id);
-        
+
         // Optimistically update following list
         setMyFollowing(prev => [...prev, student._id || student.id]);
       } catch (err) {
@@ -283,7 +283,7 @@ export default function ExplorePage() {
     try {
       const token = localStorage.getItem("collegeadda_token");
       const userId = student._id || student.id;
-      
+
       if (!myFollowing.includes(userId)) {
         await fetch(`${apiUrl}/api/users/${userId}/follow`, {
           method: "PUT",
@@ -302,11 +302,11 @@ export default function ExplorePage() {
     try {
       const token = localStorage.getItem("collegeadda_token");
       const userId = student._id || student.id;
-      
+
       // 2. Get or Create Room
       const res = await fetch(`${apiUrl}/api/chat/rooms`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
@@ -329,7 +329,7 @@ export default function ExplorePage() {
 
 
   return (
-    <div className="flex flex-col min-h-screen bg-background relative overflow-x-hidden">
+    <div className="page-shell flex flex-col overflow-x-hidden">
       <AnimatePresence mode="wait">
         {!selectedCollege ? (
           /* --- EXPLORE GRID VIEW --- */
@@ -340,88 +340,90 @@ export default function ExplorePage() {
             exit={{ opacity: 0, x: -20 }}
             className="flex-1 flex flex-col"
           >
-            <header className="sticky top-0 z-40 glass-panel border-b border-border/50 px-4 py-4 flex flex-col space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className={clsx("p-2 rounded-xl", exploreMode === "colleges" ? "bg-primary/20" : "gradient-bg")}>
-                  {exploreMode === "colleges" ? <Building2 className="text-primary" size={20} /> : <Trophy className="text-white" size={20} />}
+            <header className="page-header sticky top-0 z-40 px-5 py-4">
+              <div className="mx-auto flex w-full max-w-6xl flex-col space-y-4">
+                <div className="flex items-center space-x-3">
+                  <div className={clsx("icon-tile h-11 w-11", exploreMode === "colleges" ? "text-primary" : "gradient-bg")}>
+                    {exploreMode === "colleges" ? <Building2 className="text-primary" size={20} /> : <Trophy className="text-white" size={20} />}
+                  </div>
+                  <h1 className="text-xl font-black tracking-tight text-foreground">
+                    {exploreMode === "colleges" ? "Explore Colleges" : "Campus Arena"}
+                  </h1>
                 </div>
-                <h1 className="text-xl font-bold text-foreground">
-                  {exploreMode === "colleges" ? "Explore Colleges" : "Campus Arena"}
-                </h1>
-              </div>
 
-              <div className="flex items-center space-x-3 w-full">
-                <div className="relative w-1/2">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
-                  <input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    type="text"
-                    placeholder={exploreMode === "colleges" ? "Search college..." : "Search players..."}
-                    className="w-full bg-surface-hover border border-border/50 rounded-2xl py-3 pl-10 pr-4 text-sm text-foreground focus:outline-none focus:border-primary transition-colors"
-                  />
-                </div>
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => {
-                    setExploreMode(exploreMode === "colleges" ? "arena" : "colleges");
-                    setSearch("");
-                  }}
-                  className={clsx(
-                    "flex items-center justify-center space-x-2 px-4 py-3 rounded-2xl border transition-all text-sm font-black shadow-lg whitespace-nowrap w-1/2",
-                    exploreMode === "colleges" 
-                      ? "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white border-transparent shadow-purple-500/30 hover:shadow-purple-500/50" 
-                      : "glass border-border/50 text-foreground hover:bg-surface-hover"
-                  )}
-                >
-                  {exploreMode === "colleges" ? (
-                    <>
-                      <Trophy size={18} className="text-yellow-300 drop-shadow-md" />
-                      <span className="tracking-widest uppercase text-[10px] sm:text-xs">Arena</span>
-                    </>
-                  ) : (
-                    <>
-                      <Building2 size={18} className="text-primary" />
-                      <span className="tracking-widest uppercase text-[10px] sm:text-xs">Colleges</span>
-                    </>
-                  )}
-                </motion.button>
-              </div>
-
-              {exploreMode === "arena" && (
-                <div className="flex overflow-x-auto space-x-2 pb-2 custom-scrollbar no-scrollbar -mx-4 px-4">
-                  <button
-                    onClick={() => setArenaSportFilter("All")}
+                <div className="flex items-center space-x-3 w-full">
+                  <div className="relative w-1/2">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
+                    <input
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      type="text"
+                      placeholder={exploreMode === "colleges" ? "Search college..." : "Search players..."}
+                      className="input-surface w-full rounded-2xl py-3 pl-10 pr-4 text-sm placeholder:text-white/25"
+                    />
+                  </div>
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => {
+                      setExploreMode(exploreMode === "colleges" ? "arena" : "colleges");
+                      setSearch("");
+                    }}
                     className={clsx(
-                      "shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all border",
-                      arenaSportFilter === "All" 
-                        ? "bg-foreground text-background border-foreground shadow-md" 
-                        : "glass border-border/50 text-muted hover:text-foreground hover:border-border"
+                      "flex items-center justify-center space-x-2 px-4 py-3 rounded-2xl border transition-all text-sm font-black shadow-lg whitespace-nowrap w-1/2",
+                      exploreMode === "colleges"
+                        ? "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white border-transparent shadow-purple-500/30 hover:shadow-purple-500/50"
+                        : "glass border-border/50 text-foreground hover:bg-surface-hover"
                     )}
                   >
-                    All Sports
-                  </button>
-                  {["🎮 Esports", "🏸 Badminton", "⚽ Football", "🏀 Basketball", "🏐 Volleyball", "🏏 Cricket", "🎾 Tennis", "🏊 Swimming", "🏅 Athletics"].map(sport => (
+                    {exploreMode === "colleges" ? (
+                      <>
+                        <Trophy size={18} className="text-yellow-300 drop-shadow-md" />
+                        <span className="tracking-widest uppercase text-[10px] sm:text-xs">Arena</span>
+                      </>
+                    ) : (
+                      <>
+                        <Building2 size={18} className="text-primary" />
+                        <span className="tracking-widest uppercase text-[10px] sm:text-xs">Colleges</span>
+                      </>
+                    )}
+                  </motion.button>
+                </div>
+
+                {exploreMode === "arena" && (
+                  <div className="flex overflow-x-auto space-x-2 pb-2 custom-scrollbar no-scrollbar -mx-4 px-4">
                     <button
-                      key={sport}
-                      onClick={() => setArenaSportFilter(sport)}
+                      onClick={() => setArenaSportFilter("All")}
                       className={clsx(
                         "shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all border",
-                        arenaSportFilter === sport 
-                          ? "bg-foreground text-background border-foreground shadow-md" 
+                        arenaSportFilter === "All"
+                          ? "bg-foreground text-background border-foreground shadow-md"
                           : "glass border-border/50 text-muted hover:text-foreground hover:border-border"
                       )}
                     >
-                      {sport}
+                      All Sports
                     </button>
-                  ))}
-                </div>
-              )}
+                    {["🎮 Esports", "🏸 Badminton", "⚽ Football", "🏀 Basketball", "🏐 Volleyball", "🏏 Cricket", "🎾 Tennis", "🏊 Swimming", "🏅 Athletics"].map(sport => (
+                      <button
+                        key={sport}
+                        onClick={() => setArenaSportFilter(sport)}
+                        className={clsx(
+                          "shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all border",
+                          arenaSportFilter === sport
+                            ? "bg-foreground text-background border-foreground shadow-md"
+                            : "glass border-border/50 text-muted hover:text-foreground hover:border-border"
+                        )}
+                      >
+                        {sport}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </header>
 
             {exploreMode === "colleges" ? (
               <>
-                <div className="p-4 grid grid-cols-2 gap-6">
+                <div className="mx-auto w-full max-w-6xl p-5 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
               {loading && (
                 <div className="col-span-2 flex justify-center py-20">
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
@@ -433,7 +435,7 @@ export default function ExplorePage() {
                   whileTap={{ scale: 0.98 }}
                   key={college._id || college.id}
                   onClick={() => fetchCollegeDetails(college)}
-                  className="flex flex-col bg-surface border border-border/50 rounded-3xl overflow-hidden text-left hover:border-primary/50 transition-all shadow-md group h-full"
+                  className="app-panel flex flex-col rounded-[1.5rem] overflow-hidden text-left hover:border-primary/50 transition-all group h-full"
                 >
                   {/* Full Image Container */}
                   <div className="h-[200px] w-full bg-muted overflow-hidden">
@@ -445,7 +447,7 @@ export default function ExplorePage() {
                   </div>
 
                   {/* Info Section Below Image */}
-                  <div className="p-4 flex flex-col flex-1 space-y-3 bg-surface">
+                  <div className="p-4 flex flex-col flex-1 space-y-3 bg-transparent">
                     <div className="space-y-1">
                         <div className="bg-primary/10 p-1.5 rounded-lg mr-2">
                           <Building2 size={16} style={{ color: college.accent }} />
@@ -491,7 +493,7 @@ export default function ExplorePage() {
               </>
             ) : (
               /* --- ARENA VIEW --- */
-              <div className="flex flex-col flex-1 relative bg-[#050508]">
+              <div className="flex flex-col flex-1 relative bg-transparent">
                 {/* Top Toggle: Esports vs Sports */}
                 <div className="px-4 py-3 flex space-x-2 bg-background/80 backdrop-blur-md sticky top-0 z-30 border-b border-white/5">
                   <button
@@ -531,7 +533,7 @@ export default function ExplorePage() {
                       >
                         {/* Action Bar */}
                         <div className="flex justify-end">
-                          <button 
+                          <button
                             onClick={() => setShowPlayerCardForm(true)}
                             className="bg-gradient-to-r from-cyan-500 to-purple-500 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-cyan-500/20 hover:scale-105 transition"
                           >
@@ -545,10 +547,10 @@ export default function ExplorePage() {
                           </h3>
                           <div className="flex overflow-x-auto space-x-4 pb-4 no-scrollbar -mx-4 px-4">
                             {['BGMI', 'Valorant', 'FIFA'].map(game => (
-                              <button 
-                                key={game} 
+                              <button
+                                key={game}
                                 onClick={() => router.push(`/arena/sport/${game.toLowerCase()}`)}
-                                className="min-w-[120px] h-24 rounded-2xl border border-white/10 bg-[#0A0A0F] hover:bg-white/5 transition flex flex-col items-center justify-center relative overflow-hidden group shadow-lg"
+                                className="app-panel min-w-[120px] h-24 rounded-2xl hover:border-primary/30 transition flex flex-col items-center justify-center relative overflow-hidden group"
                               >
                                 <span className="text-2xl mb-1 group-hover:scale-110 transition-transform">🎮</span>
                                 <span className="text-[10px] font-black text-white uppercase tracking-widest">{game}</span>
@@ -582,7 +584,7 @@ export default function ExplorePage() {
                       >
                         {/* Action Bar */}
                         <div className="flex justify-end">
-                          <button 
+                          <button
                             onClick={() => setShowPlayerCardForm(true)}
                             className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-orange-500/20 hover:scale-105 transition"
                           >
@@ -604,10 +606,10 @@ export default function ExplorePage() {
                               { name: 'Tennis', icon: '🎾' },
                               { name: 'Swimming', icon: '🏊' }
                             ].map(sport => (
-                              <button 
-                                key={sport.name} 
+                              <button
+                                key={sport.name}
                                 onClick={() => router.push(`/arena/sport/${sport.name.toLowerCase()}`)}
-                                className="min-w-[120px] h-24 rounded-2xl border border-white/10 bg-[#0A0A0F] hover:bg-white/5 transition flex flex-col items-center justify-center relative overflow-hidden group shadow-lg"
+                                className="app-panel min-w-[120px] h-24 rounded-2xl hover:border-primary/30 transition flex flex-col items-center justify-center relative overflow-hidden group"
                               >
                                 <span className="text-2xl mb-1 group-hover:scale-110 transition-transform">{sport.icon}</span>
                                 <span className="text-[10px] font-black text-white uppercase tracking-widest">{sport.name}</span>
@@ -634,13 +636,13 @@ export default function ExplorePage() {
                     )}
                   </AnimatePresence>
                 </div>
-                
+
                 {/* Form Overlay */}
                 <AnimatePresence>
                   {showPlayerCardForm && (
-                    <PlayerCardForm 
-                      initialCategory={arenaCategory} 
-                      onClose={() => setShowPlayerCardForm(false)} 
+                    <PlayerCardForm
+                      initialCategory={arenaCategory}
+                      onClose={() => setShowPlayerCardForm(false)}
                     />
                   )}
                 </AnimatePresence>
@@ -779,23 +781,23 @@ export default function ExplorePage() {
                           <div className="flex flex-col space-y-3 pt-2">
                             <div className="flex items-center justify-between border-t border-border/10 pt-3">
                               <div className="flex items-center space-x-6">
-                                <button 
+                                <button
                                   onClick={() => toggleLike(post._id)}
                                   className={clsx(
                                     "flex items-center space-x-1.5 transition-colors group",
                                     post.likes?.includes(JSON.parse(localStorage.getItem('collegeadda_user') || '{}')._id) ? "text-pink-500" : "text-muted hover:text-pink-500"
                                   )}
                                 >
-                                  <Heart 
-                                    size={20} 
+                                  <Heart
+                                    size={20}
                                     className={clsx(
-                                      "transition-transform group-active:scale-75", 
+                                      "transition-transform group-active:scale-75",
                                       post.likes?.includes(JSON.parse(localStorage.getItem('collegeadda_user') || '{}')._id) && "fill-pink-500"
-                                    )} 
+                                    )}
                                   />
                                   <span className="text-xs font-bold">{post.likes?.length || 0}</span>
                                 </button>
-                                <button 
+                                <button
                                   onClick={() => setActiveCommentPost(activeCommentPost === post._id ? null : post._id)}
                                   className="flex items-center space-x-1.5 text-muted hover:text-blue-500 transition-colors group"
                                 >
@@ -803,7 +805,7 @@ export default function ExplorePage() {
                                   <span className="text-xs font-bold">{post.comments?.length || 0}</span>
                                 </button>
                               </div>
-                              <button 
+                              <button
                                 onClick={() => window.open(`https://wa.me/?text=Check out this post from ${selectedCollege.name} on CollageAdda: ${encodeURIComponent(post.content)}`, '_blank')}
                                 className="text-muted hover:text-green-500 transition-colors"
                               >
@@ -825,14 +827,14 @@ export default function ExplorePage() {
                                   </div>
                                 )}
                                 <div className="flex items-center space-x-2">
-                                  <input 
+                                  <input
                                     value={commentInputs[post._id] || ""}
                                     onChange={e => setCommentInputs(prev => ({ ...prev, [post._id]: e.target.value }))}
                                     onKeyPress={e => e.key === "Enter" && handleComment(post._id)}
                                     placeholder="Add a comment..."
                                     className="flex-1 bg-surface-hover border border-border/30 rounded-full px-4 py-2 text-xs text-foreground focus:outline-none focus:border-primary transition-colors"
                                   />
-                                  <button 
+                                  <button
                                     onClick={() => handleComment(post._id)}
                                     className="bg-primary text-white p-2 rounded-full hover:scale-105 active:scale-95 transition-all shadow-md shadow-primary/20"
                                   >
@@ -867,7 +869,7 @@ export default function ExplorePage() {
                         </p>
                       </div>
                       <div className="flex bg-surface-hover p-1 rounded-xl border border-border/50">
-                        <button 
+                        <button
                           onClick={() => setViewMode('cards')}
                           className={clsx(
                             "px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all",
@@ -876,7 +878,7 @@ export default function ExplorePage() {
                         >
                           Cards
                         </button>
-                        <button 
+                        <button
                           onClick={() => setViewMode('list')}
                           className={clsx(
                             "px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all",
@@ -907,7 +909,7 @@ export default function ExplorePage() {
                           initial={{ opacity: 0, y: -20, scale: 0.9 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: -20, scale: 0.9 }}
-                          className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] bg-[#0A0A0F] border border-border/50 shadow-xl px-6 py-3 rounded-full text-sm font-bold flex items-center text-foreground"
+                          className="app-panel fixed top-24 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-full text-sm font-bold flex items-center text-foreground"
                         >
                           {toastMessage}
                         </motion.div>
@@ -979,7 +981,7 @@ export default function ExplorePage() {
 
                                 {/* Details Area - only for top card */}
                                 {isTop && (
-                                  <div className="flex-1 p-5 space-y-4 bg-[#0A0A0F] overflow-y-auto custom-scrollbar flex flex-col relative z-10">
+                                  <div className="flex-1 p-5 space-y-4 bg-background/70 overflow-y-auto custom-scrollbar flex flex-col relative z-10">
                                     <div>
                                       <h2 className="text-2xl font-black text-foreground flex items-center gap-2 tracking-tight line-clamp-1">
                                         {student.name}
@@ -1031,8 +1033,8 @@ export default function ExplorePage() {
                       /* --- LIST VIEW --- */
                       <div className="w-full space-y-3 pb-10">
                         {selectedCollege.studentsData
-                          .filter(s => 
-                            s.name.toLowerCase().includes(studentSearch.toLowerCase()) || 
+                          .filter(s =>
+                            s.name.toLowerCase().includes(studentSearch.toLowerCase()) ||
                             s.interests?.some(i => i.toLowerCase().includes(studentSearch.toLowerCase()))
                           )
                           .map((student) => (
@@ -1057,7 +1059,7 @@ export default function ExplorePage() {
                             </div>
                             <div className="flex items-center space-x-2">
                               {myFollowing.includes(student._id || student.id) ? (
-                                <button 
+                                <button
                                   onClick={() => handleDirectMessage(student)}
                                   className="p-2.5 bg-primary/10 text-primary rounded-xl hover:bg-primary hover:text-white transition-all shadow-sm"
                                   title="Message"
@@ -1065,7 +1067,7 @@ export default function ExplorePage() {
                                   <MessageSquare size={18} />
                                 </button>
                               ) : (
-                                <button 
+                                <button
                                   onClick={() => handleConnect(student)}
                                   className="p-2.5 bg-surface-hover text-muted hover:text-primary hover:bg-primary/10 rounded-xl transition-all border border-border/30"
                                   title="Connect"

@@ -10,26 +10,31 @@ export default function AlumniAngelsPage() {
   const alumniList = [];
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#050508] relative overflow-hidden">
-      {/* Background ambient light */}
-      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
-
-      {/* Header */}
-      <div className="px-6 py-8 relative z-10 border-b border-white/5">
-        <div className="flex items-center mb-2">
-          <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center mr-4 shadow-lg shadow-amber-500/20">
-            <GraduationCap size={24} className="text-black" />
+    <div className="page-shell flex flex-col overflow-hidden">
+      <header className="page-header sticky top-0 z-40 px-5 py-5">
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-300 to-orange-500 text-black shadow-lg shadow-amber-500/20">
+              <GraduationCap size={24} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
+                Alumni Angels<span className="text-amber-400">.</span>
+              </h1>
+              <p className="mt-1 max-w-xl text-sm font-medium text-muted">
+                Verified alumni, referrals, resume reviews, and quick career chats.
+              </p>
+            </div>
           </div>
-          <h1 className="text-3xl font-black text-white tracking-tighter">
-            Alumni Angels<span className="text-amber-500">.</span>
-          </h1>
+          <div className="flex gap-2">
+            {["Referrals", "Coffee chats", "Mentors"].map((label) => (
+              <span key={label} className="app-chip text-xs font-bold">{label}</span>
+            ))}
+          </div>
         </div>
-        <p className="text-white/50 text-sm font-medium max-w-lg">
-          The VIP Club. Connect with verified alumni from top-tier companies. Request referrals or a 15-minute virtual coffee chat.
-        </p>
-      </div>
+      </header>
 
-      <div className="flex-1 overflow-y-auto p-6 relative z-10">
+      <main className="mx-auto w-full max-w-6xl flex-1 overflow-y-auto px-5 py-8">
         {alumniList.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {alumniList.map(alumni => (
@@ -37,7 +42,7 @@ export default function AlumniAngelsPage() {
                 key={alumni.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-[#0A0A0F] border border-white/10 rounded-3xl p-6 flex flex-col sm:flex-row items-center sm:items-start group hover:border-amber-500/30 transition shadow-lg relative overflow-hidden"
+                className="app-panel rounded-[1.5rem] p-6 flex flex-col sm:flex-row items-center sm:items-start group hover:border-amber-500/30 transition relative overflow-hidden"
               >
                 {alumni.company === "Google" && <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/10 rounded-bl-full blur-xl pointer-events-none" />}
                 {alumni.company === "Microsoft" && <div className="absolute top-0 right-0 w-16 h-16 bg-blue-400/10 rounded-bl-full blur-xl pointer-events-none" />}
@@ -84,13 +89,29 @@ export default function AlumniAngelsPage() {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-center text-white/30 pt-20">
-            <GraduationCap size={48} className="mb-4 opacity-20" />
-            <h3 className="font-bold text-lg mb-1">No Alumni Registered</h3>
-            <p className="text-xs">Be the first to join the network.</p>
+          <div className="app-panel mx-auto flex min-h-[420px] max-w-2xl flex-col items-center justify-center rounded-[1.75rem] p-8 text-center">
+            <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-amber-400/10 text-amber-300">
+              <GraduationCap size={34} />
+            </div>
+            <h3 className="text-2xl font-black tracking-tight text-white">Alumni network is warming up</h3>
+            <p className="mt-3 max-w-md text-sm leading-6 text-muted">
+              Once alumni accounts are added, this page will show mentors by company, college, and availability.
+            </p>
+            <div className="mt-6 grid w-full max-w-md grid-cols-3 gap-3">
+              {[
+                ["0", "Mentors"],
+                ["0", "Referrals"],
+                ["0", "Chats"],
+              ].map(([value, label]) => (
+                <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                  <p className="text-xl font-black text-white">{value}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted">{label}</p>
+                </div>
+              ))}
+            </div>
           </div>
         )}
-      </div>
+      </main>
 
       {/* Coffee Chat Modal */}
       <AnimatePresence>
@@ -99,7 +120,7 @@ export default function AlumniAngelsPage() {
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
               onClick={e => e.stopPropagation()}
-              className="bg-[#050508] border border-amber-500/30 rounded-3xl w-full max-w-md overflow-hidden flex flex-col shadow-[0_0_50px_rgba(245,158,11,0.15)]"
+              className="app-panel border-amber-500/30 rounded-[1.75rem] w-full max-w-md overflow-hidden flex flex-col"
             >
               <div className="p-6 border-b border-white/5 text-center">
                 <Coffee size={32} className="text-amber-500 mx-auto mb-3" />

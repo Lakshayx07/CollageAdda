@@ -44,22 +44,33 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-full w-64 glass border-r border-white/5 p-6 z-50">
-      {/* Brand */}
-      <div className="mb-12 flex items-center space-x-3">
-        <div className="w-10 h-10 gradient-bg rounded-2xl flex items-center justify-center text-white shadow-lg shadow-purple-500/20">
-          <Zap size={22} fill="currentColor" />
+    <aside className="nav-rail hidden lg:flex fixed left-0 top-0 z-50 h-full w-72 flex-col px-6 py-7">
+      <div className="mb-10 space-y-5">
+        <div className="flex items-center gap-3">
+          <div className="brand-mark flex h-12 w-12 items-center justify-center rounded-2xl text-white">
+            <Zap size={22} fill="currentColor" />
+          </div>
+          <div>
+            <h1 className="text-[1.35rem] font-black tracking-tight text-white">
+              Campus Adda<span className="text-cyan-300">.</span>
+            </h1>
+            <p className="text-[11px] font-semibold tracking-[0.16em] text-white/38 uppercase">
+              Student Social Network
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-xl font-black text-white tracking-tighter leading-none">
-            Campus Adda<span className="text-purple-500">.</span>
-          </h1>
-          <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest mt-1">Student Social</p>
+
+        <div className="app-panel rounded-[1.4rem] px-4 py-4">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-300/80">
+            Your campus pulse
+          </p>
+          <p className="mt-2 text-sm leading-6 text-white/72">
+            Explore people, conversations, projects, and campus energy without the clutter.
+          </p>
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex flex-col space-y-2 flex-1">
+      <nav className="flex flex-1 flex-col gap-2">
         {navItems.map((item) => {
           const isActive = pathname === item.path;
           const Icon = item.icon;
@@ -70,28 +81,47 @@ export default function Sidebar() {
               key={item.name}
               href={item.path}
               onClick={() => { if (isFriends) localStorage.setItem("collegeadda_friends_viewed", "true"); }}
-              className="relative group"
+              className="relative"
             >
-              <div className={clsx(
-                "flex items-center space-x-4 px-5 py-4 rounded-[1.5rem] transition-all duration-300 relative z-10",
-                isActive 
-                  ? "text-white" 
-                  : "text-white/40 hover:text-white hover:bg-white/5"
-              )}>
-                <div className="relative">
-                  <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+              <div
+                className={clsx(
+                  "relative z-10 flex items-center gap-4 rounded-[1.35rem] px-4 py-3.5 transition-all duration-300",
+                  isActive ? "text-white" : "text-white/42 hover:bg-white/[0.035] hover:text-white/88"
+                )}
+              >
+                <div className={clsx(
+                  "relative flex h-10 w-10 items-center justify-center rounded-2xl border transition-all",
+                  isActive
+                    ? "border-white/12 bg-white/10"
+                    : "border-white/6 bg-white/[0.03]"
+                )}>
+                  <Icon size={20} strokeWidth={isActive ? 2.45 : 2} />
                   {isFriends && hasRequest && (
-                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-[#0A0A0F] shadow-lg shadow-red-500/40"></span>
+                    <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-[#0f1420] bg-orange-400 shadow-[0_0_14px_rgba(251,146,60,0.65)]" />
                   )}
                 </div>
-                <span className="text-sm font-black uppercase tracking-[0.1em]">{item.name}</span>
-                
+
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-black uppercase tracking-[0.12em]">
+                    {item.name}
+                  </p>
+                  <p className="mt-0.5 text-[11px] font-medium text-white/36">
+                    {item.name === "Home" && "Feed and campus updates"}
+                    {item.name === "Explore" && "Browse colleges and students"}
+                    {item.name === "Messages" && "Private conversations"}
+                    {item.name === "Squad" && "Friends and requests"}
+                    {item.name === "Hustle" && "Projects, gigs, ideas"}
+                    {item.name === "Collab" && "Teams and shared work"}
+                    {item.name === "Profile" && "Your identity and vibe"}
+                  </p>
+                </div>
+
                 {isActive && (
-                  <motion.div 
+                  <motion.div
                     layoutId="sidebar-active"
-                    className="absolute inset-0 gradient-bg rounded-[1.5rem] -z-10 shadow-lg shadow-purple-500/20"
+                    className="absolute inset-0 rounded-[1.35rem] bg-[linear-gradient(135deg,rgba(124,92,255,0.2),rgba(34,199,214,0.18))] ring-1 ring-white/10"
                     initial={false}
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    transition={{ type: "spring", stiffness: 320, damping: 30 }}
                   />
                 )}
               </div>
@@ -100,14 +130,15 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Footer / Logout */}
-      <div className="mt-auto pt-8 border-t border-white/5">
+      <div className="mt-auto border-t app-divider pt-6">
         <motion.button
-          whileHover={{ x: 5 }}
+          whileHover={{ x: 4 }}
           onClick={handleLogout}
-          className="flex items-center space-x-4 px-5 py-4 w-full rounded-[1.5rem] text-red-500/50 hover:text-red-500 hover:bg-red-500/10 transition-all font-black uppercase tracking-widest text-[11px]"
+          className="flex w-full items-center gap-4 rounded-[1.35rem] px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-red-300/70 transition-all hover:bg-red-400/10 hover:text-red-200"
         >
-          <LogOut size={20} />
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-red-300/10 bg-red-400/5">
+            <LogOut size={18} />
+          </div>
           <span>Logout</span>
         </motion.button>
       </div>
