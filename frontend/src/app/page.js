@@ -41,7 +41,7 @@ export default function Home() {
     return post.content.toLowerCase().includes(selectedTopic.toLowerCase());
   });
   
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+  const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001').trim();
   
   const photoInputRef = useRef(null);
   const videoInputRef = useRef(null);
@@ -192,7 +192,7 @@ export default function Home() {
     setIsPosting(true);
     try {
       const token = localStorage.getItem("collegeadda_token");
-      const res = await fetch(`${apiUrl}/api/posts`, {
+      const res = await fetch(`${apiUrl.trim()}/api/posts`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -211,9 +211,13 @@ export default function Home() {
         setMediaType('none');
         setToastMsg("Post created!");
         setTimeout(() => setToastMsg(""), 2000);
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        alert(errorData.message || "Failed to create post. Please try again.");
       }
     } catch (err) {
-      console.error(err);
+      console.error("Error creating post:", err);
+      alert("Network error: Could not connect to the backend server. Please make sure the backend is running at " + apiUrl);
     } finally {
       setIsPosting(false);
     }
