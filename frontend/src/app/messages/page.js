@@ -529,19 +529,19 @@ function MessagesContent() {
   if (!isMounted || !user) return null;
 
   return (
-    <div className="fixed inset-x-0 top-0 bottom-20 lg:static lg:flex-1 lg:h-full flex bg-transparent overflow-hidden">
+    <div className="fixed inset-x-0 top-0 bottom-[calc(5.85rem+env(safe-area-inset-bottom))] flex overflow-hidden bg-transparent lg:static lg:h-full lg:flex-1">
       {/* Chat List Sidebar */}
       <motion.div 
         initial={{ x: -20, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         className={clsx(
-          "app-panel w-full lg:w-[380px] flex flex-col border-r border-white/5 transition-all relative z-20 rounded-none lg:rounded-[1.5rem] lg:m-4 lg:mr-0 overflow-hidden",
+          "app-panel relative z-20 flex w-full flex-col overflow-hidden rounded-none border-r border-white/5 transition-all lg:m-4 lg:mr-0 lg:w-[380px] lg:rounded-[1.5rem]",
           activeChat ? "hidden lg:flex" : "flex"
         )}
       >
-        <header className="p-6 pb-4">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-3xl font-bold text-white tracking-tight">Inbox</h1>
+        <header className="p-4 pb-3 sm:p-6 sm:pb-4">
+          <div className="mb-4 flex items-center justify-between sm:mb-6">
+            <h1 className="text-2xl font-bold text-white tracking-tight sm:text-3xl">Inbox</h1>
             <motion.button 
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
@@ -567,21 +567,21 @@ function MessagesContent() {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar px-3 space-y-1 pb-20 lg:pb-4">
+        <div className="flex-1 overflow-y-auto custom-scrollbar px-2 space-y-1 pb-6 sm:px-3 lg:pb-4">
           {filteredChats.map(chat => (
             <motion.button
               key={chat.id}
               whileHover={{ x: 4 }}
               onClick={() => setActiveChat(chat)}
               className={clsx(
-                "w-full flex items-center space-x-4 p-4 rounded-[1.5rem] transition-all group relative",
+                "group relative flex w-full items-center space-x-3 rounded-[1.35rem] p-3 transition-all sm:space-x-4 sm:rounded-[1.5rem] sm:p-4",
                 activeChat?.id === chat.id 
                   ? "bg-white/5 border border-white/10 shadow-xl" 
                   : "hover:bg-white/[0.03] border border-transparent"
               )}
             >
               <div className="relative">
-                <div className="w-14 h-14 rounded-full p-[2px] gradient-bg shadow-lg">
+                <div className="h-12 w-12 rounded-full p-[2px] gradient-bg shadow-lg sm:h-14 sm:w-14">
                   <div className="w-full h-full rounded-full bg-background flex items-center justify-center overflow-hidden">
                     {chat.type === "group" ? (
                       <div className="text-purple-400">{chat.avatar}</div>
@@ -792,7 +792,7 @@ function MessagesContent() {
                       )}
                       
                       <div className={clsx(
-                        "flex flex-col max-w-[75%]",
+                        "flex flex-col max-w-[84%] sm:max-w-[75%]",
                         isMe ? "items-end" : "items-start"
                       )}>
                         {!isMe && showAvatar && (
@@ -903,7 +903,7 @@ function MessagesContent() {
             </div>
 
             {/* Message Input */}
-            <div className="h-[60px] shrink-0 w-full px-4 py-2.5 bg-[#0a0a0f] border-t border-white/5 flex items-center justify-between relative z-20">
+            <div className="relative z-20 flex min-h-[60px] w-full shrink-0 items-center justify-between border-t border-white/5 bg-background px-3 py-2.5 sm:px-4">
               <div className="w-full h-full bg-white/[0.04] border border-white/5 rounded-full flex items-center px-1.5 py-0.5 shadow-2xl focus-within:border-purple-500/30 transition-all">
                 {/* Plus button */}
                 <button 
@@ -931,7 +931,7 @@ function MessagesContent() {
                         initial={{ opacity: 0, y: 10, scale: 0.9 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                        className="absolute bottom-12 left-0 bg-[#16161D] border border-white/10 rounded-[1.5rem] shadow-2xl p-3 z-50 w-56"
+                        className="absolute bottom-12 left-0 z-50 w-[min(14rem,calc(100vw-2rem))] rounded-[1.5rem] border border-white/10 bg-[#16161D] p-3 shadow-2xl"
                       >
                         <div className="grid grid-cols-5 gap-1.5">
                           {emojis.map((emoji, i) => (
@@ -982,7 +982,7 @@ function MessagesContent() {
                   initial={{ opacity: 0, y: 10, scale: 0.9 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                  className="absolute bottom-16 left-4 bg-[#16161D] border border-white/10 rounded-[1.5rem] shadow-2xl overflow-hidden z-50 w-56"
+                  className="absolute bottom-16 left-3 z-50 w-[min(14rem,calc(100vw-1.5rem))] overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#16161D] shadow-2xl sm:left-4 sm:w-56"
                 >
                   <button 
                     onClick={() => { setShowAttachments(false); fileInputRef.current?.click(); }}
@@ -1038,14 +1038,14 @@ function MessagesContent() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-end justify-center p-4 bg-black/80 backdrop-blur-sm"
+            className="fixed inset-0 z-[100] flex items-end justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-4"
             onClick={() => setShowCreateGroup(false)}
           >
             <motion.div 
               initial={{ y: 100 }}
               animate={{ y: 0 }}
               exit={{ y: 100 }}
-              className="w-full max-w-md bg-[#111118] rounded-[2.5rem] border border-white/10 overflow-hidden flex flex-col max-h-[85vh]"
+              className="flex max-h-[88dvh] w-full max-w-md flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#111118] sm:max-h-[85vh] sm:rounded-[2.5rem]"
               onClick={e => e.stopPropagation()}
             >
               <div className="p-6 border-b border-white/5 flex items-center justify-between shrink-0">
@@ -1116,14 +1116,14 @@ function MessagesContent() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+            className="fixed inset-0 z-[100] flex items-end justify-center bg-black/80 p-3 backdrop-blur-md sm:items-center sm:p-4"
             onClick={() => setShowAddMemberModal(false)}
           >
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="w-full max-w-md glass rounded-[2.5rem] border border-white/10 overflow-hidden shadow-2xl"
+              className="w-full max-w-md overflow-hidden rounded-[1.75rem] border border-white/10 shadow-2xl glass sm:rounded-[2.5rem]"
               onClick={e => e.stopPropagation()}
             >
               <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
@@ -1169,7 +1169,7 @@ function MessagesContent() {
 export default function MessagesPage() {
   return (
     <Suspense fallback={
-      <div className="flex h-screen items-center justify-center bg-background">
+      <div className="flex h-[100dvh] items-center justify-center bg-background">
         <div className="w-12 h-12 border-4 border-white/5 border-t-purple-500 rounded-full animate-spin"></div>
       </div>
     }>

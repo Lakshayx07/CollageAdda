@@ -57,7 +57,7 @@ export default function CreatePage() {
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-5 py-8">
+      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-6 sm:px-5 sm:py-8">
         <section className="app-panel overflow-hidden rounded-[1.75rem]">
           <div className="border-b border-white/10 p-5 sm:p-6">
             <div className="flex items-start justify-between gap-4">
@@ -94,7 +94,7 @@ export default function CreatePage() {
               <button
                 onClick={handlePost}
                 disabled={!content.trim() || isLoading}
-                className="primary-button flex h-12 items-center justify-center gap-2 rounded-2xl px-6 text-sm font-black uppercase tracking-[0.18em] transition active:scale-95 disabled:active:scale-100"
+                className="primary-button flex h-12 w-full items-center justify-center gap-2 rounded-2xl px-6 text-sm font-black uppercase tracking-[0.18em] transition active:scale-95 disabled:active:scale-100 sm:w-auto"
               >
                 {isLoading ? (
                   <div className="h-5 w-5 rounded-full border-2 border-white border-t-transparent animate-spin" />

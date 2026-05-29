@@ -536,14 +536,14 @@ export default function ProfilePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-end justify-center p-4 bg-black/80 backdrop-blur-sm"
+            className="fixed inset-0 z-[100] flex items-end justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-4"
             onClick={() => setModal(null)}
           >
             <motion.div 
               initial={{ y: 100 }}
               animate={{ y: 0 }}
               exit={{ y: 100 }}
-              className="w-full max-w-md glass-card rounded-[3rem] border border-white/10 overflow-hidden"
+              className="w-full max-w-md overflow-hidden rounded-[1.75rem] border border-white/10 glass-card sm:rounded-[3rem]"
               onClick={e => e.stopPropagation()}
             >
               <div className="p-6 border-b border-white/5 flex items-center justify-between">
@@ -591,21 +591,21 @@ export default function ProfilePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-end justify-center p-4 bg-black/80 backdrop-blur-sm"
+            className="fixed inset-0 z-[100] flex items-end justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-4"
             onClick={() => setModal(null)}
           >
             <motion.div 
               initial={{ y: 100 }}
               animate={{ y: 0 }}
               exit={{ y: 100 }}
-              className="w-full max-w-md glass-card rounded-[3rem] border border-white/10 overflow-hidden"
+              className="w-full max-w-md overflow-hidden rounded-[1.75rem] border border-white/10 glass-card sm:rounded-[3rem]"
               onClick={e => e.stopPropagation()}
             >
               <div className="p-6 border-b border-white/5 flex items-center justify-between">
                 <h3 className="text-lg font-black text-white">Edit Vibe</h3>
                 <button onClick={() => setModal(null)} className="p-2 glass rounded-full text-white/30"><X size={20} /></button>
               </div>
-              <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+              <div className="max-h-[72dvh] space-y-6 overflow-y-auto p-5 custom-scrollbar sm:max-h-[70vh] sm:p-6">
 
                 {/* Interests */}
                 <div className="space-y-3">
@@ -673,14 +673,14 @@ export default function ProfilePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl"
+            className="fixed inset-0 z-[100] flex items-end justify-center bg-black/95 p-3 backdrop-blur-xl sm:items-center sm:p-4"
             onClick={() => setModal(null)}
           >
             <motion.div 
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
-              className="w-full max-w-md glass-card rounded-[3rem] border border-white/10 overflow-hidden flex flex-col max-h-[90vh]"
+              className="flex max-h-[90dvh] w-full max-w-md flex-col overflow-hidden rounded-[1.75rem] border border-white/10 glass-card sm:max-h-[90vh] sm:rounded-[3rem]"
               onClick={e => e.stopPropagation()}
             >
               {/* Post Header */}
@@ -757,7 +757,7 @@ export default function ProfilePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-end justify-center p-4 bg-black/80 backdrop-blur-sm"
+            className="fixed inset-0 z-[100] flex items-end justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-4"
             onClick={() => setModal(null)}
           >
             <motion.div
@@ -765,7 +765,7 @@ export default function ProfilePage() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 80, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="w-full max-w-md bg-[#111118] border border-white/10 rounded-[2.5rem] p-6 space-y-4"
+              className="w-full max-w-md space-y-4 rounded-[1.75rem] border border-white/10 bg-[#111118] p-5 sm:rounded-[2.5rem] sm:p-6"
               onClick={e => e.stopPropagation()}
             >
               <h3 className="text-center text-lg font-black text-white tracking-tight mb-2">What do you want to add?</h3>
@@ -808,7 +808,7 @@ export default function ProfilePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-end justify-center p-4 bg-black/80 backdrop-blur-sm"
+            className="fixed inset-0 z-[100] flex items-end justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-4"
             onClick={() => setModal(null)}
           >
             <motion.div
@@ -816,7 +816,7 @@ export default function ProfilePage() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 80, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="w-full max-w-md bg-[#111118] border border-white/10 rounded-[2.5rem] p-6 space-y-4"
+              className="w-full max-w-md space-y-4 rounded-[1.75rem] border border-white/10 bg-[#111118] p-5 sm:rounded-[2.5rem] sm:p-6"
               onClick={e => e.stopPropagation()}
             >
               <div className="flex items-center justify-between">
@@ -869,7 +869,7 @@ export default function ProfilePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-end justify-center p-4 bg-black/80 backdrop-blur-sm"
+            className="fixed inset-0 z-[100] flex items-end justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-4"
             onClick={() => setModal(null)}
           >
             <motion.div
@@ -877,7 +877,7 @@ export default function ProfilePage() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 80, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="w-full max-w-md bg-[#111118] border border-white/10 rounded-[2.5rem] p-6 space-y-4"
+              className="max-h-[92dvh] w-full max-w-md space-y-4 overflow-y-auto rounded-[1.75rem] border border-white/10 bg-[#111118] p-5 custom-scrollbar sm:rounded-[2.5rem] sm:p-6"
               onClick={e => e.stopPropagation()}
             >
               <div className="flex items-center justify-between">
@@ -950,14 +950,14 @@ export default function ProfilePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[110] bg-black flex items-center justify-center"
+            className="fixed inset-0 z-[110] flex items-center justify-center bg-black p-0 sm:p-4"
             onClick={() => setModal(null)}
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-sm h-full max-h-[90vh] flex flex-col"
+              className="relative flex h-[100dvh] w-full max-w-sm flex-col sm:h-full sm:max-h-[90vh]"
               onClick={e => e.stopPropagation()}
             >
               {/* Progress bars */}
@@ -985,7 +985,7 @@ export default function ProfilePage() {
                 <button onClick={() => setModal(null)} className="p-2 bg-white/10 rounded-full text-white"><X size={18} /></button>
               </div>
               {/* Story Image */}
-              <div className="w-full h-full rounded-3xl overflow-hidden relative">
+              <div className="relative h-full w-full overflow-hidden sm:rounded-3xl">
                 <img src={activeStories[viewingStoryIndex]?.imageUrl} className="w-full h-full object-cover" />
                 {activeStories[viewingStoryIndex]?.caption && (
                   <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">

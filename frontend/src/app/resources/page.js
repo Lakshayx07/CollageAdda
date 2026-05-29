@@ -30,7 +30,7 @@ export default function ResourcesPage() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-5 py-8">
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-5 sm:py-8">
         <section className="app-panel rounded-[1.75rem] p-5 sm:p-6">
           <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             <div>
@@ -38,7 +38,7 @@ export default function ResourcesPage() {
                 <TrendingUp size={14} className="text-primary" />
                 Top campus downloads
               </div>
-              <h2 className="text-3xl font-black tracking-tight text-white">Find study material faster.</h2>
+              <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">Find study material faster.</h2>
             </div>
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={18} />

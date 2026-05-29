@@ -351,8 +351,8 @@ export default function ExplorePage() {
                   </h1>
                 </div>
 
-                <div className="flex items-center space-x-3 w-full">
-                  <div className="relative w-1/2">
+                <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
+                  <div className="relative w-full sm:w-1/2">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
                     <input
                       value={search}
@@ -369,7 +369,7 @@ export default function ExplorePage() {
                       setSearch("");
                     }}
                     className={clsx(
-                      "flex items-center justify-center space-x-2 px-4 py-3 rounded-2xl border transition-all text-sm font-black shadow-lg whitespace-nowrap w-1/2",
+                      "flex w-full items-center justify-center space-x-2 rounded-2xl border px-4 py-3 text-sm font-black shadow-lg transition-all sm:w-1/2",
                       exploreMode === "colleges"
                         ? "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white border-transparent shadow-purple-500/30 hover:shadow-purple-500/50"
                         : "glass border-border/50 text-foreground hover:bg-surface-hover"
@@ -423,7 +423,7 @@ export default function ExplorePage() {
 
             {exploreMode === "colleges" ? (
               <>
-                <div className="mx-auto w-full max-w-6xl p-5 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-4 p-4 sm:grid-cols-2 sm:gap-5 sm:p-5 xl:grid-cols-3">
               {loading && (
                 <div className="col-span-2 flex justify-center py-20">
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
@@ -438,7 +438,7 @@ export default function ExplorePage() {
                   className="app-panel flex flex-col rounded-[1.5rem] overflow-hidden text-left hover:border-primary/50 transition-all group h-full"
                 >
                   {/* Full Image Container */}
-                  <div className="h-[200px] w-full bg-muted overflow-hidden">
+                  <div className="h-44 w-full overflow-hidden bg-muted sm:h-[200px]">
                     <img
                       src={college.banner}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"

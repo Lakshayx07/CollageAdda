@@ -133,8 +133,8 @@ export default function LoginPage() {
 
   return (
     <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID"}>
-    <div className="min-h-screen px-4 py-8 sm:px-6 lg:px-10">
-      <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
+    <div className="min-h-[100dvh] px-3 py-5 sm:px-6 sm:py-8 lg:px-10">
+      <div className="mx-auto grid min-h-[calc(100dvh-2.5rem)] max-w-7xl items-center gap-6 sm:gap-8 lg:min-h-[calc(100vh-4rem)] lg:grid-cols-[1.05fr_0.95fr]">
         <motion.section
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -183,14 +183,14 @@ export default function LoginPage() {
           <motion.div
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="mb-8 text-center lg:hidden"
+            className="mb-5 text-center sm:mb-8 lg:hidden"
           >
             <div className="mb-4 inline-flex items-center justify-center rounded-3xl border border-white/10 p-3 shadow-2xl glass">
               <div className="brand-mark flex h-12 w-12 items-center justify-center rounded-2xl text-white">
                 <Zap size={24} fill="currentColor" />
               </div>
             </div>
-            <h1 className="mb-2 text-4xl font-black tracking-tight text-white">
+            <h1 className="mb-2 text-3xl font-black tracking-tight text-white sm:text-4xl">
               Campus Adda<span className="text-cyan-300">.</span>
             </h1>
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">
@@ -202,11 +202,11 @@ export default function LoginPage() {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="glass-card relative overflow-hidden rounded-[2rem] border border-white/6 p-7 sm:p-9"
+            className="glass-card relative overflow-hidden rounded-[1.6rem] border border-white/6 p-5 sm:rounded-[2rem] sm:p-9"
           >
           <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/10 blur-3xl -z-10" />
 
-          <div className="space-y-8">
+          <div className="space-y-6 sm:space-y-8">
             <div className="space-y-2">
               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-300/80">
                 Start here
@@ -279,7 +279,7 @@ export default function LoginPage() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 disabled={isLoading}
-                className="flex h-16 w-full items-center justify-center rounded-[1.5rem] border border-white/10 bg-[linear-gradient(135deg,rgba(124,92,255,0.22),rgba(34,199,214,0.2))] py-5 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-xl transition-all hover:border-white/20 disabled:opacity-50"
+                className="flex h-14 w-full items-center justify-center rounded-[1.35rem] border border-white/10 bg-[linear-gradient(135deg,rgba(124,92,255,0.22),rgba(34,199,214,0.2))] py-4 text-[10px] font-black uppercase tracking-[0.16em] text-white shadow-xl transition-all hover:border-white/20 disabled:opacity-50 sm:h-16 sm:rounded-[1.5rem] sm:py-5 sm:text-[11px] sm:tracking-[0.2em]"
               >
                 {isLoading ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

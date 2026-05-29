@@ -231,7 +231,7 @@ export default function FriendsPage() {
       <div className="fixed bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-pink-600/10 blur-[120px] rounded-full z-0" />
 
       {/* Header */}
-      <header className="page-header sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
+      <header className="page-header sticky top-0 z-40 px-4 py-4 flex items-center justify-between sm:px-6">
         <motion.div 
           initial={{ x: -20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
@@ -275,7 +275,7 @@ export default function FriendsPage() {
                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                className="app-panel absolute right-0 top-16 w-[320px] rounded-[1.5rem] z-50 overflow-hidden"
+                className="app-panel absolute right-0 top-16 z-50 w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-[1.5rem]"
               >
                 <div className="p-5 border-b border-white/5 flex items-center justify-between">
                   <h3 className="font-bold text-white text-sm flex items-center gap-2">
@@ -329,7 +329,7 @@ export default function FriendsPage() {
         </div>
       </header>
 
-      <div className="max-w-2xl mx-auto px-6 py-8 space-y-10 relative z-10">
+      <div className="max-w-2xl mx-auto px-4 py-6 space-y-8 relative z-10 sm:px-6 sm:py-8 sm:space-y-10">
         {/* Search Section */}
         <motion.div 
           initial={{ y: 20, opacity: 0 }}
@@ -337,7 +337,7 @@ export default function FriendsPage() {
           className="space-y-6"
         >
           <div className="text-center space-y-2">
-            <h2 className="text-4xl font-black text-white tracking-tighter">Find Your <span className="gradient-text">Campus Squad</span></h2>
+            <h2 className="text-3xl font-black text-white tracking-tight sm:text-4xl sm:tracking-tighter">Find Your <span className="gradient-text">Campus Squad</span></h2>
             <p className="text-white/40 text-sm font-medium">Connect with the coolest minds in your university</p>
           </div>
 

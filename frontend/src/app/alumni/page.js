@@ -26,7 +26,7 @@ export default function AlumniAngelsPage() {
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="no-scrollbar flex max-w-full gap-2 overflow-x-auto">
             {["Referrals", "Coffee chats", "Mentors"].map((label) => (
               <span key={label} className="app-chip text-xs font-bold">{label}</span>
             ))}
@@ -34,7 +34,7 @@ export default function AlumniAngelsPage() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 overflow-y-auto px-5 py-8">
+      <main className="mx-auto w-full max-w-6xl flex-1 overflow-y-auto px-4 py-6 sm:px-5 sm:py-8">
         {alumniList.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {alumniList.map(alumni => (
@@ -97,7 +97,7 @@ export default function AlumniAngelsPage() {
             <p className="mt-3 max-w-md text-sm leading-6 text-muted">
               Once alumni accounts are added, this page will show mentors by company, college, and availability.
             </p>
-            <div className="mt-6 grid w-full max-w-md grid-cols-3 gap-3">
+            <div className="mt-6 grid w-full max-w-md grid-cols-1 gap-3 min-[420px]:grid-cols-3">
               {[
                 ["0", "Mentors"],
                 ["0", "Referrals"],

@@ -26,7 +26,7 @@ export default function RootLayout({ children }) {
     >
       <body className="app-shell h-full bg-background text-foreground">
         <Sidebar />
-        <main className="app-surface flex min-h-screen flex-col overflow-x-hidden overflow-y-auto pb-24 lg:ml-72 lg:pb-0">
+        <main className="app-surface flex min-h-screen flex-col overflow-x-hidden overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom))] lg:ml-72 lg:pb-0">
           {children}
         </main>
         <BottomNav />

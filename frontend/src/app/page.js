@@ -930,12 +930,12 @@ export default function Home() {
       {/* Create Poll Modal */}
       <AnimatePresence>
         {showPollModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-xl px-4" onClick={() => setShowPollModal(false)}>
-            <motion.div 
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/90 px-3 py-3 backdrop-blur-xl sm:items-center sm:px-4" onClick={() => setShowPollModal(false)}>
+            <motion.div
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="w-full max-w-md glass rounded-[3rem] p-8 shadow-2xl border border-white/10" 
+              className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-[1.75rem] border border-white/10 p-5 shadow-2xl glass custom-scrollbar sm:rounded-[3rem] sm:p-8"
               onClick={e => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-8">
@@ -1032,11 +1032,11 @@ export default function Home() {
 
       {/* Campus Adda Share Modal */}
       {shareModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md px-4" onClick={() => setShareModal(null)}>
-          <motion.div 
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 px-3 py-3 backdrop-blur-md sm:items-center sm:px-4" onClick={() => setShareModal(null)}>
+          <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="w-full max-w-md glass-card rounded-[2.5rem] p-6 shadow-2xl border border-white/10" 
+            className="max-h-[88dvh] w-full max-w-md overflow-y-auto rounded-[1.75rem] border border-white/10 p-5 shadow-2xl glass-card custom-scrollbar sm:rounded-[2.5rem] sm:p-6"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-6">
@@ -1081,8 +1081,8 @@ export default function Home() {
 
       {/* Story Viewer (Keep logic but update UI) */}
       {activeStory && (
-        <div className="fixed inset-0 z-[100] bg-background flex flex-col items-center justify-center" onClick={() => setActiveStory(null)}>
-           <div className="relative w-full max-w-lg aspect-[9/16] bg-black shadow-2xl overflow-hidden md:rounded-3xl border border-white/10">
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background" onClick={() => setActiveStory(null)}>
+           <div className="relative h-[100dvh] w-full max-w-lg overflow-hidden border-white/10 bg-black shadow-2xl sm:aspect-[9/16] sm:h-auto sm:border md:rounded-3xl">
               {/* Progress Bars */}
               <div className="absolute top-6 left-6 right-6 flex space-x-1.5 z-20">
                   {activeStory.stories.map((s, i) => (

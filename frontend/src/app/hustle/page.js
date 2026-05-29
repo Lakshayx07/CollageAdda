@@ -171,7 +171,7 @@ export default function HustleHubPage() {
               setListingType(activeTab === "thrift" ? "thrift" : "gig");
               setShowPostModal(true);
             }}
-            className="primary-button px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center hover:scale-[1.03] transition"
+            className="primary-button flex w-full items-center justify-center rounded-2xl px-6 py-3 text-xs font-black uppercase tracking-widest transition hover:scale-[1.03] sm:w-auto"
           >
             <Plus size={16} className="mr-2" /> Post Listing
           </button>
@@ -179,11 +179,11 @@ export default function HustleHubPage() {
       </header>
 
       {/* Tabs */}
-      <div className="mx-auto w-full max-w-6xl px-5 py-4 flex space-x-2 relative z-10">
+      <div className="no-scrollbar relative z-10 mx-auto flex w-full max-w-6xl space-x-2 overflow-x-auto px-5 py-4">
         <button
           onClick={() => setActiveTab("thrift")}
           className={clsx(
-            "px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition flex items-center",
+            "flex shrink-0 items-center rounded-xl px-5 py-3 text-xs font-black uppercase tracking-widest transition sm:px-6",
             activeTab === "thrift" ? "bg-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.3)]" : "bg-white/5 text-white/50 hover:bg-white/10 hover:text-white"
           )}
         >
@@ -192,7 +192,7 @@ export default function HustleHubPage() {
         <button
           onClick={() => setActiveTab("gigs")}
           className={clsx(
-            "px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition flex items-center",
+            "flex shrink-0 items-center rounded-xl px-5 py-3 text-xs font-black uppercase tracking-widest transition sm:px-6",
             activeTab === "gigs" ? "bg-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.3)]" : "bg-white/5 text-white/50 hover:bg-white/10 hover:text-white"
           )}
         >

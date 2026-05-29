@@ -126,7 +126,7 @@ export default function NotificationBell() {
             initial={{ opacity: 0, y: 15, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 15, scale: 0.95 }}
-            className="app-panel absolute right-0 mt-4 w-80 rounded-[1.5rem] z-[100] overflow-hidden"
+            className="app-panel absolute right-0 z-[100] mt-4 w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-[1.5rem]"
           >
             <div className="p-5 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
               <h3 className="text-xs font-black text-white uppercase tracking-widest">Recent Activity</h3>
