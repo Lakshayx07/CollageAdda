@@ -449,16 +449,16 @@ export default function Home() {
         </div>
       </header>
 
-      <motion.div 
+      <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="show"
-        className="mx-auto flex-1 w-full max-w-6xl p-4 sm:p-6"
+        className="mx-auto w-full max-w-6xl min-w-0 flex-1 px-3 py-4 sm:p-6"
       >
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_280px]">
-        <div className="space-y-8">
-        <section className="app-panel rounded-[2rem] p-4 sm:p-5 space-y-3">
-          <div className="flex space-x-5 overflow-x-auto no-scrollbar py-2">
+        <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="min-w-0 space-y-7 sm:space-y-8">
+        <section className="app-panel min-w-0 max-w-full rounded-[1.6rem] p-4 sm:rounded-[2rem] sm:p-5 space-y-3">
+          <div className="no-scrollbar flex max-w-full space-x-4 overflow-x-auto py-2 sm:space-x-5">
             {/* Your Story */}
             <div 
               className="flex flex-col items-center space-y-2 flex-shrink-0 cursor-pointer group"
@@ -523,7 +523,7 @@ export default function Home() {
               </button>
             )}
           </div>
-          <div className="flex space-x-2 overflow-x-auto no-scrollbar py-1">
+          <div className="no-scrollbar flex max-w-full space-x-2 overflow-x-auto py-1">
             {trendingTopics.map((topic, i) => (
               <button 
                 key={i} 
@@ -545,10 +545,10 @@ export default function Home() {
         {/* Create Post Prompt */}
         <motion.div 
           variants={itemVariants}
-          className="glass-card p-5 rounded-3xl flex flex-col space-y-4 shadow-2xl relative overflow-hidden group"
+          className="glass-card relative flex min-w-0 max-w-full flex-col space-y-4 overflow-hidden rounded-[1.6rem] p-4 shadow-2xl group sm:rounded-3xl sm:p-5"
         >
           <div className="absolute top-0 left-0 w-full h-1 gradient-bg opacity-30 group-focus-within:opacity-100 transition-opacity" />
-          <div className="flex items-start space-x-4">
+          <div className="flex min-w-0 items-start space-x-3 sm:space-x-4">
             <div className="w-12 h-12 rounded-full gradient-bg p-[2px] flex-shrink-0">
               <div className="w-full h-full bg-background rounded-full flex items-center justify-center overflow-hidden">
                 {currentUser?.profilePic ? (
@@ -568,7 +568,7 @@ export default function Home() {
                 }
               }}
               placeholder="What's happening on campus today?"
-              className="flex-1 bg-transparent resize-none text-base focus:outline-none text-white placeholder:text-white/30 mt-2 min-h-[60px]"
+              className="min-w-0 flex-1 resize-none bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none sm:text-base mt-2 min-h-[60px]"
             ></textarea>
           </div>
 
@@ -595,14 +595,14 @@ export default function Home() {
             )}
           </AnimatePresence>
 
-          <div className="flex items-center justify-between border-t border-white/5 pt-4">
-             <div className="flex space-x-5">
+          <div className="flex flex-col gap-3 border-t border-white/5 pt-4 sm:flex-row sm:items-center sm:justify-between">
+             <div className="grid grid-cols-3 gap-2 sm:flex sm:space-x-5">
                <input type="file" ref={photoInputRef} className="hidden" accept="image/*" onChange={(e) => handleMediaSelect(e, 'image')} />
                <input type="file" ref={videoInputRef} className="hidden" accept="video/*" onChange={(e) => handleMediaSelect(e, 'video')} />
                
                <button 
                  onClick={() => photoInputRef.current?.click()}
-                 className="flex items-center space-x-2 text-white/50 hover:text-white transition-all group"
+                 className="flex min-w-0 items-center justify-center space-x-1.5 rounded-2xl bg-white/[0.03] px-2 py-2 text-white/50 transition-all hover:text-white group sm:justify-start sm:bg-transparent sm:px-0 sm:space-x-2"
                >
                  <div className="p-2 rounded-full group-hover:bg-purple-500/10 transition-colors">
                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
@@ -611,7 +611,7 @@ export default function Home() {
                </button>
                <button 
                  onClick={() => videoInputRef.current?.click()}
-                 className="flex items-center space-x-2 text-white/50 hover:text-white transition-all group"
+                 className="flex min-w-0 items-center justify-center space-x-1.5 rounded-2xl bg-white/[0.03] px-2 py-2 text-white/50 transition-all hover:text-white group sm:justify-start sm:bg-transparent sm:px-0 sm:space-x-2"
                >
                  <div className="p-2 rounded-full group-hover:bg-cyan-500/10 transition-colors">
                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
@@ -620,7 +620,7 @@ export default function Home() {
                </button>
                <button 
                  onClick={() => setShowPollModal(true)}
-                 className="flex items-center space-x-2 text-white/50 hover:text-white transition-all group"
+                 className="flex min-w-0 items-center justify-center space-x-1.5 rounded-2xl bg-white/[0.03] px-2 py-2 text-white/50 transition-all hover:text-white group sm:justify-start sm:bg-transparent sm:px-0 sm:space-x-2"
                >
                  <div className="p-2 rounded-full group-hover:bg-green-500/10 transition-colors">
                    <BarChart2 size={20} />
@@ -633,7 +633,7 @@ export default function Home() {
                whileTap={{ scale: 0.95 }}
                onClick={handleCreatePost} 
                disabled={isPosting || (!newPostContent.trim() && !selectedMedia)}
-               className="gradient-bg text-white px-7 py-2.5 rounded-full text-sm font-bold shadow-xl shadow-purple-500/20 disabled:opacity-50 flex items-center justify-center min-w-[120px]"
+               className="gradient-bg flex w-full items-center justify-center rounded-2xl px-5 py-3 text-sm font-bold text-white shadow-xl shadow-purple-500/20 disabled:opacity-50 sm:w-auto sm:min-w-[120px] sm:rounded-full sm:px-7 sm:py-2.5"
              >
                {isPosting ? (
                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -709,10 +709,10 @@ export default function Home() {
           )}
           
           {!loadingPosts && filteredPosts.map((post) => (
-            <motion.article 
+            <motion.article
               key={post.id} 
               variants={itemVariants}
-              className="glass-card rounded-[2rem] p-6 relative group border-l-[3px] border-l-transparent hover:border-l-purple-500 transition-all duration-500"
+              className="glass-card relative min-w-0 rounded-[1.6rem] p-4 group border-l-[3px] border-l-transparent transition-all duration-500 hover:border-l-purple-500 sm:rounded-[2rem] sm:p-6"
             >
               {/* Post Header */}
               <div className="flex items-center justify-between mb-5">
