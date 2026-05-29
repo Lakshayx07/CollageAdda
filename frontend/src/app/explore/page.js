@@ -78,6 +78,33 @@ export default function ExplorePage() {
   const [commentInputs, setCommentInputs] = useState({});
   const [activeCommentPost, setActiveCommentPost] = useState(null);
 
+  const dailyDiscovery = [
+    {
+      name: "Ishaan Mehta",
+      college: "Delhi Technological University",
+      year: "2nd year",
+      vibe: "AI clubs, football, building weekend projects",
+      shared: "5 shared interests",
+      gradient: "from-cyan-400 to-blue-600",
+    },
+    {
+      name: "Ananya Rao",
+      college: "University of Delhi",
+      year: "1st year",
+      vibe: "Open mics, psychology, campus cafes",
+      shared: "Same city",
+      gradient: "from-fuchsia-500 to-purple-600",
+    },
+    {
+      name: "Rudra Singh",
+      college: "Rishihood University",
+      year: "3rd year",
+      vibe: "Startups, debates, sports meet planning",
+      shared: "Near your campus",
+      gradient: "from-orange-400 to-rose-500",
+    },
+  ];
+
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
@@ -423,6 +450,39 @@ export default function ExplorePage() {
 
             {exploreMode === "colleges" ? (
               <>
+                <section className="mx-auto w-full max-w-6xl px-4 pt-5 sm:px-5">
+                  <div className="app-panel overflow-hidden rounded-[1.6rem] p-4 sm:rounded-[2rem] sm:p-5">
+                    <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-300">Daily Discovery</p>
+                        <h2 className="mt-1 text-xl font-black tracking-tight text-white">Students picked for your campus circle</h2>
+                      </div>
+                      <span className="inline-flex w-fit rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white/45">
+                        Refreshes daily
+                      </span>
+                    </div>
+
+                    <div className="no-scrollbar flex max-w-full gap-3 overflow-x-auto">
+                      {dailyDiscovery.map((student) => (
+                        <div key={student.name} className="min-w-[235px] flex-1 rounded-[1.35rem] border border-white/10 bg-white/[0.035] p-4">
+                          <div className="mb-4 flex items-start justify-between gap-3">
+                            <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${student.gradient} text-lg font-black text-white`}>
+                              {student.name.split(" ").map(part => part[0]).join("")}
+                            </div>
+                            <span className="rounded-full bg-cyan-400/10 px-2.5 py-1 text-[10px] font-bold text-cyan-200">{student.shared}</span>
+                          </div>
+                          <p className="truncate text-base font-black text-white">{student.name}</p>
+                          <p className="mt-1 truncate text-[11px] font-bold text-white/45">{student.college} • {student.year}</p>
+                          <p className="mt-3 text-sm leading-5 text-white/66">{student.vibe}</p>
+                          <p className="mt-4 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-white/45">
+                            Open a college and switch to Students
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+
                 <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-4 p-4 sm:grid-cols-2 sm:gap-5 sm:p-5 xl:grid-cols-3">
               {loading && (
                 <div className="col-span-2 flex justify-center py-20">

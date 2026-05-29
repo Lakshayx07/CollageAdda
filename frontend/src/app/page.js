@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check, Plus, Flame, TrendingUp, Search, Zap, BarChart2, Compass } from "lucide-react";
+import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check, Plus, Flame, TrendingUp, Search, Zap, BarChart2, Compass, CalendarDays, Trophy, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import NotificationBell from "../components/NotificationBell";
 import VerifiedBadge from "../components/VerifiedBadge";
@@ -35,6 +35,12 @@ export default function Home() {
   const [pollOptions, setPollOptions] = useState(["", ""]);
   const [pollAllowMultiple, setPollAllowMultiple] = useState(false);
   const [selectedTopic, setSelectedTopic] = useState(null);
+  const [confessionText, setConfessionText] = useState("");
+  const [confessions, setConfessions] = useState([
+    { college: "Rishihood", text: "The best friendships start after one awkward canteen conversation.", heat: 42 },
+    { college: "DU", text: "Exam season has made the library more social than Instagram.", heat: 88 },
+    { college: "IIT Delhi", text: "Someone should make a cross-college hackathon team board.", heat: 61 },
+  ]);
 
   const filteredPosts = posts.filter(post => {
     if (!selectedTopic) return true;
@@ -53,6 +59,24 @@ export default function Home() {
     { name: "Night Canteen", icon: <Flame size={14} className="text-yellow-500" /> },
     { name: "Sports Meet", icon: <Zap size={14} className="text-green-400" /> },
     { name: "Hackathon", icon: <Search size={14} className="text-cyan-400" /> }
+  ];
+
+  const dailyCampusDrop = [
+    { name: "Aarav", college: "DTU", vibe: "Robotics, football, late-night code", match: "4 shared interests", color: "from-cyan-500 to-blue-600" },
+    { name: "Meera", college: "DU", vibe: "Debate society, cafes, internships", match: "Same year", color: "from-fuchsia-500 to-purple-600" },
+    { name: "Kabir", college: "JNU", vibe: "Startups, theatre, campus events", match: "Near your campus", color: "from-orange-400 to-rose-500" },
+  ];
+
+  const campusEvents = [
+    { title: "Open Mic Night", college: "Rishihood", time: "Today, 6 PM" },
+    { title: "Freshers Mixer", college: "DU North Campus", time: "Tomorrow" },
+    { title: "Hack Sprint", college: "DTU", time: "This weekend" },
+  ];
+
+  const collegeLeaderboard = [
+    { college: "Delhi University", score: "12.4k", label: "pulse points" },
+    { college: "DTU", score: "9.8k", label: "event buzz" },
+    { college: "Rishihood", score: "7.1k", label: "new connects" },
   ];
 
   useEffect(() => {
@@ -503,6 +527,128 @@ export default function Home() {
                 <span className="text-xs text-white/80 font-medium truncate w-20 text-center">{group.author.name.split(' ')[0]}</span>
               </motion.div>
             ))}
+          </div>
+        </section>
+
+        <section className="grid min-w-0 gap-3 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="app-panel min-w-0 rounded-[1.6rem] p-4 sm:rounded-[2rem] sm:p-5">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-300">Daily Campus Drop</p>
+                <h2 className="mt-1 text-lg font-black tracking-tight text-white">3 people worth knowing today</h2>
+              </div>
+              <button
+                onClick={() => router.push('/explore')}
+                className="shrink-0 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-[10px] font-black uppercase tracking-wider text-white/70"
+              >
+                Explore
+              </button>
+            </div>
+            <div className="no-scrollbar flex max-w-full gap-3 overflow-x-auto">
+              {dailyCampusDrop.map((student) => (
+                <div key={student.name} className="min-w-[210px] flex-1 rounded-[1.35rem] border border-white/10 bg-white/[0.035] p-4">
+                  <div className={`mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${student.color} text-sm font-black text-white`}>
+                    {student.name.charAt(0)}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-black text-white">{student.name}</p>
+                    <p className="mt-1 truncate text-[11px] font-bold text-white/45">{student.college}</p>
+                    <p className="mt-3 text-xs leading-5 text-white/62">{student.vibe}</p>
+                    <span className="mt-3 inline-flex rounded-full bg-cyan-400/10 px-2.5 py-1 text-[10px] font-bold text-cyan-200">{student.match}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="app-panel min-w-0 rounded-[1.6rem] p-4 sm:rounded-[2rem] sm:p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-300">Anonymous Adda</p>
+                <h2 className="mt-1 text-lg font-black tracking-tight text-white">Campus confessions</h2>
+              </div>
+              <ShieldCheck size={20} className="text-orange-300" />
+            </div>
+            <div className="space-y-3">
+              <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-3">
+                <textarea
+                  value={confessionText}
+                  onChange={(e) => setConfessionText(e.target.value)}
+                  placeholder="Drop an anonymous campus thought..."
+                  className="min-h-16 w-full resize-none bg-transparent text-sm text-white outline-none placeholder:text-white/28"
+                />
+                <div className="mt-2 flex items-center justify-between gap-3">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-white/30">Moderated before public</span>
+                  <button
+                    onClick={() => {
+                      if (!confessionText.trim()) return;
+                      setConfessions(prev => [
+                        {
+                          college: currentUser?.university || "Your Campus",
+                          text: confessionText.trim(),
+                          heat: 1,
+                        },
+                        ...prev,
+                      ]);
+                      setToastMsg("Confession queued anonymously");
+                      setConfessionText("");
+                      setTimeout(() => setToastMsg(""), 2000);
+                    }}
+                    className="rounded-full bg-orange-400 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-black"
+                  >
+                    Drop
+                  </button>
+                </div>
+              </div>
+              {confessions.slice(0, 2).map((confession, idx) => (
+                <div key={`${confession.college}-${idx}`} className="rounded-[1.15rem] border border-white/8 bg-white/[0.025] p-3">
+                  <p className="text-sm leading-5 text-white/78">"{confession.text}"</p>
+                  <div className="mt-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-white/35">
+                    <span>{confession.college}</span>
+                    <span className="flex items-center gap-1 text-orange-300"><Flame size={11} /> {confession.heat}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="grid min-w-0 gap-3 lg:grid-cols-2">
+          <div className="app-panel rounded-[1.6rem] p-4 sm:rounded-[2rem] sm:p-5">
+            <div className="mb-4 flex items-center gap-2 text-white">
+              <CalendarDays size={18} className="text-cyan-300" />
+              <h2 className="text-sm font-black uppercase tracking-[0.16em]">Campus events</h2>
+            </div>
+            <div className="space-y-2">
+              {campusEvents.map((event) => (
+                <div key={event.title} className="flex items-center justify-between gap-3 rounded-2xl border border-white/8 bg-white/[0.03] p-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-white">{event.title}</p>
+                    <p className="mt-0.5 truncate text-[11px] font-medium text-white/40">{event.college}</p>
+                  </div>
+                  <span className="shrink-0 rounded-full bg-cyan-400/10 px-3 py-1 text-[10px] font-bold text-cyan-200">{event.time}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="app-panel rounded-[1.6rem] p-4 sm:rounded-[2rem] sm:p-5">
+            <div className="mb-4 flex items-center gap-2 text-white">
+              <Trophy size={18} className="text-yellow-300" />
+              <h2 className="text-sm font-black uppercase tracking-[0.16em]">College leaderboard</h2>
+            </div>
+            <div className="space-y-2">
+              {collegeLeaderboard.map((item, idx) => (
+                <div key={item.college} className="flex items-center gap-3 rounded-2xl border border-white/8 bg-white/[0.03] p-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-white/[0.06] text-xs font-black text-white">#{idx + 1}</div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold text-white">{item.college}</p>
+                    <p className="text-[11px] font-medium text-white/40">{item.label}</p>
+                  </div>
+                  <p className="text-sm font-black text-yellow-200">{item.score}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
