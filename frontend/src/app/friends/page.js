@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, Suspense } from "react";
-import { UserPlus, UserCheck, Search, Users, MessageCircle, Loader2, Heart, X, Sparkles, MapPin, Zap } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from "react";
+import { UserPlus, Search, Users, MessageCircle, Loader2, Heart, X, Sparkles, MapPin, Zap, Trophy, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import VerifiedBadge from "../../components/VerifiedBadge";
@@ -14,10 +14,12 @@ export default function FriendsPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [suggestedUsers, setSuggestedUsers] = useState([]);
+  const [campusUsers, setCampusUsers] = useState([]);
   const [followStatus, setFollowStatus] = useState({});
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
+  const [activeSquadTab, setActiveSquadTab] = useState("find");
 
   useEffect(() => {
     setIsMounted(true);
@@ -94,7 +96,9 @@ export default function FriendsPage() {
 
       if (suggestedRes.ok) {
         const data = await suggestedRes.json();
-        setSuggestedUsers(Array.isArray(data) ? data : []);
+        const users = Array.isArray(data) ? data : [];
+        setSuggestedUsers(users);
+        setCampusUsers(users);
       }
     } catch (err) {
       console.error("Error loading friends data:", err);
@@ -138,7 +142,11 @@ export default function FriendsPage() {
         headers: { Authorization: `Bearer ${token}` }
       })
         .then(r => r.ok ? r.json() : [])
-        .then(data => setSuggestedUsers(Array.isArray(data) ? data : []))
+        .then(data => {
+          const users = Array.isArray(data) ? data : [];
+          setSuggestedUsers(users);
+          setCampusUsers(users);
+        })
         .catch(console.error)
         .finally(() => setSearching(false));
       return;
@@ -219,6 +227,37 @@ export default function FriendsPage() {
       setFollowStatus(prev => ({ ...prev, [targetId]: currentStatus }));
     }
   };
+
+  const getSocialCount = (value) => Array.isArray(value) ? value.length : Number(value || 0);
+
+  const leaderboardStudents = useMemo(() => {
+    const source = campusUsers.length ? campusUsers : suggestedUsers;
+    const unique = new Map();
+
+    source.forEach((person) => {
+      const id = person._id || person.id || person.email || person.name;
+      if (!id || unique.has(id)) return;
+      unique.set(id, {
+        ...person,
+        followerCount: getSocialCount(person.followers),
+        followingCount: getSocialCount(person.following),
+      });
+    });
+
+    return Array.from(unique.values())
+      .map((person) => ({
+        ...person,
+        influenceScore: person.followerCount + person.followingCount,
+      }))
+      .sort((a, b) => b.influenceScore - a.influenceScore)
+      .slice(0, 10);
+  }, [campusUsers, suggestedUsers]);
+
+  const topBadgeStyles = [
+    { label: "Campus Star", className: "from-yellow-300 to-orange-500 text-black", icon: Trophy },
+    { label: "Rising Icon", className: "from-slate-200 to-cyan-300 text-slate-950", icon: Star },
+    { label: "Squad Magnet", className: "from-amber-600 to-rose-500 text-white", icon: Star },
+  ];
 
   if (!isMounted || !user) return null;
 
@@ -341,21 +380,129 @@ export default function FriendsPage() {
             <p className="text-white/40 text-sm font-medium">Connect with the coolest minds in your university</p>
           </div>
 
-          <div className="relative group">
-            <div className="absolute -inset-1 gradient-bg rounded-[2rem] blur opacity-10 group-focus-within:opacity-30 transition-opacity pointer-events-none" />
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-purple-400 transition-colors pointer-events-none" size={20} />
-            {searching && <Loader2 className="absolute right-5 top-1/2 -translate-y-1/2 text-purple-500 animate-spin" size={18} />}
-            <input
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search by name, university or #interest..."
-              className="input-surface w-full rounded-[1.5rem] py-5 pl-14 pr-12 text-[15px] text-white placeholder:text-white/25"
-            />
+          <div className="app-panel grid grid-cols-2 gap-1 rounded-[1.35rem] p-1">
+            <button
+              onClick={() => setActiveSquadTab("find")}
+              className={clsx(
+                "rounded-[1.1rem] px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] transition-all",
+                activeSquadTab === "find" ? "gradient-bg text-white shadow-lg shadow-purple-500/20" : "text-white/42 hover:text-white"
+              )}
+            >
+              Find Friends
+            </button>
+            <button
+              onClick={() => setActiveSquadTab("leaderboard")}
+              className={clsx(
+                "rounded-[1.1rem] px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] transition-all",
+                activeSquadTab === "leaderboard" ? "gradient-bg text-white shadow-lg shadow-purple-500/20" : "text-white/42 hover:text-white"
+              )}
+            >
+              Leaderboard
+            </button>
           </div>
+
+          {activeSquadTab === "find" && (
+            <div className="relative group">
+              <div className="absolute -inset-1 gradient-bg rounded-[2rem] blur opacity-10 group-focus-within:opacity-30 transition-opacity pointer-events-none" />
+              <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-purple-400 transition-colors pointer-events-none" size={20} />
+              {searching && <Loader2 className="absolute right-5 top-1/2 -translate-y-1/2 text-purple-500 animate-spin" size={18} />}
+              <input
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search by name, university or #interest..."
+                className="input-surface w-full rounded-[1.5rem] py-5 pl-14 pr-12 text-[15px] text-white placeholder:text-white/25"
+              />
+            </div>
+          )}
         </motion.div>
 
-        {/* Suggested Section */}
+        {activeSquadTab === "leaderboard" ? (
+          <div className="space-y-5">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-[11px] font-black text-white/30 uppercase tracking-[0.2em] flex items-center">
+                <Trophy size={13} className="mr-2 text-yellow-400" />
+                Top 10 Students
+              </h3>
+              <span className="text-[10px] glass px-3 py-1 rounded-full text-yellow-300 font-bold border border-yellow-500/10">
+                followers + following
+              </span>
+            </div>
+
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                <div className="w-12 h-12 border-4 border-white/5 border-t-yellow-400 rounded-full animate-spin" />
+                <p className="text-[10px] text-white/30 font-black uppercase tracking-widest">Building leaderboard...</p>
+              </div>
+            ) : leaderboardStudents.length === 0 ? (
+              <div className="text-center py-20 app-panel rounded-[1.75rem] border-white/5 border-dashed">
+                <p className="text-2xl font-black text-white/10 mb-2">No rankings yet</p>
+                <p className="text-sm text-white/20 font-medium">Connect with students to start the leaderboard.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {leaderboardStudents.map((person, idx) => {
+                  const rank = idx + 1;
+                  const topBadge = topBadgeStyles[idx];
+                  const BadgeIcon = topBadge?.icon;
+                  const avatar = person.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=7C3AED&color=fff`;
+
+                  return (
+                    <motion.div
+                      key={person._id || person.id || person.name}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.03 }}
+                      className={clsx(
+                        "app-panel flex items-center gap-3 rounded-[1.5rem] p-4 transition-all",
+                        rank <= 3 ? "border-yellow-400/20" : "hover:border-white/15"
+                      )}
+                    >
+                      <div className={clsx(
+                        "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-sm font-black",
+                        rank === 1 ? "bg-yellow-300 text-black" : rank === 2 ? "bg-slate-200 text-slate-950" : rank === 3 ? "bg-orange-500 text-white" : "bg-white/[0.06] text-white/55"
+                      )}>
+                        #{rank}
+                      </div>
+
+                      <div className="relative shrink-0">
+                        <img src={avatar} className="h-14 w-14 rounded-2xl border border-white/10 object-cover" />
+                        {rank <= 3 && (
+                          <div className="absolute -bottom-2 -right-2 rounded-xl bg-background p-1">
+                            <div className={`flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br ${topBadge.className}`}>
+                              <BadgeIcon size={13} fill="currentColor" />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="truncate text-sm font-black text-white">{person.name}</p>
+                          <VerifiedBadge user={person} size={14} />
+                        </div>
+                        <p className="mt-1 truncate text-[11px] font-bold text-white/35">{person.university || "Campus Adda"}</p>
+                        {rank <= 3 && (
+                          <span className="mt-2 inline-flex rounded-full bg-yellow-400/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-yellow-200">
+                            {topBadge.label}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="text-right">
+                        <p className="text-lg font-black text-white">{person.influenceScore}</p>
+                        <p className="text-[9px] font-bold uppercase tracking-wider text-white/28">score</p>
+                        <p className="mt-1 text-[10px] text-white/35">
+                          {person.followerCount} fans • {person.followingCount} following
+                        </p>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ) : (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h3 className="text-[11px] font-black text-white/30 uppercase tracking-[0.2em] flex items-center">
@@ -476,6 +623,7 @@ export default function FriendsPage() {
             </motion.div>
           )}
         </div>
+        )}
       </div>
     </div>
     </Suspense>
