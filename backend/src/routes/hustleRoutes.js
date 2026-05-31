@@ -19,7 +19,7 @@ router.get('/', protect, async (req, res) => {
 
 // Create a listing
 router.post('/', protect, async (req, res) => {
-  const { title, price, condition, type, gigType, comment, image } = req.body;
+  const { title, price, condition, type, gigType, comment, image, roleNeeded, projectType, compensation } = req.body;
   try {
     const listing = await Listing.create({
       title,
@@ -27,11 +27,14 @@ router.post('/', protect, async (req, res) => {
       condition,
       type,
       gigType,
+      roleNeeded: roleNeeded || '',
+      projectType: projectType || '',
+      compensation: compensation || '',
       comment,
       image,
       seller: req.user._id
     });
-    const populated = await listing.populate('seller', 'name university profilePic');
+    const populated = await listing.populate('seller', 'name university profilePic isVerified');
     res.status(201).json(populated);
   } catch (error) {
     res.status(500).json({ message: error.message });

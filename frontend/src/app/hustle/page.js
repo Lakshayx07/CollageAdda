@@ -18,7 +18,10 @@ export default function HustleHubPage() {
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [condition, setCondition] = useState("Like New"); // for thrift
-  const [gigType, setGigType] = useState("Tech"); // for gig
+  const [gigType, setGigType] = useState("Tech"); // for gig (legacy)
+  const [roleNeeded, setRoleNeeded] = useState(""); // structured gig field
+  const [projectType, setProjectType] = useState("Hackathon"); // structured gig field
+  const [compensation, setCompensation] = useState(""); // structured gig field
   const [imagePreview, setImagePreview] = useState("");
   const [comment, setComment] = useState("");
   const [selectedItem, setSelectedItem] = useState(null);
@@ -97,8 +100,8 @@ export default function HustleHubPage() {
         alert("Error saving listing.");
       }
     } else {
-      if (!title.trim() || !price.trim() || !gigType || !comment.trim()) {
-        alert("Please fill in all columns (Gig Title, Price, Category, and Comment) to publish your gig.");
+      if (!title.trim() || !price.trim() || !roleNeeded.trim() || !projectType || !comment.trim()) {
+        alert("Please fill in all gig fields: Role Needed, Project Type, and Description.");
         return;
       }
 
@@ -114,6 +117,9 @@ export default function HustleHubPage() {
             price: price.startsWith("₹") ? price : `₹${price}`,
             gigType,
             type: "gig",
+            roleNeeded,
+            projectType,
+            compensation,
             comment
           })
         });
@@ -135,6 +141,9 @@ export default function HustleHubPage() {
     setPrice("");
     setCondition("Like New");
     setGigType("Tech");
+    setRoleNeeded("");
+    setProjectType("Hackathon");
+    setCompensation("");
     setImagePreview("");
     setComment("");
     setShowPostModal(false);
@@ -270,9 +279,20 @@ export default function HustleHubPage() {
                   className="app-panel rounded-[1.5rem] p-5 flex flex-col sm:flex-row sm:items-center justify-between group hover:border-emerald-400/30 transition cursor-pointer"
                 >
                   <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">{gig.type || gig.gigType}</span>
-                      <span className="text-xs text-white/40 font-bold flex items-center">⭐ {gig.rating || 5.0} ({gig.jobs || 0} completed)</span>
+                    <div className="flex items-center flex-wrap gap-2 mb-2">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                        {gig.projectType || gig.gigType || gig.type}
+                      </span>
+                      {gig.roleNeeded && (
+                        <span className="text-[9px] font-black uppercase tracking-widest text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
+                          👤 {gig.roleNeeded}
+                        </span>
+                      )}
+                      {gig.compensation && (
+                        <span className="text-[9px] font-black uppercase tracking-widest text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/20">
+                          💰 {gig.compensation}
+                        </span>
+                      )}
                     </div>
                     <h3 className="text-white font-black text-lg mb-1">{gig.title}</h3>
                     {gig.comment && (
@@ -442,23 +462,47 @@ export default function HustleHubPage() {
                 ) : (
                   <>
                     <div>
-                      <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">Gig Category</label>
+                      <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">Role Needed</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Frontend Dev, Video Editor, Strategist..."
+                        value={roleNeeded}
+                        onChange={e => setRoleNeeded(e.target.value)}
+                        className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:outline-none transition"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">Project Type</label>
                       <select
-                        value={gigType}
-                        onChange={e => setGigType(e.target.value)}
+                        value={projectType}
+                        onChange={e => setProjectType(e.target.value)}
                         className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:outline-none transition appearance-none"
                       >
-                        <option>Tech</option>
-                        <option>Creative</option>
-                        <option>Skill</option>
-                        <option>Academic</option>
+                        <option>Hackathon</option>
+                        <option>Startup</option>
+                        <option>Freelance</option>
+                        <option>Research</option>
+                        <option>Side Project</option>
+                        <option>Non-Profit</option>
                       </select>
                     </div>
 
                     <div>
-                      <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">Comment / Description</label>
+                      <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">Compensation / Equity / Learning</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. ₹500/hr, 5% Equity, Portfolio + Learning"
+                        value={compensation}
+                        onChange={e => setCompensation(e.target.value)}
+                        className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:outline-none transition"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">Gig Description</label>
                       <textarea
-                        placeholder="Describe the service or skills you offer..."
+                        placeholder="Describe your project and what the role involves..."
                         value={comment}
                         onChange={e => setComment(e.target.value)}
                         rows={3}

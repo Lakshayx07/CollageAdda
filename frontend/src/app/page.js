@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check, Plus, Flame, TrendingUp, Search, Zap, BarChart2, Compass, CalendarDays, Trophy, ShieldCheck } from "lucide-react";
+import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check, Plus, Flame, TrendingUp, Search, Zap, BarChart2, Compass, Trophy, ShieldCheck, Flag, Globe, GraduationCap } from "lucide-react";
 import Image from "next/image";
 import NotificationBell from "../components/NotificationBell";
 import VerifiedBadge from "../components/VerifiedBadge";
@@ -38,13 +38,17 @@ export default function Home() {
   const [confessionText, setConfessionText] = useState("");
   const [confessions, setConfessions] = useState([]);
   const [confessionCommentInputs, setConfessionCommentInputs] = useState({});
+  const [confessionScope, setConfessionScope] = useState('local'); // 'local' | 'global'
+  const [confessionPrompts, setConfessionPrompts] = useState([]);
   const [placeholderText, setPlaceholderText] = useState(() => {
     const prompts = [
-      "What project are you working on today?",
-      "Share a campus update...",
-      "What's happening on campus today?",
-      "Any upcoming events?",
-      "Spill the tea on what's going on..."
+      "What is the unwritten rule of the night canteen?",
+      "Wrong answers only: why was the professor late today?",
+      "Best nap spot on campus nobody talks about?",
+      "Hot take: which campus building should be demolished first?",
+      "Describe your department in three words (be honest).",
+      "Name a campus trend that needs to die immediately.",
+      "What does the library WiFi password symbolize about this place?"
     ];
     return prompts[Math.floor(Math.random() * prompts.length)];
   });
@@ -219,8 +223,9 @@ export default function Home() {
         const data = await res.json();
         setCollegeLeaderboard(data.map(item => ({
           college: item._id || "Unknown University",
-          score: `${item.verifiedCount} verified`,
-          label: "ranking points"
+          score: item.score || 0,
+          verifiedCount: item.verifiedCount || 0,
+          totalHeat: item.totalHeat || 0,
         })));
       }
     } catch (err) {
@@ -259,11 +264,11 @@ export default function Home() {
     }
   };
 
-  const fetchConfessions = async () => {
+  const fetchConfessions = async (scope = 'local') => {
     try {
       const token = localStorage.getItem("collegeadda_token");
       if (!token) return;
-      const res = await fetch(`${apiUrl}/api/confessions`, {
+      const res = await fetch(`${apiUrl}/api/confessions?scope=${scope}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -272,6 +277,23 @@ export default function Home() {
       }
     } catch (err) {
       console.error("Error fetching confessions:", err);
+    }
+  };
+
+  const reportConfession = async (id) => {
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const res = await fetch(`${apiUrl}/api/confessions/${id}/report`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setToastMsg("Reported. Thanks for keeping campus safe 🛡️");
+        setTimeout(() => setToastMsg(""), 3000);
+        fetchConfessions(confessionScope);
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -717,12 +739,35 @@ export default function Home() {
           </div>
 
           <div className="app-panel min-w-0 rounded-[1.6rem] p-4 sm:rounded-[2rem] sm:p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-300">Anonymous Adda</p>
-                <h2 className="mt-1 text-lg font-black tracking-tight text-white">Campus confessions</h2>
+            <div className="mb-4 flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-300">Anonymous Adda</p>
+                  <h2 className="mt-1 text-lg font-black tracking-tight text-white">Campus confessions</h2>
+                </div>
+                <ShieldCheck size={20} className="text-orange-300" />
               </div>
-              <ShieldCheck size={20} className="text-orange-300" />
+              {/* Scope Toggle */}
+              <div className="flex items-center gap-2 self-start rounded-full border border-white/10 bg-white/[0.04] p-1">
+                <button
+                  onClick={() => { setConfessionScope('local'); fetchConfessions('local'); }}
+                  className={clsx(
+                    "flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider transition-all",
+                    confessionScope === 'local' ? "bg-orange-400 text-black" : "text-white/50 hover:text-white"
+                  )}
+                >
+                  <GraduationCap size={11} /> My Campus
+                </button>
+                <button
+                  onClick={() => { setConfessionScope('global'); fetchConfessions('global'); }}
+                  className={clsx(
+                    "flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider transition-all",
+                    confessionScope === 'global' ? "bg-purple-500 text-white" : "text-white/50 hover:text-white"
+                  )}
+                >
+                  <Globe size={11} /> Global Pulse
+                </button>
+              </div>
             </div>
             <div className="space-y-4">
               <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-3">
@@ -783,9 +828,16 @@ export default function Home() {
                   )}
                 >
                   <div className="absolute inset-0 bg-black/10 mix-blend-overlay pointer-events-none" />
-                  
-                  <div className="absolute top-3 right-4 text-[8px] font-black uppercase tracking-[0.2em] text-white/40">
-                    Campus Adda ✦ Confession
+
+                  <div className="absolute top-3 right-4 flex items-center gap-2">
+                    <span className="text-[8px] font-black uppercase tracking-[0.2em] text-white/40">Campus Adda ✦ Confession</span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); reportConfession(confession._id); }}
+                      title="Report this confession"
+                      className="text-white/30 hover:text-red-400 transition-colors cursor-pointer relative z-20"
+                    >
+                      <Flag size={11} />
+                    </button>
                   </div>
 
                   <p className="text-sm font-extrabold italic leading-relaxed text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)] pr-4">
@@ -848,9 +900,12 @@ export default function Home() {
 
         <section className="grid min-w-0 gap-3 lg:grid-cols-1">
           <div className="app-panel rounded-[1.6rem] p-4 sm:rounded-[2rem] sm:p-5">
-            <div className="mb-4 flex items-center gap-2 text-white">
-              <Trophy size={18} className="text-yellow-300" />
-              <h2 className="text-sm font-black uppercase tracking-[0.16em]">College leaderboard</h2>
+            <div className="mb-3 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-white">
+                <Trophy size={18} className="text-yellow-300" />
+                <h2 className="text-sm font-black uppercase tracking-[0.16em]">College leaderboard</h2>
+              </div>
+              <span className="text-[9px] font-bold uppercase tracking-wider text-white/30">Score = Verified × 10 + 🔥 Heat</span>
             </div>
             <div className="space-y-2">
               {collegeLeaderboard.length === 0 ? (
@@ -858,16 +913,47 @@ export default function Home() {
                   <p className="text-xs font-bold text-white/30">No colleges ranked yet.</p>
                   <p className="mt-1 text-[10px] text-white/20">Rankings appear as more verified students join.</p>
                 </div>
-              ) : collegeLeaderboard.map((item, idx) => (
-                <div key={item.college} className="flex items-center gap-3 rounded-2xl border border-white/8 bg-white/[0.03] p-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-white/[0.06] text-xs font-black text-white">#{idx + 1}</div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-white">{item.college}</p>
-                    <p className="text-[11px] font-medium text-white/40">{item.label}</p>
+              ) : collegeLeaderboard.map((item, idx) => {
+                const medals = ["🥇", "🥈", "🥉"];
+                const gradients = [
+                  "from-yellow-500/20 via-orange-500/10 to-transparent border-yellow-500/30",
+                  "from-slate-400/15 via-slate-500/10 to-transparent border-slate-400/25",
+                  "from-orange-700/15 via-orange-800/10 to-transparent border-orange-700/25",
+                ];
+                const isTop3 = idx < 3;
+                return (
+                  <div
+                    key={item.college}
+                    className={clsx(
+                      "flex items-center gap-3 rounded-2xl border p-3 transition-all",
+                      isTop3
+                        ? `bg-gradient-to-r ${gradients[idx]}`
+                        : "border-white/8 bg-white/[0.03]"
+                    )}
+                  >
+                    <div className={clsx(
+                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl text-sm font-black",
+                      isTop3 ? "text-lg" : "bg-white/[0.06] text-xs text-white"
+                    )}>
+                      {isTop3 ? medals[idx] : `#${idx + 1}`}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className={clsx("truncate text-sm font-bold", isTop3 ? "text-white" : "text-white/80")}>{item.college}</p>
+                      <p className="text-[10px] font-medium text-white/40">
+                        <span className="text-green-400">{item.verifiedCount} verified</span>
+                        {" · "}
+                        <span className="text-orange-400">{item.totalHeat}🔥 heat</span>
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className={clsx("text-sm font-black", isTop3 ? "text-yellow-300" : "text-white/70")}>{item.score} pts</p>
+                      {isTop3 && idx === 0 && (
+                        <span className="text-[9px] font-black uppercase tracking-wider text-yellow-400">Top Campus 🏆</span>
+                      )}
+                    </div>
                   </div>
-                  <p className="text-sm font-black text-yellow-200">{item.score}</p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </section>

@@ -28,6 +28,10 @@ const confessionSchema = new mongoose.Schema({
     type: Number,
     default: 1
   },
+  reports: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
   createdAt: {
     type: Date,
     default: Date.now,

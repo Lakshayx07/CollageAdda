@@ -1,21 +1,39 @@
 import express from 'express';
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
+import Confession from '../models/Confession.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { ensureUniversityGroup } from '../utils/universityUtils.js';
 
 const router = express.Router();
 
 // @route   GET /api/users/leaderboard
-// @desc    Get university leaderboard (ranked by verified users)
+// @desc    Get university leaderboard (ranked by verified users + confession heat)
 router.get('/leaderboard', protect, async (req, res) => {
   try {
-    const leaderboard = await User.aggregate([
+    // Aggregate verified user counts per university
+    const userCounts = await User.aggregate([
       { $match: { isVerified: true } },
-      { $group: { _id: '$university', verifiedCount: { $sum: 1 } } },
-      { $sort: { verifiedCount: -1 } },
-      { $limit: 10 }
+      { $group: { _id: '$university', verifiedCount: { $sum: 1 } } }
     ]);
+
+    // Aggregate total confession heat per university
+    const heatAgg = await Confession.aggregate([
+      { $group: { _id: '$college', totalHeat: { $sum: '$heat' } } }
+    ]);
+
+    // Merge the two datasets
+    const heatMap = {};
+    heatAgg.forEach(h => { heatMap[h._id] = h.totalHeat; });
+
+    const leaderboard = userCounts.map(u => ({
+      _id: u._id,
+      verifiedCount: u.verifiedCount,
+      totalHeat: heatMap[u._id] || 0,
+      // Composite score: 10 pts per verified student + 1 pt per heat
+      score: (u.verifiedCount * 10) + (heatMap[u._id] || 0)
+    })).sort((a, b) => b.score - a.score).slice(0, 10);
+
     res.json(leaderboard);
   } catch (error) {
     res.status(500).json({ message: error.message });

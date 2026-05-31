@@ -17,6 +17,7 @@ import storyRoutes from './routes/storyRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import hustleRoutes from './routes/hustleRoutes.js';
 import confessionRoutes from './routes/confessionRoutes.js';
+import collabRoutes from './routes/collabRoutes.js';
 
 // Connect to database
 connectDB();
@@ -66,6 +67,7 @@ app.use('/api/stories', storyRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/hustle', hustleRoutes);
 app.use('/api/confessions', confessionRoutes);
+app.use('/api/collab', collabRoutes);
 
 // ── Socket.io Real-time Chat ──────────────────────────────────────────────────
 const onlineUsers = new Map(); // socketId → { userId, name, university }
