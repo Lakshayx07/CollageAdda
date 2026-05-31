@@ -37,15 +37,19 @@ export default function Home() {
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [confessionText, setConfessionText] = useState("");
   const [confessions, setConfessions] = useState([
-    { college: "Rishihood", text: "The best friendships start after one awkward canteen conversation.", heat: 42 },
-    { college: "DU", text: "Exam season has made the library more social than Instagram.", heat: 88 },
-    { college: "IIT Delhi", text: "Someone should make a cross-college hackathon team board.", heat: 61 },
+    { college: "Rishihood", text: "The best friendships start after one awkward canteen conversation.", heat: 42, gradient: "from-orange-500 via-rose-500 to-purple-600" },
+    { college: "DU", text: "Exam season has made the library more social than Instagram.", heat: 88, gradient: "from-purple-600 via-fuchsia-500 to-pink-500" },
+    { college: "IIT Delhi", text: "Someone should make a cross-college hackathon team board.", heat: 61, gradient: "from-blue-600 via-indigo-500 to-purple-600" },
   ]);
+  const [placeholderText, setPlaceholderText] = useState("What's happening on campus today?");
+  const [selectedGradient, setSelectedGradient] = useState("from-orange-500 via-rose-500 to-purple-600");
 
   const filteredPosts = posts.filter(post => {
     if (!selectedTopic) return true;
     return post.content.toLowerCase().includes(selectedTopic.toLowerCase());
   });
+
+  const isTextTooShort = newPostContent.trim().length > 0 && newPostContent.trim().length < 10 && !selectedMedia;
   
   const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001').trim();
   
@@ -86,6 +90,17 @@ export default function Home() {
     } else {
       const u = JSON.parse(localStorage.getItem('collegeadda_user') || '{}');
       setCurrentUser(u);
+
+      const placeholders = [
+        "What project are you working on today?",
+        "Share a campus update or event...",
+        "Found a new favorite study spot on campus?",
+        "Any hot takes on today's lectures?",
+        "What's the vibe at the canteen right now?",
+        "Ask a question to the campus community..."
+      ];
+      const randomIndex = Math.floor(Math.random() * placeholders.length);
+      setPlaceholderText(placeholders[randomIndex]);
 
       // Sync user profile from backend
       const fetchLatestProfile = async () => {
@@ -385,6 +400,12 @@ export default function Home() {
     setTimeout(() => setToastMsg(""), 2000);
   };
 
+  const handleHidePost = (postId) => {
+    setPosts(prev => prev.filter(p => p.id !== postId));
+    setToastMsg("Post hidden");
+    setTimeout(() => setToastMsg(""), 2000);
+  };
+
   const handleShareToFriend = async (friendId, postId) => {
     const postToShare = posts.find(p => p.id === postId);
     if (!postToShare) return;
@@ -544,17 +565,28 @@ export default function Home() {
                 Explore
               </button>
             </div>
-            <div className="no-scrollbar flex max-w-full gap-3 overflow-x-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {dailyCampusDrop.map((student) => (
-                <div key={student.name} className="min-w-[210px] flex-1 rounded-[1.35rem] border border-white/10 bg-white/[0.035] p-4">
-                  <div className={`mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${student.color} text-sm font-black text-white`}>
-                    {student.name.charAt(0)}
+                <div 
+                  key={student.name} 
+                  className="flex flex-col justify-between rounded-[1.35rem] border border-white/10 bg-white/[0.035] p-4 transition-all hover:border-white/20 hover:bg-white/[0.05]"
+                >
+                  <div>
+                    <div className={`mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${student.color} text-sm font-black text-white shadow-md`}>
+                      {student.name.charAt(0)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-black text-white">{student.name}</p>
+                      <p className="mt-0.5 truncate text-[11px] font-bold text-white/45">{student.college}</p>
+                      <p className="mt-3 text-xs leading-relaxed text-white/62 min-h-[40px] break-words">
+                        {student.vibe}
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-black text-white">{student.name}</p>
-                    <p className="mt-1 truncate text-[11px] font-bold text-white/45">{student.college}</p>
-                    <p className="mt-3 text-xs leading-5 text-white/62">{student.vibe}</p>
-                    <span className="mt-3 inline-flex rounded-full bg-cyan-400/10 px-2.5 py-1 text-[10px] font-bold text-cyan-200">{student.match}</span>
+                  <div className="mt-4">
+                    <span className="inline-flex rounded-full bg-cyan-400/10 px-2.5 py-1 text-[10px] font-bold text-cyan-200">
+                      {student.match}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -569,7 +601,7 @@ export default function Home() {
               </div>
               <ShieldCheck size={20} className="text-orange-300" />
             </div>
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-3">
                 <textarea
                   value={confessionText}
@@ -577,7 +609,33 @@ export default function Home() {
                   placeholder="Drop an anonymous campus thought..."
                   className="min-h-16 w-full resize-none bg-transparent text-sm text-white outline-none placeholder:text-white/28"
                 />
-                <div className="mt-2 flex items-center justify-between gap-3">
+                
+                {/* Gradient Picker */}
+                <div className="mt-2 flex items-center gap-2 border-t border-white/5 pt-3">
+                  <span className="text-[9px] font-black uppercase tracking-wider text-white/40">Theme:</span>
+                  <div className="flex gap-1.5">
+                    {[
+                      { name: "Sunset", value: "from-orange-500 via-rose-500 to-purple-600" },
+                      { name: "Cyber", value: "from-blue-600 via-indigo-500 to-purple-600" },
+                      { name: "Ocean", value: "from-cyan-500 to-blue-600" },
+                      { name: "Forest", value: "from-emerald-500 via-teal-600 to-cyan-600" },
+                      { name: "Cosmic", value: "from-purple-600 via-fuchsia-500 to-pink-500" }
+                    ].map((g) => (
+                      <button
+                        key={g.name}
+                        onClick={() => setSelectedGradient(g.value)}
+                        className={clsx(
+                          "w-5 h-5 rounded-full bg-gradient-to-br cursor-pointer border border-white/10 transition-all",
+                          g.value,
+                          selectedGradient === g.value ? "ring-2 ring-white scale-110" : "opacity-80 hover:opacity-100 hover:scale-105"
+                        )}
+                        title={g.name}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-3 flex items-center justify-between gap-3 pt-2 border-t border-white/5">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-white/30">Moderated before public</span>
                   <button
                     onClick={() => {
@@ -587,6 +645,7 @@ export default function Home() {
                           college: currentUser?.university || "Your Campus",
                           text: confessionText.trim(),
                           heat: 1,
+                          gradient: selectedGradient
                         },
                         ...prev,
                       ]);
@@ -594,18 +653,36 @@ export default function Home() {
                       setConfessionText("");
                       setTimeout(() => setToastMsg(""), 2000);
                     }}
-                    className="rounded-full bg-orange-400 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-black"
+                    className="rounded-full bg-orange-400 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-black font-extrabold hover:bg-orange-300 transition-all hover:scale-105 cursor-pointer"
                   >
                     Drop
                   </button>
                 </div>
               </div>
+              
               {confessions.slice(0, 2).map((confession, idx) => (
-                <div key={`${confession.college}-${idx}`} className="rounded-[1.15rem] border border-white/8 bg-white/[0.025] p-3">
-                  <p className="text-sm leading-5 text-white/78">"{confession.text}"</p>
-                  <div className="mt-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-white/35">
-                    <span>{confession.college}</span>
-                    <span className="flex items-center gap-1 text-orange-300"><Flame size={11} /> {confession.heat}</span>
+                <div 
+                  key={`${confession.college}-${idx}`} 
+                  className={clsx(
+                    "relative overflow-hidden rounded-2xl p-5 text-white flex flex-col justify-between min-h-[140px] shadow-xl transition-all duration-300 hover:scale-[1.02]",
+                    confession.gradient ? `bg-gradient-to-br ${confession.gradient}` : "border border-white/8 bg-white/[0.025]"
+                  )}
+                >
+                  <div className="absolute inset-0 bg-black/10 mix-blend-overlay pointer-events-none" />
+                  
+                  <div className="absolute top-3 right-4 text-[8px] font-black uppercase tracking-[0.2em] text-white/40">
+                    Campus Adda ✦ Confession
+                  </div>
+
+                  <p className="text-sm font-extrabold italic leading-relaxed text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)] pr-4">
+                    "{confession.text}"
+                  </p>
+                  
+                  <div className="mt-4 flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.2)]">
+                    <span>📍 {confession.college}</span>
+                    <span className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full backdrop-blur-md">
+                      <Flame size={11} className="fill-white animate-pulse" /> {confession.heat}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -704,18 +781,25 @@ export default function Home() {
                 )}
               </div>
             </div>
-            <textarea 
-              value={newPostContent}
-              onChange={(e) => setNewPostContent(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleCreatePost();
-                }
-              }}
-              placeholder="What's happening on campus today?"
-              className="min-w-0 flex-1 resize-none bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none sm:text-base mt-2 min-h-[60px]"
-            ></textarea>
+            <div className="flex-1 flex flex-col gap-2 min-w-0">
+              <textarea 
+                value={newPostContent}
+                onChange={(e) => setNewPostContent(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    if (!isTextTooShort) handleCreatePost();
+                  }
+                }}
+                placeholder={placeholderText}
+                className="min-w-0 w-full resize-none bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none sm:text-base mt-2 min-h-[60px]"
+              />
+              {isTextTooShort && (
+                <div className="flex items-center space-x-2 text-orange-400 text-xs font-semibold animate-pulse">
+                  <span>⚠️ Write at least 10 characters to share a quality update!</span>
+                </div>
+              )}
+            </div>
           </div>
 
           <AnimatePresence>
@@ -778,8 +862,8 @@ export default function Home() {
                whileHover={{ scale: 1.05 }}
                whileTap={{ scale: 0.95 }}
                onClick={handleCreatePost} 
-               disabled={isPosting || (!newPostContent.trim() && !selectedMedia)}
-               className="gradient-bg flex w-full items-center justify-center rounded-2xl px-5 py-3 text-sm font-bold text-white shadow-xl shadow-purple-500/20 disabled:opacity-50 sm:w-auto sm:min-w-[120px] sm:rounded-full sm:px-7 sm:py-2.5"
+               disabled={isPosting || isTextTooShort || (!newPostContent.trim() && !selectedMedia)}
+               className="gradient-bg flex w-full items-center justify-center rounded-2xl px-5 py-3 text-sm font-bold text-white shadow-xl shadow-purple-500/20 disabled:opacity-50 sm:w-auto sm:min-w-[120px] sm:rounded-full sm:px-7 sm:py-2.5 cursor-pointer"
              >
                {isPosting ? (
                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -901,18 +985,29 @@ export default function Home() {
                       <MoreHorizontal size={20} />
                     </button>
                     {postMenu === post.id && (
-                      <div className="absolute right-0 top-full mt-2 w-40 bg-[#1A1A1F] border border-white/10 rounded-xl shadow-2xl py-1 z-50">
+                      <div className="absolute right-0 top-full mt-2 w-40 bg-[#1A1A1F] border border-white/10 rounded-xl shadow-2xl py-1 z-50 overflow-hidden">
                         {currentUser?._id === post.authorId || currentUser?.id === post.authorId ? (
-                          <button onClick={() => { handleDeletePost(post.id); setPostMenu(null); }} className="w-full text-left px-4 py-2 text-[13px] font-bold text-red-500 hover:bg-white/5 transition-colors">
+                          <button 
+                            onClick={() => { handleDeletePost(post.id); setPostMenu(null); }} 
+                            className="w-full text-left px-4 py-2.5 text-[13px] font-bold text-red-500 hover:bg-white/5 transition-colors cursor-pointer"
+                          >
                             Delete Post
                           </button>
                         ) : (
-                          <button 
-                            onClick={() => { handleReportPost(post.id); setPostMenu(null); }}
-                            className="w-full text-left px-4 py-2 text-[13px] font-bold text-white/60 hover:bg-white/5 hover:text-white transition-colors"
-                          >
-                            Report Post
-                          </button>
+                          <>
+                            <button 
+                              onClick={() => { handleHidePost(post.id); setPostMenu(null); }}
+                              className="w-full text-left px-4 py-2.5 text-[13px] font-bold text-white/70 hover:bg-white/5 hover:text-white transition-colors cursor-pointer"
+                            >
+                              Hide Post
+                            </button>
+                            <button 
+                              onClick={() => { handleReportPost(post.id); setPostMenu(null); }}
+                              className="w-full text-left px-4 py-2.5 text-[13px] font-bold text-red-400 hover:bg-white/5 hover:text-red-300 transition-colors border-t border-white/5 cursor-pointer"
+                            >
+                              Report Spam
+                            </button>
+                          </>
                         )}
                       </div>
                     )}
@@ -929,12 +1024,12 @@ export default function Home() {
 
               {/* Poll Section */}
               {post.poll && post.poll.options && post.poll.options.length > 0 && (
-                <div className="glass-card p-5 rounded-3xl border border-white/5 space-y-4 mb-5">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-bold text-white/80">{post.poll.allowMultiple ? "Select one or more" : "Select one"}</p>
-                    <span className="text-[10px] text-white/30 font-black uppercase tracking-widest bg-white/5 px-3 py-1 rounded-full">Poll</span>
+                <div className="glass-card p-5 rounded-2xl border border-white/10 space-y-4 mb-5 bg-white/[0.01]">
+                  <div className="flex items-center justify-between pb-2 border-b border-white/5">
+                    <p className="text-xs font-semibold text-white/50">{post.poll.allowMultiple ? "Select multiple answers" : "Select one answer"}</p>
+                    <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider bg-cyan-400/10 px-2.5 py-0.5 rounded">Active Poll</span>
                   </div>
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     {post.poll.options.map((option, idx) => {
                       const totalVotes = post.poll.options.reduce((sum, opt) => sum + (opt.votes?.length || 0), 0);
                       const optionVotes = option.votes?.length || 0;
@@ -945,34 +1040,39 @@ export default function Home() {
                         <div 
                           key={idx}
                           onClick={() => handleVote(post.id, idx)}
-                          className="relative cursor-pointer group"
+                          className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] transition-all hover:bg-white/[0.04] hover:border-white/20 cursor-pointer group"
                         >
-                          <div className="absolute inset-0 bg-white/5 rounded-2xl overflow-hidden">
-                            <motion.div 
-                              initial={{ width: 0 }}
-                              animate={{ width: `${percentage}%` }}
-                              className="h-full bg-purple-500/20 border-r border-purple-500/30"
-                            />
-                          </div>
-                          <div className="relative flex items-center justify-between p-4 rounded-2xl border border-white/5 group-hover:border-white/10 transition-all">
-                            <div className="flex items-center space-x-3">
+                          {/* Percentage Bar Fill */}
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${percentage}%` }}
+                            className="absolute top-0 bottom-0 left-0 bg-gradient-to-r from-purple-600/25 to-cyan-500/20"
+                            transition={{ type: "spring", stiffness: 80, damping: 15 }}
+                          />
+                          
+                          <div className="relative flex items-center justify-between p-4 z-10">
+                            <div className="flex items-center space-x-3 min-w-0">
                               <div className={clsx(
-                                "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
-                                hasVoted ? "border-purple-500 bg-purple-500 text-white" : "border-white/20"
+                                "w-5 h-5 rounded-md border flex items-center justify-center transition-all shrink-0",
+                                hasVoted ? "border-cyan-400 bg-cyan-400 text-black" : "border-white/30"
                               )}>
                                 {hasVoted && <Check size={12} strokeWidth={4} />}
                               </div>
-                              <span className="text-sm font-bold text-white/90">{option.text}</span>
+                              <span className="text-sm font-semibold text-white/90 truncate">{option.text}</span>
                             </div>
-                            <span className="text-xs font-bold text-white/40">{optionVotes}</span>
+                            
+                            <div className="flex items-center space-x-2 shrink-0">
+                              <span className="text-xs font-black text-cyan-300">{percentage}%</span>
+                              <span className="text-[11px] font-medium text-white/30">({optionVotes})</span>
+                            </div>
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                  <div className="flex items-center justify-between pt-2">
-                    <button className="text-[10px] font-black uppercase tracking-widest text-purple-400 hover:underline">View votes</button>
-                    <span className="text-[10px] text-white/20 font-bold">{post.poll.options.reduce((sum, opt) => sum + (opt.votes?.length || 0), 0)} total votes</span>
+                  <div className="flex items-center justify-between pt-2 border-t border-white/5 text-[10px] font-bold uppercase tracking-wider">
+                    <button className="text-purple-400 hover:text-purple-300 transition-colors">View Breakdown</button>
+                    <span className="text-white/30">{post.poll.options.reduce((sum, opt) => sum + (opt.votes?.length || 0), 0)} total votes</span>
                   </div>
                 </div>
               )}

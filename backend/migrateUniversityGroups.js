@@ -18,7 +18,7 @@ const migrate = async () => {
   const byUniversity = {};
   for (const room of groups) {
     const uni = (room.university || '').trim();
-    if (!uni || uni === 'Other') continue;
+    if (!uni || uni === 'Other') continue; 
     if (!byUniversity[uni]) byUniversity[uni] = [];
     byUniversity[uni].push(room);
   }

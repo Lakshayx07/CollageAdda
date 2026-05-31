@@ -81,7 +81,7 @@ export default function Sidebar() {
               key={item.name}
               href={item.path}
               onClick={() => { if (isFriends) localStorage.setItem("collegeadda_friends_viewed", "true"); }}
-              className="relative"
+              className="relative group"
             >
               <div
                 className={clsx(
@@ -90,10 +90,10 @@ export default function Sidebar() {
                 )}
               >
                 <div className={clsx(
-                  "relative flex h-10 w-10 items-center justify-center rounded-2xl border transition-all",
+                  "relative flex h-10 w-10 items-center justify-center rounded-2xl border transition-all duration-300 shrink-0",
                   isActive
-                    ? "border-white/12 bg-white/10"
-                    : "border-white/6 bg-white/[0.03]"
+                    ? "border-transparent bg-gradient-to-br from-purple-500 to-cyan-400 text-white shadow-md shadow-purple-500/20"
+                    : "border-white/6 bg-white/[0.03] group-hover:border-white/20 group-hover:bg-white/[0.08]"
                 )}>
                   <Icon size={20} strokeWidth={isActive ? 2.45 : 2} />
                   {isFriends && hasRequest && (
@@ -101,11 +101,17 @@ export default function Sidebar() {
                   )}
                 </div>
 
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-black uppercase tracking-[0.12em]">
+                <div className="min-w-0 flex-1 relative z-20">
+                  <p className={clsx(
+                    "text-sm font-black uppercase tracking-[0.12em] transition-colors duration-300",
+                    isActive ? "text-cyan-300" : "text-white/60 group-hover:text-white"
+                  )}>
                     {item.name}
                   </p>
-                  <p className="mt-0.5 text-[11px] font-medium text-white/36">
+                  <p className={clsx(
+                    "mt-0.5 text-[11px] font-medium transition-all duration-300 ease-in-out opacity-0 max-h-0 overflow-hidden group-hover:opacity-100 group-hover:max-h-8",
+                    isActive ? "text-cyan-300/60" : "text-white/30"
+                  )}>
                     {item.name === "Home" && "Feed and campus updates"}
                     {item.name === "Explore" && "Browse colleges and students"}
                     {item.name === "Messages" && "Private conversations"}
@@ -119,7 +125,7 @@ export default function Sidebar() {
                 {isActive && (
                   <motion.div
                     layoutId="sidebar-active"
-                    className="absolute inset-0 rounded-[1.35rem] bg-[linear-gradient(135deg,rgba(124,92,255,0.2),rgba(34,199,214,0.18))] ring-1 ring-white/10"
+                    className="absolute inset-0 rounded-[1.35rem] bg-[linear-gradient(135deg,rgba(124,92,255,0.25),rgba(34,199,214,0.22))] ring-2 ring-purple-500/20 shadow-[0_0_20px_rgba(124,92,255,0.15)]"
                     initial={false}
                     transition={{ type: "spring", stiffness: 320, damping: 30 }}
                   />
