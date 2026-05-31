@@ -39,7 +39,6 @@ export default function Home() {
   const [confessions, setConfessions] = useState([]);
   const [confessionCommentInputs, setConfessionCommentInputs] = useState({});
   const [confessionScope, setConfessionScope] = useState('local'); // 'local' | 'global'
-  const [confessionPrompts, setConfessionPrompts] = useState([]);
   const [placeholderText, setPlaceholderText] = useState(() => {
     const prompts = [
       "What is the unwritten rule of the night canteen?",
@@ -85,17 +84,6 @@ export default function Home() {
     } else {
       const u = JSON.parse(localStorage.getItem('collegeadda_user') || '{}');
       setCurrentUser(u);
-
-      const placeholders = [
-        "What project are you working on today?",
-        "Share a campus update or event...",
-        "Found a new favorite study spot on campus?",
-        "Any hot takes on today's lectures?",
-        "What's the vibe at the canteen right now?",
-        "Ask a question to the campus community..."
-      ];
-      const randomIndex = Math.floor(Math.random() * placeholders.length);
-      setPlaceholderText(placeholders[randomIndex]);
 
       // Sync user profile from backend
       const fetchLatestProfile = async () => {
