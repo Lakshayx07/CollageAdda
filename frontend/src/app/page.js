@@ -36,13 +36,21 @@ export default function Home() {
   const [pollAllowMultiple, setPollAllowMultiple] = useState(false);
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [confessionText, setConfessionText] = useState("");
-  const [confessions, setConfessions] = useState([
-    { college: "Rishihood", text: "The best friendships start after one awkward canteen conversation.", heat: 42, gradient: "from-orange-500 via-rose-500 to-purple-600" },
-    { college: "DU", text: "Exam season has made the library more social than Instagram.", heat: 88, gradient: "from-purple-600 via-fuchsia-500 to-pink-500" },
-    { college: "IIT Delhi", text: "Someone should make a cross-college hackathon team board.", heat: 61, gradient: "from-blue-600 via-indigo-500 to-purple-600" },
-  ]);
-  const [placeholderText, setPlaceholderText] = useState("What's happening on campus today?");
+  const [confessions, setConfessions] = useState([]);
+  const [placeholderText, setPlaceholderText] = useState(() => {
+    const prompts = [
+      "What project are you working on today?",
+      "Share a campus update...",
+      "What's happening on campus today?",
+      "Any upcoming events?",
+      "Spill the tea on what's going on..."
+    ];
+    return prompts[Math.floor(Math.random() * prompts.length)];
+  });
   const [selectedGradient, setSelectedGradient] = useState("from-orange-500 via-rose-500 to-purple-600");
+  const [dailyCampusDrop, setDailyCampusDrop] = useState([]);
+  const [campusEvents, setCampusEvents] = useState([]);
+  const [collegeLeaderboard, setCollegeLeaderboard] = useState([]);
 
   const filteredPosts = posts.filter(post => {
     if (!selectedTopic) return true;
@@ -63,24 +71,6 @@ export default function Home() {
     { name: "Night Canteen", icon: <Flame size={14} className="text-yellow-500" /> },
     { name: "Sports Meet", icon: <Zap size={14} className="text-green-400" /> },
     { name: "Hackathon", icon: <Search size={14} className="text-cyan-400" /> }
-  ];
-
-  const dailyCampusDrop = [
-    { name: "Aarav", college: "DTU", vibe: "Robotics, football, late-night code", match: "4 shared interests", color: "from-cyan-500 to-blue-600" },
-    { name: "Meera", college: "DU", vibe: "Debate society, cafes, internships", match: "Same year", color: "from-fuchsia-500 to-purple-600" },
-    { name: "Kabir", college: "JNU", vibe: "Startups, theatre, campus events", match: "Near your campus", color: "from-orange-400 to-rose-500" },
-  ];
-
-  const campusEvents = [
-    { title: "Open Mic Night", college: "Rishihood", time: "Today, 6 PM" },
-    { title: "Freshers Mixer", college: "DU North Campus", time: "Tomorrow" },
-    { title: "Hack Sprint", college: "DTU", time: "This weekend" },
-  ];
-
-  const collegeLeaderboard = [
-    { college: "Delhi University", score: "12.4k", label: "pulse points" },
-    { college: "DTU", score: "9.8k", label: "event buzz" },
-    { college: "Rishihood", score: "7.1k", label: "new connects" },
   ];
 
   useEffect(() => {
@@ -122,6 +112,8 @@ export default function Home() {
       fetchPosts();
       fetchFriends();
       fetchStories();
+      fetchLeaderboard();
+      fetchDailyCampusDrop();
     }
   }, [router]);
 
@@ -215,6 +207,57 @@ export default function Home() {
     }
   };
 
+  const fetchLeaderboard = async () => {
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      if (!token) return;
+      const res = await fetch(`${apiUrl}/api/users/leaderboard`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCollegeLeaderboard(data.map(item => ({
+          college: item._id || "Unknown University",
+          score: `${item.verifiedCount} verified`,
+          label: "ranking points"
+        })));
+      }
+    } catch (err) {
+      console.error("Error fetching leaderboard:", err);
+    }
+  };
+
+  const fetchDailyCampusDrop = async () => {
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      if (!token) return;
+      const res = await fetch(`${apiUrl}/api/users/search/query`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const me = JSON.parse(localStorage.getItem('collegeadda_user') || '{}');
+        const others = data.filter(u => u._id !== (me._id || me.id));
+        const colors = [
+          "from-cyan-500 to-blue-600",
+          "from-fuchsia-500 to-purple-600",
+          "from-orange-400 to-rose-500"
+        ];
+        setDailyCampusDrop(others.slice(0, 3).map((u, idx) => ({
+          name: u.name,
+          college: u.university || "Campus Member",
+          vibe: (u.interests && u.interests.length > 0)
+            ? u.interests.slice(0, 3).join(', ')
+            : (u.bio || "No bio added yet"),
+          match: u.year ? `Year ${u.year}` : "New Connect",
+          color: colors[idx % colors.length]
+        })));
+      }
+    } catch (err) {
+      console.error("Error fetching campus drop:", err);
+    }
+  };
+
   const handleMediaSelect = (e, type) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -227,7 +270,7 @@ export default function Home() {
   };
 
   const handleCreatePost = async () => {
-    if ((!newPostContent.trim() && !selectedMedia) || isPosting) return;
+    if ((!newPostContent.trim() && !selectedMedia) || isPosting || isTextTooShort) return;
     setIsPosting(true);
     try {
       const token = localStorage.getItem("collegeadda_token");
@@ -459,7 +502,7 @@ export default function Home() {
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col overflow-x-hidden bg-transparent">
+    <div className="relative flex min-h-screen flex-col overflow-x-hidden bg-transparent pb-[90px] lg:pb-0">
       <header className="sticky top-0 z-40 border-b app-divider bg-[rgba(11,15,23,0.78)] px-4 py-4 backdrop-blur-xl sm:px-6">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
           <div>
@@ -566,7 +609,12 @@ export default function Home() {
               </button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {dailyCampusDrop.map((student) => (
+              {dailyCampusDrop.length === 0 ? (
+                <div className="col-span-3 flex flex-col items-center justify-center rounded-[1.35rem] border border-dashed border-white/10 py-10 text-center">
+                  <p className="text-xs font-bold text-white/30">No other students found yet.</p>
+                  <p className="mt-1 text-[10px] text-white/20">More connections will appear as more students join.</p>
+                </div>
+              ) : dailyCampusDrop.map((student) => (
                 <div 
                   key={student.name} 
                   className="flex flex-col justify-between rounded-[1.35rem] border border-white/10 bg-white/[0.035] p-4 transition-all hover:border-white/20 hover:bg-white/[0.05]"
@@ -660,7 +708,12 @@ export default function Home() {
                 </div>
               </div>
               
-              {confessions.slice(0, 2).map((confession, idx) => (
+              {confessions.length === 0 ? (
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 py-8 text-center">
+                  <p className="text-xs font-bold text-white/30">No confessions yet.</p>
+                  <p className="mt-1 text-[10px] text-white/20">Be the first to drop one! 🤫</p>
+                </div>
+              ) : confessions.slice(0, 2).map((confession, idx) => (
                 <div 
                   key={`${confession.college}-${idx}`} 
                   className={clsx(
@@ -697,7 +750,12 @@ export default function Home() {
               <h2 className="text-sm font-black uppercase tracking-[0.16em]">Campus events</h2>
             </div>
             <div className="space-y-2">
-              {campusEvents.map((event) => (
+              {campusEvents.length === 0 ? (
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 py-8 text-center">
+                  <p className="text-xs font-bold text-white/30">No upcoming events yet.</p>
+                  <p className="mt-1 text-[10px] text-white/20">Check back soon for campus happenings!</p>
+                </div>
+              ) : campusEvents.map((event) => (
                 <div key={event.title} className="flex items-center justify-between gap-3 rounded-2xl border border-white/8 bg-white/[0.03] p-3">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-bold text-white">{event.title}</p>
@@ -715,7 +773,12 @@ export default function Home() {
               <h2 className="text-sm font-black uppercase tracking-[0.16em]">College leaderboard</h2>
             </div>
             <div className="space-y-2">
-              {collegeLeaderboard.map((item, idx) => (
+              {collegeLeaderboard.length === 0 ? (
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 py-8 text-center">
+                  <p className="text-xs font-bold text-white/30">No colleges ranked yet.</p>
+                  <p className="mt-1 text-[10px] text-white/20">Rankings appear as more verified students join.</p>
+                </div>
+              ) : collegeLeaderboard.map((item, idx) => (
                 <div key={item.college} className="flex items-center gap-3 rounded-2xl border border-white/8 bg-white/[0.03] p-3">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-white/[0.06] text-xs font-black text-white">#{idx + 1}</div>
                   <div className="min-w-0 flex-1">
@@ -1061,17 +1124,20 @@ export default function Home() {
                               <span className="text-sm font-semibold text-white/90 truncate">{option.text}</span>
                             </div>
                             
-                            <div className="flex items-center space-x-2 shrink-0">
-                              <span className="text-xs font-black text-cyan-300">{percentage}%</span>
-                              <span className="text-[11px] font-medium text-white/30">({optionVotes})</span>
+                            <div className="flex items-center justify-end space-x-2 shrink-0 bg-black/20 px-2.5 py-1 rounded-lg border border-white/5 backdrop-blur-sm w-20">
+                              <span className="text-[11px] font-black text-cyan-300">{percentage}%</span>
+                              <span className="text-[10px] font-medium text-white/40">({optionVotes})</span>
                             </div>
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                  <div className="flex items-center justify-between pt-2 border-t border-white/5 text-[10px] font-bold uppercase tracking-wider">
-                    <button className="text-purple-400 hover:text-purple-300 transition-colors">View Breakdown</button>
+                  <div className="flex items-center justify-between pt-3 border-t border-white/5 text-[10px] font-bold uppercase tracking-wider">
+                    <button className="flex items-center gap-1.5 rounded-full bg-purple-500/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-purple-300 transition-all hover:bg-purple-500/20 hover:scale-105 border border-purple-500/20">
+                      <BarChart2 size={12} />
+                      View Breakdown
+                    </button>
                     <span className="text-white/30">{post.poll.options.reduce((sum, opt) => sum + (opt.votes?.length || 0), 0)} total votes</span>
                   </div>
                 </div>

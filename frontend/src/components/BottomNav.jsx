@@ -11,12 +11,10 @@ export default function BottomNav() {
 
   const navItems = [
     { name: "Home", path: "/", icon: Home },
-    { name: "Explore", path: "/explore", icon: Search },
     { name: "Messages", path: "/messages", icon: MessageSquare },
     { name: "Hustle", path: "/hustle", icon: Compass },
     { name: "Collab", path: "/collab", icon: Zap },
     { name: "Squad", path: "/friends", icon: Users },
-    { name: "Profile", path: "/profile", icon: User },
   ];
 
   const [hasRequest, setHasRequest] = useState(false);
@@ -38,7 +36,7 @@ export default function BottomNav() {
 
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 px-2 pb-[calc(0.6rem+env(safe-area-inset-bottom))] pt-4 sm:px-3 bg-gradient-to-t from-[#0A0A0F]/95 via-[#0A0A0F]/70 to-transparent backdrop-blur-md border-t border-white/5">
-      <div className="mx-auto grid max-w-xl grid-cols-7 items-center rounded-[1.6rem] px-1 py-1 bg-[#121620]/80 border border-white/8 backdrop-blur-2xl shadow-[0_-8px_32px_rgba(0,0,0,0.5)] sm:rounded-[2rem] sm:px-1.5 sm:py-1.5">
+      <div className="mx-auto grid max-w-xl grid-cols-5 items-center rounded-[1.6rem] px-1 py-1 bg-[#121620]/80 border border-white/8 backdrop-blur-2xl shadow-[0_-8px_32px_rgba(0,0,0,0.5)] sm:rounded-[2rem] sm:px-1.5 sm:py-1.5">
         {navItems.map((item) => {
           const isActive = pathname === item.path;
           const Icon = item.icon;
