@@ -54,6 +54,7 @@ export default function Home() {
   });
   const [selectedGradient, setSelectedGradient] = useState("from-orange-500 via-rose-500 to-purple-600");
   const [dailyCampusDrop, setDailyCampusDrop] = useState([]);
+  const [currentDropIndex, setCurrentDropIndex] = useState(0);
   const [collegeLeaderboard, setCollegeLeaderboard] = useState([]);
 
   const filteredPosts = posts.filter(post => {
@@ -313,10 +314,14 @@ export default function Home() {
         setConfessionText("");
         setToastMsg("Confession dropped!");
         setTimeout(() => setToastMsg(""), 2000);
-        fetchConfessions();
+        fetchConfessions(confessionScope);
+      } else {
+        const data = await res.json();
+        alert(data.message || "Failed to drop confession");
       }
     } catch (err) {
       console.error(err);
+      alert("Error dropping confession");
     }
   };
 
@@ -691,50 +696,106 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="grid min-w-0 gap-3 lg:grid-cols-[0.7fr_1.3fr]">
-          <div className="app-panel min-w-0 rounded-[1.6rem] p-4 sm:rounded-[2rem] sm:p-5">
+        <section className="grid min-w-0 gap-6 grid-cols-1">
+          {/* Daily Campus Drop Slider */}
+          <div className="app-panel min-w-0 rounded-[1.6rem] p-4 sm:rounded-[2rem] sm:p-5 relative">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-300">Daily Campus Drop</p>
-                <h2 className="mt-1 text-lg font-black tracking-tight text-white">3 people worth knowing today</h2>
+                <h2 className="mt-1 text-[clamp(1.1rem,3vw,1.25rem)] font-black tracking-tight text-white">People worth knowing today</h2>
               </div>
               <button
                 onClick={() => router.push('/explore')}
-                className="shrink-0 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-[10px] font-black uppercase tracking-wider text-white/70"
+                className="shrink-0 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-[10px] font-black uppercase tracking-wider text-white/70 hover:bg-white/[0.08] transition-colors"
               >
                 Explore
               </button>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            
+            <div className="relative overflow-hidden w-full">
               {dailyCampusDrop.length === 0 ? (
-                <div className="col-span-3 flex flex-col items-center justify-center rounded-[1.35rem] border border-dashed border-white/10 py-10 text-center">
+                <div className="flex flex-col items-center justify-center rounded-[1.35rem] border border-dashed border-white/10 py-10 text-center">
                   <p className="text-xs font-bold text-white/30">No other students found yet.</p>
-                  <p className="mt-1 text-[10px] text-white/20">More connections will appear as more students join.</p>
+                  <p className="mt-1 text-[10px] text-white/20">Connections will appear as more students join.</p>
                 </div>
-              ) : dailyCampusDrop.map((student) => (
-                <div 
-                  key={student.name} 
-                  className="flex flex-col justify-between rounded-[1.35rem] border border-white/10 bg-white/[0.035] p-4 transition-all hover:border-white/20 hover:bg-white/[0.05]"
-                >
-                  <div>
-                    <div className={`mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${student.color} text-sm font-black text-white shadow-md`}>
-                      {student.name.charAt(0)}
+              ) : (
+                <div className="relative">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={currentDropIndex}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.2 }}
+                      className="w-full"
+                    >
+                      {(() => {
+                        const student = dailyCampusDrop[currentDropIndex];
+                        return (
+                          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 rounded-[1.35rem] border border-white/10 bg-white/[0.035] p-5 transition-all hover:border-white/20 hover:bg-white/[0.05]">
+                            
+                            <div className={`shrink-0 flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-3xl bg-gradient-to-br ${student.color} text-2xl font-black text-white shadow-lg`}>
+                              {student.name.charAt(0)}
+                            </div>
+                            
+                            <div className="flex-1 min-w-0 text-center sm:text-left flex flex-col justify-center h-full">
+                              <h3 className="text-[clamp(1.2rem,4vw,1.5rem)] font-black text-white leading-tight truncate w-full">
+                                {student.name}
+                              </h3>
+                              <p className="text-[clamp(0.75rem,2vw,0.85rem)] font-bold text-white/45 truncate w-full mt-1">
+                                {student.college}
+                              </p>
+                              
+                              <div className="mt-3 bg-white/5 border border-white/5 rounded-xl p-3">
+                                <p className="text-[clamp(0.8rem,2vw,0.9rem)] leading-relaxed text-white/70 italic min-h-[40px]">
+                                  "{student.vibe}"
+                                </p>
+                              </div>
+
+                              <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 w-full">
+                                <span className="inline-flex rounded-full bg-cyan-400/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-cyan-200 border border-cyan-500/20">
+                                  {student.match}
+                                </span>
+                                
+                                <button className="w-full sm:w-auto rounded-full bg-cyan-500 px-5 py-2 text-xs font-black uppercase tracking-widest text-black hover:bg-cyan-400 transition-all shadow-[0_0_15px_rgba(34,211,238,0.2)] hover:shadow-[0_0_20px_rgba(34,211,238,0.4)]">
+                                  Connect +
+                                </button>
+                              </div>
+                            </div>
+
+                          </div>
+                        );
+                      })()}
+                    </motion.div>
+                  </AnimatePresence>
+
+                  {/* Carousel Controls */}
+                  {dailyCampusDrop.length > 1 && (
+                    <div className="mt-4 flex items-center justify-center gap-2">
+                      <button 
+                        onClick={() => setCurrentDropIndex((prev) => (prev > 0 ? prev - 1 : dailyCampusDrop.length - 1))}
+                        className="p-2 rounded-full bg-white/5 text-white/50 hover:bg-white/10 hover:text-white transition-colors"
+                      >
+                        ←
+                      </button>
+                      <div className="flex gap-1.5">
+                        {dailyCampusDrop.map((_, i) => (
+                          <div 
+                            key={i} 
+                            className={`h-1.5 rounded-full transition-all ${i === currentDropIndex ? 'w-6 bg-cyan-400' : 'w-1.5 bg-white/20'}`}
+                          />
+                        ))}
+                      </div>
+                      <button 
+                        onClick={() => setCurrentDropIndex((prev) => (prev < dailyCampusDrop.length - 1 ? prev + 1 : 0))}
+                        className="p-2 rounded-full bg-white/5 text-white/50 hover:bg-white/10 hover:text-white transition-colors"
+                      >
+                        →
+                      </button>
                     </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-black text-white">{student.name}</p>
-                      <p className="mt-0.5 truncate text-[11px] font-bold text-white/45">{student.college}</p>
-                      <p className="mt-3 text-xs leading-relaxed text-white/62 min-h-[40px] break-words">
-                        {student.vibe}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <span className="inline-flex rounded-full bg-cyan-400/10 px-2.5 py-1 text-[10px] font-bold text-cyan-200">
-                      {student.match}
-                    </span>
-                  </div>
+                  )}
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
@@ -819,14 +880,16 @@ export default function Home() {
                   <p className="text-xs font-bold text-white/30">No confessions yet.</p>
                   <p className="mt-1 text-[10px] text-white/20">Be the first to drop one! 🤫</p>
                 </div>
-              ) : confessions.map((confession) => (
-                <div 
-                  key={confession._id} 
-                  className={clsx(
-                    "relative overflow-hidden rounded-2xl p-5 text-white flex flex-col justify-between shadow-xl transition-all duration-300 hover:scale-[1.01]",
-                    confession.gradient ? `bg-gradient-to-br ${confession.gradient}` : "border border-white/8 bg-white/[0.025]"
-                  )}
-                >
+              ) : (
+                <div className="flex flex-col h-[480px] overflow-y-auto snap-y snap-mandatory no-scrollbar gap-4 pb-10">
+                  {confessions.map((confession) => (
+                    <div 
+                      key={confession._id} 
+                      className={clsx(
+                        "snap-start snap-always shrink-0 min-h-[220px] relative overflow-hidden rounded-2xl p-5 text-white flex flex-col justify-between shadow-xl transition-all duration-300 hover:scale-[1.01]",
+                        confession.gradient ? `bg-gradient-to-br ${confession.gradient}` : "border border-white/8 bg-white/[0.025]"
+                      )}
+                    >
                   <div className="absolute inset-0 bg-black/10 mix-blend-overlay pointer-events-none" />
 
                   <div className="absolute top-3 right-4 flex items-center gap-2">
@@ -894,6 +957,8 @@ export default function Home() {
                   </div>
                 </div>
               ))}
+              </div>
+              )}
             </div>
           </div>
         </section>
@@ -905,7 +970,6 @@ export default function Home() {
                 <Trophy size={18} className="text-yellow-300" />
                 <h2 className="text-sm font-black uppercase tracking-[0.16em]">College leaderboard</h2>
               </div>
-              <span className="text-[9px] font-bold uppercase tracking-wider text-white/30">Score = Verified × 10 + 🔥 Heat</span>
             </div>
             <div className="space-y-2">
               {collegeLeaderboard.length === 0 ? (
@@ -940,9 +1004,7 @@ export default function Home() {
                     <div className="min-w-0 flex-1">
                       <p className={clsx("truncate text-sm font-bold", isTop3 ? "text-white" : "text-white/80")}>{item.college}</p>
                       <p className="text-[10px] font-medium text-white/40">
-                        <span className="text-green-400">{item.verifiedCount} verified</span>
-                        {" · "}
-                        <span className="text-orange-400">{item.totalHeat}🔥 heat</span>
+                        <span className="text-green-400">{item.verifiedCount} verified students</span>
                       </p>
                     </div>
                     <div className="text-right">
