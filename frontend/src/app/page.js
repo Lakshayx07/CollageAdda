@@ -311,10 +311,11 @@ export default function Home() {
         body: JSON.stringify({ text: confessionText.trim(), gradient: selectedGradient })
       });
       if (res.ok) {
+        const newConfession = await res.json();
+        setConfessions(prev => [newConfession, ...prev]);
         setConfessionText("");
         setToastMsg("Confession dropped!");
         setTimeout(() => setToastMsg(""), 2000);
-        fetchConfessions(confessionScope);
       } else {
         const data = await res.json();
         alert(data.message || "Failed to drop confession");
@@ -696,9 +697,9 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="grid min-w-0 gap-6 grid-cols-1">
+        <section className="grid min-w-0 gap-6 grid-cols-1 lg:grid-cols-[0.4fr_0.6fr] items-stretch">
           {/* Daily Campus Drop Slider */}
-          <div className="app-panel min-w-0 rounded-[1.6rem] p-4 sm:rounded-[2rem] sm:p-5 relative">
+          <div className="app-panel h-full flex flex-col min-w-0 rounded-[1.6rem] p-4 sm:rounded-[2rem] sm:p-5 relative">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-300">Daily Campus Drop</p>
@@ -712,7 +713,7 @@ export default function Home() {
               </button>
             </div>
             
-            <div className="relative overflow-hidden w-full">
+            <div className="relative overflow-hidden w-full flex-1 flex flex-col justify-center">
               {dailyCampusDrop.length === 0 ? (
                 <div className="flex flex-col items-center justify-center rounded-[1.35rem] border border-dashed border-white/10 py-10 text-center">
                   <p className="text-xs font-bold text-white/30">No other students found yet.</p>
@@ -799,7 +800,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="app-panel min-w-0 rounded-[1.6rem] p-4 sm:rounded-[2rem] sm:p-5">
+          <div className="app-panel h-full flex flex-col min-w-0 rounded-[1.6rem] p-4 sm:rounded-[2rem] sm:p-5">
             <div className="mb-4 flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <div>
@@ -876,12 +877,12 @@ export default function Home() {
               </div>
               
               {confessions.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 py-8 text-center">
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 py-8 text-center flex-1">
                   <p className="text-xs font-bold text-white/30">No confessions yet.</p>
                   <p className="mt-1 text-[10px] text-white/20">Be the first to drop one! 🤫</p>
                 </div>
               ) : (
-                <div className="flex flex-col h-[480px] overflow-y-auto snap-y snap-mandatory no-scrollbar gap-4 pb-10">
+                <div className="flex flex-col flex-1 h-[480px] overflow-y-auto snap-y snap-mandatory no-scrollbar gap-4 pb-10">
                   {confessions.map((confession) => (
                     <div 
                       key={confession._id} 
@@ -893,7 +894,9 @@ export default function Home() {
                   <div className="absolute inset-0 bg-black/10 mix-blend-overlay pointer-events-none" />
 
                   <div className="absolute top-3 right-4 flex items-center gap-2">
-                    <span className="text-[8px] font-black uppercase tracking-[0.2em] text-white/40">Campus Adda ✦ Confession</span>
+                    <span className="text-[8px] font-black uppercase tracking-[0.2em] text-white/40">
+                      Campus Adda ✦ Confession ✦ {confession.createdAt ? new Date(confession.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Just now'}
+                    </span>
                     <button
                       onClick={(e) => { e.stopPropagation(); reportConfession(confession._id); }}
                       title="Report this confession"
