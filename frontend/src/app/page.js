@@ -37,6 +37,7 @@ export default function Home() {
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [confessionText, setConfessionText] = useState("");
   const [confessions, setConfessions] = useState([]);
+  const [confessionCommentInputs, setConfessionCommentInputs] = useState({});
   const [placeholderText, setPlaceholderText] = useState(() => {
     const prompts = [
       "What project are you working on today?",
@@ -49,7 +50,6 @@ export default function Home() {
   });
   const [selectedGradient, setSelectedGradient] = useState("from-orange-500 via-rose-500 to-purple-600");
   const [dailyCampusDrop, setDailyCampusDrop] = useState([]);
-  const [campusEvents, setCampusEvents] = useState([]);
   const [collegeLeaderboard, setCollegeLeaderboard] = useState([]);
 
   const filteredPosts = posts.filter(post => {
@@ -114,6 +114,7 @@ export default function Home() {
       fetchStories();
       fetchLeaderboard();
       fetchDailyCampusDrop();
+      fetchConfessions();
     }
   }, [router]);
 
@@ -255,6 +256,80 @@ export default function Home() {
       }
     } catch (err) {
       console.error("Error fetching campus drop:", err);
+    }
+  };
+
+  const fetchConfessions = async () => {
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      if (!token) return;
+      const res = await fetch(`${apiUrl}/api/confessions`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setConfessions(data);
+      }
+    } catch (err) {
+      console.error("Error fetching confessions:", err);
+    }
+  };
+
+  const handleCreateConfession = async () => {
+    if (!confessionText.trim()) return;
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const res = await fetch(`${apiUrl}/api/confessions`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ text: confessionText.trim(), gradient: selectedGradient })
+      });
+      if (res.ok) {
+        setConfessionText("");
+        setToastMsg("Confession dropped!");
+        setTimeout(() => setToastMsg(""), 2000);
+        fetchConfessions();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const toggleLikeConfession = async (id) => {
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const res = await fetch(`${apiUrl}/api/confessions/${id}/like`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) fetchConfessions();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleCommentConfession = async (id) => {
+    const text = confessionCommentInputs[id];
+    if (!text?.trim()) return;
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const res = await fetch(`${apiUrl}/api/confessions/${id}/comment`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ text })
+      });
+      if (res.ok) {
+        setConfessionCommentInputs(prev => ({ ...prev, [id]: "" }));
+        fetchConfessions();
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -594,7 +669,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="grid min-w-0 gap-3 lg:grid-cols-[1.1fr_0.9fr]">
+        <section className="grid min-w-0 gap-3 lg:grid-cols-[0.7fr_1.3fr]">
           <div className="app-panel min-w-0 rounded-[1.6rem] p-4 sm:rounded-[2rem] sm:p-5">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
@@ -686,21 +761,7 @@ export default function Home() {
                 <div className="mt-3 flex items-center justify-between gap-3 pt-2 border-t border-white/5">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-white/30">Moderated before public</span>
                   <button
-                    onClick={() => {
-                      if (!confessionText.trim()) return;
-                      setConfessions(prev => [
-                        {
-                          college: currentUser?.university || "Your Campus",
-                          text: confessionText.trim(),
-                          heat: 1,
-                          gradient: selectedGradient
-                        },
-                        ...prev,
-                      ]);
-                      setToastMsg("Confession queued anonymously");
-                      setConfessionText("");
-                      setTimeout(() => setToastMsg(""), 2000);
-                    }}
+                    onClick={handleCreateConfession}
                     className="rounded-full bg-orange-400 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-black font-extrabold hover:bg-orange-300 transition-all hover:scale-105 cursor-pointer"
                   >
                     Drop
@@ -713,11 +774,11 @@ export default function Home() {
                   <p className="text-xs font-bold text-white/30">No confessions yet.</p>
                   <p className="mt-1 text-[10px] text-white/20">Be the first to drop one! 🤫</p>
                 </div>
-              ) : confessions.slice(0, 2).map((confession, idx) => (
+              ) : confessions.map((confession) => (
                 <div 
-                  key={`${confession.college}-${idx}`} 
+                  key={confession._id} 
                   className={clsx(
-                    "relative overflow-hidden rounded-2xl p-5 text-white flex flex-col justify-between min-h-[140px] shadow-xl transition-all duration-300 hover:scale-[1.02]",
+                    "relative overflow-hidden rounded-2xl p-5 text-white flex flex-col justify-between shadow-xl transition-all duration-300 hover:scale-[1.01]",
                     confession.gradient ? `bg-gradient-to-br ${confession.gradient}` : "border border-white/8 bg-white/[0.025]"
                   )}
                 >
@@ -731,11 +792,53 @@ export default function Home() {
                     "{confession.text}"
                   </p>
                   
-                  <div className="mt-4 flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.2)]">
-                    <span>📍 {confession.college}</span>
-                    <span className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full backdrop-blur-md">
-                      <Flame size={11} className="fill-white animate-pulse" /> {confession.heat}
-                    </span>
+                  <div className="mt-4 pt-3 border-t border-white/20 flex flex-col gap-3">
+                    <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.2)]">
+                      <span>📍 {confession.college}</span>
+                      <span className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full backdrop-blur-md">
+                        <Flame size={11} className="fill-white animate-pulse" /> {confession.heat} Heat
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between mt-1 relative z-10">
+                      <button 
+                        onClick={() => toggleLikeConfession(confession._id)}
+                        className="flex items-center gap-1.5 text-xs font-bold text-white/80 hover:text-white transition-all bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full backdrop-blur-md cursor-pointer"
+                      >
+                        <Heart size={14} className={confession.likes?.includes(currentUser?._id || currentUser?.id) ? "fill-red-500 text-red-500" : ""} />
+                        <span>{confession.likes?.length || 0}</span>
+                      </button>
+
+                      <div className="flex-1 ml-3 flex items-center bg-black/20 rounded-full px-3 py-1 border border-white/10">
+                        <input
+                          type="text"
+                          placeholder="Add a comment..."
+                          value={confessionCommentInputs[confession._id] || ""}
+                          onChange={(e) => setConfessionCommentInputs(prev => ({ ...prev, [confession._id]: e.target.value }))}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleCommentConfession(confession._id);
+                          }}
+                          className="w-full bg-transparent text-xs text-white placeholder:text-white/40 focus:outline-none"
+                        />
+                        <button 
+                          onClick={() => handleCommentConfession(confession._id)}
+                          className="ml-2 text-white/60 hover:text-white transition-colors cursor-pointer"
+                        >
+                          <Send size={12} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {confession.comments && confession.comments.length > 0 && (
+                      <div className="mt-2 space-y-1.5 max-h-24 overflow-y-auto no-scrollbar bg-black/10 rounded-xl p-2 border border-white/5 relative z-10">
+                        {confession.comments.map((comment, i) => (
+                          <div key={i} className="text-[11px] text-white/80 flex items-start gap-2">
+                            <span className="font-bold text-white/50 text-[9px] uppercase shrink-0 mt-0.5">Anon:</span>
+                            <span className="leading-snug">{comment.text}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -743,30 +846,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="grid min-w-0 gap-3 lg:grid-cols-2">
-          <div className="app-panel rounded-[1.6rem] p-4 sm:rounded-[2rem] sm:p-5">
-            <div className="mb-4 flex items-center gap-2 text-white">
-              <CalendarDays size={18} className="text-cyan-300" />
-              <h2 className="text-sm font-black uppercase tracking-[0.16em]">Campus events</h2>
-            </div>
-            <div className="space-y-2">
-              {campusEvents.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 py-8 text-center">
-                  <p className="text-xs font-bold text-white/30">No upcoming events yet.</p>
-                  <p className="mt-1 text-[10px] text-white/20">Check back soon for campus happenings!</p>
-                </div>
-              ) : campusEvents.map((event) => (
-                <div key={event.title} className="flex items-center justify-between gap-3 rounded-2xl border border-white/8 bg-white/[0.03] p-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-white">{event.title}</p>
-                    <p className="mt-0.5 truncate text-[11px] font-medium text-white/40">{event.college}</p>
-                  </div>
-                  <span className="shrink-0 rounded-full bg-cyan-400/10 px-3 py-1 text-[10px] font-bold text-cyan-200">{event.time}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
+        <section className="grid min-w-0 gap-3 lg:grid-cols-1">
           <div className="app-panel rounded-[1.6rem] p-4 sm:rounded-[2rem] sm:p-5">
             <div className="mb-4 flex items-center gap-2 text-white">
               <Trophy size={18} className="text-yellow-300" />
