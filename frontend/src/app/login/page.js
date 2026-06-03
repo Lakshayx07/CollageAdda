@@ -1,11 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
-import { MapPin, Mail, Lock, School, User as UserIcon, ArrowRight, Zap, Star } from "lucide-react";
+import {
+  ArrowRight,
+  CalendarDays,
+  Lock,
+  Mail,
+  MapPin,
+  Rocket,
+  School,
+  User as UserIcon,
+  Users,
+  VenetianMask,
+  Zap
+} from "lucide-react";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { motion, AnimatePresence } from "framer-motion";
-import clsx from "clsx";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -202,195 +212,226 @@ export default function LoginPage() {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="glass-card relative overflow-hidden rounded-[1.6rem] border border-white/6 p-5 sm:rounded-[2rem] sm:p-9"
+            className="relative overflow-hidden rounded-[1.9rem] border border-[#cfa75d]/20 bg-[radial-gradient(circle_at_74%_12%,rgba(207,167,93,0.14),transparent_24%),linear-gradient(180deg,rgba(18,23,32,0.96),rgba(8,12,17,0.98))] p-6 shadow-[0_28px_90px_rgba(0,0,0,0.46)] sm:p-8"
           >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/10 blur-3xl -z-10" />
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,transparent,rgba(124,92,255,0.08),transparent)]" />
 
-          <div className="space-y-6 sm:space-y-8">
-            <div className="space-y-2">
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-300/80">
-                Start here
-              </p>
-              <h2 className="text-2xl font-black tracking-tight text-white">
-                Step into your college circle
-              </h2>
-              <p className="text-sm leading-6 text-white/54">
-                Sign in with Google for the fastest setup, then choose your campus to unlock the student network.
-              </p>
-            </div>
-
-            {/* 1. Google Login at the TOP */}
-            <div className="flex justify-center w-full">
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={() => alert('Google Login Failed')}
-                theme="filled_black"
-                shape="pill"
-                size="large"
-                text="signin_with"
-                width="100%"
-              />
-            </div>
-
-            <div className="relative flex items-center justify-center">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/5"></div>
+            <div className="relative">
+              <div className="mb-9 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-purple-600 text-white shadow-[0_0_28px_rgba(124,92,255,0.42)]">
+                  <Zap size={20} fill="currentColor" />
+                </div>
+                <p className="text-xl font-black tracking-tight text-white">
+                  Campus<span className="text-purple-400">Adda</span>
+                </p>
               </div>
-              <div className="relative glass rounded-full border border-white/5 px-6 py-1 text-[9px] font-black uppercase tracking-widest text-white/20">
-                Join Campus
-              </div>
-            </div>
 
-            <form onSubmit={handleAuth} className="space-y-6">
-              {/* 2. University Selection below Google */}
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-4">Your Campus</label>
-                <div className="relative group">
-                  <div className={clsx("absolute inset-y-0 left-5 flex items-center pointer-events-none transition-colors z-10", !university ? "text-gray-800" : "text-white/20 group-focus-within:text-purple-500")}>
-                    <School size={18} />
-                  </div>
-                  <select
-                    required
-                    value={university}
-                    onChange={(e) => setUniversity(e.target.value)}
-                    className={clsx(
-                      "w-full appearance-none rounded-2xl py-4 pl-14 pr-12 text-sm font-bold transition-all focus:outline-none cursor-pointer",
-                      !university
-                        ? "border border-cyan-200/45 bg-[linear-gradient(90deg,rgba(240,248,255,0.88),rgba(217,244,247,0.92))] text-slate-900 shadow-[0_0_28px_rgba(34,199,214,0.18)]"
-                        : "glass border border-white/5 text-white focus:border-cyan-300/45"
-                    )}
+              <div className="grid gap-7">
+                <div className="space-y-4">
+                  <h2 className="text-4xl font-black leading-[1.12] tracking-tight text-purple-400 sm:text-5xl">
+                    Your Campus.<br />
+                    Your Community.
+                  </h2>
+                  <p className="max-w-sm text-base leading-7 text-white/78">
+                    Connect with students, discover events, build projects and grow together.
+                  </p>
+                </div>
+
+                <div className="relative min-h-44 overflow-hidden rounded-[1.4rem] border border-white/0">
+                  <div className="absolute inset-x-6 bottom-4 h-8 bg-[#f4cf72]/20 blur-2xl" />
+                  <svg
+                    viewBox="0 0 520 210"
+                    className="relative h-full min-h-44 w-full drop-shadow-[0_0_16px_rgba(244,207,114,0.34)]"
+                    role="img"
+                    aria-label="Campus building illustration"
                   >
-                    <option value="" disabled className="bg-[#0A0A0F] text-gray-400">
-                      Select Your University
-                    </option>
-                    {colleges.map((c, idx) => (
-                      <option key={c._id || c.id || idx} value={c.name} className="bg-[#0A0A0F] text-white">{c.name}</option>
-                    ))}
-                  </select>
-                  <div className={clsx("absolute inset-y-0 right-5 flex items-center pointer-events-none z-10", !university ? "text-gray-800" : "text-white/20")}>
-                    <MapPin size={16} />
-                  </div>
+                    <g fill="none" stroke="#f4cf72" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3">
+                      <path d="M182 177h166M225 177v-73h80v73M211 104h108M237 104l28-32 28 32M265 72V43M265 43h35l-8 12 8 12h-35" />
+                      <path d="M245 177v-34c0-12 9-22 20-22s20 10 20 22v34M260 139h10M168 177v-62h57M348 177v-62h57M158 115h68M348 115h68" />
+                      <path d="M184 134h12v29h-12zM211 134h12v29h-12zM370 134h12v29h-12zM397 134h12v29h-12z" />
+                      <circle cx="265" cy="111" r="18" />
+                      <path d="M265 101v12l8 5M109 177c0-18 14-32 31-32s31 14 31 32M132 145c0-11 8-20 18-20s18 9 18 20M384 177c0-18 14-32 31-32s31 14 31 32M397 146c0-12 9-22 20-22s20 10 20 22" />
+                      <path d="M96 102c9-17 29-25 47-16 6-18 30-19 40-4 7-3 16-1 22 4M407 93c9-17 29-25 47-16 6-18 30-19 40-4 7-3 16-1 22 4" opacity=".7" />
+                    </g>
+                    <g fill="#f4cf72">
+                      <circle cx="132" cy="41" r="2" />
+                      <circle cx="154" cy="66" r="1.5" />
+                      <circle cx="370" cy="38" r="2.5" />
+                      <circle cx="402" cy="62" r="1.5" />
+                      <path d="M439 35l3 7 7 3-7 3-3 7-3-7-7-3 7-3zM103 69l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" />
+                    </g>
+                  </svg>
                 </div>
-              </div>
 
-              {/* 3. Access Campus Button below University */}
-              <motion.button
-                type="submit"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                disabled={isLoading}
-                className="flex h-14 w-full items-center justify-center rounded-[1.35rem] border border-white/10 bg-[linear-gradient(135deg,rgba(124,92,255,0.22),rgba(34,199,214,0.2))] py-4 text-[10px] font-black uppercase tracking-[0.16em] text-white shadow-xl transition-all hover:border-white/20 disabled:opacity-50 sm:h-16 sm:rounded-[1.5rem] sm:py-5 sm:text-[11px] sm:tracking-[0.2em]"
-              >
-                {isLoading ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <span className="flex items-center">
-                    {isSignUp ? "Create My Account" : "Access Campus"}
-                    <ArrowRight size={16} className="ml-2" />
-                  </span>
-                )}
-              </motion.button>
-
-              <div className="relative flex items-center justify-center my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-white/5 border-dashed"></div>
-                </div>
-                <div className="relative bg-[#0F1420] px-4 py-1 text-[8px] font-bold uppercase tracking-widest text-white/10">
-                  Or use email access
-                </div>
-              </div>
-
-              {/* 4. Email and Secret Key at the BOTTOM */}
-              <AnimatePresence mode="wait">
-                {isSignUp && (
-                  <motion.div
-                    key="signup-fields"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="space-y-6 overflow-hidden"
-                  >
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-4">Full Name</label>
-                      <div className="relative group">
-                        <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-white/20 group-focus-within:text-purple-500 transition-colors">
-                          <UserIcon size={18} />
-                        </div>
-                        <input
-                          type="text"
-                          required={isSignUp}
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          placeholder="Rahul Sharma"
-                          className="w-full glass border border-white/5 rounded-2xl py-4 pl-14 pr-6 text-sm text-white focus:outline-none focus:border-purple-500/50 transition-all placeholder:text-white/10"
-                        />
-                      </div>
+                <form onSubmit={handleAuth} className="space-y-5">
+                  <div className="relative group">
+                    <div className="pointer-events-none absolute inset-y-0 left-6 z-10 flex items-center text-[#e8c775] transition-colors group-focus-within:text-purple-400">
+                      <School size={22} />
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-4">College Email</label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-white/20 group-focus-within:text-purple-500 transition-colors">
-                    <Mail size={18} />
+                    <select
+                      required
+                      value={university}
+                      onChange={(e) => setUniversity(e.target.value)}
+                      className="h-16 w-full cursor-pointer appearance-none rounded-2xl border border-[#f4cf72]/80 bg-black/48 pl-16 pr-14 text-base font-bold text-[#e8c775] shadow-[0_0_24px_rgba(244,207,114,0.2)] transition-all focus:border-purple-400 focus:outline-none focus:shadow-[0_0_28px_rgba(124,92,255,0.28)]"
+                    >
+                      <option value="" disabled className="bg-[#0A0A0F] text-gray-400">
+                        Select Your Campus
+                      </option>
+                      {colleges.map((c, idx) => (
+                        <option key={c._id || c.id || idx} value={c.name} className="bg-[#0A0A0F] text-white">{c.name}</option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-6 z-10 flex items-center text-[#e8c775]">
+                      <MapPin size={18} />
+                    </div>
                   </div>
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="student@college.edu"
-                    className="w-full glass border border-white/5 rounded-2xl py-4 pl-14 pr-6 text-sm text-white focus:outline-none focus:border-purple-500/50 transition-all placeholder:text-white/10"
-                  />
+
+                  <div className="relative">
+                    <div className="pointer-events-none flex h-16 w-full items-center justify-center rounded-2xl border border-purple-500/85 bg-black/28 text-base font-bold text-white shadow-[0_0_22px_rgba(124,92,255,0.22)]">
+                      Continue with Google
+                    </div>
+                    <div className="absolute inset-0 z-10 overflow-hidden rounded-2xl opacity-0">
+                      <GoogleLogin
+                        onSuccess={handleGoogleSuccess}
+                        onError={() => alert('Google Login Failed')}
+                        theme="filled_black"
+                        shape="rectangular"
+                        size="large"
+                        text="continue_with"
+                        width="480"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="relative flex items-center justify-center py-1">
+                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#f4cf72]/32 to-transparent" />
+                    <span className="px-4 text-[10px] font-black uppercase tracking-[0.18em] text-white/45">
+                      Or use email access
+                    </span>
+                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#f4cf72]/32 to-transparent" />
+                  </div>
+
+                  <AnimatePresence mode="wait">
+                    {isSignUp && (
+                      <motion.div
+                        key="signup-fields"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="space-y-5 overflow-hidden"
+                      >
+                        <div className="space-y-2">
+                          <label className="ml-4 text-[10px] font-black uppercase tracking-widest text-white/38">Full Name</label>
+                          <div className="relative group">
+                            <div className="pointer-events-none absolute inset-y-0 left-5 flex items-center text-white/24 transition-colors group-focus-within:text-purple-400">
+                              <UserIcon size={18} />
+                            </div>
+                            <input
+                              type="text"
+                              required={isSignUp}
+                              value={name}
+                              onChange={(e) => setName(e.target.value)}
+                              placeholder="Rahul Sharma"
+                              className="h-14 w-full rounded-2xl border border-white/10 bg-[#111723]/72 pl-14 pr-6 text-sm text-white transition-all placeholder:text-white/18 focus:border-purple-500/70 focus:outline-none"
+                            />
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <div className="space-y-2">
+                    <label className="ml-4 text-[10px] font-black uppercase tracking-widest text-white/38">College Email</label>
+                    <div className="relative group">
+                      <div className="pointer-events-none absolute inset-y-0 left-5 flex items-center text-white/24 transition-colors group-focus-within:text-purple-400">
+                        <Mail size={18} />
+                      </div>
+                      <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="student@college.edu"
+                        className="h-14 w-full rounded-2xl border border-white/10 bg-[#111723]/72 pl-14 pr-6 text-sm text-white transition-all placeholder:text-white/18 focus:border-purple-500/70 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="ml-4 text-[10px] font-black uppercase tracking-widest text-white/38">Secret Key</label>
+                    <div className="relative group">
+                      <div className="pointer-events-none absolute inset-y-0 left-5 flex items-center text-white/24 transition-colors group-focus-within:text-purple-400">
+                        <Lock size={18} />
+                      </div>
+                      <input
+                        type="password"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="h-14 w-full rounded-2xl border border-white/10 bg-[#111723]/72 pl-14 pr-6 text-sm text-white transition-all placeholder:text-white/18 focus:border-purple-500/70 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <motion.button
+                    type="submit"
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.98 }}
+                    disabled={isLoading}
+                    className="flex h-14 w-full items-center justify-center rounded-2xl border border-white/8 bg-[linear-gradient(135deg,rgba(124,92,255,0.8),rgba(244,207,114,0.74))] text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-[0_18px_36px_rgba(124,92,255,0.22)] transition-all disabled:opacity-50"
+                  >
+                    {isLoading ? (
+                      <div className="h-5 w-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                    ) : (
+                      <span className="flex items-center">
+                        {isSignUp ? "Create Account" : "Access Campus"}
+                        <ArrowRight size={17} className="ml-2" />
+                      </span>
+                    )}
+                  </motion.button>
+                </form>
+
+                <div className="space-y-5">
+                  <div className="flex items-center justify-center gap-4">
+                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#f4cf72]/36 to-transparent" />
+                    <p className="text-base font-bold text-white">Why join CampusAdda?</p>
+                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#f4cf72]/36 to-transparent" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                    {[
+                      { icon: Users, title: "Meet Students", copy: "Connect with peers" },
+                      { icon: CalendarDays, title: "Campus Events", copy: "Discover workshops" },
+                      { icon: Rocket, title: "Build & Collab", copy: "Find teammates" },
+                      { icon: VenetianMask, title: "Anonymous Adda", copy: "Share freely" }
+                    ].map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <div key={item.title} className="text-center">
+                          <Icon className="mx-auto mb-2 text-purple-400" size={24} />
+                          <p className="text-[11px] font-black text-white">{item.title}</p>
+                          <p className="mt-1 text-[10px] leading-4 text-white/54">{item.copy}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <p className="text-sm font-semibold text-white/38">
+                    {isSignUp ? "Already on CampusAdda?" : "New on CampusAdda?"}
+                    <button
+                      type="button"
+                      onClick={() => setIsSignUp(!isSignUp)}
+                      className="ml-2 font-black text-purple-400 transition-colors hover:text-purple-300"
+                    >
+                      {isSignUp ? "Sign In" : "Create Account"}
+                    </button>
+                  </p>
                 </div>
               </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-4">Secret Key</label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-white/20 group-focus-within:text-purple-500 transition-colors">
-                    <Lock size={18} />
-                  </div>
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full glass border border-white/5 rounded-2xl py-4 pl-14 pr-6 text-sm text-white focus:outline-none focus:border-purple-500/50 transition-all placeholder:text-white/10"
-                  />
-                </div>
-              </div>
-            </form>
-          </div>
-
-          <div className="mt-10 text-center">
-            <p className="text-[11px] text-white/20 font-bold">
-              {isSignUp ? "Already part of the squad?" : "New on campus?"}
-              <button
-                type="button"
-                onClick={() => setIsSignUp(!isSignUp)}
-                className="ml-2 text-purple-400 hover:text-purple-300 font-black uppercase tracking-wider underline underline-offset-4 decoration-purple-500/30"
-              >
-                {isSignUp ? "Sign In" : "Register"}
-              </button>
-            </p>
-          </div>
-        </motion.div>
-
-        {/* Footer info */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="mt-8 flex items-center justify-center space-x-6 text-[9px] text-white/10 font-black uppercase tracking-[0.2em]"
-        >
-          <div className="flex items-center"><Star size={10} className="mr-1" /> Terms</div>
-          <div className="flex items-center"><Star size={10} className="mr-1" /> Privacy</div>
-          <div className="flex items-center"><Star size={10} className="mr-1" /> Help</div>
-        </motion.div>
+            </div>
+          </motion.div>
       </div>
     </div>
     </div>
