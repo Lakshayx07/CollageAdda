@@ -212,36 +212,36 @@ export default function LoginPage() {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="relative overflow-hidden rounded-[1.9rem] border border-[#cfa75d]/20 bg-[radial-gradient(circle_at_74%_12%,rgba(207,167,93,0.14),transparent_24%),linear-gradient(180deg,rgba(18,23,32,0.96),rgba(8,12,17,0.98))] p-5 shadow-[0_28px_90px_rgba(0,0,0,0.46)] sm:p-6"
+            className="relative overflow-hidden rounded-[1.55rem] border border-[#cfa75d]/22 bg-[radial-gradient(circle_at_74%_12%,rgba(207,167,93,0.16),transparent_24%),linear-gradient(180deg,rgba(18,23,32,0.96),rgba(8,12,17,0.98))] p-4 shadow-[0_24px_72px_rgba(0,0,0,0.42)]"
           >
-            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,transparent,rgba(124,92,255,0.08),transparent)]" />
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,transparent,rgba(244,207,114,0.08),transparent)]" />
 
             <div className="relative">
-              <div className="mb-5 flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-purple-600 text-white shadow-[0_0_28px_rgba(124,92,255,0.42)]">
+              <div className="mb-3 flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#d7ad52] text-[#111017] shadow-[0_0_24px_rgba(244,207,114,0.34)]">
                   <Zap size={18} fill="currentColor" />
                 </div>
-                <p className="text-lg font-black tracking-tight text-white">
-                  Campus<span className="text-purple-400">Adda</span>
+                <p className="text-base font-black tracking-tight text-white">
+                  Campus<span className="text-[#f4cf72]">Adda</span>
                 </p>
               </div>
 
-              <div className="grid gap-4">
-                <div className="space-y-3">
-                  <h2 className="text-3xl font-black leading-[1.08] tracking-tight text-purple-400 sm:text-4xl">
+              <div className="grid gap-2.5">
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-black leading-[1.04] tracking-tight text-[#f4cf72]">
                     Your Campus.<br />
                     Your Community.
                   </h2>
-                  <p className="max-w-sm text-sm leading-6 text-white/72">
+                  <p className="max-w-sm text-[11px] leading-5 text-white/68">
                     Connect with students, discover events, build projects and grow together.
                   </p>
                 </div>
 
-                <div className="relative min-h-32 overflow-hidden rounded-[1.4rem] border border-white/0 sm:min-h-36">
-                  <div className="absolute inset-x-6 bottom-4 h-8 bg-[#f4cf72]/20 blur-2xl" />
+                <div className="relative min-h-24 overflow-hidden rounded-[1.1rem] border border-white/0 sm:min-h-28">
+                  <div className="absolute inset-x-10 bottom-4 h-6 bg-[#f4cf72]/18 blur-2xl" />
                   <svg
                     viewBox="0 0 520 210"
-                    className="relative h-full min-h-32 w-full drop-shadow-[0_0_16px_rgba(244,207,114,0.34)] sm:min-h-36"
+                    className="relative h-full min-h-24 w-full drop-shadow-[0_0_14px_rgba(244,207,114,0.3)] sm:min-h-28"
                     role="img"
                     aria-label="Campus building illustration"
                   >
@@ -263,16 +263,16 @@ export default function LoginPage() {
                   </svg>
                 </div>
 
-                <form onSubmit={handleAuth} className="space-y-3.5">
+                <form onSubmit={handleAuth} className="space-y-2.5">
                   <div className="relative group">
-                    <div className="pointer-events-none absolute inset-y-0 left-5 z-10 flex items-center text-[#e8c775] transition-colors group-focus-within:text-purple-400">
-                      <School size={19} />
+                    <div className="pointer-events-none absolute inset-y-0 left-5 z-10 flex items-center text-[#e8c775] transition-colors group-focus-within:text-[#f4cf72]">
+                      <School size={18} />
                     </div>
                     <select
                       required
                       value={university}
                       onChange={(e) => setUniversity(e.target.value)}
-                      className="h-13 w-full cursor-pointer appearance-none rounded-2xl border border-[#f4cf72]/80 bg-black/48 pl-14 pr-12 text-sm font-bold text-[#e8c775] shadow-[0_0_24px_rgba(244,207,114,0.2)] transition-all focus:border-purple-400 focus:outline-none focus:shadow-[0_0_28px_rgba(124,92,255,0.28)]"
+                      className="h-10 w-full cursor-pointer appearance-none rounded-xl border border-[#f4cf72]/78 bg-black/48 pl-13 pr-12 text-xs font-bold text-[#e8c775] shadow-[0_0_18px_rgba(244,207,114,0.16)] transition-all focus:border-[#f4cf72] focus:outline-none focus:shadow-[0_0_22px_rgba(244,207,114,0.2)]"
                     >
                       <option value="" disabled className="bg-[#0A0A0F] text-gray-400">
                         Select Your Campus
@@ -286,8 +286,8 @@ export default function LoginPage() {
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-purple-500/85 bg-black/28 p-1.5 shadow-[0_0_22px_rgba(124,92,255,0.22)]">
-                    <div className="flex h-11 w-full items-center justify-center overflow-hidden rounded-xl bg-[#131313]">
+                  <div className="rounded-xl border border-[#f4cf72]/78 bg-black/28 p-1.5 shadow-[0_0_20px_rgba(244,207,114,0.18)]">
+                    <div className="flex h-9 w-full items-center justify-center overflow-hidden rounded-lg bg-[#131313]">
                       <GoogleLogin
                         onSuccess={handleGoogleSuccess}
                         onError={() => alert('Google Login Failed')}
@@ -295,7 +295,7 @@ export default function LoginPage() {
                         shape="rectangular"
                         size="large"
                         text="continue_with"
-                        width="420"
+                        width="370"
                       />
                     </div>
                   </div>
@@ -315,12 +315,12 @@ export default function LoginPage() {
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        className="space-y-3.5 overflow-hidden"
+                        className="space-y-3 overflow-hidden"
                       >
                         <div className="space-y-1.5">
-                          <label className="ml-4 text-[9px] font-black uppercase tracking-widest text-white/38">Full Name</label>
+                          <label className="ml-4 text-[8px] font-black uppercase tracking-widest text-white/38">Full Name</label>
                           <div className="relative group">
-                            <div className="pointer-events-none absolute inset-y-0 left-5 flex items-center text-white/24 transition-colors group-focus-within:text-purple-400">
+                            <div className="pointer-events-none absolute inset-y-0 left-5 flex items-center text-white/24 transition-colors group-focus-within:text-[#f4cf72]">
                               <UserIcon size={18} />
                             </div>
                             <input
@@ -329,7 +329,7 @@ export default function LoginPage() {
                               value={name}
                               onChange={(e) => setName(e.target.value)}
                               placeholder="Rahul Sharma"
-                              className="h-12 w-full rounded-2xl border border-white/10 bg-[#111723]/72 pl-14 pr-6 text-sm text-white transition-all placeholder:text-white/18 focus:border-purple-500/70 focus:outline-none"
+                              className="h-10 w-full rounded-xl border border-white/10 bg-[#111723]/72 pl-14 pr-6 text-xs text-white transition-all placeholder:text-white/18 focus:border-[#f4cf72]/70 focus:outline-none"
                             />
                           </div>
                         </div>
@@ -338,9 +338,9 @@ export default function LoginPage() {
                   </AnimatePresence>
 
                   <div className="space-y-1.5">
-                    <label className="ml-4 text-[9px] font-black uppercase tracking-widest text-white/38">College Email</label>
+                    <label className="ml-4 text-[8px] font-black uppercase tracking-widest text-white/38">College Email</label>
                     <div className="relative group">
-                      <div className="pointer-events-none absolute inset-y-0 left-5 flex items-center text-white/24 transition-colors group-focus-within:text-purple-400">
+                      <div className="pointer-events-none absolute inset-y-0 left-5 flex items-center text-white/24 transition-colors group-focus-within:text-[#f4cf72]">
                         <Mail size={18} />
                       </div>
                       <input
@@ -349,15 +349,15 @@ export default function LoginPage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="student@college.edu"
-                        className="h-12 w-full rounded-2xl border border-white/10 bg-[#111723]/72 pl-14 pr-6 text-sm text-white transition-all placeholder:text-white/18 focus:border-purple-500/70 focus:outline-none"
+                        className="h-10 w-full rounded-xl border border-white/10 bg-[#111723]/72 pl-14 pr-6 text-xs text-white transition-all placeholder:text-white/18 focus:border-[#f4cf72]/70 focus:outline-none"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="ml-4 text-[9px] font-black uppercase tracking-widest text-white/38">Secret Key</label>
+                    <label className="ml-4 text-[8px] font-black uppercase tracking-widest text-white/38">Secret Key</label>
                     <div className="relative group">
-                      <div className="pointer-events-none absolute inset-y-0 left-5 flex items-center text-white/24 transition-colors group-focus-within:text-purple-400">
+                      <div className="pointer-events-none absolute inset-y-0 left-5 flex items-center text-white/24 transition-colors group-focus-within:text-[#f4cf72]">
                         <Lock size={18} />
                       </div>
                       <input
@@ -366,7 +366,7 @@ export default function LoginPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="h-12 w-full rounded-2xl border border-white/10 bg-[#111723]/72 pl-14 pr-6 text-sm text-white transition-all placeholder:text-white/18 focus:border-purple-500/70 focus:outline-none"
+                        className="h-10 w-full rounded-xl border border-white/10 bg-[#111723]/72 pl-14 pr-6 text-xs text-white transition-all placeholder:text-white/18 focus:border-[#f4cf72]/70 focus:outline-none"
                       />
                     </div>
                   </div>
@@ -376,7 +376,7 @@ export default function LoginPage() {
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.98 }}
                     disabled={isLoading}
-                    className="flex h-12 w-full items-center justify-center rounded-2xl border border-white/8 bg-[linear-gradient(135deg,rgba(124,92,255,0.8),rgba(244,207,114,0.74))] text-[10px] font-black uppercase tracking-[0.18em] text-white shadow-[0_18px_36px_rgba(124,92,255,0.22)] transition-all disabled:opacity-50"
+                    className="flex h-10 w-full items-center justify-center rounded-xl border border-[#f4cf72]/25 bg-[linear-gradient(135deg,rgba(196,143,48,0.95),rgba(244,207,114,0.78))] text-[9px] font-black uppercase tracking-[0.18em] text-[#10131d] shadow-[0_14px_26px_rgba(244,207,114,0.17)] transition-all disabled:opacity-50"
                   >
                     {isLoading ? (
                       <div className="h-5 w-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
@@ -389,13 +389,13 @@ export default function LoginPage() {
                   </motion.button>
                 </form>
 
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <div className="flex items-center justify-center gap-3">
                     <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#f4cf72]/36 to-transparent" />
-                    <p className="text-sm font-bold text-white">Why join CampusAdda?</p>
+                    <p className="text-xs font-bold text-white">Why join CampusAdda?</p>
                     <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#f4cf72]/36 to-transparent" />
                   </div>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                     {[
                       { icon: Users, title: "Meet Students", copy: "Connect with peers" },
                       { icon: CalendarDays, title: "Campus Events", copy: "Discover workshops" },
@@ -405,9 +405,9 @@ export default function LoginPage() {
                       const Icon = item.icon;
                       return (
                         <div key={item.title} className="text-center">
-                          <Icon className="mx-auto mb-1.5 text-purple-400" size={21} />
-                          <p className="text-[10px] font-black text-white">{item.title}</p>
-                          <p className="mt-0.5 text-[9px] leading-4 text-white/54">{item.copy}</p>
+                          <Icon className="mx-auto mb-1 text-[#f4cf72]" size={17} />
+                          <p className="text-[8px] font-black text-white">{item.title}</p>
+                          <p className="mt-0.5 text-[8px] leading-3 text-white/54">{item.copy}</p>
                         </div>
                       );
                     })}
@@ -415,12 +415,12 @@ export default function LoginPage() {
                 </div>
 
                 <div className="text-center">
-                  <p className="text-xs font-semibold text-white/38">
+                  <p className="text-[10px] font-semibold text-white/38">
                     {isSignUp ? "Already on CampusAdda?" : "New on CampusAdda?"}
                     <button
                       type="button"
                       onClick={() => setIsSignUp(!isSignUp)}
-                      className="ml-2 font-black text-purple-400 transition-colors hover:text-purple-300"
+                      className="ml-2 font-black text-[#f4cf72] transition-colors hover:text-[#ffe29a]"
                     >
                       {isSignUp ? "Sign In" : "Create Account"}
                     </button>
