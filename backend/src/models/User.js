@@ -10,26 +10,35 @@ const userSchema = mongoose.Schema({
   isPremium: { type: Boolean, default: false },
   profilePic: { type: String, default: '' },
   instagram: { type: String, default: '' },
+  linkedin: { type: String, default: '' },
+  github: { type: String, default: '' },
+  phone: { type: String, default: '' },
   snapchat: { type: String, default: '' },
   interests: [{ type: String }],
   goals: [{ type: String }],
   sports: [{ type: String }],
   year: { type: String, default: '' },
+  passOutBatch: { type: String, default: '' },
+  course: { type: String, default: '' },
+  branch: { type: String, default: '' },
+  studyYear: { type: String, default: '' },
+  onboardingComplete: { type: Boolean, default: false },
+  onboardingStep: { type: Number, default: 1 },
   connectedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   skippedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   
   // Verification System Fields
-  isVerified: { type: Boolean, default: true },
+  isVerified: { type: Boolean, default: false },
   verificationStatus: { 
     type: String, 
     enum: ['unverified', 'pending', 'verified', 'rejected'], 
-    default: 'verified' 
+    default: 'unverified' 
   },
   verificationMethod: { 
     type: String, 
-    enum: ['email', 'manual', 'none'], 
+    enum: ['email', 'manual', 'profile', 'none'], 
     default: 'none' 
   },
   collegeEmail: { type: String, sparse: true },

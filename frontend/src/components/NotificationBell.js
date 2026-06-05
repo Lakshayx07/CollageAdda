@@ -174,8 +174,9 @@ export default function NotificationBell() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[11px] text-white/90 leading-tight">
-                          <span className="font-black text-white mr-1">
+                          <span className="inline-flex items-center font-black text-white mr-1">
                             {notif.sender?.name}
+                            <VerifiedBadge user={notif.sender} size={12} />
                           </span> 
                           {notif.text}
                         </p>

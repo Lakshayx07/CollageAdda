@@ -93,6 +93,10 @@ export default function Home() {
           });
           if (res.ok) {
             const profileData = await res.json();
+            if (!profileData.onboardingComplete) {
+              router.push("/onboarding");
+              return;
+            }
             setCurrentUser(profileData);
             localStorage.setItem('collegeadda_user', JSON.stringify(profileData));
           }
@@ -143,7 +147,8 @@ export default function Home() {
           mediaType: p.mediaType,
           poll: p.poll,
           authorFollowers: p.author?.followers || [],
-          authorFollowing: p.author?.following || []
+          authorFollowing: p.author?.following || [],
+          authorUser: p.author || { isVerified: false }
         }));
         setPosts(formatted);
       }
@@ -241,6 +246,7 @@ export default function Home() {
         setDailyCampusDrop(others.slice(0, 3).map((u, idx) => ({
           name: u.name,
           college: u.university || "Campus Member",
+          isVerified: u.isVerified,
           vibe: (u.interests && u.interests.length > 0)
             ? u.interests.slice(0, 3).join(', ')
             : (u.bio || "No bio added yet"),
@@ -1243,7 +1249,7 @@ export default function Home() {
                   <div>
                     <h3 className="text-base font-bold text-white flex items-center gap-2">
                       {post.author}
-                      <VerifiedBadge user={{ followers: post.authorFollowers, following: post.authorFollowing }} size={16} /> 
+                      <VerifiedBadge user={post.authorUser} size={16} /> 
                     </h3>
                     <p className="text-xs text-white/40 font-medium">{post.university} • {post.time}</p>
                   </div>

@@ -4,6 +4,7 @@ import { Check, Code, Palette, Shield, X, Zap, Plus, Users, Clock, Briefcase, Lo
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
+import VerifiedBadge from "@/components/VerifiedBadge";
 
 const URGENCY_COLORS = {
   High: "text-red-400 bg-red-500/10 border-red-500/20",
@@ -219,7 +220,10 @@ export default function CollabPage() {
                       {cards[0].author?.name?.charAt(0) || "?"}
                     </div>
                     <div>
-                      <p className="text-sm font-black text-white">{cards[0].author?.name || "Campus Student"}</p>
+                      <div className="flex items-center">
+                        <p className="text-sm font-black text-white">{cards[0].author?.name || "Campus Student"}</p>
+                        <VerifiedBadge user={cards[0].author} size={14} />
+                      </div>
                       <p className="text-[11px] text-white/50 font-medium">{cards[0].yearMajor}</p>
                     </div>
                   </div>

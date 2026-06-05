@@ -1,0 +1,402 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, ArrowRight, Camera, Check, Code, Link, PartyPopper, Phone, SkipForward, Sparkles, User } from "lucide-react";
+import VerifiedBadge from "@/components/VerifiedBadge";
+import clsx from "clsx";
+
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001").trim();
+
+const batchOptions = ["2024", "2025", "2026", "2027", "2028", "2029", "2030"];
+const courseOptions = ["B.Tech", "BCA", "MCA", "MBA", "B.Sc", "M.Tech", "B.Com", "BA", "Other"];
+const studyYearOptions = ["1st Year", "2nd Year", "3rd Year", "4th Year", "Alumni"];
+const interestOptions = [
+  "Hackathons",
+  "Coding",
+  "Design",
+  "Gaming",
+  "Music",
+  "Sports",
+  "Placements",
+  "Startups",
+  "Content Creation",
+  "Photography",
+  "Reading",
+  "Cultural Events"
+];
+
+const emptyForm = {
+  name: "",
+  profilePic: "",
+  passOutBatch: "",
+  course: "",
+  branch: "",
+  studyYear: "",
+  interests: [],
+  bio: "",
+  phone: "",
+  linkedin: "",
+  github: "",
+  instagram: ""
+};
+
+const initialsAvatar = (name) => (
+  `https://ui-avatars.com/api/?name=${encodeURIComponent(name || "Campus Student")}&background=2563EB&color=fff&bold=true`
+);
+
+export default function OnboardingPage() {
+  const router = useRouter();
+  const [user, setUser] = useState(null);
+  const [step, setStep] = useState(1);
+  const [form, setForm] = useState(emptyForm);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const completedRequiredFields = useMemo(() => {
+    return Boolean(
+      form.name.trim() &&
+      form.profilePic &&
+      form.passOutBatch &&
+      form.course &&
+      form.branch.trim() &&
+      form.studyYear &&
+      form.interests.length >= 3
+    );
+  }, [form]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("collegeadda_token");
+    const stored = localStorage.getItem("collegeadda_user");
+    if (!token || !stored) {
+      router.push("/login");
+      return;
+    }
+
+    const localUser = JSON.parse(stored);
+    setUser(localUser);
+    setForm({
+      ...emptyForm,
+      name: localUser.name || "",
+      profilePic: localUser.profilePic || "",
+      passOutBatch: localUser.passOutBatch || "",
+      course: localUser.course || "",
+      branch: localUser.branch || "",
+      studyYear: localUser.studyYear || localUser.year || "",
+      interests: localUser.interests || [],
+      bio: localUser.bio || "",
+      phone: localUser.phone || "",
+      linkedin: localUser.linkedin || "",
+      github: localUser.github || "",
+      instagram: localUser.instagram || ""
+    });
+    setStep(Math.min(Math.max(localUser.onboardingStep || 1, 1), 10));
+
+    const syncProfile = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/users/profile`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const profile = await res.json();
+          if (profile.onboardingComplete) {
+            router.push("/");
+            return;
+          }
+          setUser(profile);
+          localStorage.setItem("collegeadda_user", JSON.stringify(profile));
+          setForm({
+            ...emptyForm,
+            name: profile.name || "",
+            profilePic: profile.profilePic || "",
+            passOutBatch: profile.passOutBatch || "",
+            course: profile.course || "",
+            branch: profile.branch || "",
+            studyYear: profile.studyYear || profile.year || "",
+            interests: profile.interests || [],
+            bio: profile.bio || "",
+            phone: profile.phone || "",
+            linkedin: profile.linkedin || "",
+            github: profile.github || "",
+            instagram: profile.instagram || ""
+          });
+          setStep(Math.min(Math.max(profile.onboardingStep || 1, 1), 10));
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    syncProfile();
+  }, [router]);
+
+  const saveProgress = async (nextStep, complete = false, overrides = {}) => {
+    const token = localStorage.getItem("collegeadda_token");
+    if (!token) return false;
+    setSaving(true);
+    setError("");
+    try {
+      const payload = {
+        ...form,
+        ...overrides,
+        onboardingStep: nextStep,
+        onboardingComplete: complete
+      };
+      const res = await fetch(`${API_URL}/api/users/profile`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Could not save onboarding.");
+      setUser(data);
+      setForm(prev => ({ ...prev, ...payload }));
+      localStorage.setItem("collegeadda_user", JSON.stringify(data));
+      return true;
+    } catch (err) {
+      setError(err.message);
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const validateStep = () => {
+    if (step === 1 && !form.name.trim()) return "Full name is required.";
+    if (step === 2 && !form.profilePic) return "Upload a photo or use the initials avatar.";
+    if (step === 3 && !form.passOutBatch) return "Select your graduation year.";
+    if (step === 4 && (!form.course || !form.branch.trim())) return "Course and branch are required.";
+    if (step === 5 && !form.studyYear) return "Select your current year of study.";
+    if (step === 6 && form.interests.length < 3) return "Select at least 3 interests.";
+    return "";
+  };
+
+  const goNext = async (overrides = {}) => {
+    const validation = validateStep();
+    if (validation) {
+      setError(validation);
+      return;
+    }
+    const nextStep = Math.min(step + 1, 10);
+    if (await saveProgress(nextStep, false, overrides)) setStep(nextStep);
+  };
+
+  const skipPhoto = async () => {
+    const avatar = initialsAvatar(form.name);
+    setForm(prev => ({ ...prev, profilePic: avatar }));
+    await goNext({ profilePic: avatar });
+  };
+
+  const finish = async () => {
+    if (!completedRequiredFields) {
+      setError("Complete steps 1 to 6 to enter Campus Adda.");
+      return;
+    }
+    if (await saveProgress(10, true)) router.push("/");
+  };
+
+  const handlePhoto = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => setForm(prev => ({ ...prev, profilePic: reader.result }));
+    reader.readAsDataURL(file);
+  };
+
+  const toggleInterest = (interest) => {
+    setForm(prev => ({
+      ...prev,
+      interests: prev.interests.includes(interest)
+        ? prev.interests.filter(item => item !== interest)
+        : [...prev.interests, interest]
+    }));
+  };
+
+  if (!user) return null;
+
+  const fieldClass = "w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-white outline-none transition focus:border-cyan-300/60";
+
+  return (
+    <div className="min-h-screen bg-[#080C11] px-4 py-5 text-white sm:px-6 lg:-ml-72 lg:px-10">
+      <div className="mx-auto flex min-h-[calc(100vh-2.5rem)] max-w-3xl flex-col">
+        <div className="mb-6">
+          <div className="mb-3 flex items-center justify-between text-xs font-black uppercase tracking-[0.18em] text-white/45">
+            <span>Step {Math.min(step, 9)} of 9</span>
+            <span>{Math.round((Math.min(step, 9) / 9) * 100)}%</span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-blue-500 transition-all"
+              style={{ width: `${(Math.min(step, 9) / 9) * 100}%` }}
+            />
+          </div>
+        </div>
+
+        <section className="flex flex-1 items-center">
+          <div className="w-full rounded-[1.75rem] border border-white/10 bg-white/[0.045] p-5 shadow-2xl shadow-black/30 sm:p-8">
+            {step === 1 && (
+              <div className="space-y-5">
+                <User className="text-cyan-300" size={34} />
+                <h1 className="text-3xl font-black tracking-tight">What&apos;s your full name?</h1>
+                <input className={fieldClass} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Your full name" />
+              </div>
+            )}
+
+            {step === 2 && (
+              <div className="space-y-6">
+                <Camera className="text-cyan-300" size={34} />
+                <div>
+                  <h1 className="text-3xl font-black tracking-tight">Add your profile picture</h1>
+                  <p className="mt-2 text-sm text-white/55">Use a campus-friendly photo or continue with your initials.</p>
+                </div>
+                <div className="flex flex-col items-center gap-5 sm:flex-row">
+                  <div className="h-32 w-32 overflow-hidden rounded-full border-4 border-cyan-300/40 bg-white/8">
+                    {form.profilePic ? <img src={form.profilePic} className="h-full w-full object-cover" alt="Profile preview" /> : <div className="flex h-full w-full items-center justify-center text-4xl font-black">{form.name.charAt(0) || "U"}</div>}
+                  </div>
+                  <div className="flex flex-1 flex-col gap-3">
+                    <label className="inline-flex cursor-pointer items-center justify-center rounded-2xl bg-cyan-400 px-5 py-3 text-sm font-black text-black">
+                      Upload Photo
+                      <input type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
+                    </label>
+                    <button onClick={skipPhoto} className="inline-flex items-center justify-center rounded-2xl border border-white/10 px-5 py-3 text-sm font-black text-white/70">
+                      <SkipForward size={16} className="mr-2" /> Use Initials Avatar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div className="space-y-5">
+                <h1 className="text-3xl font-black tracking-tight">Select your graduation year</h1>
+                <select className={fieldClass} value={form.passOutBatch} onChange={e => setForm({ ...form, passOutBatch: e.target.value })}>
+                  <option value="" className="bg-[#080C11]">Pass out batch</option>
+                  {batchOptions.map(year => <option key={year} value={year} className="bg-[#080C11]">{year}</option>)}
+                </select>
+              </div>
+            )}
+
+            {step === 4 && (
+              <div className="space-y-5">
+                <h1 className="text-3xl font-black tracking-tight">Course and branch</h1>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <select className={fieldClass} value={form.course} onChange={e => setForm({ ...form, course: e.target.value })}>
+                    <option value="" className="bg-[#080C11]">Course</option>
+                    {courseOptions.map(course => <option key={course} value={course} className="bg-[#080C11]">{course}</option>)}
+                  </select>
+                  <input className={fieldClass} value={form.branch} onChange={e => setForm({ ...form, branch: e.target.value })} placeholder="Computer Science, ECE, Marketing" />
+                </div>
+              </div>
+            )}
+
+            {step === 5 && (
+              <div className="space-y-5">
+                <h1 className="text-3xl font-black tracking-tight">Current year of study</h1>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {studyYearOptions.map(option => (
+                    <button key={option} onClick={() => setForm({ ...form, studyYear: option })} className={clsx("rounded-2xl border px-4 py-3 text-sm font-black", form.studyYear === option ? "border-cyan-300 bg-cyan-300 text-black" : "border-white/10 bg-white/[0.04] text-white/60")}>{option}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {step === 6 && (
+              <div className="space-y-5">
+                <div>
+                  <h1 className="text-3xl font-black tracking-tight">What are you into?</h1>
+                  <p className="mt-2 text-sm text-white/55">Choose at least 3 interests.</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {interestOptions.map(interest => (
+                    <button key={interest} onClick={() => toggleInterest(interest)} className={clsx("rounded-full border px-4 py-2 text-xs font-black transition", form.interests.includes(interest) ? "border-blue-400 bg-blue-500 text-white" : "border-white/10 bg-white/[0.04] text-white/55")}>{interest}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {step === 7 && (
+              <div className="space-y-5">
+                <Sparkles className="text-cyan-300" size={34} />
+                <h1 className="text-3xl font-black tracking-tight">Write a short bio</h1>
+                <input className={fieldClass} maxLength={100} value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} placeholder="Final year CSE | Dev | CAT 2025 Aspirant" />
+                <p className="text-right text-xs font-bold text-white/35">{form.bio.length}/100</p>
+              </div>
+            )}
+
+            {step === 8 && (
+              <div className="space-y-5">
+                <Phone className="text-cyan-300" size={34} />
+                <h1 className="text-3xl font-black tracking-tight">Phone number</h1>
+                <div className="flex rounded-2xl border border-white/10 bg-white/[0.04]">
+                  <span className="border-r border-white/10 px-4 py-3 text-sm font-black text-white/55">+91</span>
+                  <input className="min-w-0 flex-1 bg-transparent px-4 py-3 text-sm font-semibold text-white outline-none" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="Optional" />
+                </div>
+              </div>
+            )}
+
+            {step === 9 && (
+              <div className="space-y-5">
+                <h1 className="text-3xl font-black tracking-tight">Add social links</h1>
+                <div className="space-y-3">
+                  <div className="relative"><Link className="absolute left-4 top-3.5 text-white/35" size={18} /><input className={`${fieldClass} pl-11`} value={form.linkedin} onChange={e => setForm({ ...form, linkedin: e.target.value })} placeholder="LinkedIn URL" /></div>
+                  <div className="relative"><Code className="absolute left-4 top-3.5 text-white/35" size={18} /><input className={`${fieldClass} pl-11`} value={form.github} onChange={e => setForm({ ...form, github: e.target.value })} placeholder="GitHub URL" /></div>
+                  <input className={fieldClass} value={form.instagram} onChange={e => setForm({ ...form, instagram: e.target.value })} placeholder="Instagram username" />
+                </div>
+              </div>
+            )}
+
+            {step === 10 && (
+              <div className="space-y-6 text-center">
+                <PartyPopper className="mx-auto text-cyan-300" size={44} />
+                <div>
+                  <h1 className="text-3xl font-black tracking-tight">You&apos;re all set, {form.name.split(" ")[0] || "student"}!</h1>
+                  <p className="mt-2 text-sm text-white/55">Your Campus Adda profile is ready.</p>
+                </div>
+                <div className="mx-auto max-w-sm rounded-[1.5rem] border border-white/10 bg-white/[0.05] p-5 text-left">
+                  <div className="flex items-center gap-4">
+                    <img src={form.profilePic || initialsAvatar(form.name)} className="h-16 w-16 rounded-full object-cover" alt="Profile" />
+                    <div>
+                      <div className="flex items-center">
+                        <h2 className="text-xl font-black">{form.name}</h2>
+                        <VerifiedBadge user={{ isVerified: completedRequiredFields }} size={18} />
+                      </div>
+                      <p className="text-xs font-bold text-cyan-200">{user.university}</p>
+                    </div>
+                  </div>
+                  <p className="mt-4 text-sm text-white/70">{form.bio || `${form.course} ${form.branch} · Batch of ${form.passOutBatch}`}</p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {form.interests.map(item => <span key={item} className="rounded-full bg-blue-500/15 px-3 py-1 text-[10px] font-black text-blue-200">{item}</span>)}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {error && <p className="mt-6 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-200">{error}</p>}
+
+            <div className="mt-8 flex items-center justify-between gap-3">
+              <button onClick={() => setStep(Math.max(1, step - 1))} disabled={step === 1 || saving} className="inline-flex items-center rounded-2xl border border-white/10 px-4 py-3 text-sm font-black text-white/60 disabled:opacity-30">
+                <ArrowLeft size={16} className="mr-2" /> Back
+              </button>
+              {step === 7 || step === 8 || step === 9 ? (
+                <button onClick={() => goNext()} disabled={saving} className="rounded-2xl border border-white/10 px-4 py-3 text-sm font-black text-white/70">
+                  {step === 9 ? "Skip All" : "Skip"}
+                </button>
+              ) : null}
+              {step < 10 ? (
+                <button onClick={() => goNext()} disabled={saving} className="ml-auto inline-flex items-center rounded-2xl bg-cyan-400 px-5 py-3 text-sm font-black text-black disabled:opacity-60">
+                  {saving ? "Saving..." : "Continue"} <ArrowRight size={16} className="ml-2" />
+                </button>
+              ) : (
+                <button onClick={finish} disabled={saving} className="ml-auto inline-flex items-center rounded-2xl bg-cyan-400 px-5 py-3 text-sm font-black text-black disabled:opacity-60">
+                  Enter Campus Adda <Check size={16} className="ml-2" />
+                </button>
+              )}
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}

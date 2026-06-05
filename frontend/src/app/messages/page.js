@@ -599,7 +599,10 @@ function MessagesContent() {
 
               <div className="flex-1 text-left min-w-0">
                 <div className="flex justify-between items-center mb-1">
-                  <p className="font-bold text-[15px] text-white truncate leading-tight">{chat.name}</p>
+                  <div className="flex min-w-0 items-center">
+                    <p className="font-bold text-[15px] text-white truncate leading-tight">{chat.name}</p>
+                    {chat.partner && <VerifiedBadge user={chat.partner} size={12} />}
+                  </div>
                   <span className="text-[10px] text-white/30 font-medium">{chat.time}</span>
                 </div>
                 <div className="flex justify-between items-center">

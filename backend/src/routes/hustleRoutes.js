@@ -9,7 +9,7 @@ const router = express.Router();
 router.get('/', protect, async (req, res) => {
   try {
     const listings = await Listing.find({})
-      .populate('seller', 'name university profilePic')
+      .populate('seller', 'name university profilePic isVerified')
       .sort({ createdAt: -1 });
     res.json(listings);
   } catch (error) {

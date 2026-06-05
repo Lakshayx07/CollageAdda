@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LogOut, Edit3, X, Check, Plus, Grid, Heart, MessageCircle, Send, ChevronLeft, ChevronRight, Share2, Ghost, MapPin, Zap, Star, Camera, Clock, Image as ImageIcon, Music, Code, Palette, Plane, Gamepad2, Book, Dumbbell, Film, Utensils, Trophy } from "lucide-react";
+import { LogOut, Edit3, X, Check, Plus, Grid, Heart, MessageCircle, Send, ChevronLeft, ChevronRight, Share2, Ghost, MapPin, Zap, Star, Camera, Clock, Image as ImageIcon, Music, Code, Palette, Plane, Gamepad2, Book, Dumbbell, Film, Utensils, Trophy, Briefcase } from "lucide-react";
 
 const InstagramIcon = ({ size = 20 }) => (
   <svg 
@@ -27,16 +27,18 @@ import VerifiedBadge from "@/components/VerifiedBadge";
 import clsx from "clsx";
 
 const INTEREST_OPTIONS = [
+  { name: "Hackathons", icon: <Trophy size={12} /> },
   { name: "Music", icon: <Music size={12} /> },
-  { name: "Cricket", icon: <Trophy size={12} /> },
   { name: "Coding", icon: <Code size={12} /> },
-  { name: "Art", icon: <Palette size={12} /> },
-  { name: "Travel", icon: <Plane size={12} /> },
+  { name: "Design", icon: <Palette size={12} /> },
   { name: "Gaming", icon: <Gamepad2 size={12} /> },
-  { name: "Books", icon: <Book size={12} /> },
-  { name: "Fitness", icon: <Dumbbell size={12} /> },
-  { name: "Movies", icon: <Film size={12} /> },
-  { name: "Cooking", icon: <Utensils size={12} /> }
+  { name: "Sports", icon: <Trophy size={12} /> },
+  { name: "Placements", icon: <Briefcase size={12} /> },
+  { name: "Startups", icon: <Zap size={12} /> },
+  { name: "Content Creation", icon: <Film size={12} /> },
+  { name: "Photography", icon: <Camera size={12} /> },
+  { name: "Reading", icon: <Book size={12} /> },
+  { name: "Cultural Events", icon: <Music size={12} /> }
 ];
 const SPORT_OPTIONS = [
   { name: "Football", icon: <Trophy size={12} /> },
@@ -67,7 +69,22 @@ export default function ProfilePage() {
   const [storyUploading, setStoryUploading] = useState(false);
   const [viewingStoryIndex, setViewingStoryIndex] = useState(0);
 
-  const [editData, setEditData] = useState({ profilePic: "", instaId: "", snapId: "", interests: [], sports: [] });
+  const [editData, setEditData] = useState({
+    name: "",
+    bio: "",
+    profilePic: "",
+    passOutBatch: "",
+    course: "",
+    branch: "",
+    studyYear: "",
+    phone: "",
+    linkedin: "",
+    github: "",
+    instaId: "",
+    snapId: "",
+    interests: [],
+    sports: []
+  });
   const [saved, setSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [unfollowingId, setUnfollowingId] = useState(null);
@@ -92,7 +109,16 @@ export default function ProfilePage() {
           setUser(profileData);
           localStorage.setItem("collegeadda_user", JSON.stringify(profileData));
           setEditData({ 
+            name: profileData.name || "",
+            bio: profileData.bio || "",
             profilePic: profileData.profilePic || "",
+            passOutBatch: profileData.passOutBatch || "",
+            course: profileData.course || "",
+            branch: profileData.branch || "",
+            studyYear: profileData.studyYear || profileData.year || "",
+            phone: profileData.phone || "",
+            linkedin: profileData.linkedin || "",
+            github: profileData.github || "",
             instaId: profileData.instagram || "", 
             snapId: profileData.snapchat || "", 
             interests: profileData.interests || [], 
@@ -199,7 +225,16 @@ export default function ProfilePage() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
+          name: editData.name,
+          bio: editData.bio,
           profilePic: editData.profilePic,
+          passOutBatch: editData.passOutBatch,
+          course: editData.course,
+          branch: editData.branch,
+          studyYear: editData.studyYear,
+          phone: editData.phone,
+          linkedin: editData.linkedin,
+          github: editData.github,
           instagram: editData.instaId,
           snapchat: editData.snapId,
           interests: editData.interests,
@@ -355,9 +390,31 @@ export default function ProfilePage() {
               <h2 className="text-3xl font-black text-white tracking-tighter">{user.name}</h2>
               <VerifiedBadge user={user} size={22} />
             </div>
+            {user.bio && (
+              <p className="mx-auto max-w-sm text-sm font-semibold leading-6 text-white/65">{user.bio}</p>
+            )}
             <div className="flex items-center justify-center space-x-2 text-purple-400 font-bold uppercase tracking-[0.2em] text-[10px]">
               <MapPin size={12} className="text-purple-500" />
               <span>{user.university}</span>
+            </div>
+          </div>
+
+          <div className="grid w-full gap-3 rounded-[1.5rem] border border-white/8 bg-white/[0.035] p-4 text-left sm:grid-cols-2">
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-widest text-white/30">Course</p>
+              <p className="mt-1 text-sm font-bold text-white/80">{[user.course, user.branch].filter(Boolean).join(" · ") || "Not added"}</p>
+            </div>
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-widest text-white/30">Batch</p>
+              <p className="mt-1 text-sm font-bold text-white/80">{user.passOutBatch ? `Batch of ${user.passOutBatch}` : "Not added"}</p>
+            </div>
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-widest text-white/30">Year</p>
+              <p className="mt-1 text-sm font-bold text-white/80">{user.studyYear || user.year || "Not added"}</p>
+            </div>
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-widest text-white/30">Private phone</p>
+              <p className="mt-1 text-sm font-bold text-white/80">{user.phone ? `+91 ${user.phone}` : "Only visible to you"}</p>
             </div>
           </div>
 
@@ -422,6 +479,36 @@ export default function ProfilePage() {
                 <div className="min-w-0">
                   <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest">Instagram</p>
                   <p className="text-sm font-black text-white truncate leading-none">@{user.instagram}</p>
+                </div>
+              </motion.a>
+            )}
+            {user.linkedin && (
+              <motion.a
+                whileHover={{ y: -4 }}
+                href={user.linkedin}
+                className="glass-card p-4 rounded-3xl border border-white/5 flex items-center space-x-3"
+              >
+                <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white">
+                  <Send size={18} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest">LinkedIn</p>
+                  <p className="text-sm font-black text-white truncate leading-none">Profile</p>
+                </div>
+              </motion.a>
+            )}
+            {user.github && (
+              <motion.a
+                whileHover={{ y: -4 }}
+                href={user.github}
+                className="glass-card p-4 rounded-3xl border border-white/5 flex items-center space-x-3"
+              >
+                <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center text-black">
+                  <Code size={18} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest">GitHub</p>
+                  <p className="text-sm font-black text-white truncate leading-none">Profile</p>
                 </div>
               </motion.a>
             )}
@@ -606,6 +693,118 @@ export default function ProfilePage() {
                 <button onClick={() => setModal(null)} className="p-2 glass rounded-full text-white/30"><X size={20} /></button>
               </div>
               <div className="max-h-[72dvh] space-y-6 overflow-y-auto p-5 custom-scrollbar sm:max-h-[70vh] sm:p-6">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-2">Full Name</label>
+                  <input
+                    value={editData.name}
+                    onChange={e => setEditData({ ...editData, name: e.target.value })}
+                    className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm font-semibold text-white outline-none focus:border-purple-400"
+                    placeholder="Your full name"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-2">Profile Photo URL</label>
+                  <input
+                    value={editData.profilePic}
+                    onChange={e => setEditData({ ...editData, profilePic: e.target.value })}
+                    className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm font-semibold text-white outline-none focus:border-purple-400"
+                    placeholder="Image URL or uploaded avatar data"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-2">Bio</label>
+                  <input
+                    maxLength={100}
+                    value={editData.bio}
+                    onChange={e => setEditData({ ...editData, bio: e.target.value })}
+                    className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm font-semibold text-white outline-none focus:border-purple-400"
+                    placeholder="Final year CSE | Dev | CAT 2025 Aspirant"
+                  />
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-2">Pass Out Batch</label>
+                    <select
+                      value={editData.passOutBatch}
+                      onChange={e => setEditData({ ...editData, passOutBatch: e.target.value })}
+                      className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm font-semibold text-white outline-none focus:border-purple-400"
+                    >
+                      <option value="" className="bg-[#0A0A0F]">Select batch</option>
+                      {["2024", "2025", "2026", "2027", "2028", "2029", "2030"].map(year => <option key={year} value={year} className="bg-[#0A0A0F]">{year}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-2">Year of Study</label>
+                    <select
+                      value={editData.studyYear}
+                      onChange={e => setEditData({ ...editData, studyYear: e.target.value })}
+                      className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm font-semibold text-white outline-none focus:border-purple-400"
+                    >
+                      <option value="" className="bg-[#0A0A0F]">Select year</option>
+                      {["1st Year", "2nd Year", "3rd Year", "4th Year", "Alumni"].map(year => <option key={year} value={year} className="bg-[#0A0A0F]">{year}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-2">Course</label>
+                    <select
+                      value={editData.course}
+                      onChange={e => setEditData({ ...editData, course: e.target.value })}
+                      className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm font-semibold text-white outline-none focus:border-purple-400"
+                    >
+                      <option value="" className="bg-[#0A0A0F]">Select course</option>
+                      {["B.Tech", "BCA", "MCA", "MBA", "B.Sc", "M.Tech", "B.Com", "BA", "Other"].map(course => <option key={course} value={course} className="bg-[#0A0A0F]">{course}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-2">Branch</label>
+                    <input
+                      value={editData.branch}
+                      onChange={e => setEditData({ ...editData, branch: e.target.value })}
+                      className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm font-semibold text-white outline-none focus:border-purple-400"
+                      placeholder="Computer Science, ECE, Marketing"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-2">Private Phone</label>
+                  <div className="flex rounded-2xl border border-white/10 bg-black/30">
+                    <span className="border-r border-white/10 px-4 py-3 text-sm font-black text-white/40">+91</span>
+                    <input
+                      value={editData.phone}
+                      onChange={e => setEditData({ ...editData, phone: e.target.value })}
+                      className="min-w-0 flex-1 bg-transparent px-4 py-3 text-sm font-semibold text-white outline-none"
+                      placeholder="Optional"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-3">
+                  <input
+                    value={editData.linkedin}
+                    onChange={e => setEditData({ ...editData, linkedin: e.target.value })}
+                    className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm font-semibold text-white outline-none focus:border-purple-400"
+                    placeholder="LinkedIn URL"
+                  />
+                  <input
+                    value={editData.github}
+                    onChange={e => setEditData({ ...editData, github: e.target.value })}
+                    className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm font-semibold text-white outline-none focus:border-purple-400"
+                    placeholder="GitHub URL"
+                  />
+                  <input
+                    value={editData.instaId}
+                    onChange={e => setEditData({ ...editData, instaId: e.target.value })}
+                    className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm font-semibold text-white outline-none focus:border-purple-400"
+                    placeholder="Instagram username"
+                  />
+                </div>
 
                 {/* Interests */}
                 <div className="space-y-3">

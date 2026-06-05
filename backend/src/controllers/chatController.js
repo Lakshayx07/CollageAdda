@@ -11,7 +11,7 @@ import User from '../models/User.js';
 export const getRooms = async (req, res) => {
   try {
     const rooms = await ChatRoom.find({ participants: req.user._id })
-      .populate('participants', 'name profilePic university')
+      .populate('participants', 'name profilePic university isVerified')
       .populate('lastMessage')
       .sort({ updatedAt: -1 });
     res.json(rooms);
@@ -29,7 +29,7 @@ export const getMessages = async (req, res) => {
   const { page = 1, limit = 50 } = req.query;
   try {
     const messages = await Message.find({ room: req.params.id })
-      .populate('sender', 'name profilePic')
+      .populate('sender', 'name profilePic isVerified')
       .sort({ createdAt: -1 })
       .limit(limit)
       .skip((page - 1) * limit);
@@ -84,7 +84,7 @@ export const getOrCreatePrivateRoom = async (req, res) => {
         isGroup: true,
         groupName: groupName
       });
-      const populatedRoom = await ChatRoom.findById(room._id).populate('participants', 'name profilePic university');
+      const populatedRoom = await ChatRoom.findById(room._id).populate('participants', 'name profilePic university isVerified');
       return res.status(201).json(populatedRoom);
     }
 
@@ -94,14 +94,14 @@ export const getOrCreatePrivateRoom = async (req, res) => {
     let room = await ChatRoom.findOne({
       isGroup: false,
       participants: { $all: [req.user._id, target] }
-    }).populate('participants', 'name profilePic university');
+    }).populate('participants', 'name profilePic university isVerified');
 
     if (!room) {
       room = await ChatRoom.create({
         participants: [req.user._id, target],
         isGroup: false
       });
-      room = await ChatRoom.findById(room._id).populate('participants', 'name profilePic university');
+      room = await ChatRoom.findById(room._id).populate('participants', 'name profilePic university isVerified');
     }
 
     res.json(room);
@@ -151,7 +151,7 @@ export const sendMessage = async (req, res) => {
       }
     }
 
-    const populatedMsg = await Message.findById(message._id).populate('sender', 'name profilePic');
+    const populatedMsg = await Message.findById(message._id).populate('sender', 'name profilePic isVerified');
     res.status(201).json(populatedMsg);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -198,7 +198,7 @@ export const addMember = async (req, res) => {
     
     await room.save();
 
-    const populatedRoom = await ChatRoom.findById(room._id).populate('participants', 'name profilePic university');
+    const populatedRoom = await ChatRoom.findById(room._id).populate('participants', 'name profilePic university isVerified');
     res.json({ message: 'Member added successfully', room: populatedRoom });
   } catch (error) {
     res.status(500).json({ message: error.message });

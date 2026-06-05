@@ -10,7 +10,7 @@ const router = express.Router();
 router.get('/', protect, async (req, res) => {
   try {
     const posts = await Post.find({ university: req.user.university })
-      .populate('author', 'name profilePic university followers following')
+      .populate('author', 'name profilePic university isVerified')
       .sort({ createdAt: -1 })
       .limit(30);
     
@@ -57,7 +57,7 @@ router.post('/', protect, verified, async (req, res) => {
       poll: (poll && poll.options && poll.options.length > 0) ? poll : undefined
     });
     
-    const populated = await post.populate('author', 'name profilePic university followers following');
+    const populated = await post.populate('author', 'name profilePic university isVerified');
     res.status(201).json(populated);
   } catch (error) {
     res.status(500).json({ message: error.message });

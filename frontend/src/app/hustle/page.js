@@ -4,6 +4,7 @@ import { Compass, ShoppingBag, Briefcase, Plus, Filter, MessageSquare, ChevronRi
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
+import VerifiedBadge from "@/components/VerifiedBadge";
 
 export default function HustleHubPage() {
   const router = useRouter();
@@ -247,7 +248,12 @@ export default function HustleHubPage() {
                     <div className="flex items-center justify-between mt-2 mb-4 text-xs text-white/40">
                       <span className="flex items-center">
                         <div className="w-4 h-4 rounded-full bg-white/20 mr-2" />
-                        {item.seller?.name || item.seller || "Lakshay Y."} • {item.seller?.university || item.college || "Rishihood"}
+                        <span className="flex min-w-0 items-center">
+                          {item.seller?.name || item.seller || "Lakshay Y."}
+                          <VerifiedBadge user={item.seller} size={13} />
+                        </span>
+                        <span className="mx-1">•</span>
+                        {item.seller?.university || item.college || "Rishihood"}
                       </span>
                     </div>
                     <button

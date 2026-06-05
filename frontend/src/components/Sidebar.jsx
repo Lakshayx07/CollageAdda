@@ -10,6 +10,8 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
 
+  if (pathname === "/login" || pathname === "/onboarding") return null;
+
   const navItems = [
     { name: "Home", path: "/", icon: Home },
     { name: "Explore", path: "/explore", icon: Search },

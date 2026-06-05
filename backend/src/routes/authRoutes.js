@@ -4,6 +4,7 @@ import User from '../models/User.js';
 import ChatRoom from '../models/ChatRoom.js';
 
 import { ensureUniversityGroup } from '../utils/universityUtils.js';
+import { publicUserPayload, syncVerificationStatus } from '../utils/verificationUtils.js';
 import { OAuth2Client } from 'google-auth-library';
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -32,6 +33,7 @@ router.post('/register', async (req, res) => {
       
       if (shouldUpdateUniversity) {
         existingUser.university = university.trim();
+        syncVerificationStatus(existingUser);
         await existingUser.save();
       }
 
@@ -64,18 +66,12 @@ router.post('/register', async (req, res) => {
       referredBy,
       points: 50
     });
+    syncVerificationStatus(user);
+    await user.save();
 
     await ensureUniversityGroup(user);
 
-    res.status(201).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      university: user.university,
-      referralCode: user.referralCode,
-      points: user.points,
-      token: generateToken(user._id),
-    });
+    res.status(201).json(publicUserPayload(user, generateToken(user._id)));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -88,16 +84,10 @@ router.post('/login', async (req, res) => {
   try {
     const user = await User.findOne({ email });
     if (user && (await user.matchPassword(password))) {
+      syncVerificationStatus(user);
+      await user.save();
       await ensureUniversityGroup(user);
-      res.json({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        university: user.university,
-        isPremium: user.isPremium,
-        profilePic: user.profilePic,
-        token: generateToken(user._id),
-      });
+      res.json(publicUserPayload(user, generateToken(user._id)));
     } else {
       res.status(401).json({ message: 'Invalid email or password' });
     }
@@ -123,13 +113,15 @@ router.post('/google', async (req, res) => {
     const { email, name, sub, picture } = payload;
 
     let user = await User.findOne({ email });
+    let isNewUser = false;
 
     if (user) {
       // Login existing user
       if (university && university !== 'Other' && (!user.university || user.university === 'Other')) {
         user.university = university.trim();
-        await user.save();
       }
+      syncVerificationStatus(user);
+      await user.save();
       await ensureUniversityGroup(user);
     } else {
       // Register new user
@@ -160,20 +152,13 @@ router.post('/google', async (req, res) => {
         points: 50,
         profilePic: picture
       });
+      isNewUser = true;
+      syncVerificationStatus(user);
+      await user.save();
       await ensureUniversityGroup(user);
     }
 
-    res.status(user.isNew ? 201 : 200).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      university: user.university,
-      referralCode: user.referralCode,
-      points: user.points,
-      isPremium: user.isPremium,
-      profilePic: user.profilePic || picture,
-      token: generateToken(user._id),
-    });
+    res.status(isNewUser ? 201 : 200).json(publicUserPayload(user, generateToken(user._id)));
   } catch (error) {
     console.error("Google Auth Error:", error);
     res.status(500).json({ message: 'Failed to authenticate with Google' });

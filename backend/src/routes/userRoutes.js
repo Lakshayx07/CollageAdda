@@ -4,6 +4,7 @@ import Notification from '../models/Notification.js';
 import Confession from '../models/Confession.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { ensureUniversityGroup } from '../utils/universityUtils.js';
+import { publicUserPayload, syncVerificationStatus } from '../utils/verificationUtils.js';
 
 const router = express.Router();
 
@@ -46,6 +47,9 @@ router.get('/profile', protect, async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password');
     if (!user) return res.status(404).json({ message: 'User not found' });
+    const wasVerified = user.isVerified;
+    syncVerificationStatus(user);
+    if (wasVerified !== user.isVerified) await user.save();
     res.json(user);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -59,19 +63,54 @@ router.put('/profile', protect, async (req, res) => {
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    const { name, bio, profilePic, instagram, snapchat, university, password, interests, goals, sports, year } = req.body;
+    const {
+      name,
+      bio,
+      profilePic,
+      instagram,
+      linkedin,
+      github,
+      phone,
+      snapchat,
+      university,
+      password,
+      interests,
+      goals,
+      sports,
+      year,
+      passOutBatch,
+      course,
+      branch,
+      studyYear,
+      onboardingComplete,
+      onboardingStep
+    } = req.body;
 
     if (name) user.name = name;
     if (bio !== undefined) user.bio = bio;
     if (profilePic !== undefined) user.profilePic = profilePic;
     if (instagram !== undefined) user.instagram = instagram;
+    if (linkedin !== undefined) user.linkedin = linkedin;
+    if (github !== undefined) user.github = github;
+    if (phone !== undefined) user.phone = phone;
     if (snapchat !== undefined) user.snapchat = snapchat;
     if (university) user.university = university;
     if (interests !== undefined) user.interests = interests;
     if (goals !== undefined) user.goals = goals;
     if (sports !== undefined) user.sports = sports;
     if (year !== undefined) user.year = year;
+    if (passOutBatch !== undefined) user.passOutBatch = passOutBatch;
+    if (course !== undefined) user.course = course;
+    if (branch !== undefined) user.branch = branch;
+    if (studyYear !== undefined) {
+      user.studyYear = studyYear;
+      user.year = studyYear;
+    }
+    if (onboardingComplete !== undefined) user.onboardingComplete = onboardingComplete;
+    if (onboardingStep !== undefined) user.onboardingStep = onboardingStep;
     if (password) user.password = password; // pre-save hook will hash it
+
+    syncVerificationStatus(user);
 
     const updated = await user.save();
     
@@ -80,21 +119,7 @@ router.put('/profile', protect, async (req, res) => {
       await ensureUniversityGroup(updated);
     }
 
-    res.json({
-      _id: updated._id,
-      name: updated.name,
-      email: updated.email,
-      bio: updated.bio,
-      university: updated.university,
-      profilePic: updated.profilePic,
-      instagram: updated.instagram,
-      snapchat: updated.snapchat,
-      interests: updated.interests,
-      goals: updated.goals,
-      sports: updated.sports,
-      year: updated.year,
-      isPremium: updated.isPremium,
-    });
+    res.json(publicUserPayload(updated));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -117,7 +142,10 @@ router.get('/search/query', protect, async (req, res) => {
       ];
     }
     
-    const users = await User.find(query).select('-password').sort({ createdAt: -1 }).limit(20);
+    const users = await User.find(query)
+      .select('name university profilePic bio interests year studyYear passOutBatch course branch followers following isVerified createdAt')
+      .sort({ createdAt: -1 })
+      .limit(20);
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -128,7 +156,7 @@ router.get('/search/query', protect, async (req, res) => {
 // @desc    Get logged-in user's followers
 router.get('/me/followers', protect, async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).populate('followers', 'name university profilePic _id');
+    const user = await User.findById(req.user._id).populate('followers', 'name university profilePic _id isVerified createdAt');
     res.json(user.followers || []);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -141,7 +169,7 @@ router.get('/me/followers/new', protect, async (req, res) => {
   try {
     const since = req.query.since ? new Date(Number(req.query.since)) : new Date(0);
     // Populate followers with their joinedAt / updatedAt so we can filter
-    const user = await User.findById(req.user._id).populate('followers', 'name university profilePic _id createdAt');
+    const user = await User.findById(req.user._id).populate('followers', 'name university profilePic _id createdAt isVerified');
     
     // Return all followers if no since param, otherwise filter by createdAt after 'since'
     const allFollowers = user.followers || [];
@@ -159,7 +187,7 @@ router.get('/me/followers/new', protect, async (req, res) => {
 // @desc    Get logged-in user's following list
 router.get('/me/following', protect, async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).populate('following', 'name university profilePic _id');
+    const user = await User.findById(req.user._id).populate('following', 'name university profilePic _id isVerified createdAt');
     res.json(user.following || []);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -238,7 +266,7 @@ router.put('/:id/follow', protect, async (req, res) => {
 // @desc    Get another user's public profile
 router.get('/:id', protect, async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select('-password -email');
+    const user = await User.findById(req.params.id).select('-password -email -phone -verificationToken -verificationTokenExpires -collegeEmail -idPhotoUrl -adminNotes');
     if (!user) return res.status(404).json({ message: 'User not found' });
     res.json(user);
   } catch (error) {

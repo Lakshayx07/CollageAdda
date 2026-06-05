@@ -94,7 +94,7 @@ export default function LoginPage() {
       localStorage.setItem('collegeadda_token', data.token);
       localStorage.setItem('collegeadda_user', JSON.stringify(data));
 
-      window.location.href = '/';
+      window.location.href = data.onboardingComplete ? '/' : '/onboarding';
 
     } catch (error) {
       console.error("Auth Error:", error.message);
@@ -131,7 +131,7 @@ export default function LoginPage() {
       localStorage.setItem('collegeadda_token', data.token);
       localStorage.setItem('collegeadda_user', JSON.stringify(data));
 
-      window.location.href = '/';
+      window.location.href = data.onboardingComplete ? '/' : '/onboarding';
 
     } catch (error) {
       console.error("Google Auth Error:", error.message);

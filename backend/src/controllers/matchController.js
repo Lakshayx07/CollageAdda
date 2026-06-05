@@ -22,7 +22,7 @@ export const getMatches = async (req, res) => {
     const users = await User.find({
       _id: { $nin: excludeIds },
       isVerified: true // Only match with verified students
-    }).select('-password -email').limit(50);
+    }).select('-password -email -phone -verificationToken -verificationTokenExpires -collegeEmail -idPhotoUrl -adminNotes').limit(50);
 
     const scoredMatches = users.map(user => {
       let score = 0;

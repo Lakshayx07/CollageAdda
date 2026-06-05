@@ -1,27 +1,17 @@
 "use client";
 import { motion } from "framer-motion";
 
-export default function VerifiedBadge({ user, size = 14 }) {
+export default function VerifiedBadge({ user, size = 14, className = "" }) {
   if (!user) return null;
 
-  // Get counts from various potential property names
-  const fers = user.followers || user.authorFollowers || [];
-  const fing = user.following || user.authorFollowing || [];
-  
-  const fersCount = Array.isArray(fers) ? fers.length : (user.followersCount || 0);
-  const fingCount = Array.isArray(fing) ? fing.length : (user.followingCount || 0);
-
-  // Verification threshold: 1 follower OR 1 following (Temp for testing)
-  const isVerified = fersCount >= 10 || fingCount >= 10;
-
-  if (!isVerified) return null;
+  if (!user.isVerified) return null;
 
   return (
     <motion.span 
       initial={{ scale: 0 }}
       animate={{ scale: 1 }}
-      className="inline-flex items-center justify-center ml-1.5 flex-shrink-0" 
-      title={`Verified Campus Leader (${fersCount} followers, ${fingCount} following)`}
+      className={`inline-flex items-center justify-center ml-1.5 flex-shrink-0 ${className}`}
+      title="Verified Student"
       style={{ width: size, height: size }}
     >
       <svg 
