@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import ChatRoom from '../models/ChatRoom.js';
 
-import { ensureUniversityGroup } from '../utils/universityUtils.js';
+import { ensureUniversityGroup, normalizeUniversityName } from '../utils/universityUtils.js';
 import { publicUserPayload, syncVerificationStatus } from '../utils/verificationUtils.js';
 import { OAuth2Client } from 'google-auth-library';
 
@@ -61,7 +61,7 @@ router.post('/register', async (req, res) => {
       name, 
       email, 
       password, 
-      university: (university || '').trim(), 
+      university: normalizeUniversityName(university), 
       referralCode: genCode,
       referredBy,
       points: 50
@@ -146,7 +146,7 @@ router.post('/google', async (req, res) => {
         name,
         email,
         password: sub, // Dummy password
-        university: university.trim(),
+        university: normalizeUniversityName(university),
         referralCode: genCode,
         referredBy,
         points: 50,

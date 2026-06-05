@@ -624,7 +624,7 @@ export default function ExplorePage() {
                           <h3 className="text-white font-black uppercase tracking-wider mb-3 flex items-center text-sm">
                             <Target className="mr-2 text-pink-500" size={16} /> Top Players
                           </h3>
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {/* We will map real data here soon */}
                             {/* {realEsportsPlayers.map(player => ( ... ))} */}
                           </div>
@@ -683,7 +683,7 @@ export default function ExplorePage() {
                           <h3 className="text-white font-black uppercase tracking-wider mb-3 flex items-center text-sm">
                             <Users className="mr-2 text-orange-400" size={16} /> Top Athletes
                           </h3>
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {/* We will map real data here soon */}
                             {/* {realSportsPlayers.map(player => ( ... ))} */}
                           </div>

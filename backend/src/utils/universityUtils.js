@@ -1,6 +1,18 @@
 import ChatRoom from '../models/ChatRoom.js';
 
 /**
+ * Normalizes university name (e.g. converting variants of Rishihood to a standard name)
+ */
+export const normalizeUniversityName = (name) => {
+  if (!name) return name;
+  let normalized = name.trim();
+  if (/rishihood/i.test(normalized)) {
+    return 'Rishihood University';
+  }
+  return normalized;
+};
+
+/**
  * Ensures a user is a participant in their university's common group.
  * If the group doesn't exist, it creates it.
  * 
@@ -8,7 +20,7 @@ import ChatRoom from '../models/ChatRoom.js';
  */
 export const ensureUniversityGroup = async (user) => {
   // Normalize university name — trim whitespace
-  const universityName = (user.university || '').trim();
+  const universityName = normalizeUniversityName(user.university);
   if (!universityName || universityName === 'Other') return;
 
   try {

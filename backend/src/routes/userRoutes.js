@@ -3,7 +3,7 @@ import User from '../models/User.js';
 import Notification from '../models/Notification.js';
 import Confession from '../models/Confession.js';
 import { protect } from '../middleware/authMiddleware.js';
-import { ensureUniversityGroup } from '../utils/universityUtils.js';
+import { ensureUniversityGroup, normalizeUniversityName } from '../utils/universityUtils.js';
 import { publicUserPayload, syncVerificationStatus } from '../utils/verificationUtils.js';
 
 const router = express.Router();
@@ -94,7 +94,7 @@ router.put('/profile', protect, async (req, res) => {
     if (github !== undefined) user.github = github;
     if (phone !== undefined) user.phone = phone;
     if (snapchat !== undefined) user.snapchat = snapchat;
-    if (university) user.university = university;
+    if (university) user.university = normalizeUniversityName(university);
     if (interests !== undefined) user.interests = interests;
     if (goals !== undefined) user.goals = goals;
     if (sports !== undefined) user.sports = sports;
@@ -145,7 +145,7 @@ router.get('/search/query', protect, async (req, res) => {
     const users = await User.find(query)
       .select('name university profilePic bio interests year studyYear passOutBatch course branch followers following isVerified createdAt')
       .sort({ createdAt: -1 })
-      .limit(20);
+      .limit(100);
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: error.message });

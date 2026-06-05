@@ -215,7 +215,24 @@ export default function FriendsPage() {
 
   const toggleFollow = async (targetId) => {
     const currentStatus = followStatus[targetId];
-    setFollowStatus(prev => ({ ...prev, [targetId]: currentStatus === "connected" ? null : "connected" }));
+    const isConnecting = currentStatus !== "connected";
+    setFollowStatus(prev => ({ ...prev, [targetId]: isConnecting ? "connected" : null }));
+    
+    const updateUsersList = (users) => users.map(u => {
+        if (u._id === targetId || u.id === targetId) {
+            let currentFollowers = Array.isArray(u.followers) ? u.followers : Array.from({length: Number(u.followers || 0)});
+            if (isConnecting) {
+                return { ...u, followers: [...currentFollowers, user._id || user.id] };
+            } else {
+                return { ...u, followers: currentFollowers.filter(id => id !== (user._id || user.id)).slice(0, Math.max(0, currentFollowers.length - 1)) };
+            }
+        }
+        return u;
+    });
+
+    setCampusUsers(prev => updateUsersList(prev));
+    setSuggestedUsers(prev => updateUsersList(prev));
+
     try {
       const token = getToken();
       await fetch(`${apiUrl}/api/users/${targetId}/follow`, {
@@ -225,6 +242,21 @@ export default function FriendsPage() {
     } catch (err) {
       console.error(err);
       setFollowStatus(prev => ({ ...prev, [targetId]: currentStatus }));
+      
+      // Revert if error
+      const revertUsersList = (users) => users.map(u => {
+        if (u._id === targetId || u.id === targetId) {
+            let currentFollowers = Array.isArray(u.followers) ? u.followers : Array.from({length: Number(u.followers || 0)});
+            if (!isConnecting) {
+                return { ...u, followers: [...currentFollowers, user._id || user.id] };
+            } else {
+                return { ...u, followers: currentFollowers.filter(id => id !== (user._id || user.id)).slice(0, Math.max(0, currentFollowers.length - 1)) };
+            }
+        }
+        return u;
+      });
+      setCampusUsers(prev => revertUsersList(prev));
+      setSuggestedUsers(prev => revertUsersList(prev));
     }
   };
 
