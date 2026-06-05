@@ -68,6 +68,13 @@ export default function Home() {
   const photoInputRef = useRef(null);
   const videoInputRef = useRef(null);
 
+  const clearSessionAndLogin = () => {
+    localStorage.removeItem("collegeadda_token");
+    localStorage.removeItem("collegeadda_user");
+    setLoadingPosts(false);
+    router.push("/login");
+  };
+
   const trendingTopics = [
     { name: "Tech Fest 2024", icon: <Flame size={14} className="text-orange-500" /> },
     { name: "Exam Season", icon: <TrendingUp size={14} className="text-blue-400" /> },
@@ -80,9 +87,15 @@ export default function Home() {
   useEffect(() => {
     const token = localStorage.getItem("collegeadda_token");
     if (!token) {
-      router.push("/login");
+      clearSessionAndLogin();
     } else {
-      const u = JSON.parse(localStorage.getItem('collegeadda_user') || '{}');
+      let u = {};
+      try {
+        u = JSON.parse(localStorage.getItem('collegeadda_user') || '{}');
+      } catch {
+        clearSessionAndLogin();
+        return;
+      }
       setCurrentUser(u);
 
       // Sync user profile from backend
@@ -99,6 +112,8 @@ export default function Home() {
             }
             setCurrentUser(profileData);
             localStorage.setItem('collegeadda_user', JSON.stringify(profileData));
+          } else if (res.status === 401) {
+            clearSessionAndLogin();
           }
         } catch (err) {
           console.error("Error syncing profile:", err);
@@ -122,9 +137,18 @@ export default function Home() {
       const res = await fetch(`${apiUrl}/api/posts`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      if (res.status === 401) {
+        clearSessionAndLogin();
+        return;
+      }
       if (res.ok) {
         const data = await res.json();
-        const user = JSON.parse(localStorage.getItem('collegeadda_user') || '{}');
+        let user = {};
+        try {
+          user = JSON.parse(localStorage.getItem('collegeadda_user') || '{}');
+        } catch {
+          user = {};
+        }
         const formatted = data.map(p => ({
           id: p._id,
           author: p.author?.name || 'Unknown',

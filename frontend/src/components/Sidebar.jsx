@@ -9,8 +9,7 @@ import clsx from "clsx";
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-
-  if (pathname === "/login" || pathname === "/onboarding") return null;
+  const [hasRequest, setHasRequest] = useState(false);
 
   const navItems = [
     { name: "Home", path: "/", icon: Home },
@@ -22,9 +21,8 @@ export default function Sidebar() {
     { name: "Profile", path: "/profile", icon: User },
   ];
 
-  const [hasRequest, setHasRequest] = useState(false);
-
   useEffect(() => {
+    if (pathname === "/login" || pathname === "/onboarding") return;
     const checkRequests = () => {
       const incoming = JSON.parse(localStorage.getItem("collegeadda_incoming") || "[]");
       const viewed = localStorage.getItem("collegeadda_friends_viewed") === "true";
@@ -37,13 +35,15 @@ export default function Sidebar() {
       window.removeEventListener("storage", checkRequests);
       clearInterval(interval);
     };
-  }, []);
+  }, [pathname]);
 
   const handleLogout = () => {
     localStorage.removeItem("collegeadda_token");
     localStorage.removeItem("collegeadda_user");
     router.push("/login");
   };
+
+  if (pathname === "/login" || pathname === "/onboarding") return null;
 
   return (
     <aside className="nav-rail hidden lg:flex fixed left-0 top-0 z-50 h-full w-72 flex-col px-6 py-7">

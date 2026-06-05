@@ -8,8 +8,7 @@ import clsx from "clsx";
 
 export default function BottomNav() {
   const pathname = usePathname();
-
-  if (pathname === "/login" || pathname === "/onboarding") return null;
+  const [hasRequest, setHasRequest] = useState(false);
 
   const navItems = [
     { name: "Home", path: "/", icon: Home },
@@ -19,9 +18,8 @@ export default function BottomNav() {
     { name: "Squad", path: "/friends", icon: Users },
   ];
 
-  const [hasRequest, setHasRequest] = useState(false);
-
   useEffect(() => {
+    if (pathname === "/login" || pathname === "/onboarding") return;
     const checkRequests = () => {
       const incoming = JSON.parse(localStorage.getItem("collegeadda_incoming") || "[]");
       const viewed = localStorage.getItem("collegeadda_friends_viewed") === "true";
@@ -34,7 +32,9 @@ export default function BottomNav() {
       window.removeEventListener("storage", checkRequests);
       clearInterval(interval);
     };
-  }, []);
+  }, [pathname]);
+
+  if (pathname === "/login" || pathname === "/onboarding") return null;
 
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 px-2 pb-[calc(0.6rem+env(safe-area-inset-bottom))] pt-4 sm:px-3 bg-gradient-to-t from-[#0A0A0F]/95 via-[#0A0A0F]/70 to-transparent backdrop-blur-md border-t border-white/5">
