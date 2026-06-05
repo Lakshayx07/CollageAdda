@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Camera, Check, Code, Link, PartyPopper, Phone, SkipForward, Sparkles, User } from "lucide-react";
+import { ArrowLeft, ArrowRight, Camera, Check, PartyPopper, Phone, SkipForward, Sparkles, User } from "lucide-react";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import clsx from "clsx";
+import AnimatedBackground from "@/components/AnimatedBackground";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001").trim();
 
@@ -90,7 +91,7 @@ export default function OnboardingPage() {
       github: localUser.github || "",
       instagram: localUser.instagram || ""
     });
-    setStep(Math.min(Math.max(localUser.onboardingStep || 1, 1), 10));
+    setStep(Math.min(Math.max(localUser.onboardingStep || 1, 1), 9));
 
     const syncProfile = async () => {
       try {
@@ -120,7 +121,7 @@ export default function OnboardingPage() {
             github: profile.github || "",
             instagram: profile.instagram || ""
           });
-          setStep(Math.min(Math.max(profile.onboardingStep || 1, 1), 10));
+          setStep(Math.min(Math.max(profile.onboardingStep || 1, 1), 9));
         }
       } catch (err) {
         console.error(err);
@@ -179,7 +180,7 @@ export default function OnboardingPage() {
       setError(validation);
       return;
     }
-    const nextStep = Math.min(step + 1, 10);
+    const nextStep = Math.min(step + 1, 9);
     if (await saveProgress(nextStep, false, overrides)) setStep(nextStep);
   };
 
@@ -194,7 +195,7 @@ export default function OnboardingPage() {
       setError("Complete steps 1 to 6 to enter Campus Adda.");
       return;
     }
-    if (await saveProgress(10, true)) router.push("/");
+    if (await saveProgress(9, true)) router.push("/");
   };
 
   const handlePhoto = (e) => {
@@ -216,26 +217,27 @@ export default function OnboardingPage() {
 
   if (!user) return null;
 
-  const fieldClass = "w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-white outline-none transition focus:border-cyan-300/60";
+  const fieldClass = "w-full rounded-2xl border border-cyan-500/20 bg-white/[0.02] backdrop-blur-sm px-4 py-3 text-sm font-semibold text-white outline-none transition focus:border-cyan-400 focus:bg-cyan-900/10 focus:shadow-[0_0_15px_rgba(34,211,238,0.2)]";
 
   return (
-    <div className="min-h-screen bg-[#080C11] px-4 py-5 text-white sm:px-6 lg:-ml-72 lg:px-10">
-      <div className="mx-auto flex min-h-[calc(100vh-2.5rem)] max-w-3xl flex-col">
+    <div className="relative min-h-screen bg-[#040814] px-4 py-5 text-white sm:px-6 lg:-ml-72 lg:px-10 overflow-hidden">
+      <AnimatedBackground />
+      <div className="relative z-10 mx-auto flex min-h-[calc(100vh-2.5rem)] max-w-3xl flex-col">
         <div className="mb-6">
-          <div className="mb-3 flex items-center justify-between text-xs font-black uppercase tracking-[0.18em] text-white/45">
-            <span>Step {Math.min(step, 9)} of 9</span>
-            <span>{Math.round((Math.min(step, 9) / 9) * 100)}%</span>
+          <div className="mb-3 flex items-center justify-between text-xs font-black uppercase tracking-[0.18em] text-cyan-400/80">
+            <span>Step {Math.min(step, 8)} of 8</span>
+            <span>{Math.round((Math.min(step, 8) / 8) * 100)}%</span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-white/10">
+          <div className="h-1.5 overflow-hidden rounded-full bg-blue-900/40">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-blue-500 transition-all"
-              style={{ width: `${(Math.min(step, 9) / 9) * 100}%` }}
+              className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 transition-all shadow-[0_0_10px_rgba(34,211,238,0.8)]"
+              style={{ width: `${(Math.min(step, 8) / 8) * 100}%` }}
             />
           </div>
         </div>
 
         <section className="flex flex-1 items-center">
-          <div className="w-full rounded-[1.75rem] border border-white/10 bg-white/[0.045] p-5 shadow-2xl shadow-black/30 sm:p-8">
+          <div className="w-full rounded-[1.75rem] border border-cyan-500/20 bg-[#060B18]/60 backdrop-blur-xl p-5 shadow-[0_0_40px_rgba(0,0,0,0.5),inset_0_0_20px_rgba(34,211,238,0.05)] sm:p-10 relative overflow-hidden">
             {step === 1 && (
               <div className="space-y-5">
                 <User className="text-cyan-300" size={34} />
@@ -337,17 +339,6 @@ export default function OnboardingPage() {
             )}
 
             {step === 9 && (
-              <div className="space-y-5">
-                <h1 className="text-3xl font-black tracking-tight">Add social links</h1>
-                <div className="space-y-3">
-                  <div className="relative"><Link className="absolute left-4 top-3.5 text-white/35" size={18} /><input className={`${fieldClass} pl-11`} value={form.linkedin} onChange={e => setForm({ ...form, linkedin: e.target.value })} placeholder="LinkedIn URL" /></div>
-                  <div className="relative"><Code className="absolute left-4 top-3.5 text-white/35" size={18} /><input className={`${fieldClass} pl-11`} value={form.github} onChange={e => setForm({ ...form, github: e.target.value })} placeholder="GitHub URL" /></div>
-                  <input className={fieldClass} value={form.instagram} onChange={e => setForm({ ...form, instagram: e.target.value })} placeholder="Instagram username" />
-                </div>
-              </div>
-            )}
-
-            {step === 10 && (
               <div className="space-y-6 text-center">
                 <PartyPopper className="mx-auto text-cyan-300" size={44} />
                 <div>
@@ -375,21 +366,21 @@ export default function OnboardingPage() {
 
             {error && <p className="mt-6 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-200">{error}</p>}
 
-            <div className="mt-8 flex items-center justify-between gap-3">
-              <button onClick={() => setStep(Math.max(1, step - 1))} disabled={step === 1 || saving} className="inline-flex items-center rounded-2xl border border-white/10 px-4 py-3 text-sm font-black text-white/60 disabled:opacity-30">
+            <div className="mt-8 flex items-center justify-between gap-3 relative z-10">
+              <button onClick={() => setStep(Math.max(1, step - 1))} disabled={step === 1 || saving} className="inline-flex items-center rounded-2xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-black text-white/60 transition hover:bg-white/10 hover:text-white disabled:opacity-30">
                 <ArrowLeft size={16} className="mr-2" /> Back
               </button>
-              {step === 7 || step === 8 || step === 9 ? (
-                <button onClick={() => goNext()} disabled={saving} className="rounded-2xl border border-white/10 px-4 py-3 text-sm font-black text-white/70">
-                  {step === 9 ? "Skip All" : "Skip"}
+              {step === 7 || step === 8 ? (
+                <button onClick={() => goNext()} disabled={saving} className="rounded-2xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-black text-white/70 transition hover:bg-white/10 hover:text-white">
+                  {step === 8 ? "Skip All" : "Skip"}
                 </button>
               ) : null}
-              {step < 10 ? (
-                <button onClick={() => goNext()} disabled={saving} className="ml-auto inline-flex items-center rounded-2xl bg-cyan-400 px-5 py-3 text-sm font-black text-black disabled:opacity-60">
+              {step < 9 ? (
+                <button onClick={() => goNext()} disabled={saving} className="ml-auto inline-flex items-center rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-500 px-6 py-3 text-sm font-black text-black shadow-[0_0_20px_rgba(34,211,238,0.4)] disabled:opacity-60 transition hover:scale-105 hover:shadow-[0_0_30px_rgba(34,211,238,0.6)]">
                   {saving ? "Saving..." : "Continue"} <ArrowRight size={16} className="ml-2" />
                 </button>
               ) : (
-                <button onClick={finish} disabled={saving} className="ml-auto inline-flex items-center rounded-2xl bg-cyan-400 px-5 py-3 text-sm font-black text-black disabled:opacity-60">
+                <button onClick={finish} disabled={saving} className="ml-auto inline-flex items-center rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-500 px-6 py-3 text-sm font-black text-black shadow-[0_0_20px_rgba(34,211,238,0.4)] disabled:opacity-60 transition hover:scale-105 hover:shadow-[0_0_30px_rgba(34,211,238,0.6)]">
                   Enter Campus Adda <Check size={16} className="ml-2" />
                 </button>
               )}
