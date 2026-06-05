@@ -266,6 +266,16 @@ export default function FriendsPage() {
     const source = campusUsers.length ? campusUsers : suggestedUsers;
     const unique = new Map();
 
+    // Always include current user in the leaderboard
+    if (user && (user._id || user.id)) {
+      const id = user._id || user.id || user.email || user.name;
+      unique.set(id, {
+        ...user,
+        followerCount: getSocialCount(user.followers),
+        followingCount: getSocialCount(user.following),
+      });
+    }
+
     source.forEach((person) => {
       const id = person._id || person.id || person.email || person.name;
       if (!id || unique.has(id)) return;
