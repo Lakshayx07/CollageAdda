@@ -25,6 +25,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import UniversityBadges from "@/components/UniversityBadges";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import clsx from "clsx";
+import { extractInstagramUsername } from "@/utils/socials";
 
 const INTEREST_OPTIONS = [
   { name: "Hackathons", icon: <Trophy size={12} /> },
@@ -470,7 +471,9 @@ export default function ProfilePage() {
             {user.instagram && (
               <motion.a 
                 whileHover={{ y: -4 }}
-                href={`https://instagram.com/${user.instagram}`}
+                href={user.instagram.includes('http') ? user.instagram : `https://instagram.com/${user.instagram}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="glass-card p-4 rounded-3xl border border-white/5 flex items-center space-x-3"
               >
                 <div className="w-10 h-10 bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] rounded-2xl flex items-center justify-center text-white">
@@ -478,7 +481,7 @@ export default function ProfilePage() {
                 </div>
                 <div className="min-w-0">
                   <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest">Instagram</p>
-                  <p className="text-sm font-black text-white truncate leading-none">@{user.instagram}</p>
+                  <p className="text-sm font-black text-white truncate leading-none">{extractInstagramUsername(user.instagram)}</p>
                 </div>
               </motion.a>
             )}

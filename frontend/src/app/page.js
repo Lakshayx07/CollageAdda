@@ -252,37 +252,89 @@ export default function Home() {
     }
   };
 
-  const fetchDailyCampusDrop = async () => {
+  const fetchDailyCampusDrop = async (forceRefresh = false) => {
     try {
       const token = localStorage.getItem("collegeadda_token");
-      if (!token) return;
+      if (!token) {
+        console.log('[DailyDrop] No token, skipping fetch');
+        return;
+      }
+
+      const colors = [
+        "from-cyan-500 to-blue-600",
+        "from-fuchsia-500 to-purple-600",
+        "from-orange-400 to-rose-500",
+        "from-pink-500 to-rose-500",
+        "from-violet-500 to-fuchsia-500"
+      ];
+
+      const mapUser = (u, idx) => ({
+        id: u._id,
+        name: u.name || "Campus Student",
+        profilePic: u.profilePic || "",
+        college: u.university || "Campus Member",
+        isVerified: u.isVerified,
+        course: u.course || u.branch || "",
+        year: u.year || u.studyYear || "",
+        vibe: (u.interests && u.interests.length > 0)
+          ? u.interests.slice(0, 3).join(' · ')
+          : (u.bio && u.bio.trim() ? u.bio : "No bio added yet"),
+        match: (() => {
+          const parts = [];
+          if (u.course || u.branch) parts.push(u.course || u.branch);
+          if (u.year || u.studyYear) parts.push(`${u.year || u.studyYear} Year`);
+          return parts.length > 0 ? parts.join(' • ') : "New Connect";
+        })(),
+        color: colors[idx % colors.length]
+      });
+
+      // ── localStorage 24-hour cache check (client-side) ───────────────────
+      if (!forceRefresh) {
+        const today = new Date().toDateString();
+        try {
+          const saved = JSON.parse(localStorage.getItem('daily_drop') || 'null');
+          if (saved && saved.date === today && Array.isArray(saved.users) && saved.users.length > 0) {
+            console.log('[DailyDrop] Using localStorage cache:', saved.users.length, 'users');
+            setDailyCampusDrop(saved.users.map((u, idx) => mapUser(u, idx)));
+            return;
+          }
+        } catch (e) {
+          console.log('[DailyDrop] Cache read error, fetching fresh');
+        }
+      }
+
+      console.log('[DailyDrop] Fetching from API...');
       const res = await fetch(`${apiUrl}/api/users/daily-drop`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+
+      console.log('[DailyDrop] API response status:', res.status);
+
       if (res.ok) {
         const data = await res.json();
-        const colors = [
-          "from-cyan-500 to-blue-600",
-          "from-fuchsia-500 to-purple-600",
-          "from-orange-400 to-rose-500",
-          "from-pink-500 to-rose-500",
-          "from-violet-500 to-fuchsia-500"
-        ];
-        setDailyCampusDrop(data.map((u, idx) => ({
-          id: u._id,
-          name: u.name,
-          profilePic: u.profilePic,
-          college: u.university || "Campus Member",
-          isVerified: u.isVerified,
-          vibe: (u.interests && u.interests.length > 0)
-            ? u.interests.slice(0, 3).join(', ')
-            : (u.bio || "No bio added yet"),
-          match: u.year ? `Year ${u.year}` : "New Connect",
-          color: colors[idx % colors.length]
-        })));
+        console.log('[DailyDrop] Users received:', data.length, data.map(u => u.name));
+
+        if (data.length > 0) {
+          // Save to localStorage cache
+          try {
+            localStorage.setItem('daily_drop', JSON.stringify({
+              date: new Date().toDateString(),
+              users: data
+            }));
+          } catch (e) {
+            console.log('[DailyDrop] Could not save to localStorage:', e);
+          }
+          setDailyCampusDrop(data.map((u, idx) => mapUser(u, idx)));
+        } else {
+          console.log('[DailyDrop] API returned 0 users — showing invite placeholder');
+          setDailyCampusDrop([]);
+        }
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        console.error('[DailyDrop] API error:', res.status, errData);
       }
     } catch (err) {
-      console.error("Error fetching campus drop:", err);
+      console.error('[DailyDrop] Fetch failed:', err);
     }
   };
 
@@ -771,19 +823,41 @@ export default function Home() {
                 <p className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-300">Daily Campus Drop</p>
                 <h2 className="mt-1 text-[clamp(1.1rem,3vw,1.25rem)] font-black tracking-tight text-white">People worth knowing today</h2>
               </div>
-              <button
-                onClick={() => router.push('/explore')}
-                className="shrink-0 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-[10px] font-black uppercase tracking-wider text-white/70 hover:bg-white/[0.08] transition-colors"
-              >
-                Explore
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => fetchDailyCampusDrop(true)}
+                  title="Refresh suggestions"
+                  className="p-2 rounded-xl border border-white/10 bg-white/[0.04] text-white/40 hover:text-white hover:bg-white/[0.08] transition-all"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                </button>
+                <button
+                  onClick={() => router.push('/explore')}
+                  className="shrink-0 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-[10px] font-black uppercase tracking-wider text-white/70 hover:bg-white/[0.08] transition-colors"
+                >
+                  Explore
+                </button>
+              </div>
             </div>
             
             <div className="relative overflow-hidden w-full flex-1 flex flex-col justify-center mt-2">
               {dailyCampusDrop.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-[1.35rem] border border-dashed border-white/10 py-10 text-center">
-                  <p className="text-xs font-bold text-white/30">No other students found yet.</p>
-                  <p className="mt-1 text-[10px] text-white/20">Connections will appear as more students join.</p>
+                <div className="flex flex-col items-center justify-center rounded-[1.75rem] border border-dashed border-white/10 py-10 text-center gap-4 px-6">
+                  <div className="w-14 h-14 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-white/50">Be the first!</p>
+                    <p className="mt-1 text-[11px] text-white/25">Invite friends to Campus Adda</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      navigator.share ? navigator.share({ title: 'Campus Adda', text: 'Join me on Campus Adda!', url: 'https://campusadda.social' }) : window.open('https://campusadda.social', '_blank');
+                    }}
+                    className="gradient-bg text-white text-[10px] font-black uppercase tracking-widest px-5 py-2.5 rounded-full shadow-lg shadow-purple-500/20 hover:scale-105 transition-transform"
+                  >
+                    Invite Friends 🚀
+                  </button>
                 </div>
               ) : (
                 <div className="relative">
@@ -828,15 +902,18 @@ export default function Home() {
                                 {student.college}
                               </p>
                               
-                              <p className="text-[13px] leading-relaxed text-white/70 italic mt-3 line-clamp-2 h-10">
+                              {/* Course + Year Pill */}
+                              {student.match && student.match !== 'New Connect' && (
+                                <p className="text-[11px] font-bold text-cyan-400/80 mt-1 truncate">
+                                  ⚡ {student.match}
+                                </p>
+                              )}
+                              
+                              <p className="text-[13px] leading-relaxed text-white/65 italic mt-3 line-clamp-2">
                                 "{student.vibe}"
                               </p>
 
-                              <div className="mt-5 flex items-center justify-between gap-3 w-full">
-                                <span className="inline-flex rounded-full bg-white/5 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-white/60 border border-white/10">
-                                  ⚡ {student.match}
-                                </span>
-                                
+                              <div className="mt-5 flex items-center justify-end gap-3 w-full">
                                 <button 
                                   onClick={() => !isConnected && !isPending && handleConnectUser(student.id)}
                                   disabled={isConnected || isPending}
@@ -844,7 +921,7 @@ export default function Home() {
                                     "rounded-full px-5 py-2 text-xs font-black uppercase tracking-widest transition-all",
                                     isConnected ? "bg-green-500/20 text-green-400 border border-green-500/30" :
                                     isPending ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 cursor-wait" :
-                                    "bg-gradient-to-r from-purple-500 to-cyan-500 text-white hover:opacity-90 shadow-lg shadow-purple-500/20"
+                                    "bg-gradient-to-r from-purple-500 to-cyan-500 text-white hover:opacity-90 shadow-lg shadow-purple-500/20 hover:scale-105 active:scale-95"
                                   )}
                                 >
                                   {isConnected ? "Squad ✓" : isPending ? "Pending ⏳" : "Connect +"}

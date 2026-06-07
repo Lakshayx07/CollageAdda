@@ -963,13 +963,13 @@ export default function FriendsPage() {
                     <div className="absolute inset-0 bg-black/20 mix-blend-overlay" />
                   </motion.div>
                   
-                  <div className="px-6 relative flex-1 flex flex-col mt-[-50px]">
+                  <div className="px-6 relative flex-1 flex flex-col -mt-12">
                     {/* Photo */}
-                    <motion.div variants={modalVars.profilePic} className="relative w-28 h-28 mx-auto group cursor-pointer">
-                      <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-tr from-cyan-400 to-purple-500 animate-ping opacity-30 blur-md" />
-                      <img src={selectedProfileData.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedProfileData.name)}&background=7C3AED&color=fff`} className="relative z-10 w-full h-full rounded-[2rem] border-[4px] border-[#0A0A0F] object-cover shadow-2xl bg-[#0A0A0F] group-hover:scale-105 transition-transform duration-300" />
+                    <motion.div variants={modalVars.profilePic} className="relative w-[100px] h-[100px] mx-auto group cursor-pointer">
+                      <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-cyan-400 to-purple-500 animate-ping opacity-30 blur-md" />
+                      <img src={selectedProfileData.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedProfileData.name)}&background=7C3AED&color=fff`} className="relative z-10 w-full h-full rounded-full border-[3px] border-transparent" style={{ background: 'linear-gradient(#0A0A0F, #0A0A0F) padding-box, linear-gradient(to right bottom, #a855f7, #06b6d4) border-box', objectFit: 'cover' }} />
                       {selectedProfileData.rank && (
-                        <div className="absolute z-20 -top-2 -right-2 bg-yellow-400 text-black text-[11px] font-black px-2.5 py-0.5 rounded-full border-2 border-[#0A0A0F] shadow-lg">#{selectedProfileData.rank}</div>
+                        <div className="absolute z-20 -top-1 -right-1 bg-yellow-400 text-black text-[11px] font-black px-2 py-0.5 rounded-full border-2 border-[#0A0A0F] shadow-lg">#{selectedProfileData.rank}</div>
                       )}
                     </motion.div>
 
@@ -1057,11 +1057,8 @@ export default function FriendsPage() {
                     <motion.div variants={modalVars.buttonsContainer} className="mt-8 flex flex-col gap-3">
                       {user && (user._id === selectedProfileData._id || user.id === selectedProfileData._id) ? (
                         <>
-                          <motion.div variants={modalVars.buttonItem} className="text-center py-1 mb-1">
-                            <span className="bg-purple-500/10 text-purple-400 text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border border-purple-500/20">This is You! 🎯</span>
-                          </motion.div>
-                          <motion.button variants={modalVars.primaryButton} onClick={() => router.push('/profile')} className="w-full py-4 glass rounded-2xl text-xs font-black text-white uppercase tracking-widest shadow-xl border border-white/10 hover:bg-white/5 transition-colors hover:scale-[1.02]">
-                            Edit Profile
+                          <motion.button variants={modalVars.primaryButton} onClick={() => router.push('/profile')} className="w-full py-4 gradient-bg rounded-2xl text-xs font-black text-white uppercase tracking-widest shadow-xl border border-white/10 hover:scale-[1.02] transition-transform">
+                            ✏️ Edit Profile
                           </motion.button>
                         </>
                       ) : followStatus[selectedProfileData._id] === "connected" ? (
@@ -1069,9 +1066,18 @@ export default function FriendsPage() {
                           <motion.button variants={modalVars.primaryButton} onClick={() => { handleDirectMessage(selectedProfileData._id); setSelectedProfileId(null); }} className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-2xl text-xs font-black text-white uppercase tracking-widest shadow-lg shadow-emerald-500/20 hover:scale-[1.02] transition-transform">
                             💬 Chat Now
                           </motion.button>
-                          <motion.div variants={modalVars.buttonItem} className="w-full py-3 glass rounded-2xl text-[10px] font-black text-white/30 uppercase tracking-widest text-center border border-white/5 cursor-default">
-                            👥 Squad Member ✓
-                          </motion.div>
+                          <motion.button variants={modalVars.buttonItem} onClick={() => { router.push(`/profile/${selectedProfileData._id}`); setSelectedProfileId(null); }} className="w-full py-4 glass rounded-2xl text-xs font-black text-white uppercase tracking-widest shadow-xl border border-white/10 hover:bg-white/5 transition-colors hover:scale-[1.02]">
+                            🔗 View Full Profile
+                          </motion.button>
+                        </>
+                      ) : followStatus[selectedProfileData._id] === "pending" ? (
+                        <>
+                          <motion.button variants={modalVars.primaryButton} disabled className="w-full py-4 bg-white/5 rounded-2xl text-xs font-black text-white/40 uppercase tracking-widest border border-white/10 cursor-not-allowed">
+                            ⏳ Request Sent
+                          </motion.button>
+                          <motion.button variants={modalVars.buttonItem} onClick={() => { router.push(`/profile/${selectedProfileData._id}`); setSelectedProfileId(null); }} className="w-full py-4 glass rounded-2xl text-xs font-black text-white uppercase tracking-widest shadow-xl border border-white/10 hover:bg-white/5 transition-colors hover:scale-[1.02]">
+                            🔗 View Full Profile
+                          </motion.button>
                         </>
                       ) : (
                         <>
@@ -1087,7 +1093,7 @@ export default function FriendsPage() {
                             {connectStatus === "connected" && <span className="relative z-10">✓ Connected!</span>}
                           </motion.button>
                           <motion.button variants={modalVars.buttonItem} onClick={() => { router.push(`/profile/${selectedProfileData._id}`); setSelectedProfileId(null); }} className="w-full py-4 glass rounded-2xl text-xs font-black text-white uppercase tracking-widest shadow-xl border border-white/10 hover:bg-white/5 transition-colors hover:scale-[1.02]">
-                            👁 View Full Profile
+                            🔗 View Full Profile
                           </motion.button>
                         </>
                       )}

@@ -153,50 +153,119 @@ router.get('/search/query', protect, async (req, res) => {
 });
 
 // @route   GET /api/users/daily-drop
-// @desc    Get 5 random users, resets every 24 hours
+// @desc    Instagram-style smart suggestions — always 5 users, resets every 24h
 router.get('/daily-drop', protect, async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).populate('dailyDropUsers', 'name university profilePic bio interests year studyYear passOutBatch course branch followers following isVerified createdAt');
+    const me = await User.findById(req.user._id)
+      .populate('dailyDropUsers', 'name university profilePic bio interests year studyYear passOutBatch course branch followers following isVerified createdAt');
+
+    if (!me) return res.status(404).json({ message: 'User not found' });
+
+    // ── 24-hour cache check ───────────────────────────────────────────────
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
-    const dropDate = user.dailyDropDate ? new Date(user.dailyDropDate) : null;
+    const dropDate = me.dailyDropDate ? new Date(me.dailyDropDate) : null;
     if (dropDate) dropDate.setHours(0, 0, 0, 0);
 
-    if (dropDate && dropDate.getTime() === today.getTime() && user.dailyDropUsers && user.dailyDropUsers.length === 5) {
-      // It's the same day and we have 5 users, return them
-      return res.json(user.dailyDropUsers);
+    if (
+      dropDate &&
+      dropDate.getTime() === today.getTime() &&
+      me.dailyDropUsers &&
+      me.dailyDropUsers.length === 5
+    ) {
+      console.log('[DailyDrop] Returning cached users for today');
+      return res.json(me.dailyDropUsers);
     }
 
-    // Otherwise, pick 5 new users
-    // First try to find users from same university, then fallback
-    const sameUniUsers = await User.aggregate([
-      { $match: { _id: { $ne: user._id }, university: user.university } },
-      { $sample: { size: 5 } }
-    ]);
+    // ── Build exclusion list (self + already following) ───────────────────
+    const followingIds = (me.following || []).map(id => id.toString());
+    const excludeIds = [me._id.toString(), ...followingIds];
 
-    let finalUsers = sameUniUsers;
-    if (finalUsers.length < 5) {
-      const remaining = 5 - finalUsers.length;
-      const otherUsers = await User.aggregate([
-        { $match: { _id: { $ne: user._id }, university: { $ne: user.university } } },
-        { $sample: { size: remaining } }
+    const fields = 'name university profilePic bio interests year studyYear passOutBatch course branch followers following isVerified createdAt';
+    let suggested = [];
+
+    const notAlreadyPicked = () => [...excludeIds, ...suggested.map(u => u._id.toString())];
+
+    // ── PRIORITY 1: Same campus, not connected ─────────────────────────────
+    if (suggested.length < 5 && me.university) {
+      const sameCampus = await User.find({
+        _id: { $nin: notAlreadyPicked() },
+        university: me.university,
+        name: { $exists: true, $ne: '' }
+      })
+        .select(fields)
+        .limit(5 - suggested.length)
+        .lean();
+      console.log(`[DailyDrop] P1 same-campus found: ${sameCampus.length}`);
+      suggested = [...suggested, ...sameCampus];
+    }
+
+    // ── PRIORITY 2: Common interests ──────────────────────────────────────
+    if (suggested.length < 5 && me.interests && me.interests.length > 0) {
+      const common = await User.find({
+        _id: { $nin: notAlreadyPicked() },
+        interests: { $elemMatch: { $in: me.interests } }
+      })
+        .select(fields)
+        .limit(5 - suggested.length)
+        .lean();
+      console.log(`[DailyDrop] P2 common-interests found: ${common.length}`);
+      suggested = [...suggested, ...common];
+    }
+
+    // ── PRIORITY 3: Popular users (highest follower count) ─────────────────
+    if (suggested.length < 5) {
+      const popular = await User.aggregate([
+        { $match: { _id: { $nin: notAlreadyPicked().map(id => {
+          try { return new (require('mongoose').Types.ObjectId)(id); } catch { return null; }
+        }).filter(Boolean) } } },
+        { $addFields: { score: { $add: [{ $size: { $ifNull: ['$followers', []] } }, { $size: { $ifNull: ['$following', []] } }] } } },
+        { $sort: { score: -1 } },
+        { $limit: 5 - suggested.length },
+        { $project: { name: 1, university: 1, profilePic: 1, bio: 1, interests: 1, year: 1, studyYear: 1, passOutBatch: 1, course: 1, branch: 1, followers: 1, following: 1, isVerified: 1, createdAt: 1 } }
       ]);
-      finalUsers = [...finalUsers, ...otherUsers];
+      console.log(`[DailyDrop] P3 popular found: ${popular.length}`);
+      suggested = [...suggested, ...popular];
     }
 
-    // Save to user profile
-    user.dailyDropUsers = finalUsers.map(u => u._id);
-    user.dailyDropDate = new Date();
-    await user.save();
+    // ── PRIORITY 4: Recently joined (last 7 days) ──────────────────────────
+    if (suggested.length < 5) {
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const newUsers = await User.find({
+        _id: { $nin: notAlreadyPicked() },
+        createdAt: { $gte: sevenDaysAgo }
+      })
+        .select(fields)
+        .limit(5 - suggested.length)
+        .lean();
+      console.log(`[DailyDrop] P4 new-users found: ${newUsers.length}`);
+      suggested = [...suggested, ...newUsers];
+    }
 
-    // Populate the newly fetched users to match standard format
-    const populatedDrop = await User.find({ _id: { $in: finalUsers.map(u => u._id) } })
-      .select('name university profilePic bio interests year studyYear passOutBatch course branch followers following isVerified createdAt');
+    // ── PRIORITY 5: ABSOLUTE FALLBACK — just get anyone ───────────────────
+    if (suggested.length < 5) {
+      const anyone = await User.find({
+        _id: { $nin: notAlreadyPicked() }
+      })
+        .select(fields)
+        .limit(5 - suggested.length)
+        .lean();
+      console.log(`[DailyDrop] P5 fallback found: ${anyone.length}`);
+      suggested = [...suggested, ...anyone];
+    }
 
-    res.json(populatedDrop);
+    console.log(`[DailyDrop] Total suggested: ${suggested.length}`);
+
+    // ── Save to DB for 24h caching ─────────────────────────────────────────
+    if (suggested.length > 0) {
+      me.dailyDropUsers = suggested.map(u => u._id);
+      me.dailyDropDate = new Date();
+      await me.save();
+    }
+
+    res.json(suggested);
   } catch (error) {
-    console.error('Error in daily-drop:', error);
+    console.error('[DailyDrop] Error:', error);
     res.status(500).json({ message: error.message });
   }
 });
