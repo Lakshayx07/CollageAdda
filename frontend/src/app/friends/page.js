@@ -1,4 +1,4 @@
-"use client";
+ "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from "react";
 import { UserPlus, Search, Users, MessageCircle, Loader2, Heart, X, Sparkles, MapPin, Zap, Trophy, Star } from "lucide-react";
@@ -20,6 +20,9 @@ export default function FriendsPage() {
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
   const [activeSquadTab, setActiveSquadTab] = useState("find");
+  const [leaderboardTab, setLeaderboardTab] = useState("my_campus");
+  const [globalUsers, setGlobalUsers] = useState([]);
+  const [globalLoading, setGlobalLoading] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
@@ -34,6 +37,26 @@ export default function FriendsPage() {
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
   const getToken = () => localStorage.getItem("collegeadda_token");
+
+  const fetchGlobalUsers = useCallback(async () => {
+    if (globalUsers.length > 0) return;
+    const token = getToken();
+    if (!token) return;
+    setGlobalLoading(true);
+    try {
+      const res = await fetch(`${apiUrl}/api/users/search/query?q=`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setGlobalUsers(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setGlobalLoading(false);
+    }
+  }, [apiUrl, globalUsers.length]);
 
   // Fetch followers and compare against last seen
   const fetchFollowerNotifications = useCallback(async () => {
@@ -263,7 +286,9 @@ export default function FriendsPage() {
   const getSocialCount = (value) => Array.isArray(value) ? value.length : Number(value || 0);
 
   const leaderboardStudents = useMemo(() => {
-    const source = campusUsers.length ? campusUsers : suggestedUsers;
+    const source = activeSquadTab === "leaderboard" && leaderboardTab === "global_pulse" 
+      ? globalUsers 
+      : (campusUsers.length ? campusUsers : suggestedUsers);
     const unique = new Map();
 
     // Always include current user in the leaderboard
@@ -293,7 +318,7 @@ export default function FriendsPage() {
       }))
       .sort((a, b) => b.influenceScore - a.influenceScore)
       .slice(0, 10);
-  }, [campusUsers, suggestedUsers]);
+  }, [campusUsers, suggestedUsers, globalUsers, activeSquadTab, leaderboardTab, user]);
 
   const topBadgeStyles = [
     { label: "Campus Star", className: "from-yellow-300 to-orange-500 text-black", icon: Trophy },
@@ -461,17 +486,42 @@ export default function FriendsPage() {
 
         {activeSquadTab === "leaderboard" ? (
           <div className="space-y-5">
+            {/* Inner Tabs for Leaderboard */}
+            <div className="app-panel grid grid-cols-2 gap-1 rounded-[1.35rem] p-1 mb-2">
+              <button
+                onClick={() => setLeaderboardTab("my_campus")}
+                className={clsx(
+                  "rounded-[1.1rem] px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] transition-all",
+                  leaderboardTab === "my_campus" ? "gradient-bg text-white shadow-lg shadow-purple-500/20" : "text-white/42 hover:text-white"
+                )}
+              >
+                My Campus
+              </button>
+              <button
+                onClick={() => {
+                  setLeaderboardTab("global_pulse");
+                  fetchGlobalUsers();
+                }}
+                className={clsx(
+                  "rounded-[1.1rem] px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] transition-all",
+                  leaderboardTab === "global_pulse" ? "gradient-bg text-white shadow-lg shadow-purple-500/20" : "text-white/42 hover:text-white"
+                )}
+              >
+                Global Pulse
+              </button>
+            </div>
+
             <div className="flex items-center justify-between gap-3">
               <h3 className="text-[11px] font-black text-white/30 uppercase tracking-[0.2em] flex items-center">
                 <Trophy size={13} className="mr-2 text-yellow-400" />
-                Top 10 Students
+                {leaderboardTab === "global_pulse" ? "Top 10 Worldwide" : "Top 10 Students"}
               </h3>
               <span className="text-[10px] glass px-3 py-1 rounded-full text-yellow-300 font-bold border border-yellow-500/10">
                 followers + following
               </span>
             </div>
 
-            {loading ? (
+            {loading || (leaderboardTab === "global_pulse" && globalLoading) ? (
               <div className="flex flex-col items-center justify-center py-20 space-y-4">
                 <div className="w-12 h-12 border-4 border-white/5 border-t-yellow-400 rounded-full animate-spin" />
                 <p className="text-[10px] text-white/30 font-black uppercase tracking-widest">Building leaderboard...</p>
@@ -488,6 +538,89 @@ export default function FriendsPage() {
                   const topBadge = topBadgeStyles[idx];
                   const BadgeIcon = topBadge?.icon;
                   const avatar = person.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=7C3AED&color=fff`;
+
+                  if (leaderboardTab === "global_pulse" && rank === 1) {
+                    return (
+                      <motion.div
+                        key={person._id || person.id || person.name}
+                        initial={{ opacity: 0, scale: 0.8, y: 30 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        transition={{ type: "spring", stiffness: 280, damping: 20 }}
+                        whileHover={{ scale: 1.02, rotate: 1 }}
+                        className="relative p-[3px] rounded-[2rem] overflow-hidden mb-8 group cursor-pointer shadow-[0_0_40px_rgba(168,85,247,0.15)]"
+                      >
+                        {/* Rotating Holographic Border */}
+                        <div className="absolute -inset-[100%] bg-[conic-gradient(from_0deg,#ff4545,#00ff99,#006aff,#ff0095,#ff4545)] animate-[spin_4s_linear_infinite] opacity-80" />
+                        
+                        <div className="relative bg-[#0A0A0F]/90 backdrop-blur-2xl rounded-[1.8rem] p-7 flex flex-col items-center text-center gap-5">
+                          <div className="w-full flex justify-center">
+                            <motion.span 
+                              animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
+                              transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                              className="bg-[linear-gradient(45deg,#ff0095,#006aff,#00ff99,#ff0095)] bg-[length:300%_300%] text-white text-[11px] font-black uppercase tracking-[0.2em] px-5 py-2 rounded-full shadow-[0_0_20px_rgba(0,106,255,0.4)] flex items-center gap-2"
+                            >
+                              🌍 Global Pulse Leader
+                            </motion.span>
+                          </div>
+                          
+                          <div className="relative mt-3">
+                            {/* Pulse Ring Behind Avatar */}
+                            <div className="absolute inset-0 rounded-[2.2rem] bg-gradient-to-tr from-cyan-400 to-purple-500 animate-ping opacity-30 blur-md" />
+                            
+                            <img src={avatar} className="relative w-28 h-28 rounded-[2.2rem] border-4 border-white/10 object-cover shadow-2xl z-10 group-hover:scale-105 transition-transform duration-300" />
+                            
+                            <motion.div 
+                              animate={{ y: [0, -10, 0], rotate: [0, 15, -10, 0] }}
+                              transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                              className="absolute -top-6 -right-6 text-5xl drop-shadow-[0_0_20px_rgba(250,204,21,0.6)] z-20"
+                            >
+                              👑
+                            </motion.div>
+                            
+                            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-white text-black text-sm font-black px-4 py-1 rounded-full shadow-[0_0_15px_rgba(255,255,255,0.5)] z-20">
+                              #1
+                            </div>
+                          </div>
+                          
+                          <div className="mt-3">
+                            <div className="flex items-center justify-center gap-2">
+                              <p className="text-2xl font-black text-white tracking-tight">{person.name}</p>
+                              <VerifiedBadge user={person} size={20} />
+                            </div>
+                            <p className="text-xs font-bold text-white/50 mt-1 flex items-center justify-center gap-1">
+                              <MapPin size={12} className="text-purple-400" />
+                              {person.university || "Campus Adda"}
+                            </p>
+                            <div className="mt-3 flex justify-center">
+                               <span className="inline-flex rounded-full glass px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-cyan-300 border border-cyan-400/20 shadow-[0_0_10px_rgba(6,182,212,0.2)]">
+                                 {topBadge?.label || "Global Star"}
+                               </span>
+                            </div>
+                          </div>
+                          
+                          <div className="w-full h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent my-2" />
+                          
+                          <div className="flex gap-8 w-full justify-center items-center">
+                            <div className="text-center group-hover:scale-110 transition-transform">
+                              <p className="text-3xl font-black bg-gradient-to-br from-yellow-300 to-orange-500 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(250,204,21,0.2)]">{person.influenceScore}</p>
+                              <p className="text-[10px] uppercase tracking-[0.2em] text-white/40 font-bold mt-1">Total Score</p>
+                            </div>
+                            <div className="w-[1px] h-10 bg-white/10" />
+                            <div className="text-left flex flex-col justify-center gap-1">
+                              <p className="text-xs font-bold text-white/80 flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-pink-500 animate-pulse" />
+                                {person.followerCount} fans
+                              </p>
+                              <p className="text-xs font-bold text-white/60 flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-cyan-500" />
+                                {person.followingCount} following
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  }
 
                   return (
                     <motion.div
