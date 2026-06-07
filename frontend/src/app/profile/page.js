@@ -307,7 +307,7 @@ export default function ProfilePage() {
   if (!user) return null;
 
   return (
-    <div className="page-shell relative overflow-x-hidden">
+    <div className="page-shell profile-page relative overflow-x-hidden">
       {/* Background Decorative Glows */}
       <div className="fixed top-[-10%] right-[-10%] w-[60%] h-[60%] bg-purple-600/10 blur-[150px] rounded-full z-0" />
       <div className="fixed bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-pink-600/10 blur-[150px] rounded-full z-0" />
@@ -400,7 +400,7 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <div className="grid w-full gap-3 rounded-[1.5rem] border border-white/8 bg-white/[0.035] p-4 text-left sm:grid-cols-2">
+          <div className="profile-stat-card grid w-full gap-3 rounded-[1.5rem] border border-white/8 bg-white/[0.035] p-4 text-left sm:grid-cols-2">
             <div>
               <p className="text-[9px] font-black uppercase tracking-widest text-white/30">Course</p>
               <p className="mt-1 text-sm font-bold text-white/80">{[user.course, user.branch].filter(Boolean).join(" · ") || "Not added"}</p>
@@ -432,7 +432,7 @@ export default function ProfilePage() {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.1 * i }}
                 onClick={stat.action}
-                className="glass-card p-4 rounded-3xl border border-white/5 hover:border-white/20 transition-all group text-center"
+                className="profile-stat-pill glass-card p-4 rounded-3xl border border-white/5 hover:border-white/20 transition-all group text-center"
               >
                 <p className="text-2xl font-black text-white tracking-tighter group-hover:scale-110 transition-transform">{stat.value}</p>
                 <p className="text-[10px] text-white/30 font-black uppercase tracking-widest mt-1">{stat.label}</p>
@@ -474,7 +474,7 @@ export default function ProfilePage() {
                 href={user.instagram.includes('http') ? user.instagram : `https://instagram.com/${user.instagram}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="glass-card p-4 rounded-3xl border border-white/5 flex items-center space-x-3"
+                className="glass-card p-4 rounded-3xl border border-white/5 flex items-center space-x-3 profile-social-card"
               >
                 <div className="w-10 h-10 bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] rounded-2xl flex items-center justify-center text-white">
                   <InstagramIcon size={20} />
@@ -489,7 +489,7 @@ export default function ProfilePage() {
               <motion.a
                 whileHover={{ y: -4 }}
                 href={user.linkedin}
-                className="glass-card p-4 rounded-3xl border border-white/5 flex items-center space-x-3"
+                className="glass-card p-4 rounded-3xl border border-white/5 flex items-center space-x-3 profile-social-card"
               >
                 <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white">
                   <Send size={18} />
@@ -504,7 +504,7 @@ export default function ProfilePage() {
               <motion.a
                 whileHover={{ y: -4 }}
                 href={user.github}
-                className="glass-card p-4 rounded-3xl border border-white/5 flex items-center space-x-3"
+                className="glass-card p-4 rounded-3xl border border-white/5 flex items-center space-x-3 profile-social-card"
               >
                 <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center text-black">
                   <Code size={18} />
@@ -519,7 +519,7 @@ export default function ProfilePage() {
               <motion.a 
                 whileHover={{ y: -4 }}
                 href={`https://snapchat.com/add/${user.snapchat}`}
-                className="glass-card p-4 rounded-3xl border border-white/5 flex items-center space-x-3"
+                className="glass-card p-4 rounded-3xl border border-white/5 flex items-center space-x-3 profile-social-card"
               >
                 <div className="w-10 h-10 bg-[#FFFC00] rounded-2xl flex items-center justify-center text-black">
                   <Ghost size={20} />
@@ -541,13 +541,13 @@ export default function ProfilePage() {
             </h3>
             <div className="flex flex-wrap gap-2">
               {(user.interests || []).map((i, idx) => (
-                <span key={idx} className="glass px-4 py-2 rounded-full text-[11px] font-bold text-white/60 border border-white/5 hover:border-purple-500/30 hover:text-purple-400 transition-all flex items-center space-x-2">
+                <span key={idx} className="profile-interest-tag glass px-4 py-2 rounded-full text-[11px] font-bold text-white/60 border border-white/5 hover:border-purple-500/30 hover:text-purple-400 transition-all flex items-center space-x-2">
                   <Star size={10} className="text-purple-400" />
                   <span>{i}</span>
                 </span>
               ))}
               {(user.sports || []).map((s, idx) => (
-                <span key={idx} className="bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-wider flex items-center space-x-2">
+                <span key={idx} className="profile-sport-tag bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-wider flex items-center space-x-2">
                   <Trophy size={10} />
                   <span>{s}</span>
                 </span>

@@ -78,32 +78,11 @@ export default function ExplorePage() {
   const [commentInputs, setCommentInputs] = useState({});
   const [activeCommentPost, setActiveCommentPost] = useState(null);
 
-  const dailyDiscovery = [
-    {
-      name: "Ishaan Mehta",
-      college: "Delhi Technological University",
-      year: "2nd year",
-      vibe: "AI clubs, football, building weekend projects",
-      shared: "5 shared interests",
-      gradient: "from-cyan-400 to-blue-600",
-    },
-    {
-      name: "Ananya Rao",
-      college: "University of Delhi",
-      year: "1st year",
-      vibe: "Open mics, psychology, campus cafes",
-      shared: "Same city",
-      gradient: "from-fuchsia-500 to-purple-600",
-    },
-    {
-      name: "Rudra Singh",
-      college: "Rishihood University",
-      year: "3rd year",
-      vibe: "Startups, debates, sports meet planning",
-      shared: "Near your campus",
-      gradient: "from-orange-400 to-rose-500",
-    },
-  ];
+  const [dailyDiscovery, setDailyDiscovery] = useState([]);
+  const [dailyDiscoveryLoading, setDailyDiscoveryLoading] = useState(true);
+  const [discoveryTimestamp, setDiscoveryTimestamp] = useState(null);
+  const [refreshCountdown, setRefreshCountdown] = useState("");
+  const [discoveryConnectStatus, setDiscoveryConnectStatus] = useState({});
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -136,6 +115,121 @@ export default function ExplorePage() {
     };
     fetchInitialData();
   }, [apiUrl]);
+
+  // ── Daily Discovery: real students, 12-hour cache ──────────────────────────
+  useEffect(() => {
+    const TWELVE_HOURS = 12 * 60 * 60 * 1000;
+
+    const fetchPickedStudents = async () => {
+      setDailyDiscoveryLoading(true);
+      try {
+        const token = localStorage.getItem("collegeadda_token");
+        const currentUser = JSON.parse(localStorage.getItem("collegeadda_user") || "{}");
+        const currentUserId = currentUser._id || currentUser.id;
+
+        // Check cache
+        const cached = JSON.parse(localStorage.getItem("explore_picked_students") || "null");
+        const isExpired = !cached || (Date.now() - cached.timestamp > TWELVE_HOURS);
+
+        let students = [];
+
+        if (!isExpired && Array.isArray(cached.students) && cached.students.length > 0) {
+          students = cached.students;
+          setDiscoveryTimestamp(cached.timestamp);
+        } else {
+          // Priority 1: same university
+          const res1 = await fetch(
+            `${apiUrl}/api/users/suggestions?limit=3`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          if (res1.ok) {
+            const data1 = await res1.json();
+            students = Array.isArray(data1) ? data1.slice(0, 3) : [];
+          }
+
+          // Fallback: any real users
+          if (students.length < 3) {
+            const res2 = await fetch(
+              `${apiUrl}/api/users?limit=6`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (res2.ok) {
+              const data2 = await res2.json();
+              const extras = (Array.isArray(data2) ? data2 : [])
+                .filter(u => (u._id || u.id) !== currentUserId && !students.some(s => (s._id || s.id) === (u._id || u.id)))
+                .slice(0, 3 - students.length);
+              students = [...students, ...extras];
+            }
+          }
+
+          const ts = Date.now();
+          localStorage.setItem("explore_picked_students", JSON.stringify({ timestamp: ts, students }));
+          setDiscoveryTimestamp(ts);
+        }
+
+        // Build tag for each student relative to current user
+        const tagged = students.map(u => {
+          let tag = "Explore 🌐";
+          if (u.university && currentUser.university && u.university === currentUser.university) {
+            tag = "Same Campus 🏫";
+          } else if (Array.isArray(u.interests) && Array.isArray(currentUser.interests)) {
+            const shared = u.interests.filter(i => currentUser.interests.includes(i)).length;
+            if (shared > 0) tag = `${shared} shared interests ✨`;
+          }
+          return { ...u, tag };
+        });
+
+        setDailyDiscovery(tagged);
+
+        // Initialise connect status from following list
+        const initStatus = {};
+        tagged.forEach(u => {
+          const uid = u._id || u.id;
+          initStatus[uid] = myFollowing.includes(uid) ? 'connected' : 'idle';
+        });
+        setDiscoveryConnectStatus(initStatus);
+      } catch (err) {
+        console.error("Error fetching daily discovery:", err);
+      } finally {
+        setDailyDiscoveryLoading(false);
+      }
+    };
+
+    fetchPickedStudents();
+  }, [apiUrl, myFollowing]);
+
+  // Countdown timer
+  useEffect(() => {
+    if (!discoveryTimestamp) return;
+    const TWELVE_HOURS = 12 * 60 * 60 * 1000;
+    const tick = () => {
+      const remaining = TWELVE_HOURS - (Date.now() - discoveryTimestamp);
+      if (remaining <= 0) { setRefreshCountdown("Refreshing..."); return; }
+      const h = Math.floor(remaining / 3600000);
+      const m = Math.floor((remaining % 3600000) / 60000);
+      setRefreshCountdown(`Refreshes in ${h}h ${m}m`);
+    };
+    tick();
+    const interval = setInterval(tick, 60000);
+    return () => clearInterval(interval);
+  }, [discoveryTimestamp]);
+
+  const handleDiscoveryConnect = async (student) => {
+    const uid = student._id || student.id;
+    setDiscoveryConnectStatus(prev => ({ ...prev, [uid]: 'pending' }));
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      await fetch(`${apiUrl}/api/users/${uid}/follow`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setDiscoveryConnectStatus(prev => ({ ...prev, [uid]: 'connected' }));
+      setMyFollowing(prev => [...prev, uid]);
+    } catch (err) {
+      console.error("Connect error:", err);
+      setDiscoveryConnectStatus(prev => ({ ...prev, [uid]: 'idle' }));
+    }
+  };
 
   const toggleLike = async (postId) => {
     try {
@@ -458,27 +552,66 @@ export default function ExplorePage() {
                         <h2 className="mt-1 text-xl font-black tracking-tight text-white">Students picked for your campus circle</h2>
                       </div>
                       <span className="inline-flex w-fit rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white/45">
-                        Refreshes daily
+                        {refreshCountdown || "Refreshes in 12h"}
                       </span>
                     </div>
 
                     <div className="no-scrollbar flex max-w-full gap-3 overflow-x-auto">
-                      {dailyDiscovery.map((student) => (
-                        <div key={student.name} className="min-w-[235px] flex-1 rounded-[1.35rem] border border-white/10 bg-white/[0.035] p-4">
-                          <div className="mb-4 flex items-start justify-between gap-3">
-                            <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${student.gradient} text-lg font-black text-white`}>
-                              {student.name.split(" ").map(part => part[0]).join("")}
-                            </div>
-                            <span className="rounded-full bg-cyan-400/10 px-2.5 py-1 text-[10px] font-bold text-cyan-200">{student.shared}</span>
-                          </div>
-                          <p className="truncate text-base font-black text-white">{student.name}</p>
-                          <p className="mt-1 truncate text-[11px] font-bold text-white/45">{student.college} • {student.year}</p>
-                          <p className="mt-3 text-sm leading-5 text-white/66">{student.vibe}</p>
-                          <p className="mt-4 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-white/45">
-                            Open a college and switch to Students
-                          </p>
+                      {dailyDiscoveryLoading ? (
+                        <div className="flex w-full justify-center py-10">
+                          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-cyan-400" />
                         </div>
-                      ))}
+                      ) : dailyDiscovery.length === 0 ? (
+                        <div className="flex w-full flex-col items-center justify-center rounded-[1.35rem] border border-dashed border-white/10 py-10 text-center gap-3 px-6">
+                          <p className="text-sm font-black text-white/40">Be the first to invite friends! 🎉</p>
+                          <button
+                            onClick={() => navigator.share ? navigator.share({ title: 'Campus Adda', text: 'Join me on Campus Adda!', url: window.location.origin }) : null}
+                            className="gradient-bg text-white text-[10px] font-black uppercase tracking-widest px-5 py-2.5 rounded-full shadow-lg"
+                          >
+                            Share Invite 🚀
+                          </button>
+                        </div>
+                      ) : dailyDiscovery.map((student) => {
+                        const uid = student._id || student.id;
+                        const status = discoveryConnectStatus[uid] || 'idle';
+                        const gradients = ["from-cyan-400 to-blue-600", "from-fuchsia-500 to-purple-600", "from-orange-400 to-rose-500"];
+                        const gIdx = dailyDiscovery.indexOf(student) % 3;
+                        const avatarUrl = student.profilePic
+                          ? student.profilePic
+                          : `https://ui-avatars.com/api/?name=${encodeURIComponent(student.name || "U")}&background=7C3AED&color=fff`;
+
+                        return (
+                          <div key={uid} className="min-w-[235px] flex-1 rounded-[1.35rem] border border-white/10 bg-white/[0.035] p-4 flex flex-col">
+                            <div className="mb-4 flex items-start justify-between gap-3">
+                              <div className="h-14 w-14 shrink-0 rounded-2xl overflow-hidden border border-white/10">
+                                <img src={avatarUrl} alt={student.name} className="w-full h-full object-cover" />
+                              </div>
+                              <span className="rounded-full bg-cyan-400/10 px-2.5 py-1 text-[10px] font-bold text-cyan-200 text-right leading-tight">{student.tag}</span>
+                            </div>
+                            <p className="truncate text-base font-black text-white">{student.name}</p>
+                            <p className="mt-1 truncate text-[11px] font-bold text-white/45">
+                              {student.university || "Campus Adda"}{student.studyYear || student.year ? ` • ${student.studyYear || student.year}` : ""}
+                            </p>
+                            <p className="mt-3 text-sm leading-5 text-white/66 line-clamp-2 flex-1">
+                              {student.bio || (Array.isArray(student.interests) && student.interests.slice(0,3).join(", ")) || "Campus Adda student"}
+                            </p>
+                            <button
+                              onClick={() => status === 'idle' && handleDiscoveryConnect(student)}
+                              disabled={status !== 'idle'}
+                              className={clsx(
+                                "mt-4 w-full rounded-xl py-2.5 text-[11px] font-black uppercase tracking-widest transition-all",
+                                status === 'connected'
+                                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 cursor-default"
+                                  : status === 'pending'
+                                  ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 cursor-wait"
+                                  : "bg-gradient-to-r from-purple-500 to-cyan-500 text-white hover:opacity-90 shadow-lg shadow-purple-500/20 hover:scale-105 active:scale-95"
+                              )}
+                            >
+                              {status === 'connected' ? "👥 Squad Member ✓" : status === 'pending' ? "⏳ Pending" : "⚡ Connect"}
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </section>

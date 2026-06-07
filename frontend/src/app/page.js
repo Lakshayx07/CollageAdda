@@ -817,9 +817,9 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="grid min-w-0 gap-6 grid-cols-1 lg:grid-cols-[0.4fr_0.6fr] items-stretch">
+        <section className="grid min-w-0 gap-6 grid-cols-1 lg:grid-cols-[0.6fr_0.4fr] items-stretch">
           {/* Daily Campus Drop Slider */}
-          <div className="app-panel h-full flex flex-col min-w-0 rounded-[1.6rem] p-4 sm:rounded-[2rem] sm:p-5 relative">
+          <div className="app-panel h-full flex flex-col min-w-0 rounded-[1.6rem] p-4 sm:rounded-[2rem] sm:p-5 relative lg:order-2">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-300">Daily Campus Drop</p>
@@ -967,7 +967,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="app-panel h-full flex flex-col min-w-0 rounded-[1.6rem] p-4 sm:rounded-[2rem] sm:p-5">
+          <div className="app-panel h-full flex flex-col min-w-0 rounded-[1.6rem] p-4 sm:rounded-[2rem] sm:p-5 lg:order-1">
             <div className="mb-4 flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <div>
