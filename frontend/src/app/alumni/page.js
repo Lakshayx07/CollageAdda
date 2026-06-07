@@ -57,7 +57,6 @@ export default function AlumniAngelsPage() {
                 <div className="flex-1 text-center sm:text-left w-full">
                   <h3 className="text-xl font-black text-white leading-tight flex items-center justify-center sm:justify-start">
                     {alumni.name} 
-                    {alumni.available && <div className="w-2 h-2 rounded-full bg-green-500 ml-2 animate-pulse" title="Available for Chats" />}
                   </h3>
                   <p className="text-sm text-white/50 font-bold mb-3">{alumni.college} ' {alumni.gradYear.slice(2)}</p>
                   

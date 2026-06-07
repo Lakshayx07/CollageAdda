@@ -29,6 +29,10 @@ const userSchema = mongoose.Schema({
   followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   
+  // Daily Drop feature
+  dailyDropUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  dailyDropDate: { type: Date },
+  
   // Verification System Fields
   isVerified: { type: Boolean, default: false },
   verificationStatus: { 

@@ -152,6 +152,55 @@ router.get('/search/query', protect, async (req, res) => {
   }
 });
 
+// @route   GET /api/users/daily-drop
+// @desc    Get 5 random users, resets every 24 hours
+router.get('/daily-drop', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).populate('dailyDropUsers', 'name university profilePic bio interests year studyYear passOutBatch course branch followers following isVerified createdAt');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const dropDate = user.dailyDropDate ? new Date(user.dailyDropDate) : null;
+    if (dropDate) dropDate.setHours(0, 0, 0, 0);
+
+    if (dropDate && dropDate.getTime() === today.getTime() && user.dailyDropUsers && user.dailyDropUsers.length === 5) {
+      // It's the same day and we have 5 users, return them
+      return res.json(user.dailyDropUsers);
+    }
+
+    // Otherwise, pick 5 new users
+    // First try to find users from same university, then fallback
+    const sameUniUsers = await User.aggregate([
+      { $match: { _id: { $ne: user._id }, university: user.university } },
+      { $sample: { size: 5 } }
+    ]);
+
+    let finalUsers = sameUniUsers;
+    if (finalUsers.length < 5) {
+      const remaining = 5 - finalUsers.length;
+      const otherUsers = await User.aggregate([
+        { $match: { _id: { $ne: user._id }, university: { $ne: user.university } } },
+        { $sample: { size: remaining } }
+      ]);
+      finalUsers = [...finalUsers, ...otherUsers];
+    }
+
+    // Save to user profile
+    user.dailyDropUsers = finalUsers.map(u => u._id);
+    user.dailyDropDate = new Date();
+    await user.save();
+
+    // Populate the newly fetched users to match standard format
+    const populatedDrop = await User.find({ _id: { $in: finalUsers.map(u => u._id) } })
+      .select('name university profilePic bio interests year studyYear passOutBatch course branch followers following isVerified createdAt');
+
+    res.json(populatedDrop);
+  } catch (error) {
+    console.error('Error in daily-drop:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // @route   GET /api/users/me/followers
 // @desc    Get logged-in user's followers
 router.get('/me/followers', protect, async (req, res) => {

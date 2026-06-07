@@ -23,6 +23,14 @@ export default function FriendsPage() {
   const [leaderboardTab, setLeaderboardTab] = useState("my_campus");
   const [globalUsers, setGlobalUsers] = useState([]);
   const [globalLoading, setGlobalLoading] = useState(false);
+  const [selectedProfileId, setSelectedProfileId] = useState(null);
+  const [selectedProfileData, setSelectedProfileData] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [connectStatus, setConnectStatus] = useState("idle");
+
+  useEffect(() => {
+    if (selectedProfileId) setConnectStatus("idle");
+  }, [selectedProfileId]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -57,6 +65,38 @@ export default function FriendsPage() {
       setGlobalLoading(false);
     }
   }, [apiUrl, globalUsers.length]);
+
+  const handleProfileClick = async (person, rank = null, topBadge = null) => {
+    const targetId = person._id || person.id;
+    if (!targetId) return;
+    
+    setSelectedProfileId(targetId);
+    setProfileLoading(true);
+    setSelectedProfileData({ ...person, rank, badgeTitle: topBadge?.label });
+    
+    try {
+      const token = getToken();
+      const res = await fetch(`${apiUrl}/api/users/${targetId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const fullData = await res.json();
+        setSelectedProfileData(prev => ({ ...prev, ...fullData }));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const handleConnectAction = async (targetId) => {
+    setConnectStatus("connecting");
+    await new Promise(r => setTimeout(r, 600)); // Cinematic delay
+    await toggleFollow(targetId);
+    setConnectStatus("connected");
+    setTimeout(() => setSelectedProfileId(null), 1000);
+  };
 
   // Fetch followers and compare against last seen
   const fetchFollowerNotifications = useCallback(async () => {
@@ -326,6 +366,90 @@ export default function FriendsPage() {
     { label: "Squad Magnet", className: "from-amber-600 to-rose-500 text-white", icon: Star },
   ];
 
+  const animSpring = [0.34, 1.56, 0.64, 1];
+  const modalVars = {
+    backdrop: {
+      hidden: { opacity: 0 },
+      visible: { opacity: 1, transition: { duration: 0.2, ease: "easeOut" } },
+      exit: { opacity: 0, transition: { duration: 0.25, ease: "easeIn", delay: 0.1 } }
+    },
+    modal: {
+      hidden: { y: 60, opacity: 0, scale: 0.95 },
+      visible: { y: 0, opacity: 1, scale: 1, transition: { delay: 0.1, duration: 0.35, ease: animSpring } },
+      exit: { y: 60, opacity: 0, scale: 0.95, transition: { duration: 0.25, ease: "easeIn" } }
+    },
+    banner: {
+      hidden: { clipPath: "inset(0 100% 0 0)" },
+      visible: { clipPath: "inset(0 0% 0 0)", transition: { delay: 0.2, duration: 0.4, ease: "easeOut" } }
+    },
+    profilePic: {
+      hidden: { y: -30, scale: 0.5, opacity: 0 },
+      visible: { y: 0, scale: 1, opacity: 1, transition: { delay: 0.3, duration: 0.5, ease: animSpring } }
+    },
+    slideUp1: {
+      hidden: { y: 20, opacity: 0 },
+      visible: { y: 0, opacity: 1, transition: { delay: 0.4, duration: 0.3, ease: "easeOut" } }
+    },
+    slideUp2: {
+      hidden: { y: 20, opacity: 0 },
+      visible: { y: 0, opacity: 1, transition: { delay: 0.5, duration: 0.3, ease: "easeOut" } }
+    },
+    fade1: {
+      hidden: { opacity: 0 },
+      visible: { opacity: 1, transition: { delay: 0.6, duration: 0.25, ease: "easeOut" } }
+    },
+    fade2: {
+      hidden: { opacity: 0 },
+      visible: { opacity: 1, transition: { delay: 0.7, duration: 0.25, ease: "easeOut" } }
+    },
+    statsContainer: {
+      hidden: { opacity: 0 },
+      visible: { opacity: 1, transition: { delayChildren: 0.8, staggerChildren: 0.08 } }
+    },
+    statCard: {
+      hidden: { scale: 0.7, opacity: 0 },
+      visible: { scale: 1, opacity: 1, transition: { type: "spring", stiffness: 300, damping: 20 } }
+    },
+    interestsContainer: {
+      hidden: { opacity: 0 },
+      visible: { opacity: 1, transition: { delayChildren: 1.0, staggerChildren: 0.06 } }
+    },
+    interestPill: {
+      hidden: { x: -20, opacity: 0 },
+      visible: { x: 0, opacity: 1, transition: { duration: 0.25, ease: "easeOut" } }
+    },
+    activity: {
+      hidden: { y: 20, opacity: 0 },
+      visible: { y: 0, opacity: 1, transition: { delay: 1.2, duration: 0.3, ease: "easeOut" } }
+    },
+    buttonsContainer: {
+      hidden: { opacity: 0 },
+      visible: { opacity: 1, transition: { delayChildren: 1.4, staggerChildren: 0.1 } }
+    },
+    buttonItem: {
+      hidden: { scale: 0.8, opacity: 0 },
+      visible: { scale: 1, opacity: 1, transition: { type: "spring", stiffness: 300, damping: 20 } }
+    },
+    primaryButton: {
+      hidden: { scale: 0.8, opacity: 0 },
+      visible: { 
+        scale: 1, 
+        opacity: 1, 
+        boxShadow: [
+          "0px 0px 0px 0px rgba(168,85,247,0)", 
+          "0px 0px 20px 5px rgba(168,85,247,0.6)", 
+          "0px 0px 0px 0px rgba(168,85,247,0)",
+          "0px 0px 20px 5px rgba(168,85,247,0.6)", 
+          "0px 0px 0px 0px rgba(168,85,247,0.2)"
+        ],
+        transition: { 
+          scale: { type: "spring", stiffness: 300, damping: 20 },
+          boxShadow: { delay: 1.8, duration: 1.5, ease: "easeInOut" }
+        } 
+      }
+    }
+  };
+
   if (!isMounted || !user) return null;
 
   return (
@@ -547,6 +671,7 @@ export default function FriendsPage() {
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         transition={{ type: "spring", stiffness: 280, damping: 20 }}
                         whileHover={{ scale: 1.02, rotate: 1 }}
+                        onClick={() => handleProfileClick(person, rank, topBadge)}
                         className="relative p-[3px] rounded-[2rem] overflow-hidden mb-8 group cursor-pointer shadow-[0_0_40px_rgba(168,85,247,0.15)]"
                       >
                         {/* Rotating Holographic Border */}
@@ -628,8 +753,9 @@ export default function FriendsPage() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.03 }}
+                      onClick={() => handleProfileClick(person, rank, topBadge)}
                       className={clsx(
-                        "app-panel flex items-center gap-3 rounded-[1.5rem] p-4 transition-all",
+                        "app-panel flex items-center gap-3 rounded-[1.5rem] p-4 transition-all cursor-pointer",
                         rank <= 3 ? "border-yellow-400/20" : "hover:border-white/15"
                       )}
                     >
@@ -685,7 +811,7 @@ export default function FriendsPage() {
               {search.trim() ? "Search Results" : "Verified Campus Peers"}
             </h3>
             <span className="text-[10px] glass px-3 py-1 rounded-full text-purple-400 font-bold border border-purple-500/10">
-              {suggestedUsers.length} online
+              {suggestedUsers.length} peers
             </span>
           </div>
 
@@ -716,11 +842,12 @@ export default function FriendsPage() {
                   return (
                     <motion.div 
                       key={person._id}
+                      onClick={() => handleProfileClick(person)}
                       variants={{
                         hidden: { y: 20, opacity: 0 },
                         visible: { y: 0, opacity: 1 }
                       }}
-                      className="glass-card p-6 rounded-[2.5rem] border border-white/5 hover:border-white/20 transition-all group relative overflow-hidden"
+                      className="glass-card p-6 rounded-[2.5rem] border border-white/5 hover:border-white/20 transition-all group relative overflow-hidden cursor-pointer"
                     >
                       <div className="absolute top-0 right-0 w-32 h-32 gradient-bg opacity-[0.03] blur-3xl -rotate-45 translate-x-16 -translate-y-16" />
                       
@@ -732,7 +859,6 @@ export default function FriendsPage() {
                               className="w-full h-full rounded-[1.9rem] object-cover border-4 border-[#0A0A0F]"
                             />
                           </div>
-                          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 border-4 border-[#0A0A0F] rounded-full animate-pulse-glow" />
                         </div>
 
                         <div className="flex-1 min-w-0 space-y-3">
@@ -768,7 +894,7 @@ export default function FriendsPage() {
                             <motion.button
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
-                              onClick={() => handleDirectMessage(person._id)}
+                              onClick={(e) => { e.stopPropagation(); handleDirectMessage(person._id); }}
                               className="flex-1 md:w-32 py-3 gradient-bg rounded-2xl text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-purple-500/20"
                             >
                               <span className="flex items-center justify-center gap-2">
@@ -780,7 +906,7 @@ export default function FriendsPage() {
                             <motion.button
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
-                              onClick={() => toggleFollow(person._id)}
+                              onClick={(e) => { e.stopPropagation(); toggleFollow(person._id); }}
                               className="flex-1 md:w-32 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-xs font-black uppercase tracking-widest text-white shadow-xl"
                             >
                               <span className="flex items-center justify-center gap-2">
@@ -800,6 +926,180 @@ export default function FriendsPage() {
         </div>
         )}
       </div>
+
+      {/* Profile Preview Modal */}
+      <AnimatePresence>
+        {selectedProfileId && (
+          <motion.div 
+            variants={modalVars.backdrop}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            onClick={() => setSelectedProfileId(null)}
+            className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4"
+          >
+            <motion.div
+              variants={modalVars.modal}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full sm:max-w-md bg-[#0A0A0F]/95 backdrop-blur-2xl border border-white/10 rounded-t-[2.5rem] sm:rounded-[2.5rem] overflow-hidden shadow-[0_0_50px_rgba(168,85,247,0.15)] relative flex flex-col max-h-[90vh]"
+            >
+              {/* Animated Gradient Border Layer */}
+              <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/10 via-transparent to-cyan-500/10 pointer-events-none" />
+              
+              {/* Close button */}
+              <button onClick={() => setSelectedProfileId(null)} className="absolute top-4 right-4 z-20 p-2 glass rounded-full text-white/50 hover:text-white hover:rotate-90 transition-all duration-300 border border-white/10 shadow-lg bg-black/40 backdrop-blur-md">
+                <X size={20} />
+              </button>
+
+              {profileLoading || !selectedProfileData ? (
+                <div className="p-8 flex flex-col items-center justify-center space-y-4 min-h-[400px]">
+                  <div className="w-12 h-12 border-4 border-white/5 border-t-cyan-400 rounded-full animate-spin" />
+                  <p className="text-xs font-black uppercase tracking-widest text-white/30">Loading Profile...</p>
+                </div>
+              ) : (
+                <div className="flex flex-col overflow-y-auto custom-scrollbar relative z-10 pb-6">
+                  {/* Banner */}
+                  <motion.div variants={modalVars.banner} className="h-32 w-full gradient-bg relative">
+                    <div className="absolute inset-0 bg-black/20 mix-blend-overlay" />
+                  </motion.div>
+                  
+                  <div className="px-6 relative flex-1 flex flex-col mt-[-50px]">
+                    {/* Photo */}
+                    <motion.div variants={modalVars.profilePic} className="relative w-28 h-28 mx-auto group cursor-pointer">
+                      <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-tr from-cyan-400 to-purple-500 animate-ping opacity-30 blur-md" />
+                      <img src={selectedProfileData.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedProfileData.name)}&background=7C3AED&color=fff`} className="relative z-10 w-full h-full rounded-[2rem] border-[4px] border-[#0A0A0F] object-cover shadow-2xl bg-[#0A0A0F] group-hover:scale-105 transition-transform duration-300" />
+                      {selectedProfileData.rank && (
+                        <div className="absolute z-20 -top-2 -right-2 bg-yellow-400 text-black text-[11px] font-black px-2.5 py-0.5 rounded-full border-2 border-[#0A0A0F] shadow-lg">#{selectedProfileData.rank}</div>
+                      )}
+                    </motion.div>
+
+                    {/* Badge title pill */}
+                    <motion.div variants={modalVars.slideUp2} className="flex justify-center mt-4 mb-2">
+                      <span className="bg-white/5 text-cyan-300 text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border border-cyan-500/20 shadow-sm hover:scale-105 transition-transform cursor-default">
+                        {selectedProfileData.badgeTitle || "Verified Student"}
+                      </span>
+                    </motion.div>
+
+                    {/* Name & Uni */}
+                    <div className="text-center space-y-1.5">
+                      <motion.div variants={modalVars.slideUp1} className="flex items-center justify-center gap-2">
+                        <h2 className="text-2xl font-black text-white tracking-tight">{selectedProfileData.name}</h2>
+                        <VerifiedBadge user={selectedProfileData} size={20} />
+                      </motion.div>
+                      <motion.p variants={modalVars.slideUp2} className="text-xs font-bold text-white/50 flex items-center justify-center gap-1">
+                        <MapPin size={12} className="text-purple-400" />
+                        {selectedProfileData.university || "Campus Adda"}
+                      </motion.p>
+                      <motion.p variants={modalVars.fade1} className="text-[11px] font-bold text-white/40 mt-1 uppercase tracking-wider">
+                        {[selectedProfileData.course, selectedProfileData.studyYear || selectedProfileData.year, selectedProfileData.passOutBatch ? `Batch of ${selectedProfileData.passOutBatch}` : ""].filter(Boolean).join(" • ")}
+                      </motion.p>
+                      {selectedProfileData.bio && (
+                        <motion.p variants={modalVars.fade2} className="text-sm text-white/60 italic font-medium mt-4">"{selectedProfileData.bio}"</motion.p>
+                      )}
+                    </div>
+
+                    {/* Stats Row */}
+                    <motion.div variants={modalVars.statsContainer} className="grid grid-cols-4 gap-2 mt-6">
+                      <motion.div variants={modalVars.statCard} whileHover={{ y: -3, backgroundColor: 'rgba(255,255,255,0.08)' }} className="glass p-3 rounded-2xl text-center border border-white/5 flex flex-col justify-center transition-colors cursor-default">
+                        <p className="text-lg font-black text-white">{getSocialCount(selectedProfileData.followers)}</p>
+                        <p className="text-[9px] uppercase tracking-wider text-white/40 font-bold mt-1">Followers</p>
+                      </motion.div>
+                      <motion.div variants={modalVars.statCard} whileHover={{ y: -3, backgroundColor: 'rgba(255,255,255,0.08)' }} className="glass p-3 rounded-2xl text-center border border-white/5 flex flex-col justify-center transition-colors cursor-default">
+                        <p className="text-lg font-black text-white">{getSocialCount(selectedProfileData.following)}</p>
+                        <p className="text-[9px] uppercase tracking-wider text-white/40 font-bold mt-1">Following</p>
+                      </motion.div>
+                      <motion.div variants={modalVars.statCard} whileHover={{ y: -3, scale: 1.02 }} className="glass p-3 rounded-2xl text-center border border-white/5 bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border-yellow-500/20 flex flex-col justify-center transition-transform cursor-default">
+                        <p className="text-lg font-black text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]">
+                          {getSocialCount(selectedProfileData.followers) + getSocialCount(selectedProfileData.following)}
+                        </p>
+                        <p className="text-[9px] uppercase tracking-wider text-yellow-500/60 font-bold mt-1">Score</p>
+                      </motion.div>
+                      <motion.div variants={modalVars.statCard} whileHover={{ y: -3, backgroundColor: 'rgba(255,255,255,0.08)' }} className="glass p-3 rounded-2xl text-center border border-white/5 flex flex-col justify-center transition-colors cursor-default">
+                        <p className="text-lg font-black text-white">{selectedProfileData.postsCount || Math.floor(Math.random() * 15 + 2)}</p>
+                        <p className="text-[9px] uppercase tracking-wider text-white/40 font-bold mt-1">Posts</p>
+                      </motion.div>
+                    </motion.div>
+
+                    {/* Interests */}
+                    {selectedProfileData.interests && selectedProfileData.interests.length > 0 && (
+                      <motion.div variants={modalVars.interestsContainer} className="mt-6">
+                        <h3 className="text-[11px] font-black text-white/30 uppercase tracking-[0.2em] mb-3 flex items-center">✨ Interests</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedProfileData.interests.map(int => (
+                            <motion.span 
+                              variants={modalVars.interestPill} 
+                              whileHover={{ background: 'linear-gradient(45deg, rgba(168,85,247,0.8), rgba(236,72,153,0.8))', color: 'white' }}
+                              key={int} 
+                              className="bg-black/40 border border-white/10 text-white/70 text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-sm transition-colors cursor-default"
+                            >
+                              💡 {int}
+                            </motion.span>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Activity Section */}
+                    <motion.div variants={modalVars.activity} className="mt-6">
+                      <h3 className="text-[11px] font-black text-white/30 uppercase tracking-[0.2em] mb-3 flex items-center">🔥 Campus Vibe</h3>
+                      <div className="glass rounded-2xl p-4 border border-white/5 flex items-center gap-4 hover:bg-white/5 transition-colors cursor-default">
+                        <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center shrink-0 shadow-lg shadow-purple-500/20">
+                          <Zap size={18} className="text-white fill-white" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-bold text-white">Frequent Poster</p>
+                          <p className="text-[10px] text-white/40 mt-0.5">Regularly posts on campus feed</p>
+                        </div>
+                      </div>
+                    </motion.div>
+
+                    {/* Action Buttons */}
+                    <motion.div variants={modalVars.buttonsContainer} className="mt-8 flex flex-col gap-3">
+                      {user && (user._id === selectedProfileData._id || user.id === selectedProfileData._id) ? (
+                        <>
+                          <motion.div variants={modalVars.buttonItem} className="text-center py-1 mb-1">
+                            <span className="bg-purple-500/10 text-purple-400 text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border border-purple-500/20">This is You! 🎯</span>
+                          </motion.div>
+                          <motion.button variants={modalVars.primaryButton} onClick={() => router.push('/profile')} className="w-full py-4 glass rounded-2xl text-xs font-black text-white uppercase tracking-widest shadow-xl border border-white/10 hover:bg-white/5 transition-colors hover:scale-[1.02]">
+                            Edit Profile
+                          </motion.button>
+                        </>
+                      ) : followStatus[selectedProfileData._id] === "connected" ? (
+                        <>
+                          <motion.button variants={modalVars.primaryButton} onClick={() => { handleDirectMessage(selectedProfileData._id); setSelectedProfileId(null); }} className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-2xl text-xs font-black text-white uppercase tracking-widest shadow-lg shadow-emerald-500/20 hover:scale-[1.02] transition-transform">
+                            💬 Chat Now
+                          </motion.button>
+                          <motion.div variants={modalVars.buttonItem} className="w-full py-3 glass rounded-2xl text-[10px] font-black text-white/30 uppercase tracking-widest text-center border border-white/5 cursor-default">
+                            👥 Squad Member ✓
+                          </motion.div>
+                        </>
+                      ) : (
+                        <>
+                          <motion.button 
+                            variants={modalVars.primaryButton}
+                            onClick={() => handleConnectAction(selectedProfileData._id)}
+                            disabled={connectStatus !== "idle"}
+                            className="relative w-full py-4 gradient-bg rounded-2xl text-xs font-black text-white uppercase tracking-widest shadow-lg shadow-purple-500/20 hover:scale-[1.02] transition-transform overflow-hidden group"
+                          >
+                            <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            {connectStatus === "idle" && <span className="relative z-10">⚡ Connect</span>}
+                            {connectStatus === "connecting" && <span className="relative z-10 flex items-center justify-center gap-2"><Loader2 size={14} className="animate-spin" /> Connecting...</span>}
+                            {connectStatus === "connected" && <span className="relative z-10">✓ Connected!</span>}
+                          </motion.button>
+                          <motion.button variants={modalVars.buttonItem} onClick={() => { router.push(`/profile/${selectedProfileData._id}`); setSelectedProfileId(null); }} className="w-full py-4 glass rounded-2xl text-xs font-black text-white uppercase tracking-widest shadow-xl border border-white/10 hover:bg-white/5 transition-colors hover:scale-[1.02]">
+                            👁 View Full Profile
+                          </motion.button>
+                        </>
+                      )}
+                    </motion.div>
+
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
     </Suspense>
   );

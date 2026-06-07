@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check, Plus, Flame, TrendingUp, Search, Zap, BarChart2, Compass, Trophy, ShieldCheck, Flag, Globe, GraduationCap } from "lucide-react";
+import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check, Plus, Flame, TrendingUp, Search, Zap, BarChart2, Compass, Trophy, ShieldCheck, Flag, Globe, GraduationCap, ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import NotificationBell from "../components/NotificationBell";
 import VerifiedBadge from "../components/VerifiedBadge";
@@ -13,6 +13,7 @@ export default function Home() {
   const router = useRouter();
 
   const [friendsList, setFriendsList] = useState([]);
+  const [connectStatus, setConnectStatus] = useState({});
   const [activeCommentPost, setActiveCommentPost] = useState(null);
   const [commentInputs, setCommentInputs] = useState({});
   const [followedUsers, setFollowedUsers] = useState({});
@@ -255,20 +256,22 @@ export default function Home() {
     try {
       const token = localStorage.getItem("collegeadda_token");
       if (!token) return;
-      const res = await fetch(`${apiUrl}/api/users/search/query`, {
+      const res = await fetch(`${apiUrl}/api/users/daily-drop`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
-        const me = JSON.parse(localStorage.getItem('collegeadda_user') || '{}');
-        const others = data.filter(u => u._id !== (me._id || me.id));
         const colors = [
           "from-cyan-500 to-blue-600",
           "from-fuchsia-500 to-purple-600",
-          "from-orange-400 to-rose-500"
+          "from-orange-400 to-rose-500",
+          "from-pink-500 to-rose-500",
+          "from-violet-500 to-fuchsia-500"
         ];
-        setDailyCampusDrop(others.slice(0, 3).map((u, idx) => ({
+        setDailyCampusDrop(data.map((u, idx) => ({
+          id: u._id,
           name: u.name,
+          profilePic: u.profilePic,
           college: u.university || "Campus Member",
           isVerified: u.isVerified,
           vibe: (u.interests && u.interests.length > 0)
@@ -296,6 +299,25 @@ export default function Home() {
       }
     } catch (err) {
       console.error("Error fetching confessions:", err);
+    }
+  };
+
+  const handleConnectUser = async (userId) => {
+    setConnectStatus(prev => ({ ...prev, [userId]: 'pending' }));
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const res = await fetch(`${apiUrl}/api/users/${userId}/follow`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setConnectStatus(prev => ({ ...prev, [userId]: 'connected' }));
+      } else {
+        setConnectStatus(prev => ({ ...prev, [userId]: null }));
+      }
+    } catch (err) {
+      console.error(err);
+      setConnectStatus(prev => ({ ...prev, [userId]: null }));
     }
   };
 
@@ -345,21 +367,46 @@ export default function Home() {
   };
 
   const toggleLikeConfession = async (id) => {
+    const userId = currentUser?._id || currentUser?.id;
+    if (!userId) return;
+
+    // --- OPTIMISTIC UI UPDATE --- 
+    // Toggle like locally first — no re-fetch, card never disappears
+    setConfessions(prev => prev.map(c => {
+      if (c._id !== id) return c;
+      const alreadyLiked = c.likes?.some(l => l.toString() === userId.toString());
+      const newLikes = alreadyLiked
+        ? (c.likes || []).filter(l => l.toString() !== userId.toString())
+        : [...(c.likes || []), userId];
+      return { ...c, likes: newLikes, heat: 1 + (newLikes.length * 2) + ((c.comments?.length || 0) * 3) };
+    }));
+
     try {
       const token = localStorage.getItem("collegeadda_token");
-      const res = await fetch(`${apiUrl}/api/confessions/${id}/like`, {
+      await fetch(`${apiUrl}/api/confessions/${id}/like`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (res.ok) fetchConfessions();
+      // Server persists, no need to re-fetch
     } catch (err) {
       console.error(err);
+      // Rollback on error by re-fetching
+      fetchConfessions(confessionScope);
     }
   };
 
   const handleCommentConfession = async (id) => {
     const text = confessionCommentInputs[id];
     if (!text?.trim()) return;
+
+    // --- OPTIMISTIC UI UPDATE ---
+    const tempComment = { text: text.trim(), createdAt: new Date().toISOString(), _temp: true };
+    setConfessions(prev => prev.map(c => {
+      if (c._id !== id) return c;
+      return { ...c, comments: [...(c.comments || []), tempComment] };
+    }));
+    setConfessionCommentInputs(prev => ({ ...prev, [id]: "" }));
+
     try {
       const token = localStorage.getItem("collegeadda_token");
       const res = await fetch(`${apiUrl}/api/confessions/${id}/comment`, {
@@ -371,8 +418,9 @@ export default function Home() {
         body: JSON.stringify({ text })
       });
       if (res.ok) {
-        setConfessionCommentInputs(prev => ({ ...prev, [id]: "" }));
-        fetchConfessions();
+        const updated = await res.json();
+        // Replace with real server data to remove _temp flag
+        setConfessions(prev => prev.map(c => c._id === id ? updated : c));
       }
     } catch (err) {
       console.error(err);
@@ -731,7 +779,7 @@ export default function Home() {
               </button>
             </div>
             
-            <div className="relative overflow-hidden w-full flex-1 flex flex-col justify-center">
+            <div className="relative overflow-hidden w-full flex-1 flex flex-col justify-center mt-2">
               {dailyCampusDrop.length === 0 ? (
                 <div className="flex flex-col items-center justify-center rounded-[1.35rem] border border-dashed border-white/10 py-10 text-center">
                   <p className="text-xs font-bold text-white/30">No other students found yet.</p>
@@ -745,43 +793,64 @@ export default function Home() {
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -20 }}
-                      transition={{ duration: 0.2 }}
+                      transition={{ duration: 0.3, ease: "easeOut" }}
                       className="w-full"
                     >
                       {(() => {
                         const student = dailyCampusDrop[currentDropIndex];
+                        const isConnected = friendsList.some(f => f.id === student.id) || connectStatus[student.id] === 'connected';
+                        const isPending = connectStatus[student.id] === 'pending';
+                        
                         return (
-                          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 rounded-[1.35rem] border border-white/10 bg-white/[0.035] p-5 transition-all hover:border-white/20 hover:bg-white/[0.05]">
+                          <div className="relative rounded-[2rem] border border-white/10 bg-[#0d0d1a] overflow-hidden transition-all hover:border-white/20 shadow-2xl">
+                            {/* Gradient Banner bg */}
+                            <div className={`h-24 w-full bg-gradient-to-r ${student.color} opacity-80`} />
                             
-                            <div className={`shrink-0 flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-3xl bg-gradient-to-br ${student.color} text-2xl font-black text-white shadow-lg`}>
-                              {student.name.charAt(0)}
+                            {/* Profile Pic overlapping banner */}
+                            <div className="absolute top-10 left-6">
+                              <div className="h-20 w-20 rounded-full border-4 border-[#0d0d1a] bg-gradient-to-br from-gray-800 to-black overflow-hidden flex items-center justify-center shadow-xl">
+                                {student.profilePic ? (
+                                  <img src={student.profilePic} alt={student.name} className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className={`w-full h-full flex items-center justify-center text-3xl font-black text-white bg-gradient-to-br ${student.color}`}>
+                                    {student.name.charAt(0)}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                             
-                            <div className="flex-1 min-w-0 text-center sm:text-left flex flex-col justify-center h-full">
-                              <h3 className="text-[clamp(1.2rem,4vw,1.5rem)] font-black text-white leading-tight truncate w-full">
-                                {student.name}
+                            {/* Card Content */}
+                            <div className="pt-10 pb-6 px-6">
+                              <h3 className="text-xl font-black text-white leading-tight truncate w-full">
+                                {student.name.length > 15 ? student.name.substring(0, 15) + "..." : student.name}
                               </h3>
-                              <p className="text-[clamp(0.75rem,2vw,0.85rem)] font-bold text-white/45 truncate w-full mt-1">
+                              <p className="text-sm font-bold text-white/40 truncate w-full mt-0.5">
                                 {student.college}
                               </p>
                               
-                              <div className="mt-3 bg-white/5 border border-white/5 rounded-xl p-3">
-                                <p className="text-[clamp(0.8rem,2vw,0.9rem)] leading-relaxed text-white/70 italic min-h-[40px]">
-                                  "{student.vibe}"
-                                </p>
-                              </div>
+                              <p className="text-[13px] leading-relaxed text-white/70 italic mt-3 line-clamp-2 h-10">
+                                "{student.vibe}"
+                              </p>
 
-                              <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 w-full">
-                                <span className="inline-flex rounded-full bg-cyan-400/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-cyan-200 border border-cyan-500/20">
-                                  {student.match}
+                              <div className="mt-5 flex items-center justify-between gap-3 w-full">
+                                <span className="inline-flex rounded-full bg-white/5 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-white/60 border border-white/10">
+                                  ⚡ {student.match}
                                 </span>
                                 
-                                <button className="w-full sm:w-auto rounded-full bg-cyan-500 px-5 py-2 text-xs font-black uppercase tracking-widest text-black hover:bg-cyan-400 transition-all shadow-[0_0_15px_rgba(34,211,238,0.2)] hover:shadow-[0_0_20px_rgba(34,211,238,0.4)]">
-                                  Connect +
+                                <button 
+                                  onClick={() => !isConnected && !isPending && handleConnectUser(student.id)}
+                                  disabled={isConnected || isPending}
+                                  className={clsx(
+                                    "rounded-full px-5 py-2 text-xs font-black uppercase tracking-widest transition-all",
+                                    isConnected ? "bg-green-500/20 text-green-400 border border-green-500/30" :
+                                    isPending ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 cursor-wait" :
+                                    "bg-gradient-to-r from-purple-500 to-cyan-500 text-white hover:opacity-90 shadow-lg shadow-purple-500/20"
+                                  )}
+                                >
+                                  {isConnected ? "Squad ✓" : isPending ? "Pending ⏳" : "Connect +"}
                                 </button>
                               </div>
                             </div>
-
                           </div>
                         );
                       })()}
@@ -790,26 +859,27 @@ export default function Home() {
 
                   {/* Carousel Controls */}
                   {dailyCampusDrop.length > 1 && (
-                    <div className="mt-4 flex items-center justify-center gap-2">
+                    <div className="mt-6 flex items-center justify-center gap-3">
                       <button 
                         onClick={() => setCurrentDropIndex((prev) => (prev > 0 ? prev - 1 : dailyCampusDrop.length - 1))}
-                        className="p-2 rounded-full bg-white/5 text-white/50 hover:bg-white/10 hover:text-white transition-colors"
+                        className="p-2.5 rounded-full bg-white/5 text-white/50 hover:bg-white/15 hover:text-white transition-all hover:scale-110 active:scale-95"
                       >
-                        ←
+                        <ChevronLeft size={18} />
                       </button>
-                      <div className="flex gap-1.5">
+                      <div className="flex gap-2 mx-2">
                         {dailyCampusDrop.map((_, i) => (
                           <div 
                             key={i} 
-                            className={`h-1.5 rounded-full transition-all ${i === currentDropIndex ? 'w-6 bg-cyan-400' : 'w-1.5 bg-white/20'}`}
+                            onClick={() => setCurrentDropIndex(i)}
+                            className={`h-2 rounded-full cursor-pointer transition-all duration-300 ${i === currentDropIndex ? 'w-8 bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.5)]' : 'w-2 bg-white/20 hover:bg-white/40'}`}
                           />
                         ))}
                       </div>
                       <button 
                         onClick={() => setCurrentDropIndex((prev) => (prev < dailyCampusDrop.length - 1 ? prev + 1 : 0))}
-                        className="p-2 rounded-full bg-white/5 text-white/50 hover:bg-white/10 hover:text-white transition-colors"
+                        className="p-2.5 rounded-full bg-white/5 text-white/50 hover:bg-white/15 hover:text-white transition-all hover:scale-110 active:scale-95"
                       >
-                        →
+                        <ChevronRight size={18} />
                       </button>
                     </div>
                   )}
@@ -901,84 +971,134 @@ export default function Home() {
                 </div>
               ) : (
                 <div className="flex flex-col flex-1 h-[480px] overflow-y-auto snap-y snap-mandatory no-scrollbar gap-4 pb-10">
-                  {confessions.map((confession) => (
-                    <div 
-                      key={confession._id} 
-                      className={clsx(
-                        "snap-start snap-always shrink-0 min-h-[220px] relative overflow-hidden rounded-2xl p-5 text-white flex flex-col justify-between shadow-xl transition-all duration-300 hover:scale-[1.01]",
-                        confession.gradient ? `bg-gradient-to-br ${confession.gradient}` : "border border-white/8 bg-white/[0.025]"
-                      )}
+                  <AnimatePresence initial={false}>
+                  {confessions.map((confession) => {
+                    const userId = currentUser?._id || currentUser?.id;
+                    const isLiked = confession.likes?.some(l => l.toString() === userId?.toString());
+                    const likesCount = confession.likes?.length || 0;
+                    const commentsCount = confession.comments?.length || 0;
+
+                    // Time formatting
+                    const getTimeAgo = (date) => {
+                      if (!date) return 'Just now';
+                      const diff = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
+                      if (diff < 60) return 'Just now';
+                      if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+                      if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+                      return new Date(date).toLocaleDateString();
+                    };
+
+                    return (
+                    <motion.div
+                      key={confession._id}
+                      initial={{ opacity: 0, y: 20, scale: 0.97 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.35, ease: "easeOut" }}
+                      className="snap-start snap-always shrink-0"
                     >
-                  <div className="absolute inset-0 bg-black/10 mix-blend-overlay pointer-events-none" />
-
-                  <div className="absolute top-3 right-4 flex items-center gap-2">
-                    <span className="text-[8px] font-black uppercase tracking-[0.2em] text-white/40">
-                      Campus Adda ✦ Confession ✦ {confession.createdAt ? new Date(confession.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Just now'}
-                    </span>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); reportConfession(confession._id); }}
-                      title="Report this confession"
-                      className="text-white/30 hover:text-red-400 transition-colors cursor-pointer relative z-20"
-                    >
-                      <Flag size={11} />
-                    </button>
-                  </div>
-
-                  <p className="text-sm font-extrabold italic leading-relaxed text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)] pr-4">
-                    "{confession.text}"
-                  </p>
-                  
-                  <div className="mt-4 pt-3 border-t border-white/20 flex flex-col gap-3">
-                    <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.2)]">
-                      <span>📍 {confession.college}</span>
-                      <span className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full backdrop-blur-md">
-                        <Flame size={11} className="fill-white animate-pulse" /> {confession.heat} Heat
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between mt-1 relative z-10">
-                      <button 
-                        onClick={() => toggleLikeConfession(confession._id)}
-                        className="flex items-center gap-1.5 text-xs font-bold text-white/80 hover:text-white transition-all bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full backdrop-blur-md cursor-pointer"
+                      <div
+                        className={clsx(
+                          "relative overflow-hidden rounded-2xl shadow-xl transition-all duration-300 hover:shadow-2xl",
+                          confession.gradient ? `bg-gradient-to-br ${confession.gradient}` : "border border-white/8 bg-white/[0.04]"
+                        )}
                       >
-                        <Heart size={14} className={confession.likes?.includes(currentUser?._id || currentUser?.id) ? "fill-red-500 text-red-500" : ""} />
-                        <span>{confession.likes?.length || 0}</span>
-                      </button>
+                        {/* Subtle overlay for text legibility */}
+                        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/20 to-black/50 pointer-events-none" />
 
-                      <div className="flex-1 ml-3 flex items-center bg-black/20 rounded-full px-3 py-1 border border-white/10">
-                        <input
-                          type="text"
-                          placeholder="Add a comment..."
-                          value={confessionCommentInputs[confession._id] || ""}
-                          onChange={(e) => setConfessionCommentInputs(prev => ({ ...prev, [confession._id]: e.target.value }))}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") handleCommentConfession(confession._id);
-                          }}
-                          className="w-full bg-transparent text-xs text-white placeholder:text-white/40 focus:outline-none"
-                        />
-                        <button 
-                          onClick={() => handleCommentConfession(confession._id)}
-                          className="ml-2 text-white/60 hover:text-white transition-colors cursor-pointer"
-                        >
-                          <Send size={12} />
-                        </button>
-                      </div>
-                    </div>
-
-                    {confession.comments && confession.comments.length > 0 && (
-                      <div className="mt-2 space-y-1.5 max-h-24 overflow-y-auto no-scrollbar bg-black/10 rounded-xl p-2 border border-white/5 relative z-10">
-                        {confession.comments.map((comment, i) => (
-                          <div key={i} className="text-[11px] text-white/80 flex items-start gap-2">
-                            <span className="font-bold text-white/50 text-[9px] uppercase shrink-0 mt-0.5">Anon:</span>
-                            <span className="leading-snug">{comment.text}</span>
+                        {/* Header Row */}
+                        <div className="relative z-10 flex items-center justify-between px-5 pt-4 pb-3 border-b border-white/10">
+                          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/50">
+                            CAMPUS ADDA ✦ CONFESSION ✦ {confession.createdAt ? new Date(confession.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Just now'}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[9px] text-white/40 font-bold">{getTimeAgo(confession.createdAt)}</span>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); reportConfession(confession._id); }}
+                              title="Report this confession"
+                              className="text-white/30 hover:text-red-400 transition-colors cursor-pointer p-1"
+                            >
+                              <Flag size={10} />
+                            </button>
                           </div>
-                        ))}
+                        </div>
+
+                        {/* Confession Text */}
+                        <div className="relative z-10 px-5 py-4">
+                          <p className="text-[15px] font-bold italic leading-relaxed text-white drop-shadow-sm">
+                            "{confession.text}"
+                          </p>
+                        </div>
+
+                        {/* Footer info row */}
+                        <div className="relative z-10 flex items-center justify-between px-5 pb-3">
+                          <span className="text-[10px] font-black uppercase text-white/70 truncate max-w-[60%]">
+                            🏫 {confession.college}
+                          </span>
+                          <span className="flex items-center gap-1 bg-black/25 backdrop-blur-sm px-2.5 py-1 rounded-full text-white/90 text-[10px] font-black">
+                            <Flame size={11} className="fill-orange-400 text-orange-400" /> {confession.heat} Heat
+                          </span>
+                        </div>
+
+                        {/* Action Bar */}
+                        <div className="relative z-10 flex items-center gap-2 px-4 py-3 border-t border-white/10 bg-black/20 backdrop-blur-sm">
+                          {/* Like Button */}
+                          <button
+                            onClick={() => toggleLikeConfession(confession._id)}
+                            className={clsx(
+                              "flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full transition-all cursor-pointer",
+                              isLiked
+                                ? "bg-red-500/25 text-red-400 border border-red-500/30"
+                                : "bg-white/10 hover:bg-white/20 text-white/70 hover:text-white border border-white/10"
+                            )}
+                          >
+                            <Heart size={13} className={isLiked ? "fill-red-400 text-red-400" : ""} />
+                            <span>{likesCount}</span>
+                          </button>
+
+                          {/* Comment Count Badge */}
+                          <span className="flex items-center gap-1 text-[10px] font-bold text-white/50 bg-white/5 px-2.5 py-1.5 rounded-full border border-white/10 shrink-0">
+                            💬 {commentsCount}
+                          </span>
+
+                          {/* Comment Input */}
+                          <div className="flex-1 flex items-center bg-black/25 rounded-full px-3 py-1.5 border border-white/10 min-w-0">
+                            <input
+                              type="text"
+                              placeholder="Add a comment..."
+                              value={confessionCommentInputs[confession._id] || ""}
+                              onChange={(e) => setConfessionCommentInputs(prev => ({ ...prev, [confession._id]: e.target.value }))}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") handleCommentConfession(confession._id);
+                              }}
+                              className="w-full bg-transparent text-xs text-white placeholder:text-white/35 focus:outline-none min-w-0"
+                            />
+                            <button
+                              onClick={() => handleCommentConfession(confession._id)}
+                              className="ml-2 text-white/50 hover:text-white transition-colors cursor-pointer shrink-0"
+                            >
+                              <Send size={12} />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Comments List */}
+                        {commentsCount > 0 && (
+                          <div className="relative z-10 px-4 pb-4 space-y-1.5 max-h-28 overflow-y-auto no-scrollbar border-t border-white/5 pt-3 bg-black/20">
+                            {confession.comments.map((comment, i) => (
+                              <div key={i} className="text-[11px] text-white/75 flex items-start gap-2">
+                                <span className="font-black text-white/40 text-[9px] uppercase shrink-0 mt-0.5 bg-white/5 px-1.5 py-0.5 rounded">Anon</span>
+                                <span className="leading-snug">{comment.text}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    </motion.div>
+                  );
+                  })}
+                  </AnimatePresence>
                 </div>
-              ))}
-              </div>
               )}
             </div>
           </div>
@@ -1268,7 +1388,6 @@ export default function Home() {
                         onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author)}&background=7C3AED&color=fff`; }}
                       />
                     </div>
-                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-[#0A0A0F] rounded-full animate-pulse"></div>
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-white flex items-center gap-2">

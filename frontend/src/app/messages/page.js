@@ -594,7 +594,6 @@ function MessagesContent() {
                     )}
                   </div>
                 </div>
-                <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-[3px] border-[#0A0A0F] rounded-full animate-pulse-glow" />
               </div>
 
               <div className="flex-1 text-left min-w-0">
@@ -658,17 +657,12 @@ function MessagesContent() {
                           />}
                     </div>
                   </div>
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-[#0A0A0F] rounded-full" />
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center space-x-1.5 min-w-0">
                     <h2 className="font-bold text-white text-[14px] truncate max-w-[120px] xs:max-w-[150px] sm:max-w-none leading-tight">{activeChat.name}</h2>
                     {activeChat.partner && <VerifiedBadge user={activeChat.partner} size={12} />}
                   </div>
-                  <p className="text-[9px] text-green-500 font-bold uppercase tracking-wider flex items-center leading-none mt-0.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1 flex-shrink-0" />
-                    Active Now
-                  </p>
                 </div>
               </div>
               
