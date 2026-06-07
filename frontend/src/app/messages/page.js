@@ -184,6 +184,7 @@ function MessagesContent() {
             ...c, 
             lastMsg: msg.text, 
             time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            timestamp: new Date(msg.createdAt).getTime(),
             unreadCount: isCurrent ? 0 : (c.unreadCount || 0) + 1
           };
         }
@@ -210,6 +211,7 @@ function MessagesContent() {
             avatar: room.isGroup ? <Users size={20} className="text-purple-400" /> : (room.participants.find(p => p._id !== u._id)?.profilePic || `https://ui-avatars.com/api/?name=User&background=7C3AED&color=fff`),
             lastMsg: room.lastMessage?.text || "No messages yet",
             time: room.lastMessage ? new Date(room.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "",
+            timestamp: room.lastMessage?.createdAt ? new Date(room.lastMessage.createdAt).getTime() : new Date(room.updatedAt || room.createdAt || 0).getTime(),
             unreadCount: room.unreadCounts?.[u._id] || 0,
             participants: room.participants?.map(p => p._id || p.id) || [],
             partner: room.isGroup ? null : room.participants.find(p => p._id !== u._id)
@@ -252,6 +254,7 @@ function MessagesContent() {
                     avatar: newRoom.participants?.find(p => p._id !== u._id)?.profilePic || `https://ui-avatars.com/api/?name=User&background=7C3AED&color=fff`,
                     lastMsg: "No messages yet",
                     time: "",
+                    timestamp: Date.now(),
                     unreadCount: 0,
                     partner: newRoom.participants?.find(p => p._id !== u._id)
                   };
@@ -382,6 +385,18 @@ function MessagesContent() {
         }
       ]
     }));
+    // Optimistic UI update for chat list
+    setChats(prevChats => prevChats.map(c => {
+      if (c.id === activeChat.id) {
+        return {
+          ...c,
+          lastMsg: data.text || (data.mediaUrl ? 'Sent an attachment' : ''),
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          timestamp: Date.now()
+        };
+      }
+      return c;
+    }));
     
     socketRef.current.emit('send_message', data);
     setInput("");
@@ -437,6 +452,7 @@ function MessagesContent() {
           avatar: <Users size={20} className="text-purple-400" />,
           lastMsg: "Group created",
           time: "",
+          timestamp: Date.now(),
           unreadCount: 0,
           participants: newRoom.participants?.map(p => p._id || p.id) || []
         };
@@ -528,7 +544,19 @@ function MessagesContent() {
     }
   };
 
-  const filteredChats = chats.filter(c => c.name.toLowerCase().includes(chatSearch.toLowerCase()));
+  const sortedChats = [...chats].sort((a, b) => {
+    // Check if it's the common group
+    const isACommonGroup = a.type === "group" && a.name.includes("Common Group");
+    const isBCommonGroup = b.type === "group" && b.name.includes("Common Group");
+    
+    if (isACommonGroup && !isBCommonGroup) return -1;
+    if (!isACommonGroup && isBCommonGroup) return 1;
+    
+    // Sort by timestamp descending
+    return (b.timestamp || 0) - (a.timestamp || 0);
+  });
+
+  const filteredChats = sortedChats.filter(c => c.name.toLowerCase().includes(chatSearch.toLowerCase()));
 
   if (!isMounted || !user) return null;
 

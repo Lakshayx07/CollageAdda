@@ -581,33 +581,51 @@ export default function ExplorePage() {
                           : `https://ui-avatars.com/api/?name=${encodeURIComponent(student.name || "U")}&background=7C3AED&color=fff`;
 
                         return (
-                          <div key={uid} className="min-w-[235px] flex-1 rounded-[1.35rem] border border-white/10 bg-white/[0.035] p-4 flex flex-col">
-                            <div className="mb-4 flex items-start justify-between gap-3">
-                              <div className="h-14 w-14 shrink-0 rounded-2xl overflow-hidden border border-white/10">
+                          <div key={uid} className="min-w-[280px] flex-1 rounded-[1.5rem] border border-white/10 bg-white/[0.02] p-5 flex flex-col hover:bg-white/[0.04] transition-colors">
+                            <div className="flex justify-end mb-4">
+                              <span className="rounded-full bg-white/5 border border-white/10 px-3 py-1 text-[10px] font-bold text-white/70 shadow-sm">
+                                {student.tag}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-4 mb-4">
+                              <div className="h-[60px] w-[60px] shrink-0 rounded-full overflow-hidden border-2 border-white/10">
                                 <img src={avatarUrl} alt={student.name} className="w-full h-full object-cover" />
                               </div>
-                              <span className="rounded-full bg-cyan-400/10 px-2.5 py-1 text-[10px] font-bold text-cyan-200 text-right leading-tight">{student.tag}</span>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-[16px] font-bold text-white">{student.name}</p>
+                                <p className="truncate text-[13px] text-white/60 mt-0.5">{student.university || "Campus Adda"}</p>
+                                <p className="truncate text-[12px] text-white/40 mt-0.5">
+                                  {student.studyYear || student.year ? `${student.studyYear || student.year} ` : ""}
+                                  {(student.course || student.branch) ? `• ${student.course || student.branch}` : ""}
+                                </p>
+                              </div>
                             </div>
-                            <p className="truncate text-base font-black text-white">{student.name}</p>
-                            <p className="mt-1 truncate text-[11px] font-bold text-white/45">
-                              {student.university || "Campus Adda"}{student.studyYear || student.year ? ` • ${student.studyYear || student.year}` : ""}
-                            </p>
-                            <p className="mt-3 text-sm leading-5 text-white/66 line-clamp-2 flex-1">
-                              {student.bio || (Array.isArray(student.interests) && student.interests.slice(0,3).join(", ")) || "Campus Adda student"}
-                            </p>
+                            
+                            <div className="flex flex-wrap gap-1.5 mb-5 flex-1 content-start">
+                              {Array.isArray(student.interests) && student.interests.length > 0 ? (
+                                student.interests.slice(0, 3).map((interest, i) => (
+                                  <span key={i} className="px-3 py-1.5 text-[10px] font-bold bg-white/5 border border-white/10 text-white/70 rounded-full">
+                                    {interest}
+                                  </span>
+                                ))
+                              ) : (
+                                <p className="text-[12px] text-white/40 italic line-clamp-2">{student.bio || "No bio added yet"}</p>
+                              )}
+                            </div>
+
                             <button
                               onClick={() => status === 'idle' && handleDiscoveryConnect(student)}
                               disabled={status !== 'idle'}
                               className={clsx(
-                                "mt-4 w-full rounded-xl py-2.5 text-[11px] font-black uppercase tracking-widest transition-all",
+                                "mt-auto w-full rounded-xl py-3 text-[12px] font-black uppercase tracking-widest transition-all",
                                 status === 'connected'
-                                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 cursor-default"
+                                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 cursor-default"
                                   : status === 'pending'
-                                  ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 cursor-wait"
+                                  ? "bg-white/5 text-white/40 border border-white/10 cursor-wait"
                                   : "bg-gradient-to-r from-purple-500 to-cyan-500 text-white hover:opacity-90 shadow-lg shadow-purple-500/20 hover:scale-105 active:scale-95"
                               )}
                             >
-                              {status === 'connected' ? "👥 Squad Member ✓" : status === 'pending' ? "⏳ Pending" : "⚡ Connect"}
+                              {status === 'connected' ? "👥 Squad ✓" : status === 'pending' ? "⏳ Pending" : "⚡ Connect"}
                             </button>
                           </div>
                         );

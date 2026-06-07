@@ -54,8 +54,6 @@ export default function Home() {
     return prompts[Math.floor(Math.random() * prompts.length)];
   });
   const [selectedGradient, setSelectedGradient] = useState("from-orange-500 via-rose-500 to-purple-600");
-  const [dailyCampusDrop, setDailyCampusDrop] = useState([]);
-  const [currentDropIndex, setCurrentDropIndex] = useState(0);
   const [collegeLeaderboard, setCollegeLeaderboard] = useState([]);
 
   const filteredPosts = posts.filter(post => {
@@ -127,7 +125,6 @@ export default function Home() {
       fetchFriends();
       fetchStories();
       fetchLeaderboard();
-      fetchDailyCampusDrop();
       fetchConfessions();
     }
   }, [router]);
@@ -253,91 +250,6 @@ export default function Home() {
     }
   };
 
-  const fetchDailyCampusDrop = async (forceRefresh = false) => {
-    try {
-      const token = localStorage.getItem("collegeadda_token");
-      if (!token) {
-        console.log('[DailyDrop] No token, skipping fetch');
-        return;
-      }
-
-      const colors = [
-        "from-cyan-500 to-blue-600",
-        "from-fuchsia-500 to-purple-600",
-        "from-orange-400 to-rose-500",
-        "from-pink-500 to-rose-500",
-        "from-violet-500 to-fuchsia-500"
-      ];
-
-      const mapUser = (u, idx) => ({
-        id: u._id,
-        name: u.name || "Campus Student",
-        profilePic: u.profilePic || "",
-        college: u.university || "Campus Member",
-        isVerified: u.isVerified,
-        course: u.course || u.branch || "",
-        year: u.year || u.studyYear || "",
-        vibe: (u.interests && u.interests.length > 0)
-          ? u.interests.slice(0, 3).join(' · ')
-          : (u.bio && u.bio.trim() ? u.bio : "No bio added yet"),
-        match: (() => {
-          const parts = [];
-          if (u.course || u.branch) parts.push(u.course || u.branch);
-          if (u.year || u.studyYear) parts.push(`${u.year || u.studyYear} Year`);
-          return parts.length > 0 ? parts.join(' • ') : "New Connect";
-        })(),
-        color: colors[idx % colors.length]
-      });
-
-      // ── localStorage 24-hour cache check (client-side) ───────────────────
-      if (!forceRefresh) {
-        const today = new Date().toDateString();
-        try {
-          const saved = JSON.parse(localStorage.getItem('daily_drop') || 'null');
-          if (saved && saved.date === today && Array.isArray(saved.users) && saved.users.length > 0) {
-            console.log('[DailyDrop] Using localStorage cache:', saved.users.length, 'users');
-            setDailyCampusDrop(saved.users.map((u, idx) => mapUser(u, idx)));
-            return;
-          }
-        } catch (e) {
-          console.log('[DailyDrop] Cache read error, fetching fresh');
-        }
-      }
-
-      console.log('[DailyDrop] Fetching from API...');
-      const res = await fetch(`${apiUrl}/api/users/daily-drop`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      console.log('[DailyDrop] API response status:', res.status);
-
-      if (res.ok) {
-        const data = await res.json();
-        console.log('[DailyDrop] Users received:', data.length, data.map(u => u.name));
-
-        if (data.length > 0) {
-          // Save to localStorage cache
-          try {
-            localStorage.setItem('daily_drop', JSON.stringify({
-              date: new Date().toDateString(),
-              users: data
-            }));
-          } catch (e) {
-            console.log('[DailyDrop] Could not save to localStorage:', e);
-          }
-          setDailyCampusDrop(data.map((u, idx) => mapUser(u, idx)));
-        } else {
-          console.log('[DailyDrop] API returned 0 users — showing invite placeholder');
-          setDailyCampusDrop([]);
-        }
-      } else {
-        const errData = await res.json().catch(() => ({}));
-        console.error('[DailyDrop] API error:', res.status, errData);
-      }
-    } catch (err) {
-      console.error('[DailyDrop] Fetch failed:', err);
-    }
-  };
 
   const fetchConfessions = async (scope = 'local') => {
     try {
@@ -738,10 +650,11 @@ export default function Home() {
         <div className="flex items-center space-x-4">
           <ThemeToggle />
           <button 
-            onClick={() => router.push('/explore')}
+            onClick={() => router.push('/collab')}
+            title="Collab"
             className="rounded-2xl border border-white/8 bg-white/[0.04] p-2.5 text-white/70 transition-colors hover:bg-white/[0.08]"
           >
-            <Search size={22} />
+            <Zap size={22} />
           </button>
           <NotificationBell />
           <div 
@@ -817,155 +730,8 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="grid min-w-0 gap-6 grid-cols-1 lg:grid-cols-[0.6fr_0.4fr] items-stretch">
-          {/* Daily Campus Drop Slider */}
-          <div className="app-panel h-full flex flex-col min-w-0 rounded-[1.6rem] p-4 sm:rounded-[2rem] sm:p-5 relative lg:order-2">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-300">Daily Campus Drop</p>
-                <h2 className="mt-1 text-[clamp(1.1rem,3vw,1.25rem)] font-black tracking-tight text-white">People worth knowing today</h2>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => fetchDailyCampusDrop(true)}
-                  title="Refresh suggestions"
-                  className="p-2 rounded-xl border border-white/10 bg-white/[0.04] text-white/40 hover:text-white hover:bg-white/[0.08] transition-all"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-                </button>
-                <button
-                  onClick={() => router.push('/explore')}
-                  className="shrink-0 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-[10px] font-black uppercase tracking-wider text-white/70 hover:bg-white/[0.08] transition-colors"
-                >
-                  Explore
-                </button>
-              </div>
-            </div>
-            
-            <div className="relative overflow-hidden w-full flex-1 flex flex-col justify-center mt-2">
-              {dailyCampusDrop.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-[1.75rem] border border-dashed border-white/10 py-10 text-center gap-4 px-6">
-                  <div className="w-14 h-14 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-white/50">Be the first!</p>
-                    <p className="mt-1 text-[11px] text-white/25">Invite friends to Campus Adda</p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      navigator.share ? navigator.share({ title: 'Campus Adda', text: 'Join me on Campus Adda!', url: 'https://campusadda.social' }) : window.open('https://campusadda.social', '_blank');
-                    }}
-                    className="gradient-bg text-white text-[10px] font-black uppercase tracking-widest px-5 py-2.5 rounded-full shadow-lg shadow-purple-500/20 hover:scale-105 transition-transform"
-                  >
-                    Invite Friends 🚀
-                  </button>
-                </div>
-              ) : (
-                <div className="relative">
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={currentDropIndex}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      transition={{ duration: 0.3, ease: "easeOut" }}
-                      className="w-full"
-                    >
-                      {(() => {
-                        const student = dailyCampusDrop[currentDropIndex];
-                        const isConnected = friendsList.some(f => f.id === student.id) || connectStatus[student.id] === 'connected';
-                        const isPending = connectStatus[student.id] === 'pending';
-                        
-                        return (
-                          <div className="relative rounded-[2rem] border border-white/10 bg-[#0d0d1a] overflow-hidden transition-all hover:border-white/20 shadow-2xl">
-                            {/* Gradient Banner bg */}
-                            <div className={`h-24 w-full bg-gradient-to-r ${student.color} opacity-80`} />
-                            
-                            {/* Profile Pic overlapping banner */}
-                            <div className="absolute top-10 left-6">
-                              <div className="h-20 w-20 rounded-full border-4 border-[#0d0d1a] bg-gradient-to-br from-gray-800 to-black overflow-hidden flex items-center justify-center shadow-xl">
-                                {student.profilePic ? (
-                                  <img src={student.profilePic} alt={student.name} className="w-full h-full object-cover" />
-                                ) : (
-                                  <div className={`w-full h-full flex items-center justify-center text-3xl font-black text-white bg-gradient-to-br ${student.color}`}>
-                                    {student.name.charAt(0)}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            
-                            {/* Card Content */}
-                            <div className="pt-10 pb-6 px-6">
-                              <h3 className="text-xl font-black text-white leading-tight truncate w-full">
-                                {student.name.length > 15 ? student.name.substring(0, 15) + "..." : student.name}
-                              </h3>
-                              <p className="text-sm font-bold text-white/40 truncate w-full mt-0.5">
-                                {student.college}
-                              </p>
-                              
-                              {/* Course + Year Pill */}
-                              {student.match && student.match !== 'New Connect' && (
-                                <p className="text-[11px] font-bold text-cyan-400/80 mt-1 truncate">
-                                  ⚡ {student.match}
-                                </p>
-                              )}
-                              
-                              <p className="text-[13px] leading-relaxed text-white/65 italic mt-3 line-clamp-2">
-                                "{student.vibe}"
-                              </p>
+        <section className="grid min-w-0 gap-6 grid-cols-1 items-stretch">
 
-                              <div className="mt-5 flex items-center justify-end gap-3 w-full">
-                                <button 
-                                  onClick={() => !isConnected && !isPending && handleConnectUser(student.id)}
-                                  disabled={isConnected || isPending}
-                                  className={clsx(
-                                    "rounded-full px-5 py-2 text-xs font-black uppercase tracking-widest transition-all",
-                                    isConnected ? "bg-green-500/20 text-green-400 border border-green-500/30" :
-                                    isPending ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 cursor-wait" :
-                                    "bg-gradient-to-r from-purple-500 to-cyan-500 text-white hover:opacity-90 shadow-lg shadow-purple-500/20 hover:scale-105 active:scale-95"
-                                  )}
-                                >
-                                  {isConnected ? "Squad ✓" : isPending ? "Pending ⏳" : "Connect +"}
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })()}
-                    </motion.div>
-                  </AnimatePresence>
-
-                  {/* Carousel Controls */}
-                  {dailyCampusDrop.length > 1 && (
-                    <div className="mt-6 flex items-center justify-center gap-3">
-                      <button 
-                        onClick={() => setCurrentDropIndex((prev) => (prev > 0 ? prev - 1 : dailyCampusDrop.length - 1))}
-                        className="p-2.5 rounded-full bg-white/5 text-white/50 hover:bg-white/15 hover:text-white transition-all hover:scale-110 active:scale-95"
-                      >
-                        <ChevronLeft size={18} />
-                      </button>
-                      <div className="flex gap-2 mx-2">
-                        {dailyCampusDrop.map((_, i) => (
-                          <div 
-                            key={i} 
-                            onClick={() => setCurrentDropIndex(i)}
-                            className={`h-2 rounded-full cursor-pointer transition-all duration-300 ${i === currentDropIndex ? 'w-8 bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.5)]' : 'w-2 bg-white/20 hover:bg-white/40'}`}
-                          />
-                        ))}
-                      </div>
-                      <button 
-                        onClick={() => setCurrentDropIndex((prev) => (prev < dailyCampusDrop.length - 1 ? prev + 1 : 0))}
-                        className="p-2.5 rounded-full bg-white/5 text-white/50 hover:bg-white/15 hover:text-white transition-all hover:scale-110 active:scale-95"
-                      >
-                        <ChevronRight size={18} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
 
           <div className="app-panel h-full flex flex-col min-w-0 rounded-[1.6rem] p-4 sm:rounded-[2rem] sm:p-5 lg:order-1">
             <div className="mb-4 flex flex-col gap-3">
@@ -977,69 +743,83 @@ export default function Home() {
                 <ShieldCheck size={20} className="text-orange-300" />
               </div>
               {/* Scope Toggle */}
-              <div className="flex items-center gap-2 self-start rounded-full border border-white/10 bg-white/[0.04] p-1">
+              <div className="flex items-center gap-3 self-start mb-2">
                 <button
                   onClick={() => { setConfessionScope('local'); fetchConfessions('local'); }}
                   className={clsx(
-                    "flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider transition-all",
-                    confessionScope === 'local' ? "bg-orange-400 text-black" : "text-white/50 hover:text-white"
+                    "flex items-center gap-2 rounded-full px-4 py-2 text-[11px] font-black uppercase tracking-wider transition-all duration-300",
+                    confessionScope === 'local' 
+                      ? "bg-gradient-to-r from-purple-500 to-cyan-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]" 
+                      : "border border-white/10 bg-white/[0.02] text-white/50 hover:text-white hover:bg-white/[0.06]"
                   )}
                 >
-                  <GraduationCap size={11} /> My Campus
+                  🏫 My Campus
                 </button>
                 <button
                   onClick={() => { setConfessionScope('global'); fetchConfessions('global'); }}
                   className={clsx(
-                    "flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider transition-all",
-                    confessionScope === 'global' ? "bg-purple-500 text-white" : "text-white/50 hover:text-white"
+                    "flex items-center gap-2 rounded-full px-4 py-2 text-[11px] font-black uppercase tracking-wider transition-all duration-300",
+                    confessionScope === 'global' 
+                      ? "bg-gradient-to-r from-purple-500 to-cyan-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]" 
+                      : "border border-white/10 bg-white/[0.02] text-white/50 hover:text-white hover:bg-white/[0.06]"
                   )}
                 >
-                  <Globe size={11} /> Global Pulse
+                  🌐 Global Pulse
                 </button>
               </div>
             </div>
-            <div className="space-y-4">
-              <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-3">
+            <div className="space-y-6">
+              <div className="rounded-[1.25rem] border border-transparent bg-white/[0.03] p-4 transition-all focus-within:border-purple-500 focus-within:shadow-[0_0_0_1px_#7c3aed] focus-within:bg-white/[0.05]">
                 <textarea
                   value={confessionText}
                   onChange={(e) => setConfessionText(e.target.value)}
-                  placeholder="Drop an anonymous campus thought..."
-                  className="min-h-16 w-full resize-none bg-transparent text-sm text-white outline-none placeholder:text-white/28"
+                  maxLength={280}
+                  placeholder={placeholderText}
+                  className="min-h-[100px] w-full resize-none bg-transparent text-base text-white outline-none placeholder:text-white/30 leading-relaxed"
                 />
                 
                 {/* Gradient Picker */}
-                <div className="mt-2 flex items-center gap-2 border-t border-white/5 pt-3">
-                  <span className="text-[9px] font-black uppercase tracking-wider text-white/40">Theme:</span>
-                  <div className="flex gap-1.5">
-                    {[
-                      { name: "Sunset", value: "from-orange-500 via-rose-500 to-purple-600" },
-                      { name: "Cyber", value: "from-blue-600 via-indigo-500 to-purple-600" },
-                      { name: "Ocean", value: "from-cyan-500 to-blue-600" },
-                      { name: "Forest", value: "from-emerald-500 via-teal-600 to-cyan-600" },
-                      { name: "Cosmic", value: "from-purple-600 via-fuchsia-500 to-pink-500" }
-                    ].map((g) => (
-                      <button
-                        key={g.name}
-                        onClick={() => setSelectedGradient(g.value)}
-                        className={clsx(
-                          "w-5 h-5 rounded-full bg-gradient-to-br cursor-pointer border border-white/10 transition-all",
-                          g.value,
-                          selectedGradient === g.value ? "ring-2 ring-white scale-110" : "opacity-80 hover:opacity-100 hover:scale-105"
-                        )}
-                        title={g.name}
-                      />
-                    ))}
+                <div className="mt-3 flex items-center justify-between border-t border-white/5 pt-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-white/40">Theme:</span>
+                    <div className="flex gap-2">
+                      {[
+                        { name: "Sunset", value: "from-orange-500 via-rose-500 to-purple-600" },
+                        { name: "Cyber", value: "from-blue-600 via-indigo-500 to-purple-600" },
+                        { name: "Ocean", value: "from-cyan-500 to-blue-600" },
+                        { name: "Forest", value: "from-emerald-500 via-teal-600 to-cyan-600" },
+                        { name: "Cosmic", value: "from-purple-600 via-fuchsia-500 to-pink-500" }
+                      ].map((g) => (
+                        <button
+                          key={g.name}
+                          onClick={() => setSelectedGradient(g.value)}
+                          className={clsx(
+                            "w-7 h-7 rounded-full bg-gradient-to-br cursor-pointer border border-white/10 transition-all duration-300",
+                            g.value,
+                            selectedGradient === g.value ? "ring-2 ring-white scale-110 shadow-lg" : "opacity-70 hover:opacity-100 hover:scale-110"
+                          )}
+                          title={g.name}
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
 
-                <div className="mt-3 flex items-center justify-between gap-3 pt-2 border-t border-white/5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-white/30">Moderated before public</span>
-                  <button
-                    onClick={handleCreateConfession}
-                    className="rounded-full bg-orange-400 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-black font-extrabold hover:bg-orange-300 transition-all hover:scale-105 cursor-pointer"
-                  >
-                    Drop
-                  </button>
+                  <div className="flex items-center gap-4">
+                    <span className={clsx("text-xs font-bold", confessionText.length > 260 ? "text-red-400" : "text-white/40")}>
+                      {confessionText.length} / 280
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-white/30 hidden sm:inline-block">🔒 Moderated before public</span>
+                      <button
+                        onClick={handleCreateConfession}
+                        disabled={confessionText.trim().length === 0}
+                        style={{ background: 'linear-gradient(135deg, #f59e0b, #ef4444)' }}
+                        className="rounded-full px-5 py-2.5 text-xs font-black uppercase tracking-widest text-white shadow-[0_0_15px_rgba(239,68,68,0.4)] hover:shadow-[0_0_20px_rgba(239,68,68,0.6)] transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+                      >
+                        🔥 Drop
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
               
@@ -1103,8 +883,8 @@ export default function Home() {
                         </div>
 
                         {/* Confession Text */}
-                        <div className="relative z-10 px-5 py-4">
-                          <p className="text-[15px] font-bold italic leading-relaxed text-white drop-shadow-sm">
+                        <div className="relative z-10 px-6 py-6">
+                          <p className="text-[18px] font-bold italic leading-relaxed text-white drop-shadow-md">
                             "{confession.text}"
                           </p>
                         </div>
@@ -1163,13 +943,18 @@ export default function Home() {
 
                         {/* Comments List */}
                         {commentsCount > 0 && (
-                          <div className="relative z-10 px-4 pb-4 space-y-1.5 max-h-28 overflow-y-auto no-scrollbar border-t border-white/5 pt-3 bg-black/20">
-                            {confession.comments.map((comment, i) => (
-                              <div key={i} className="text-[11px] text-white/75 flex items-start gap-2">
-                                <span className="font-black text-white/40 text-[9px] uppercase shrink-0 mt-0.5 bg-white/5 px-1.5 py-0.5 rounded">Anon</span>
+                          <div className="relative z-10 px-5 pb-5 space-y-2 border-t border-white/5 pt-4 bg-black/20">
+                            {confession.comments.slice(0, 2).map((comment, i) => (
+                              <div key={i} className="text-sm text-white/80 flex items-start gap-2">
+                                <span className="font-black text-white/40 text-[10px] uppercase shrink-0 mt-1 bg-white/10 px-2 py-0.5 rounded-md">Anon</span>
                                 <span className="leading-snug">{comment.text}</span>
                               </div>
                             ))}
+                            {commentsCount > 2 && (
+                              <button className="text-[11px] font-bold text-white/40 hover:text-white mt-1 uppercase tracking-wider transition-colors">
+                                View all {commentsCount} comments
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>
