@@ -959,15 +959,23 @@ export default function FriendsPage() {
               ) : (
                 <div className="flex flex-col overflow-y-auto custom-scrollbar relative z-10 pb-6">
                   {/* Banner */}
-                  <motion.div variants={modalVars.banner} className="h-32 w-full gradient-bg relative">
+                  <motion.div variants={modalVars.banner} className="h-[70px] w-full gradient-bg relative">
                     <div className="absolute inset-0 bg-black/20 mix-blend-overlay" />
                   </motion.div>
                   
-                  <div className="px-6 relative flex-1 flex flex-col -mt-12">
-                    {/* Photo */}
-                    <motion.div variants={modalVars.profilePic} className="relative w-[100px] h-[100px] mx-auto group cursor-pointer">
-                      <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-cyan-400 to-purple-500 animate-ping opacity-30 blur-md" />
-                      <img src={selectedProfileData.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedProfileData.name)}&background=7C3AED&color=fff`} className="relative z-10 w-full h-full rounded-full border-[3px] border-transparent" style={{ background: 'linear-gradient(#0A0A0F, #0A0A0F) padding-box, linear-gradient(to right bottom, #a855f7, #06b6d4) border-box', objectFit: 'cover' }} />
+                  <div className="px-6 relative flex-1 flex flex-col">
+                    {/* Photo — sits BELOW banner, never overlapping */}
+                    <motion.div variants={modalVars.profilePic} className="mt-4 relative w-[100px] h-[100px] mx-auto shrink-0">
+                      {/* Gradient border ring */}
+                      <div className="absolute inset-0 rounded-full p-[3px]" style={{ background: 'linear-gradient(135deg, #7c3aed, #06b6d4)' }}>
+                        <div className="w-full h-full rounded-full overflow-hidden bg-[#0A0A0F]">
+                          <img
+                            src={selectedProfileData.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedProfileData.name)}&background=7C3AED&color=fff`}
+                            alt={selectedProfileData.name}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }}
+                          />
+                        </div>
+                      </div>
                       {selectedProfileData.rank && (
                         <div className="absolute z-20 -top-1 -right-1 bg-yellow-400 text-black text-[11px] font-black px-2 py-0.5 rounded-full border-2 border-[#0A0A0F] shadow-lg">#{selectedProfileData.rank}</div>
                       )}
