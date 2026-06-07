@@ -387,6 +387,12 @@ body.messages-page-active {
   height: 100dvh !important;
 }
 
+body.messages-page-active .app-surface {
+  min-height: 100dvh;
+  overflow: hidden !important;
+  padding-bottom: 0 !important;
+}
+
 /* ALL OTHER PAGES — restore normal scroll */
 body:not(.messages-page-active) {
   overflow: auto;
@@ -464,29 +470,61 @@ body:not(.messages-page-active) {
 }
 
 @media (max-width: 768px) {
-  /* On mobile, each panel takes full width — JSX controls which one is visible */
+  /* WhatsApp-style: both panels full-screen, slide in/out with transform */
+  .messages-layout {
+    position: relative;
+    overflow: hidden;
+    height: calc(100dvh - 64px - env(safe-area-inset-bottom));
+  }
+
   .inbox-panel {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     min-width: 100%;
-    height: calc(100dvh - 64px); /* account for bottom nav */
-    padding-bottom: 0;
+    height: 100%;
+    border-right: none;
+    transform: translateX(0);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 2;
+    display: flex !important;
+  }
+
+  /* When a chat is open, slide inbox LEFT off-screen */
+  .inbox-panel.chat-active {
+    transform: translateX(-100%);
   }
 
   .chat-panel {
-    width: 100%;
-    height: calc(100dvh - 64px); /* account for bottom nav */
-  }
-  
-  .chat-input-area {
-    position: fixed;
-    bottom: 64px; /* above bottom nav */
+    position: absolute;
+    top: 0;
     left: 0;
-    right: 0;
-    z-index: 100;
+    width: 100%;
+    height: 100%;
+    transform: translateX(100%); /* start off-screen RIGHT */
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1;
+    display: flex !important;
   }
-  
+
+  /* When a chat is open, slide chat panel INTO view */
+  .chat-panel.chat-active {
+    transform: translateX(0);
+    z-index: 3;
+  }
+
+  .chat-input-area {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    right: auto;
+    width: 100%;
+    z-index: 20;
+  }
+
   .chat-messages-area {
-    padding-bottom: 80px;
+    padding: 12px;
   }
 }
 

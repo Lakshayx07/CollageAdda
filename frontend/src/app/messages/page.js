@@ -20,6 +20,7 @@ function MessagesContent() {
     document.body.classList.add('messages-page-active');
     return () => {
       document.body.classList.remove('messages-page-active');
+      document.body.classList.remove('messages-chat-open');
     };
   }, []);
   const [activeChat, setActiveChat] = useState(null);
@@ -46,6 +47,11 @@ function MessagesContent() {
   const socketRef = useRef(null);
   const fileInputRef = useRef(null);
   const scrollRef = useRef(null);
+
+  useEffect(() => {
+    document.body.classList.toggle('messages-chat-open', Boolean(activeChat));
+    return () => document.body.classList.remove('messages-chat-open');
+  }, [activeChat]);
 
   const isOnlyEmoji = (text) => {
     if (!text) return false;
@@ -473,6 +479,36 @@ function MessagesContent() {
     setSelectedMembers(prev => prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id]);
   };
 
+  const openChat = (chat) => {
+    setActiveChat(chat);
+    setShowAttachments(false);
+    setShowEmojiPicker(false);
+    setShowChatOptions(false);
+
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("chat", chat.id);
+      url.searchParams.delete("userId");
+      url.searchParams.delete("interestProduct");
+      window.history.replaceState({}, document.title, `${url.pathname}${url.search}`);
+    }
+  };
+
+  const closeChat = () => {
+    setActiveChat(null);
+    setShowAttachments(false);
+    setShowEmojiPicker(false);
+    setShowChatOptions(false);
+    setSelectedMedia(null);
+    setMediaType('none');
+
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("chat");
+      window.history.replaceState({}, document.title, `${url.pathname}${url.search}`);
+    }
+  };
+
   const handleLeaveGroup = async () => {
     if (!activeChat || activeChat.type !== 'group') return;
     
@@ -568,7 +604,7 @@ function MessagesContent() {
         animate={{ x: 0, opacity: 1 }}
         className={clsx(
           "inbox-panel",
-          activeChat ? "hidden md:flex" : "flex"
+          activeChat && "chat-active"
         )}
       >
         <header className="inbox-header flex flex-col pt-4">
@@ -604,7 +640,9 @@ function MessagesContent() {
             <motion.button
               key={chat.id}
               whileHover={{ x: 4 }}
-              onClick={() => setActiveChat(chat)}
+              type="button"
+              onClick={() => openChat(chat)}
+              aria-label={`Open chat with ${chat.name}`}
               className={clsx(
                 "group relative flex w-full items-center space-x-3 rounded-[1.35rem] p-3 transition-all sm:space-x-4 sm:rounded-[1.5rem] sm:p-4",
                 activeChat?.id === chat.id 
@@ -665,14 +703,14 @@ function MessagesContent() {
       {/* Chat Area */}
       <div className={clsx(
         "chat-panel",
-        !activeChat ? "hidden md:flex" : "flex"
+        activeChat && "chat-active"
       )}>
         {activeChat ? (
           <>
             {/* Chat Header */}
             <header className="chat-header page-header flex items-center justify-between px-4 md:px-6 py-2">
               <div className="flex items-center space-x-3 min-w-0">
-                <button onClick={() => setActiveChat(null)} className="lg:hidden p-2 text-white/40 hover:text-white bg-white/5 rounded-full mr-1 flex-shrink-0">
+                <button onClick={closeChat} className="lg:hidden p-2 text-white/40 hover:text-white bg-white/5 rounded-full mr-1 flex-shrink-0" aria-label="Back to conversations">
                   <ChevronLeft size={20} />
                 </button>
                 <div className="relative flex-shrink-0">
