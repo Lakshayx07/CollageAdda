@@ -125,7 +125,15 @@ export default function ExplorePage() {
       try {
         const token = localStorage.getItem("collegeadda_token");
         const currentUser = JSON.parse(localStorage.getItem("collegeadda_user") || "{}");
-        const currentUserId = currentUser._id || currentUser.id;
+
+        console.log('[DailyDiscovery] Current user:', currentUser);
+        console.log('[DailyDiscovery] Current user ID:', currentUser?._id || currentUser?.id);
+
+        if (!token) {
+          console.log('[DailyDiscovery] No auth token found');
+          setDailyDiscoveryLoading(false);
+          return;
+        }
 
         // Check cache
         const cached = JSON.parse(localStorage.getItem("explore_picked_students") || "null");
@@ -134,32 +142,27 @@ export default function ExplorePage() {
         let students = [];
 
         if (!isExpired && Array.isArray(cached.students) && cached.students.length > 0) {
+          console.log('[DailyDiscovery] Using cached students:', cached.students.length);
           students = cached.students;
           setDiscoveryTimestamp(cached.timestamp);
         } else {
-          // Priority 1: same university
-          const res1 = await fetch(
-            `${apiUrl}/api/users/suggestions?limit=3`,
+          // Call the correct endpoint — /api/users/daily-drop has a 5-priority fallback
+          // that includes getting absolutely anyone in the DB
+          console.log('[DailyDiscovery] Fetching from /api/users/daily-drop...');
+          const res = await fetch(
+            `${apiUrl}/api/users/daily-drop`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
-          if (res1.ok) {
-            const data1 = await res1.json();
-            students = Array.isArray(data1) ? data1.slice(0, 3) : [];
-          }
 
-          // Fallback: any real users
-          if (students.length < 3) {
-            const res2 = await fetch(
-              `${apiUrl}/api/users?limit=6`,
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
-            if (res2.ok) {
-              const data2 = await res2.json();
-              const extras = (Array.isArray(data2) ? data2 : [])
-                .filter(u => (u._id || u.id) !== currentUserId && !students.some(s => (s._id || s.id) === (u._id || u.id)))
-                .slice(0, 3 - students.length);
-              students = [...students, ...extras];
-            }
+          console.log('[DailyDiscovery] Response status:', res.status);
+
+          if (res.ok) {
+            const data = await res.json();
+            console.log('[DailyDiscovery] Fetched students:', data);
+            students = Array.isArray(data) ? data.slice(0, 3) : [];
+          } else {
+            const errText = await res.text();
+            console.log('[DailyDiscovery] Fetch error response:', errText);
           }
 
           const ts = Date.now();
