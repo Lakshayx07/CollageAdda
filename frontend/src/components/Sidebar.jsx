@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { Home, Compass, User, LogOut, Users, MessageSquare, Zap, Search } from "lucide-react";
 import Link from "next/link";
+import ThemeToggle from "./ThemeToggle";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
@@ -138,7 +139,11 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="mt-auto border-t app-divider pt-6">
+      <div className="mt-auto border-t app-divider pt-6 flex flex-col gap-4">
+        <div className="flex items-center justify-between px-4">
+          <span className="text-[11px] font-black uppercase tracking-[0.16em] text-white/50 transition-colors duration-300">Theme</span>
+          <ThemeToggle />
+        </div>
         <motion.button
           whileHover={{ x: 4 }}
           onClick={handleLogout}

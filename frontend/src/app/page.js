@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check, Plus, Flame, TrendingUp, Search, Zap, BarChart2, Compass, Trophy, ShieldCheck, Flag, Globe, GraduationCap, ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import NotificationBell from "../components/NotificationBell";
+import ThemeToggle from "../components/ThemeToggle";
 import VerifiedBadge from "../components/VerifiedBadge";
 import clsx from "clsx";
 import { motion, AnimatePresence } from "framer-motion";
@@ -735,6 +736,7 @@ export default function Home() {
             </h1>
           </div>
         <div className="flex items-center space-x-4">
+          <ThemeToggle />
           <button 
             onClick={() => router.push('/explore')}
             className="rounded-2xl border border-white/8 bg-white/[0.04] p-2.5 text-white/70 transition-colors hover:bg-white/[0.08]"
