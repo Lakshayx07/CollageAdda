@@ -677,7 +677,7 @@ export default function FriendsPage() {
                         {/* Rotating Holographic Border */}
                         <div className="absolute -inset-[100%] bg-[conic-gradient(from_0deg,#ff4545,#00ff99,#006aff,#ff0095,#ff4545)] animate-[spin_4s_linear_infinite] opacity-80" />
                         
-                        <div className="relative bg-[#0A0A0F]/90 backdrop-blur-2xl rounded-[1.8rem] p-7 flex flex-col items-center text-center gap-5">
+                        <div className="relative app-panel backdrop-blur-2xl rounded-[1.8rem] p-7 flex flex-col items-center text-center gap-5">
                           <div className="w-full flex justify-center">
                             <motion.span 
                               animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
@@ -702,7 +702,7 @@ export default function FriendsPage() {
                               👑
                             </motion.div>
                             
-                            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-white text-black text-sm font-black px-4 py-1 rounded-full shadow-[0_0_15px_rgba(255,255,255,0.5)] z-20">
+                            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-white text-sm font-black px-4 py-1 rounded-full shadow-[0_0_15px_rgba(255,255,255,0.5)] z-20" style={{ color: '#000000' }}>
                               #1
                             </div>
                           </div>
@@ -727,7 +727,7 @@ export default function FriendsPage() {
                           
                           <div className="flex gap-8 w-full justify-center items-center">
                             <div className="text-center group-hover:scale-110 transition-transform">
-                              <p className="text-3xl font-black bg-gradient-to-br from-yellow-300 to-orange-500 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(250,204,21,0.2)]">{person.influenceScore}</p>
+                              <p className="text-3xl font-black bg-gradient-to-br from-yellow-300 to-orange-500 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(250,204,21,0.2)]" style={{ WebkitTextFillColor: 'transparent', color: 'transparent' }}>{person.influenceScore}</p>
                               <p className="text-[10px] uppercase tracking-[0.2em] text-white/40 font-bold mt-1">Total Score</p>
                             </div>
                             <div className="w-[1px] h-10 bg-white/10" />
@@ -761,8 +761,8 @@ export default function FriendsPage() {
                     >
                       <div className={clsx(
                         "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-sm font-black",
-                        rank === 1 ? "bg-yellow-300 text-black" : rank === 2 ? "bg-slate-200 text-slate-950" : rank === 3 ? "bg-orange-500 text-white" : "bg-white/[0.06] text-white/55"
-                      )}>
+                        rank === 1 ? "bg-yellow-300" : rank === 2 ? "bg-slate-200" : rank === 3 ? "bg-orange-500" : "bg-white/[0.06] text-white/55"
+                      )} style={rank === 1 ? { color: '#000000' } : rank === 2 ? { color: '#020617' } : rank === 3 ? { color: '#ffffff' } : {}}>
                         #{rank}
                       </div>
 
@@ -941,7 +941,7 @@ export default function FriendsPage() {
             <motion.div
               variants={modalVars.modal}
               onClick={(e) => e.stopPropagation()}
-              className="w-full sm:max-w-md bg-[#0A0A0F]/95 backdrop-blur-2xl border border-white/10 rounded-t-[2.5rem] sm:rounded-[2.5rem] overflow-hidden shadow-[0_0_50px_rgba(168,85,247,0.15)] relative flex flex-col max-h-[90vh]"
+              className="w-full sm:max-w-md app-panel backdrop-blur-2xl rounded-t-[2.5rem] sm:rounded-[2.5rem] overflow-hidden shadow-[0_0_50px_rgba(168,85,247,0.15)] relative flex flex-col max-h-[90vh]"
             >
               {/* Animated Gradient Border Layer */}
               <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/10 via-transparent to-cyan-500/10 pointer-events-none" />
@@ -968,7 +968,7 @@ export default function FriendsPage() {
                     <motion.div variants={modalVars.profilePic} className="mt-4 relative w-[100px] h-[100px] mx-auto shrink-0">
                       {/* Gradient border ring */}
                       <div className="absolute inset-0 rounded-full p-[3px]" style={{ background: 'linear-gradient(135deg, #7c3aed, #06b6d4)' }}>
-                        <div className="w-full h-full rounded-full overflow-hidden bg-[#0A0A0F]">
+                        <div className="w-full h-full rounded-full overflow-hidden app-panel">
                           <img
                             src={selectedProfileData.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedProfileData.name)}&background=7C3AED&color=fff`}
                             alt={selectedProfileData.name}
@@ -977,7 +977,7 @@ export default function FriendsPage() {
                         </div>
                       </div>
                       {selectedProfileData.rank && (
-                        <div className="absolute z-20 -top-1 -right-1 bg-yellow-400 text-black text-[11px] font-black px-2 py-0.5 rounded-full border-2 border-[#0A0A0F] shadow-lg">#{selectedProfileData.rank}</div>
+                        <div className="absolute z-20 -top-1 -right-1 bg-yellow-400 text-[11px] font-black px-2 py-0.5 rounded-full border-2 border-transparent shadow-lg" style={{ color: '#000000' }}>#{selectedProfileData.rank}</div>
                       )}
                     </motion.div>
 

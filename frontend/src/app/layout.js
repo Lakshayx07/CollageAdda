@@ -19,6 +19,12 @@ export const metadata = {
   description: "A professional social startup for Indian students.",
 };
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  interactiveWidget: 'resizes-content',
+};
+
 export default function RootLayout({ children }) {
   return (
     <html
