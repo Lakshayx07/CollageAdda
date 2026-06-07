@@ -358,12 +358,39 @@ header, [class*="navbar"], [class*="topbar"], .page-header {
   color: var(--msg-received-text) !important;
 }
 
+/* GLOBAL DEFAULTS — never override these globally */
+html {
+  scroll-behavior: smooth;
+  height: auto;           /* NOT 100% */
+  overflow-y: auto;       /* normal scroll */
+}
+
+body {
+  min-height: 100vh;
+  height: auto;           /* NOT fixed height */
+  overflow-x: hidden;     /* prevent horizontal scroll only */
+  overflow-y: auto;       /* normal vertical scroll */
+  position: static;       /* NOT fixed */
+}
+
+/* Each page container scrolls naturally */
+.page-container {
+  min-height: 100vh;
+  overflow-y: auto;
+}
+
 /* Chat Layout structure to fix mobile keyboard */
-html, body {
-  height: 100%;
-  overflow: hidden;
-  position: fixed;
-  width: 100%;
+body.messages-page-active {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100% !important;
+  height: 100dvh !important;
+}
+
+/* ALL OTHER PAGES — restore normal scroll */
+body:not(.messages-page-active) {
+  overflow: auto;
+  position: static;
 }
 
 .messages-layout {

@@ -17,6 +17,10 @@ function MessagesContent() {
 
   useEffect(() => {
     setIsMounted(true);
+    document.body.classList.add('messages-page-active');
+    return () => {
+      document.body.classList.remove('messages-page-active');
+    };
   }, []);
   const [activeChat, setActiveChat] = useState(null);
   const [chats, setChats] = useState([]);
