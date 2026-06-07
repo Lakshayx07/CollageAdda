@@ -464,13 +464,22 @@ body:not(.messages-page-active) {
 }
 
 @media (max-width: 768px) {
+  /* On mobile, each panel takes full width — JSX controls which one is visible */
   .inbox-panel {
-    display: none; /* Hide inbox when chat is open on mobile */
+    width: 100%;
+    min-width: 100%;
+    height: calc(100dvh - 64px); /* account for bottom nav */
+    padding-bottom: 0;
+  }
+
+  .chat-panel {
+    width: 100%;
+    height: calc(100dvh - 64px); /* account for bottom nav */
   }
   
   .chat-input-area {
     position: fixed;
-    bottom: 0;
+    bottom: 64px; /* above bottom nav */
     left: 0;
     right: 0;
     z-index: 100;
