@@ -1,7 +1,8 @@
-import React from "react";
-import { Clock, Users } from "lucide-react";
+import React, { useState } from "react";
+import { Clock, Users, MoreVertical, Trash2, Share2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
-import VerifiedBadge from "@/components/VerifiedBadge"; // Wait, is it there? I saw it in page.js
+import VerifiedBadge from "@/components/VerifiedBadge";
 
 const URGENCY_COLORS = {
   High: "text-red-400 bg-red-500/10 border-red-500/20",
@@ -18,8 +19,11 @@ const PROJECT_TYPE_COLORS = {
   Other: "text-white/40 bg-white/5 border-white/10"
 };
 
-export default function CollabCard({ card, onContribute }) {
+export default function CollabCard({ card, currentUser, onContribute, onShare, onDelete }) {
+  const [showOptions, setShowOptions] = useState(false);
+
   if (!card) return null;
+  const isOwner = currentUser && (currentUser.id === card.user_id || currentUser._id === card.user_id);
 
   // Assume card structure:
   // {
@@ -37,20 +41,65 @@ export default function CollabCard({ card, onContribute }) {
       {/* Background glow */}
       <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/20 rounded-full blur-[80px] pointer-events-none" />
 
-      {/* Header badges */}
-      <div className="flex justify-between items-start mb-5 z-10">
-        <span className={clsx(
-          "text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border",
-          PROJECT_TYPE_COLORS[card.project_type] || PROJECT_TYPE_COLORS.Other
-        )}>
-          {card.project_type || "Project"}
-        </span>
-        <span className={clsx(
-          "text-[10px] font-bold uppercase px-2 py-1 rounded-full border",
-          URGENCY_COLORS[card.urgency] || URGENCY_COLORS.Medium
-        )}>
-          <Clock size={9} className="inline mr-1" />{card.urgency || "Medium"} Urgency
-        </span>
+      {/* Header badges & Options */}
+      <div className="flex justify-between items-start mb-5 z-10 relative">
+        <div className="flex gap-2">
+          <span className={clsx(
+            "text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border",
+            PROJECT_TYPE_COLORS[card.project_type] || PROJECT_TYPE_COLORS.Other
+          )}>
+            {card.project_type || "Project"}
+          </span>
+          <span className={clsx(
+            "text-[10px] font-bold uppercase px-2 py-1 rounded-full border",
+            URGENCY_COLORS[card.urgency] || URGENCY_COLORS.Medium
+          )}>
+            <Clock size={9} className="inline mr-1" />{card.urgency || "Medium"} Urgency
+          </span>
+        </div>
+        
+        <div className="relative">
+          <button 
+            onClick={() => setShowOptions(!showOptions)}
+            className="p-1.5 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+          >
+            <MoreVertical size={18} />
+          </button>
+          
+          <AnimatePresence>
+            {showOptions && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                className="absolute right-0 top-full mt-1 w-36 bg-[#1a1a1a] border border-white/10 shadow-2xl rounded-xl overflow-hidden z-50"
+              >
+                <button
+                  onClick={() => {
+                    setShowOptions(false);
+                    onShare(card);
+                  }}
+                  className="w-full px-4 py-3 text-left text-xs font-bold text-white hover:bg-white/5 flex items-center gap-2 transition-colors"
+                >
+                  <Share2 size={14} /> Share
+                </button>
+                {isOwner && (
+                  <button
+                    onClick={() => {
+                      setShowOptions(false);
+                      if (window.confirm("Are you sure you want to delete this card?")) {
+                        onDelete(card.id);
+                      }
+                    }}
+                    className="w-full px-4 py-3 text-left text-xs font-bold text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors border-t border-white/5"
+                  >
+                    <Trash2 size={14} /> Delete
+                  </button>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* Author */}

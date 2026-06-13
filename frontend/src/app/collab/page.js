@@ -86,7 +86,7 @@ export default function CollabPage() {
       
     } catch (err) {
       console.error(err);
-      alert("Failed to post collab card.");
+      alert("Failed to post collab card: " + (err?.message || JSON.stringify(err)));
     } finally {
       setIsPosting(false);
     }

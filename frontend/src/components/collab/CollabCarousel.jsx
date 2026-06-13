@@ -5,6 +5,7 @@ import { supabase } from "@/utils/supabase";
 import CollabCard from "./CollabCard";
 import ContributeModal from "./ContributeModal";
 import ApplicationsPanel from "./ApplicationsPanel";
+import ShareCollabModal from "./ShareCollabModal";
 
 export default function CollabCarousel({ currentUser, onPostCard }) {
   const [cards, setCards] = useState([]);
@@ -12,6 +13,7 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0); // 1 for right, -1 for left
   const [showModal, setShowModal] = useState(false);
+  const [shareCard, setShareCard] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -31,6 +33,18 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
         if (error) throw error;
         if (isMounted) {
           setCards(data || []);
+          
+          // Check if we need to navigate to a specific card via URL
+          if (typeof window !== "undefined") {
+            const url = new URL(window.location.href);
+            const cardIdParam = url.searchParams.get("cardId");
+            if (cardIdParam && data && data.length > 0) {
+              const foundIndex = data.findIndex(c => c.id === cardIdParam);
+              if (foundIndex !== -1) {
+                setCurrentIndex(foundIndex);
+              }
+            }
+          }
         }
       } catch (err) {
         console.error("Error fetching collab cards:", err);
@@ -68,6 +82,20 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
   const handlePrev = () => {
     setDirection(-1);
     setCurrentIndex((prev) => (prev - 1 + cards.length) % cards.length);
+  };
+
+  const handleDelete = async (cardId) => {
+    try {
+      const { error } = await supabase.from("collab_cards").delete().eq("id", cardId);
+      if (error) throw error;
+      setCards(prev => prev.filter(c => c.id !== cardId));
+      if (currentIndex >= cards.length - 1) {
+        setCurrentIndex(Math.max(0, cards.length - 2));
+      }
+    } catch (err) {
+      console.error("Failed to delete card:", err);
+      alert("Failed to delete card.");
+    }
   };
 
   if (loading) {
@@ -160,7 +188,13 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
             }}
             className="absolute inset-0 w-full h-full flex flex-col"
           >
-            <CollabCard card={currentCard} onContribute={() => setShowModal(true)} />
+            <CollabCard 
+              card={currentCard} 
+              currentUser={currentUser}
+              onContribute={() => setShowModal(true)} 
+              onShare={(c) => setShareCard(c)}
+              onDelete={handleDelete}
+            />
           </motion.div>
         </AnimatePresence>
       </div>
@@ -198,8 +232,16 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
         }}
       />
 
+      {/* Share Modal */}
+      <ShareCollabModal
+        isOpen={!!shareCard}
+        onClose={() => setShareCard(null)}
+        card={shareCard}
+        currentUser={currentUser}
+      />
+
       {/* Applications Panel for Card Owner */}
-      {currentUser && currentCard.user_id === currentUser.id && (
+      {currentUser && currentCard.user_id === (currentUser.id || currentUser._id) && (
         <ApplicationsPanel cardId={currentCard.id} currentUser={currentUser} />
       )}
     </section>
