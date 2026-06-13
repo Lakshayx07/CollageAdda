@@ -117,7 +117,9 @@ export default function CollabCard({ card, currentUser, onContribute, onShare, o
             <p className="text-sm font-black text-white">{profile.full_name || "Campus Student"}</p>
             {profile.is_verified && <VerifiedBadge size={14} />}
           </div>
-          <p className="text-[11px] text-white/50 font-medium">{card.year_major || profile.university || "Student"}</p>
+          <p className="text-[11px] text-white/50 font-medium">
+            {[profile.university, card.year_major].filter(Boolean).join(" • ") || "Student"}
+          </p>
         </div>
       </div>
 

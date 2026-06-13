@@ -21,25 +21,36 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
     const fetchCards = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase
-          .from("collab_cards")
-          .select(`
-            *,
-            profiles:user_id (full_name, avatar_url, university, is_verified)
-          `)
-          .eq("status", "active")
-          .order("created_at", { ascending: false });
+        const { data: cards, error } = await supabase
+          .from('collab_cards')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        console.log('collab cards:', cards, error);
 
         if (error) throw error;
+
         if (isMounted) {
-          setCards(data || []);
+          const cardsWithProfiles = await Promise.all(
+            (cards || []).map(async (card) => {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('full_name, avatar_url, university')
+                .eq('id', card.user_id)
+                .single();
+              
+              return { ...card, profiles: profile || {} };
+            })
+          );
+          
+          setCards(cardsWithProfiles);
           
           // Check if we need to navigate to a specific card via URL
           if (typeof window !== "undefined") {
             const url = new URL(window.location.href);
             const cardIdParam = url.searchParams.get("cardId");
-            if (cardIdParam && data && data.length > 0) {
-              const foundIndex = data.findIndex(c => c.id === cardIdParam);
+            if (cardIdParam && cardsWithProfiles && cardsWithProfiles.length > 0) {
+              const foundIndex = cardsWithProfiles.findIndex(c => c.id === cardIdParam);
               if (foundIndex !== -1) {
                 setCurrentIndex(foundIndex);
               }
@@ -57,15 +68,14 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
 
     // Subscribe to new cards
     const subscription = supabase
-      .channel("collab_cards_all")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "collab_cards", filter: "status=eq.active" },
-        (payload) => {
-          // Ideally fetch profile data as well, but for now we just refetch
-          fetchCards();
-        }
-      )
+      .channel('collab_cards_changes')
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'collab_cards' 
+      }, (payload) => {
+        setCards(prev => [payload.new, ...prev]);
+      })
       .subscribe();
 
     return () => {
