@@ -128,64 +128,77 @@ async function findWithGemini(profile) {
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
   if (!apiKey) return null;
 
-  const model = process.env.GEMINI_MODEL || "gemini-3.5-flash";
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-goog-api-key": apiKey,
-    },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: createPrompt(profile) }] }],
-      tools: [{ google_search: {} }],
-      generationConfig: {
-        temperature: 0.2,
-        responseMimeType: "application/json",
+  try {
+    const model = process.env.GEMINI_MODEL || "gemini-1.5-flash";
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
       },
-    }),
-  });
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: createPrompt(profile) }] }],
+        tools: [{ google_search: {} }],
+        generationConfig: {
+          temperature: 0.2,
+          responseMimeType: "application/json",
+        },
+      }),
+    });
 
-  if (!response.ok) {
-    const detail = await response.text();
-    throw new Error(`Gemini search failed: ${detail.slice(0, 240)}`);
+    if (!response.ok) {
+      const detail = await response.text();
+      console.error(`Gemini search failed: ${detail.slice(0, 240)}`);
+      return null;
+    }
+
+    const data = await response.json();
+    const text = data?.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("\n") || "";
+    return sanitizeResults(parseJsonArray(text));
+  } catch (error) {
+    console.error("Gemini error:", error);
+    return null;
   }
-
-  const data = await response.json();
-  const text = data?.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("\n") || "";
-  return sanitizeResults(parseJsonArray(text));
 }
 
 async function findWithAnthropic(profile) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return null;
 
-  const model = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5";
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: 1800,
-      temperature: 0.2,
-      system: "You search the web for current student opportunities and output only strict JSON arrays.",
-      tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 5 }],
-      messages: [{ role: "user", content: createPrompt(profile) }],
-    }),
-  });
+  try {
+    const model = process.env.ANTHROPIC_MODEL || "claude-3-5-sonnet-latest";
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 1800,
+        temperature: 0.2,
+        system: "You search the web for current student opportunities and output only strict JSON arrays.",
+        tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 5 }],
+        messages: [{ role: "user", content: createPrompt(profile) }],
+      }),
+    });
 
-  if (!response.ok) {
-    const detail = await response.text();
-    throw new Error(`Claude search failed: ${detail.slice(0, 240)}`);
+    if (!response.ok) {
+      const detail = await response.text();
+      console.error(`Claude search failed: ${detail.slice(0, 240)}`);
+      return null;
+    }
+
+    const data = await response.json();
+    const text = data?.content?.filter((block) => block.type === "text").map((block) => block.text || "").join("\n") || "";
+    return sanitizeResults(parseJsonArray(text));
+  } catch (error) {
+    console.error("Anthropic error:", error);
+    return null;
   }
-
-  const data = await response.json();
-  const text = data?.content?.filter((block) => block.type === "text").map((block) => block.text || "").join("\n") || "";
-  return sanitizeResults(parseJsonArray(text));
 }
+
 
 export async function POST(request) {
   let body;
@@ -222,9 +235,9 @@ export async function POST(request) {
     if (!opportunities) {
       return NextResponse.json(
         {
-          error: "Set GEMINI_API_KEY or ANTHROPIC_API_KEY on the frontend server to enable real-time opportunity search.",
+          error: "API quota exceeded. To get real data, please update your Gemini API key, check your billing, or add an Anthropic API key.",
         },
-        { status: 501 }
+        { status: 429 }
       );
     }
 
@@ -244,7 +257,7 @@ export async function POST(request) {
     }
 
     return NextResponse.json(
-      { error: error.message || "Unable to find opportunities right now." },
+      { error: "AI providers are currently unavailable. Please try again later." },
       { status: 502 }
     );
   }

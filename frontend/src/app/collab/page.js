@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import OpportunityFinder from "./OpportunityFinder";
+import CollabCarousel from "@/components/collab/CollabCarousel";
+import { supabase } from "@/utils/supabase";
 
 const URGENCY_COLORS = {
   High: "text-red-400 bg-red-500/10 border-red-500/20",
@@ -24,9 +26,6 @@ const PROJECT_TYPE_COLORS = {
 
 export default function CollabPage() {
   const router = useRouter();
-  const [cards, setCards] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [direction, setDirection] = useState("");
   const [showPostModal, setShowPostModal] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
@@ -41,59 +40,12 @@ export default function CollabPage() {
   const [urgency, setUrgency] = useState("Medium");
   const [description, setDescription] = useState("");
 
-  const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001").trim();
-
   useEffect(() => {
     const storedUser = localStorage.getItem("collegeadda_user");
     if (storedUser) {
       try { setCurrentUser(JSON.parse(storedUser)); } catch (e) { console.error(e); }
     }
-    fetchCards();
   }, []);
-
-  const fetchCards = async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("collegeadda_token");
-      if (!token) return;
-      const res = await fetch(`${apiUrl}/api/collab`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setCards(data);
-      }
-    } catch (err) {
-      console.error("Error fetching collab cards:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSwipe = async (isAccept) => {
-    if (cards.length === 0) return;
-    const topCard = cards[0];
-    setDirection(isAccept ? "right" : "left");
-
-    if (isAccept) {
-      try {
-        const token = localStorage.getItem("collegeadda_token");
-        await fetch(`${apiUrl}/api/collab/${topCard._id}/interest`, {
-          method: "PUT",
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setToastMsg("Interest sent! 🎉 They can reach out to you.");
-        setTimeout(() => setToastMsg(""), 3000);
-      } catch (err) {
-        console.error(err);
-      }
-    }
-
-    setTimeout(() => {
-      setCards(prev => prev.slice(1));
-      setDirection("");
-    }, 300);
-  };
 
   const handlePost = async (e) => {
     e.preventDefault();
@@ -101,35 +53,39 @@ export default function CollabPage() {
       alert("Please fill in your skillset, what you're building, and your class year.");
       return;
     }
+    
+    if (!currentUser?.id) {
+      alert("You must be logged in to post.");
+      return;
+    }
+
     setIsPosting(true);
     try {
-      const token = localStorage.getItem("collegeadda_token");
-      const res = await fetch(`${apiUrl}/api/collab`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          skillset,
+      const { error } = await supabase
+        .from('collab_cards')
+        .insert({
+          user_id: currentUser.id,
+          skills: skillset.split(",").map(s => s.trim()).filter(Boolean),
           building,
-          yearMajor,
-          projectType,
-          rolesNeeded: rolesNeeded.split(",").map(r => r.trim()).filter(Boolean),
+          year_major: yearMajor,
+          project_type: projectType,
           urgency,
-          description
-        })
-      });
-      if (res.ok) {
-        setToastMsg("Your collab card is live! 🚀");
-        setTimeout(() => setToastMsg(""), 3000);
-        setShowPostModal(false);
-        setSkillset(""); setBuilding(""); setYearMajor("");
-        setProjectType("Side Project"); setRolesNeeded(""); setUrgency("Medium"); setDescription("");
-        fetchCards();
-      }
+          roles_needed: rolesNeeded.split(",").map(r => r.trim()).filter(Boolean),
+          description,
+          status: 'active'
+        });
+
+      if (error) throw error;
+      
+      setToastMsg("Your collab card is live! 🚀");
+      setTimeout(() => setToastMsg(""), 3000);
+      setShowPostModal(false);
+      setSkillset(""); setBuilding(""); setYearMajor("");
+      setProjectType("Side Project"); setRolesNeeded(""); setUrgency("Medium"); setDescription("");
+      
     } catch (err) {
       console.error(err);
+      alert("Failed to post collab card.");
     } finally {
       setIsPosting(false);
     }
@@ -179,153 +135,7 @@ export default function CollabPage() {
         <div className="grid w-full gap-6 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start">
           <OpportunityFinder currentUser={currentUser} />
 
-          <section className="flex w-full flex-col items-center">
-            <div className="mb-4 flex w-full max-w-sm items-center justify-between">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-muted">Team cards</p>
-                <h2 className="text-lg font-black text-white">Campus Collabs</h2>
-              </div>
-              <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-black text-muted">
-                Swipe
-              </span>
-            </div>
-
-            <div className="relative w-full max-w-sm" style={{ minHeight: 480 }}>
-          {loading ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center rounded-[1.75rem] app-panel">
-              <Loader size={32} className="animate-spin text-primary mb-4" />
-              <p className="text-sm text-muted font-bold">Loading campus cards…</p>
-            </div>
-          ) : (
-            <AnimatePresence>
-              {cards.length > 0 ? (
-                <motion.div
-                  key={cards[0]._id}
-                  initial={{ scale: 0.95, opacity: 0, y: 20 }}
-                  animate={{
-                    scale: 1,
-                    opacity: 1,
-                    y: 0,
-                    x: direction === "right" ? 200 : direction === "left" ? -200 : 0,
-                    rotate: direction === "right" ? 12 : direction === "left" ? -12 : 0
-                  }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.3 }}
-                  className="app-panel absolute inset-0 rounded-[1.75rem] p-6 flex flex-col"
-                >
-                  {/* Header badges */}
-                  <div className="flex justify-between items-start mb-5">
-                    <span className={clsx(
-                      "text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border",
-                      PROJECT_TYPE_COLORS[cards[0].projectType] || PROJECT_TYPE_COLORS.Other
-                    )}>
-                      {cards[0].projectType}
-                    </span>
-                    <span className={clsx(
-                      "text-[10px] font-bold uppercase px-2 py-1 rounded-full border",
-                      URGENCY_COLORS[cards[0].urgency] || URGENCY_COLORS.Medium
-                    )}>
-                      <Clock size={9} className="inline mr-1" />{cards[0].urgency} Urgency
-                    </span>
-                  </div>
-
-                  {/* Author */}
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center text-sm font-black text-white shrink-0">
-                      {cards[0].author?.name?.charAt(0) || "?"}
-                    </div>
-                    <div>
-                      <div className="flex items-center">
-                        <p className="text-sm font-black text-white">{cards[0].author?.name || "Campus Student"}</p>
-                        <VerifiedBadge user={cards[0].author} size={14} />
-                      </div>
-                      <p className="text-[11px] text-white/50 font-medium">{cards[0].yearMajor}</p>
-                    </div>
-                  </div>
-
-                  {/* What they're building */}
-                  <div className="mb-3">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-1">What I&apos;m Building</p>
-                    <h2 className="text-xl font-black text-white leading-tight">{cards[0].building}</h2>
-                  </div>
-
-                  {/* Skillset */}
-                  <div className="mb-3">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-1.5">My Skillset</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {cards[0].skillset.split(",").map((s, i) => (
-                        <span key={i} className="text-[10px] font-bold text-white/70 bg-white/5 border border-white/10 px-2 py-1 rounded-lg">
-                          {s.trim()}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Roles Needed */}
-                  {cards[0].rolesNeeded?.length > 0 && (
-                    <div className="mb-3">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-1.5">
-                        <Users size={9} className="inline mr-1" />Roles Needed
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {cards[0].rolesNeeded.map((r, i) => (
-                          <span key={i} className="text-[10px] font-bold text-blue-300 bg-blue-500/10 border border-blue-500/20 px-2 py-1 rounded-lg">
-                            {r}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Description */}
-                  {cards[0].description && (
-                    <p className="text-xs text-white/50 leading-relaxed mb-4 italic flex-1">
-                      &quot;{cards[0].description}&quot;
-                    </p>
-                  )}
-
-                  {/* Interested count */}
-                  <p className="text-[10px] text-white/30 font-bold mb-3">
-                    {cards[0].interests?.length || 0} people interested · {cards[0].author?.university}
-                  </p>
-
-                  {/* Swipe Buttons */}
-                  <div className="flex justify-center space-x-6 pt-4 border-t border-white/10">
-                    <button
-                      onClick={() => handleSwipe(false)}
-                      className="w-16 h-16 rounded-full bg-white/5 border border-white/10 text-white/50 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/30 flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-                    >
-                      <X size={28} strokeWidth={3} />
-                    </button>
-                    <button
-                      onClick={() => handleSwipe(true)}
-                      className="w-16 h-16 rounded-full bg-white/5 border border-white/10 text-white/50 hover:bg-green-500/10 hover:text-green-500 hover:border-green-500/30 flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-[0_0_20px_rgba(34,197,94,0)] hover:shadow-[0_0_20px_rgba(34,197,94,0.3)]"
-                    >
-                      <Check size={28} strokeWidth={3} />
-                    </button>
-                  </div>
-                </motion.div>
-              ) : (
-                <div className="app-panel absolute inset-0 flex flex-col items-center justify-center rounded-[1.75rem] p-7 text-center">
-                  <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-primary/10 text-primary">
-                    <Briefcase size={34} />
-                  </div>
-                  <h3 className="text-2xl font-black tracking-tight text-white">No cards on campus</h3>
-                  <p className="mt-3 text-sm leading-6 text-muted">
-                    Be the first to post a collab card for your campus!
-                  </p>
-                  <button
-                    onClick={() => setShowPostModal(true)}
-                    className="mt-6 primary-button px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest"
-                  >
-                    <Plus size={14} className="inline mr-2" />Post Your Card
-                  </button>
-                </div>
-              )}
-            </AnimatePresence>
-          )}
-            </div>
-          </section>
+          <CollabCarousel currentUser={currentUser} onPostCard={() => setShowPostModal(true)} />
         </div>
       </main>
 
