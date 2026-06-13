@@ -71,12 +71,15 @@ export default function ContributeModal({ isOpen, onClose, card, currentUser, on
       
       // Let's try to insert into messages. We will include sender_id and receiver_id.
       // If the schema requires a room_id, this might fail, but we follow the prompt's direction.
-      await supabase.from('messages').insert({
+      const { error: msgError } = await supabase.from('messages').insert({
         sender_id: userId,
         receiver_id: card.user_id,
         content: messageContent,
         type: 'collab_application' // optional metadata if supported
-      }).catch(err => console.log("Message insertion might need room_id, ignoring error for now:", err));
+      });
+      if (msgError) {
+        console.log("Message insertion might need room_id, ignoring error for now:", msgError);
+      }
 
       onApplied();
       onClose();
