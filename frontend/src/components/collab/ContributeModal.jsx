@@ -89,7 +89,7 @@ export default function ContributeModal({ isOpen, onClose, card, currentUser, on
       
     } catch (err) {
       console.error("Error applying:", err);
-      alert("Failed to send application. Please try again.");
+      alert(`Failed to send application. Error: ${err?.message || JSON.stringify(err)}`);
     } finally {
       setIsSubmitting(false);
     }
