@@ -34,7 +34,8 @@ export default function ContributeModal({ isOpen, onClose, card, currentUser, on
       return;
     }
 
-    if (!currentUser?.id) {
+    const userId = currentUser?.id || currentUser?._id;
+    if (!userId) {
       alert("You must be logged in to apply.");
       return;
     }
@@ -45,7 +46,7 @@ export default function ContributeModal({ isOpen, onClose, card, currentUser, on
       const { error: appError } = await supabase
         .from('collab_applications')
         .insert({
-          applicant_user_id: currentUser.id,
+          applicant_user_id: userId,
           card_id: card.id,
           card_owner_user_id: card.user_id,
           name,
@@ -71,7 +72,7 @@ export default function ContributeModal({ isOpen, onClose, card, currentUser, on
       // Let's try to insert into messages. We will include sender_id and receiver_id.
       // If the schema requires a room_id, this might fail, but we follow the prompt's direction.
       await supabase.from('messages').insert({
-        sender_id: currentUser.id,
+        sender_id: userId,
         receiver_id: card.user_id,
         content: messageContent,
         type: 'collab_application' // optional metadata if supported

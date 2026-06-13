@@ -19,6 +19,9 @@ export default function ApplicationCard({ application }) {
         {application.status === 'pending' ? 'Pending Review' : application.status}
       </div>
 
+
+
+
       <div className="flex flex-col md:flex-row gap-5 items-start">
         {/* Left Col: Avatar + Name + applying for */}
         <div className="flex flex-col items-center min-w-[120px] shrink-0 text-center space-y-2">

@@ -54,7 +54,8 @@ export default function CollabPage() {
       return;
     }
     
-    if (!currentUser?.id) {
+    const userId = currentUser?.id || currentUser?._id;
+    if (!userId) {
       alert("You must be logged in to post.");
       return;
     }
@@ -64,7 +65,7 @@ export default function CollabPage() {
       const { error } = await supabase
         .from('collab_cards')
         .insert({
-          user_id: currentUser.id,
+          user_id: userId,
           skills: skillset.split(",").map(s => s.trim()).filter(Boolean),
           building,
           year_major: yearMajor,
