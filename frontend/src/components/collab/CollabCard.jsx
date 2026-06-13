@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Clock, Users, MoreVertical, Trash2, Share2, ChevronLeft, ChevronRight, Rocket, Code } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import { supabase } from "@/utils/supabase";
 
 const URGENCY_COLORS = {
   High: "text-red-400 bg-red-500/10 border-red-500/20",
@@ -21,6 +22,25 @@ const PROJECT_TYPE_COLORS = {
 
 export default function CollabCard({ card, currentUser, onContribute, onShare, onDelete, onNext, onPrev, currentIndex, totalCards }) {
   const [showOptions, setShowOptions] = useState(false);
+  const [hasApplied, setHasApplied] = useState(false);
+  
+  useEffect(() => {
+    if (!card || !currentUser) return;
+    
+    const checkApplied = async () => {
+      const userIdStr = String(currentUser?.id || currentUser?._id);
+      const { data: existingApp, error } = await supabase
+        .from('collab_applications')
+        .select('id')
+        .eq('card_id', card.id)
+        .eq('applicant_user_id', userIdStr)
+        .single();
+        
+      setHasApplied(!!existingApp);
+    };
+    
+    checkApplied();
+  }, [card?.id, currentUser]);
 
   if (!card) return null;
   const isOwner = currentUser && (currentUser.id === card.user_id || currentUser._id === card.user_id);
@@ -198,12 +218,18 @@ export default function CollabCard({ card, currentUser, onContribute, onShare, o
           </div>
         )}
         {/* Contribute button */}
-        <button
-          onClick={() => onContribute(card)}
-          className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-2xl py-3 font-bold uppercase tracking-widest text-xs transition-all shadow-lg hover:from-violet-500 hover:to-indigo-500 flex items-center justify-center gap-2"
-        >
-          ✦ Contribute Now
-        </button>
+        {hasApplied ? (
+          <div className="w-full flex items-center justify-center gap-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-black text-sm py-3">
+            ✓ Applied
+          </div>
+        ) : (
+          <button
+            onClick={() => onContribute(card)}
+            className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-2xl py-3 font-bold uppercase tracking-widest text-xs transition-all shadow-lg hover:from-violet-500 hover:to-indigo-500 flex items-center justify-center gap-2"
+          >
+            ✦ Contribute Now
+          </button>
+        )}
       </div>
     </div>
   );
