@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Clock, Users, MoreVertical, Trash2, Share2 } from "lucide-react";
+import { Clock, Users, MoreVertical, Trash2, Share2, ChevronLeft, ChevronRight, Rocket, Code } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
 import VerifiedBadge from "@/components/VerifiedBadge";
@@ -19,7 +19,7 @@ const PROJECT_TYPE_COLORS = {
   Other: "text-white/40 bg-white/5 border-white/10"
 };
 
-export default function CollabCard({ card, currentUser, onContribute, onShare, onDelete }) {
+export default function CollabCard({ card, currentUser, onContribute, onShare, onDelete, onNext, onPrev, currentIndex, totalCards }) {
   const [showOptions, setShowOptions] = useState(false);
 
   if (!card) return null;
@@ -37,12 +37,14 @@ export default function CollabCard({ card, currentUser, onContribute, onShare, o
   const rolesArray = Array.isArray(card.roles_needed) ? card.roles_needed : (card.roles_needed ? card.roles_needed.split(",") : []);
 
   return (
-    <div className="app-panel rounded-[1.75rem] p-6 flex flex-col w-full bg-white/[0.02] border border-white/10 shadow-xl relative overflow-hidden">
+    <div className="app-panel rounded-[1.75rem] flex flex-col w-full h-[520px] bg-gradient-to-b from-white/[0.04] to-black/40 border border-white/10 shadow-2xl relative overflow-hidden ring-1 ring-white/5">
       {/* Background glow */}
-      <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/20 rounded-full blur-[80px] pointer-events-none" />
+      <div className="absolute -top-32 -right-32 w-64 h-64 bg-violet-500/20 rounded-full blur-[100px] pointer-events-none" />
 
-      {/* Header badges & Options */}
-      <div className="flex justify-between items-start mb-5 z-10 relative">
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto p-6 scrollbar-hide relative z-10">
+        {/* Header badges & Options */}
+        <div className="flex justify-between items-start mb-5 relative">
         <div className="flex gap-2">
           <span className={clsx(
             "text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border",
@@ -103,39 +105,46 @@ export default function CollabCard({ card, currentUser, onContribute, onShare, o
       </div>
 
       {/* Author */}
-      <div className="flex items-center gap-3 mb-4 z-10">
+      <div className="flex items-center gap-3 mb-4">
         {profile.avatar_url ? (
-          <img src={profile.avatar_url} alt={profile.full_name} className="w-10 h-10 rounded-full object-cover border border-white/20" />
+          <img src={profile.avatar_url} alt={profile.full_name} className="w-12 h-12 rounded-full object-cover border border-white/20" />
         ) : (
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center text-sm font-black text-white shrink-0">
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-sm font-black text-white shrink-0">
             {profile.full_name?.charAt(0) || "?"}
           </div>
         )}
         
         <div>
           <div className="flex items-center gap-1">
-            <p className="text-sm font-black text-white">{profile.full_name || "Campus Student"}</p>
+            <p className="text-sm font-black text-white">{profile.full_name || profile.username || "Student"}</p>
             {profile.is_verified && <VerifiedBadge size={14} />}
           </div>
-          <p className="text-[11px] text-white/50 font-medium">
-            {[profile.university, card.year_major].filter(Boolean).join(" • ") || "Student"}
-          </p>
+          <p className="text-[11px] text-white/50 font-medium">{card.year_major || "Student"}</p>
+          {profile.university && (
+            <p className="text-[10px] text-white/40 font-medium mt-0.5">🎓 {profile.university}</p>
+          )}
         </div>
       </div>
 
       {/* What they're building */}
-      <div className="mb-4 z-10">
-        <p className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-1">What I&apos;m Building</p>
-        <h2 className="text-xl font-black text-white leading-tight">{card.building}</h2>
+      <div className="mb-6">
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-indigo-400 mb-2 flex items-center gap-1.5">
+          <Rocket size={12} className="text-violet-400" /> What I&apos;m Building
+        </p>
+        <h2 className="text-base font-bold text-white leading-tight tracking-tight line-clamp-2">
+          {card.building}
+        </h2>
       </div>
 
       {/* Skillset */}
       {skillsArray.length > 0 && (
-        <div className="mb-4 z-10">
-          <p className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-1.5">My Skillset</p>
-          <div className="flex flex-wrap gap-1.5">
+        <div className="mb-5">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-2 flex items-center gap-1.5">
+            <Code size={12} /> My Skillset
+          </p>
+          <div className="flex flex-wrap gap-2">
             {skillsArray.map((s, i) => (
-              <span key={i} className="text-[10px] font-bold text-white/70 bg-white/5 border border-white/10 px-2 py-1 rounded-lg">
+              <span key={i} className="text-[10px] font-bold text-violet-100 bg-violet-500/10 border border-violet-500/20 px-3 py-1 rounded-full shadow-[0_0_10px_rgba(139,92,246,0.1)] hover:bg-violet-500/20 transition-colors">
                 {s.trim()}
               </span>
             ))}
@@ -145,13 +154,13 @@ export default function CollabCard({ card, currentUser, onContribute, onShare, o
 
       {/* Roles Needed */}
       {rolesArray.length > 0 && (
-        <div className="mb-4 z-10">
-          <p className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-1.5">
-            <Users size={9} className="inline mr-1" />Roles Needed
+        <div className="mb-5">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-2 flex items-center gap-1.5">
+            <Users size={12} /> Roles Needed
           </p>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-2">
             {rolesArray.map((r, i) => (
-              <span key={i} className="text-[10px] font-bold text-blue-300 bg-blue-500/10 border border-blue-500/20 px-2 py-1 rounded-lg">
+              <span key={i} className="text-[10px] font-bold text-blue-100 bg-blue-500/10 border border-blue-500/20 px-3 py-1 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.1)] hover:bg-blue-500/20 transition-colors">
                 {r.trim()}
               </span>
             ))}
@@ -161,19 +170,37 @@ export default function CollabCard({ card, currentUser, onContribute, onShare, o
 
       {/* Description */}
       {card.description && (
-        <div className="mb-6 z-10 flex-1">
-          <p className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-1.5">Description</p>
-          <p className="text-xs text-white/60 leading-relaxed italic border-l-2 border-primary/30 pl-3 py-1">
-            &quot;{card.description}&quot;
-          </p>
+        <div className="mb-6 flex-1">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-2">Description</p>
+          <div className="bg-white/[0.03] rounded-xl p-4 border border-white/[0.05] shadow-inner">
+            <p className="text-[13px] text-white/70 leading-relaxed font-medium">
+              {card.description}
+            </p>
+          </div>
         </div>
       )}
+      </div>
 
-      {/* Contribute Button */}
-      <div className="mt-auto pt-4 z-10">
+      {/* Fixed footer - never scrolls away */}
+      <div className="border-t border-white/10 p-4 space-y-3 shrink-0 bg-black/20 backdrop-blur-md relative z-20">
+        {/* Arrow navigation */}
+        {totalCards > 1 && (
+          <div className="flex items-center justify-between px-2">
+            <button onClick={onPrev} className="p-2 text-white/50 hover:text-white transition">
+              <ChevronLeft size={20} />
+            </button>
+            <span className="text-[10px] font-black uppercase tracking-widest text-white/40">
+              Card {currentIndex + 1} of {totalCards}
+            </span>
+            <button onClick={onNext} className="p-2 text-white/50 hover:text-white transition">
+              <ChevronRight size={20} />
+            </button>
+          </div>
+        )}
+        {/* Contribute button */}
         <button
           onClick={() => onContribute(card)}
-          className="w-full py-3.5 bg-gradient-to-r from-primary to-purple-600 hover:from-purple-500 hover:to-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(139,92,246,0.3)] hover:shadow-[0_0_30px_rgba(139,92,246,0.5)] flex items-center justify-center gap-2"
+          className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-2xl py-3 font-bold uppercase tracking-widest text-xs transition-all shadow-lg hover:from-violet-500 hover:to-indigo-500 flex items-center justify-center gap-2"
         >
           ✦ Contribute Now
         </button>

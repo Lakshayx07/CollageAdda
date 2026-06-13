@@ -35,7 +35,7 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
             (cards || []).map(async (card) => {
               const { data: profile } = await supabase
                 .from('profiles')
-                .select('full_name, avatar_url, university')
+                .select('full_name, avatar_url, university, username')
                 .eq('id', card.user_id)
                 .single();
               
@@ -204,32 +204,16 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
               onContribute={() => setShowModal(true)} 
               onShare={(c) => setShareCard(c)}
               onDelete={handleDelete}
+              onNext={handleNext}
+              onPrev={handlePrev}
+              currentIndex={currentIndex}
+              totalCards={cards.length}
             />
           </motion.div>
         </AnimatePresence>
       </div>
 
-      {cards.length > 1 && (
-        <div className="w-full max-w-sm mt-6 flex flex-col items-center gap-3">
-          <div className="flex gap-4">
-            <button
-              onClick={handlePrev}
-              className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition hover:scale-105 active:scale-95"
-            >
-              <ChevronLeft size={24} />
-            </button>
-            <button
-              onClick={handleNext}
-              className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition hover:scale-105 active:scale-95"
-            >
-              <ChevronRight size={24} />
-            </button>
-          </div>
-          <div className="text-[10px] font-black uppercase tracking-widest text-white/40">
-            Card {currentIndex + 1} of {cards.length}
-          </div>
-        </div>
-      )}
+
 
       {/* Contribute Modal */}
       <ContributeModal
