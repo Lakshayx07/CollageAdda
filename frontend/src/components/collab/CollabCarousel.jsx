@@ -11,9 +11,10 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [direction, setDirection] = useState(0); // 1 for right, -1 for left
+  const [direction, setDirection] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [shareCard, setShareCard] = useState(null);
+  const [appliedCardIds, setAppliedCardIds] = useState(new Set());
 
   useEffect(() => {
     let isMounted = true;
@@ -208,6 +209,7 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
               onPrev={handlePrev}
               currentIndex={currentIndex}
               totalCards={cards.length}
+              appliedOverride={appliedCardIds.has(currentCard.id)}
             />
           </motion.div>
         </AnimatePresence>
@@ -222,7 +224,8 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
         card={currentCard}
         currentUser={currentUser}
         onApplied={() => {
-          // Handled inside ContributeModal, could show another toast here if needed
+          setAppliedCardIds(prev => new Set([...prev, currentCard.id]));
+          setShowModal(false);
         }}
       />
 

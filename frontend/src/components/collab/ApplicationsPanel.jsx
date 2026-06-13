@@ -10,8 +10,10 @@ export default function ApplicationsPanel({ cardId, currentUser }) {
   const [error, setError] = useState(null);
   const [toastMsg, setToastMsg] = useState("");
 
+  const userId = currentUser ? String(currentUser.id || currentUser._id) : null;
+
   useEffect(() => {
-    if (!cardId || !currentUser?.id) return;
+    if (!cardId || !userId) return;
     
     let isMounted = true;
     
@@ -19,7 +21,6 @@ export default function ApplicationsPanel({ cardId, currentUser }) {
       setLoading(true);
       setError(null);
       try {
-        const userIdStr = String(currentUser?.id || currentUser?._id);
         const { data: applications, error: fetchError } = await supabase
           .from("collab_applications")
           .select(`
@@ -27,7 +28,7 @@ export default function ApplicationsPanel({ cardId, currentUser }) {
             profiles:applicant_user_id (avatar_url)
           `)
           .eq("card_id", cardId)
-          .eq("card_owner_user_id", userIdStr)
+          .eq("card_owner_user_id", userId)
           .order('created_at', { ascending: false });
 
         console.log('applications fetched:', applications, fetchError);
@@ -45,7 +46,6 @@ export default function ApplicationsPanel({ cardId, currentUser }) {
     fetchApplications();
 
     // Subscribe to new applications for this specific card
-    const userIdStr = String(currentUser?.id || currentUser?._id);
     const subscription = supabase
       .channel(`applications-for-${cardId}`)
       .on(
@@ -54,7 +54,7 @@ export default function ApplicationsPanel({ cardId, currentUser }) {
           event: 'INSERT',
           schema: 'public',
           table: 'collab_applications',
-          filter: `card_owner_user_id=eq.${userIdStr}`
+          filter: `card_owner_user_id=eq.${userId}`
         },
         (payload) => {
           // Add new application to the list (would be better to refetch to get profile data, 
@@ -68,7 +68,7 @@ export default function ApplicationsPanel({ cardId, currentUser }) {
       isMounted = false;
       supabase.removeChannel(subscription);
     };
-  }, [cardId, currentUser?.id]);
+  }, [cardId, userId]);
 
   if (!cardId || !currentUser) return null;
 

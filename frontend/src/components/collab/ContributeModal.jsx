@@ -82,8 +82,6 @@ export default function ContributeModal({ isOpen, onClose, card, currentUser, on
       }
 
       onApplied();
-      onClose();
-      
       // Reset form
       setCourseBranch("");
       setSkills("");
