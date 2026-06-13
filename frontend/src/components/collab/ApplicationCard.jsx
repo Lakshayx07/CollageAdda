@@ -1,5 +1,5 @@
 import React from "react";
-import { User, Briefcase, GraduationCap, Github, Linkedin, Clock } from "lucide-react";
+import { User, Briefcase, GraduationCap, Code, Link, Clock } from "lucide-react";
 
 export default function ApplicationCard({ application }) {
   if (!application) return null;
@@ -83,12 +83,12 @@ export default function ApplicationCard({ application }) {
             <div className="flex gap-3 pt-1 border-t border-white/5">
               {application.linkedin_url && (
                 <a href={application.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-blue-400 transition flex items-center gap-1 text-xs font-medium">
-                  <Linkedin size={14} /> LinkedIn
+                  <Link size={14} /> LinkedIn
                 </a>
               )}
               {application.portfolio_url && (
                 <a href={application.portfolio_url} target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-emerald-400 transition flex items-center gap-1 text-xs font-medium">
-                  <Github size={14} /> Portfolio / GitHub
+                  <Code size={14} /> Portfolio / GitHub
                 </a>
               )}
             </div>
