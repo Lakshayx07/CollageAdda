@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import OpportunityFinder from "./OpportunityFinder";
 
 const URGENCY_COLORS = {
   High: "text-red-400 bg-red-500/10 border-red-500/20",
@@ -174,8 +175,22 @@ export default function CollabPage() {
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center justify-center px-5 py-8">
-        <div className="relative w-full max-w-sm" style={{ minHeight: 480 }}>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-5 py-8">
+        <div className="grid w-full gap-6 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start">
+          <OpportunityFinder currentUser={currentUser} />
+
+          <section className="flex w-full flex-col items-center">
+            <div className="mb-4 flex w-full max-w-sm items-center justify-between">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-muted">Team cards</p>
+                <h2 className="text-lg font-black text-white">Campus Collabs</h2>
+              </div>
+              <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-black text-muted">
+                Swipe
+              </span>
+            </div>
+
+            <div className="relative w-full max-w-sm" style={{ minHeight: 480 }}>
           {loading ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center rounded-[1.75rem] app-panel">
               <Loader size={32} className="animate-spin text-primary mb-4" />
@@ -309,6 +324,8 @@ export default function CollabPage() {
               )}
             </AnimatePresence>
           )}
+            </div>
+          </section>
         </div>
       </main>
 
