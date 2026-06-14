@@ -97,24 +97,28 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
     if (appliedCards[currentCard.id] !== undefined) return;
 
     const checkIfApplied = async () => {
-      const { data, error } = await supabase
-        .from("collab_applications")
-        .select("id, status")
-        .eq("card_id", currentCard.id)
-        .eq("applicant_user_id", userId)
-        .limit(1);
+      const myId = String(currentUser?.id || currentUser?._id || '').trim();
 
-      console.log(`=== CHECK APPLIED for card ${currentCard.id} ===`, data, error);
-      if (data && data.length > 0) {
+      const { data: allApps } = await supabase
+        .from('collab_applications')
+        .select('id, card_id, applicant_user_id, status');
+
+      const existingApp = (allApps || []).find(app => 
+        String(app.card_id) === String(currentCard.id) &&
+        String(app.applicant_user_id).trim() === myId
+      );
+
+      console.log(`=== CHECK APPLIED for card ${currentCard.id} ===`, existingApp);
+      if (existingApp) {
         setAppliedCards((prev) => ({ ...prev, [currentCard.id]: true }));
-        setAppStatusByCard((prev) => ({ ...prev, [currentCard.id]: data[0].status || 'pending' }));
+        setAppStatusByCard((prev) => ({ ...prev, [currentCard.id]: existingApp.status || 'pending' }));
       } else {
         setAppliedCards((prev) => ({ ...prev, [currentCard.id]: false }));
       }
     };
 
     checkIfApplied();
-  }, [currentIndex, cards, userId]);
+  }, [currentIndex, cards, userId, currentUser, appliedCards]);
 
   // Realtime: listen for status updates on MY applications
   useEffect(() => {

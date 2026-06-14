@@ -46,9 +46,9 @@ export default function ContributeModal({ isOpen, onClose, card, currentUser, on
       const { data: savedApp, error: appError } = await supabase
         .from('collab_applications')
         .insert({
-          applicant_user_id: userId,
+          applicant_user_id: String(currentUser?.id || currentUser?._id || '').trim(),
           card_id: card.id,
-          card_owner_user_id: card.user_id,
+          card_owner_user_id: String(card.user_id || '').trim(),
           name,
           course_branch: courseBranch,
           year,

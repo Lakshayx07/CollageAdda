@@ -179,40 +179,51 @@ export default function ApplicationsPanel({ cardId, currentUser }) {
     setTimeout(() => setToastMsg(""), 4000);
   };
 
-  const fetchApplications = useCallback(async () => {
-    if (!cardId || !userId) return;
-    setLoading(true);
-    setError(null);
-
+  const loadApplications = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    
     try {
-      // Debug: fetch ALL to compare IDs
-      const { data: allApps } = await supabase
-        .from("collab_applications")
-        .select("id, card_owner_user_id, card_id, applicant_user_id");
-      console.log("=== ALL APPLICATIONS IN DB ===", allApps);
-      console.log("=== APPLICATIONS QUERY ===", { userId, cardId });
-
-      const { data: apps, error: fetchErr } = await supabase
-        .from("collab_applications")
-        .select(`*, profiles:applicant_user_id (full_name, avatar_url, university)`)
-        .eq("card_owner_user_id", userId)
-        .order("created_at", { ascending: false });
-
-      console.log("=== APPLICATIONS FETCHED ===", { apps, fetchErr });
-      if (fetchErr) throw fetchErr;
-      setApplications(apps || []);
+      // Get ALL applications first (no filter)
+      const { data: allApps, error } = await supabase
+        .from('collab_applications')
+        .select('*, profiles:applicant_user_id (full_name, avatar_url, university)')
+        .order('created_at', { ascending: false })
+      
+      if (error) throw error
+      
+      // Get current user's MongoDB ID as plain string
+      const myId = String(
+        currentUser?.id || 
+        currentUser?._id || 
+        currentUser?.user_id || 
+        ''
+      ).replace(/['"]/g, '').trim()
+      
+      console.log('My ID:', myId)
+      console.log('All apps:', allApps)
+      
+      // Filter client-side - compare as plain strings
+      const myApplications = (allApps || []).filter(app => {
+        const ownerId = String(app.card_owner_user_id || '').trim()
+        return ownerId === myId
+      })
+      
+      console.log('My applications:', myApplications)
+      setApplications(myApplications)
+      
     } catch (err) {
-      console.error("Error fetching applications:", err);
-      setError("Could not load applications.");
+      console.error('Error:', err)
+      setError(err.message)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }, [cardId, userId]);
+  }, [currentUser])
 
   useEffect(() => {
     if (!cardId || !userId) return;
 
-    fetchApplications();
+    loadApplications();
 
     // Realtime: new applications coming in
     const channel = supabase
@@ -226,14 +237,14 @@ export default function ApplicationsPanel({ cardId, currentUser }) {
           filter: `card_owner_user_id=eq.${userId}`,
         },
         () => {
-          fetchApplications();
+          loadApplications();
           showToast("New application received! 🎉");
         }
       )
       .subscribe();
 
     return () => supabase.removeChannel(channel);
-  }, [cardId, userId, fetchApplications]);
+  }, [cardId, userId, loadApplications]);
 
   const handleImpressive = async (application) => {
     // Optimistic
