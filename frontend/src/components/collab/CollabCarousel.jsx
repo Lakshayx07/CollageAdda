@@ -20,7 +20,7 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
   const [appStatusByCard, setAppStatusByCard] = useState({});
   const [toastMsg, setToastMsg] = useState("");
 
-  const userId = currentUser ? String(currentUser.id || currentUser._id || "") : null;
+  const userId = currentUser ? (currentUser?.id || currentUser?._id || "").toString() : null;
 
   console.log("=== CURRENT USER ===", currentUser);
   console.log("=== USER ID being used ===", currentUser?.id, currentUser?._id, "→ resolved:", userId);
@@ -39,29 +39,16 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
         console.log("collab cards:", rawCards, error);
         if (error) throw error;
 
-        if (isMounted) {
-          const cardsWithProfiles = await Promise.all(
-            (rawCards || []).map(async (card) => {
-              const { data: profile } = await supabase
-                .from("profiles")
-                .select("full_name, avatar_url, university, username")
-                .eq("id", card.user_id)
-                .single();
-              return { ...card, profiles: profile || {} };
-            })
-          );
-
-          setCards(cardsWithProfiles);
+          setCards(rawCards || []);
 
           // Check URL param for deep-link to a card
           if (typeof window !== "undefined") {
             const cardIdParam = new URL(window.location.href).searchParams.get("cardId");
             if (cardIdParam) {
-              const idx = cardsWithProfiles.findIndex((c) => c.id === cardIdParam);
+              const idx = (rawCards || []).findIndex((c) => c.id === cardIdParam);
               if (idx !== -1) setCurrentIndex(idx);
             }
           }
-        }
       } catch (err) {
         console.error("Error fetching collab cards:", err);
       } finally {
@@ -89,7 +76,8 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
 
   // When current card changes, check DB to see if user already applied + get status
   useEffect(() => {
-    if (!cards.length || !userId) return;
+    if (!currentUser) return;
+    if (!cards || !cards.length || !userId) return;
     const currentCard = cards[currentIndex];
     if (!currentCard) return;
 
@@ -97,7 +85,8 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
     if (appliedCards[currentCard.id] !== undefined) return;
 
     const checkIfApplied = async () => {
-      const myId = String(currentUser?.id || currentUser?._id || '').trim();
+      const myId = (currentUser?.id || currentUser?._id || '').toString().trim();
+      if (!myId) return;
 
       const { data: allApps } = await supabase
         .from('collab_applications')
@@ -187,7 +176,7 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
     );
   }
 
-  if (cards.length === 0) {
+  if (!cards || cards.length === 0) {
     return (
       <section className="flex w-full flex-col items-center">
         <div className="relative w-full max-w-sm" style={{ minHeight: 480 }}>

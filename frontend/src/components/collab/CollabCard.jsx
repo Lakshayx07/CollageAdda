@@ -24,8 +24,8 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
   
   if (!card) return null;
   const isOwner = currentUser && (
-    String(currentUser.id) === String(card.user_id) || 
-    String(currentUser._id) === String(card.user_id)
+    (currentUser?.id || "").toString() === (card?.user_id || "").toString() || 
+    (currentUser?._id || "").toString() === (card?.user_id || "").toString()
   );
   const isApplied = !!hasApplied;
 
@@ -36,7 +36,7 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
   //   profiles: { full_name, avatar_url, university, is_verified } // joined from supabase
   // }
 
-  const profile = card.profiles || {};
+  // Profile is now fetched from the card directly or fallback
   const skillsArray = Array.isArray(card.skills) ? card.skills : (card.skills ? card.skills.split(",") : []);
   const rolesArray = Array.isArray(card.roles_needed) ? card.roles_needed : (card.roles_needed ? card.roles_needed.split(",") : []);
 
@@ -110,23 +110,19 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
 
       {/* Author */}
       <div className="flex items-center gap-3 mb-4">
-        {profile.avatar_url ? (
-          <img src={profile.avatar_url} alt={profile.full_name} className="w-12 h-12 rounded-full object-cover border border-white/20" />
+        {card.poster_avatar ? (
+          <img src={card.poster_avatar} alt={card.poster_name || "Student"} className="w-12 h-12 rounded-full object-cover border border-white/20" />
         ) : (
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-sm font-black text-white shrink-0">
-            {profile.full_name?.charAt(0) || "?"}
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-[10px] font-black text-white shrink-0 uppercase tracking-widest">
+            {card.user_id ? String(card.user_id).slice(-4) : "?"}
           </div>
         )}
         
         <div>
           <div className="flex items-center gap-1">
-            <p className="text-sm font-black text-white">{profile.full_name || profile.username || "Student"}</p>
-            {profile.is_verified && <VerifiedBadge size={14} />}
+            <p className="text-sm font-black text-white">{card.poster_name || "Campus Student"}</p>
           </div>
           <p className="text-[11px] text-white/50 font-medium">{card.year_major || "Student"}</p>
-          {profile.university && (
-            <p className="text-[10px] text-white/40 font-medium mt-0.5">🎓 {profile.university}</p>
-          )}
         </div>
       </div>
 
@@ -147,7 +143,7 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
             <Code size={12} /> My Skillset
           </p>
           <div className="flex flex-wrap gap-2">
-            {skillsArray.map((s, i) => (
+            {(skillsArray || []).map((s, i) => (
               <span key={i} className="text-[10px] font-bold text-violet-100 bg-violet-500/10 border border-violet-500/20 px-3 py-1 rounded-full shadow-[0_0_10px_rgba(139,92,246,0.1)] hover:bg-violet-500/20 transition-colors">
                 {s.trim()}
               </span>
@@ -163,7 +159,7 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
             <Users size={12} /> Roles Needed
           </p>
           <div className="flex flex-wrap gap-2">
-            {rolesArray.map((r, i) => (
+            {(rolesArray || []).map((r, i) => (
               <span key={i} className="text-[10px] font-bold text-blue-100 bg-blue-500/10 border border-blue-500/20 px-3 py-1 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.1)] hover:bg-blue-500/20 transition-colors">
                 {r.trim()}
               </span>

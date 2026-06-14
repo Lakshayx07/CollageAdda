@@ -104,7 +104,7 @@ function ApplicationCard({ application, onImpressive, onPass }) {
               Skills
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {skillsArray.map((s, i) => (
+              {(skillsArray || []).map((s, i) => (
                 <span
                   key={i}
                   className="text-[10px] font-bold text-violet-200 bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 rounded-full"
@@ -171,7 +171,7 @@ export default function ApplicationsPanel({ cardId, currentUser }) {
   const [toastMsg, setToastMsg] = useState("");
   const [toastType, setToastType] = useState("success"); // "success" | "info"
 
-  const userId = currentUser ? String(currentUser.id || currentUser._id || "") : null;
+  const userId = currentUser ? (currentUser?.id || currentUser?._id || "").toString() : null;
 
   const showToast = (msg, type = "success") => {
     setToastMsg(msg);
@@ -187,18 +187,19 @@ export default function ApplicationsPanel({ cardId, currentUser }) {
       // Get ALL applications first (no filter)
       const { data: allApps, error } = await supabase
         .from('collab_applications')
-        .select('*, profiles:applicant_user_id (full_name, avatar_url, university)')
+        .select('*')
         .order('created_at', { ascending: false })
       
       if (error) throw error
       
       // Get current user's MongoDB ID as plain string
-      const myId = String(
+      const myId = (
         currentUser?.id || 
         currentUser?._id || 
         currentUser?.user_id || 
         ''
-      ).replace(/['"]/g, '').trim()
+      ).toString().replace(/['"]/g, '').trim()
+      if (!myId) return;
       
       console.log('My ID:', myId)
       console.log('All apps:', allApps)
@@ -221,6 +222,7 @@ export default function ApplicationsPanel({ cardId, currentUser }) {
   }, [currentUser])
 
   useEffect(() => {
+    if (!currentUser) return;
     if (!cardId || !userId) return;
 
     loadApplications();
@@ -249,7 +251,7 @@ export default function ApplicationsPanel({ cardId, currentUser }) {
   const handleImpressive = async (application) => {
     // Optimistic
     setApplications((prev) =>
-      prev.map((a) => (a.id === application.id ? { ...a, status: "impressive" } : a))
+      (prev || []).map((a) => (a.id === application.id ? { ...a, status: "impressive" } : a))
     );
 
     try {
@@ -310,7 +312,7 @@ export default function ApplicationsPanel({ cardId, currentUser }) {
       console.error("Error marking impressive:", err);
       // Revert
       setApplications((prev) =>
-        prev.map((a) => (a.id === application.id ? { ...a, status: application.status } : a))
+        (prev || []).map((a) => (a.id === application.id ? { ...a, status: application.status } : a))
       );
       showToast("Failed to mark impressive. Try again.", "error");
     }
@@ -319,7 +321,7 @@ export default function ApplicationsPanel({ cardId, currentUser }) {
   const handlePass = async (application) => {
     // Optimistic
     setApplications((prev) =>
-      prev.map((a) => (a.id === application.id ? { ...a, status: "rejected" } : a))
+      (prev || []).map((a) => (a.id === application.id ? { ...a, status: "rejected" } : a))
     );
 
     try {
@@ -332,14 +334,14 @@ export default function ApplicationsPanel({ cardId, currentUser }) {
     } catch (err) {
       console.error("Error passing application:", err);
       setApplications((prev) =>
-        prev.map((a) => (a.id === application.id ? { ...a, status: application.status } : a))
+        (prev || []).map((a) => (a.id === application.id ? { ...a, status: application.status } : a))
       );
     }
   };
 
   if (!cardId || !currentUser) return null;
 
-  const pendingCount = applications.filter((a) => !a.status || a.status === "pending").length;
+  const pendingCount = (applications || []).filter((a) => !a.status || a.status === "pending").length;
 
   return (
     <div className="w-full mt-8 flex flex-col items-center relative">
@@ -400,7 +402,7 @@ export default function ApplicationsPanel({ cardId, currentUser }) {
               Retry
             </button>
           </div>
-        ) : applications.length === 0 ? (
+        ) : (applications || []).length === 0 ? (
           <div className="app-panel rounded-[1.5rem] p-8 flex flex-col items-center justify-center text-center opacity-70">
             <Inbox size={32} className="text-white/20 mb-3" />
             <p className="text-sm font-bold text-white/50">No applications yet</p>
@@ -409,7 +411,7 @@ export default function ApplicationsPanel({ cardId, currentUser }) {
             </p>
           </div>
         ) : (
-          applications.map((app) => (
+          (applications || []).map((app) => (
             <ApplicationCard
               key={app.id}
               application={app}

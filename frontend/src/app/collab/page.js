@@ -66,6 +66,8 @@ export default function CollabPage() {
         .from('collab_cards')
         .insert({
           user_id: userId,
+          poster_name: currentUser?.name || currentUser?.username || 'Student',
+          poster_avatar: currentUser?.avatar || currentUser?.photo || null,
           skills: skillset.split(",").map(s => s.trim()).filter(Boolean),
           building,
           year_major: yearMajor,
