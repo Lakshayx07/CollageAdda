@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Clock, Users, MoreVertical, Trash2, Share2, ChevronLeft, ChevronRight, Rocket, Code } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
 import VerifiedBadge from "@/components/VerifiedBadge";
-import { supabase } from "@/utils/supabase";
 
 const URGENCY_COLORS = {
   High: "text-red-400 bg-red-500/10 border-red-500/20",
@@ -20,32 +19,15 @@ const PROJECT_TYPE_COLORS = {
   Other: "text-white/40 bg-white/5 border-white/10"
 };
 
-export default function CollabCard({ card, currentUser, onContribute, onShare, onDelete, onNext, onPrev, currentIndex, totalCards, onApplied, appliedOverride }) {
+export default function CollabCard({ card, currentUser, hasApplied, appStatus, onContribute, onShare, onDelete, onNext, onPrev, currentIndex, totalCards }) {
   const [showOptions, setShowOptions] = useState(false);
-  const [hasApplied, setHasApplied] = useState(false);
   
-  const userId = currentUser ? String(currentUser.id || currentUser._id) : null;
-  const isApplied = appliedOverride || hasApplied;
-
-  useEffect(() => {
-    if (!card || !userId) return;
-    
-    const checkApplied = async () => {
-      const { data: existingApp } = await supabase
-        .from('collab_applications')
-        .select('id')
-        .eq('card_id', card.id)
-        .eq('applicant_user_id', userId)
-        .single();
-        
-      setHasApplied(!!existingApp);
-    };
-    
-    checkApplied();
-  }, [card?.id, userId]);
-
   if (!card) return null;
-  const isOwner = currentUser && (currentUser.id === card.user_id || currentUser._id === card.user_id);
+  const isOwner = currentUser && (
+    String(currentUser.id) === String(card.user_id) || 
+    String(currentUser._id) === String(card.user_id)
+  );
+  const isApplied = !!hasApplied;
 
   // Assume card structure:
   // {
@@ -221,8 +203,27 @@ export default function CollabCard({ card, currentUser, onContribute, onShare, o
         )}
         {/* Contribute button */}
         {isApplied ? (
-          <div className="w-full flex items-center justify-center gap-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-black text-sm py-3">
-            ✓ Applied
+          <div className="flex flex-col items-center gap-1.5">
+            <div className="w-full flex items-center justify-center gap-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-black text-sm py-3">
+              ✓ Applied
+            </div>
+            
+            {/* Applicant Status Tracking */}
+            {appStatus === 'pending' && (
+              <p className="text-amber-400 text-xs text-center mt-1">
+                ⏳ Application under review
+              </p>
+            )}
+            {appStatus === 'impressive' && (
+              <p className="text-emerald-400 text-xs text-center mt-1 animate-pulse">
+                ✨ Marked Impressive! Check your messages 🎉
+              </p>
+            )}
+            {appStatus === 'rejected' && (
+              <p className="text-white/40 text-xs text-center mt-1">
+                Application not selected this time. Keep building! 💪
+              </p>
+            )}
           </div>
         ) : isOwner ? null : (
           <button

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Loader, Briefcase, Plus } from "lucide-react";
+import { Loader, Briefcase, Plus } from "lucide-react";
 import { supabase } from "@/utils/supabase";
 import CollabCard from "./CollabCard";
 import ContributeModal from "./ContributeModal";
@@ -14,7 +14,16 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
   const [direction, setDirection] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [shareCard, setShareCard] = useState(null);
-  const [appliedCardIds, setAppliedCardIds] = useState(new Set());
+  // { [cardId]: true/false }
+  const [appliedCards, setAppliedCards] = useState({});
+  // { [cardId]: 'pending' | 'impressive' | 'rejected' }
+  const [appStatusByCard, setAppStatusByCard] = useState({});
+  const [toastMsg, setToastMsg] = useState("");
+
+  const userId = currentUser ? String(currentUser.id || currentUser._id || "") : null;
+
+  console.log("=== CURRENT USER ===", currentUser);
+  console.log("=== USER ID being used ===", currentUser?.id, currentUser?._id, "→ resolved:", userId);
 
   useEffect(() => {
     let isMounted = true;
@@ -22,39 +31,34 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
     const fetchCards = async () => {
       setLoading(true);
       try {
-        const { data: cards, error } = await supabase
-          .from('collab_cards')
-          .select('*')
-          .order('created_at', { ascending: false });
+        const { data: rawCards, error } = await supabase
+          .from("collab_cards")
+          .select("*")
+          .order("created_at", { ascending: false });
 
-        console.log('collab cards:', cards, error);
-
+        console.log("collab cards:", rawCards, error);
         if (error) throw error;
 
         if (isMounted) {
           const cardsWithProfiles = await Promise.all(
-            (cards || []).map(async (card) => {
+            (rawCards || []).map(async (card) => {
               const { data: profile } = await supabase
-                .from('profiles')
-                .select('full_name, avatar_url, university, username')
-                .eq('id', card.user_id)
+                .from("profiles")
+                .select("full_name, avatar_url, university, username")
+                .eq("id", card.user_id)
                 .single();
-              
               return { ...card, profiles: profile || {} };
             })
           );
-          
+
           setCards(cardsWithProfiles);
-          
-          // Check if we need to navigate to a specific card via URL
+
+          // Check URL param for deep-link to a card
           if (typeof window !== "undefined") {
-            const url = new URL(window.location.href);
-            const cardIdParam = url.searchParams.get("cardId");
-            if (cardIdParam && cardsWithProfiles && cardsWithProfiles.length > 0) {
-              const foundIndex = cardsWithProfiles.findIndex(c => c.id === cardIdParam);
-              if (foundIndex !== -1) {
-                setCurrentIndex(foundIndex);
-              }
+            const cardIdParam = new URL(window.location.href).searchParams.get("cardId");
+            if (cardIdParam) {
+              const idx = cardsWithProfiles.findIndex((c) => c.id === cardIdParam);
+              if (idx !== -1) setCurrentIndex(idx);
             }
           }
         }
@@ -69,14 +73,12 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
 
     // Subscribe to new cards
     const subscription = supabase
-      .channel('collab_cards_changes')
-      .on('postgres_changes', { 
-        event: 'INSERT', 
-        schema: 'public', 
-        table: 'collab_cards' 
-      }, (payload) => {
-        setCards(prev => [payload.new, ...prev]);
-      })
+      .channel("collab_cards_changes")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "collab_cards" },
+        (payload) => setCards((prev) => [payload.new, ...prev])
+      )
       .subscribe();
 
     return () => {
@@ -84,6 +86,65 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
       supabase.removeChannel(subscription);
     };
   }, []);
+
+  // When current card changes, check DB to see if user already applied + get status
+  useEffect(() => {
+    if (!cards.length || !userId) return;
+    const currentCard = cards[currentIndex];
+    if (!currentCard) return;
+
+    // Skip if we already know
+    if (appliedCards[currentCard.id] !== undefined) return;
+
+    const checkIfApplied = async () => {
+      const { data, error } = await supabase
+        .from("collab_applications")
+        .select("id, status")
+        .eq("card_id", currentCard.id)
+        .eq("applicant_user_id", userId)
+        .limit(1);
+
+      console.log(`=== CHECK APPLIED for card ${currentCard.id} ===`, data, error);
+      if (data && data.length > 0) {
+        setAppliedCards((prev) => ({ ...prev, [currentCard.id]: true }));
+        setAppStatusByCard((prev) => ({ ...prev, [currentCard.id]: data[0].status || 'pending' }));
+      } else {
+        setAppliedCards((prev) => ({ ...prev, [currentCard.id]: false }));
+      }
+    };
+
+    checkIfApplied();
+  }, [currentIndex, cards, userId]);
+
+  // Realtime: listen for status updates on MY applications
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel(`my-app-status-${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'collab_applications',
+          filter: `applicant_user_id=eq.${userId}`,
+        },
+        (payload) => {
+          const updated = payload.new;
+          if (updated.status === 'impressive') {
+            setAppStatusByCard((prev) => ({ ...prev, [updated.card_id]: 'impressive' }));
+            setToastMsg('🎉 Your application was marked Impressive! Check your messages.');
+            setTimeout(() => setToastMsg(''), 5000);
+          } else if (updated.status === 'rejected') {
+            setAppStatusByCard((prev) => ({ ...prev, [updated.card_id]: 'rejected' }));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
+  }, [userId]);
 
   const handleNext = () => {
     setDirection(1);
@@ -99,7 +160,7 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
     try {
       const { error } = await supabase.from("collab_cards").delete().eq("id", cardId);
       if (error) throw error;
-      setCards(prev => prev.filter(c => c.id !== cardId));
+      setCards((prev) => prev.filter((c) => c.id !== cardId));
       if (currentIndex >= cards.length - 1) {
         setCurrentIndex(Math.max(0, cards.length - 2));
       }
@@ -147,33 +208,32 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
   }
 
   const currentCard = cards[currentIndex];
+  const isCardOwner = userId && String(currentCard?.user_id) === userId;
+  const hasApplied = appliedCards[currentCard?.id] === true;
+  const appStatus = appStatusByCard[currentCard?.id] || null;
 
   const variants = {
-    enter: (direction) => {
-      return {
-        x: direction > 0 ? 200 : -200,
-        opacity: 0,
-        scale: 0.9,
-      };
-    },
-    center: {
-      zIndex: 1,
-      x: 0,
-      opacity: 1,
-      scale: 1,
-    },
-    exit: (direction) => {
-      return {
-        zIndex: 0,
-        x: direction < 0 ? 200 : -200,
-        opacity: 0,
-        scale: 0.9,
-      };
-    }
+    enter: (d) => ({ x: d > 0 ? 200 : -200, opacity: 0, scale: 0.9 }),
+    center: { zIndex: 1, x: 0, opacity: 1, scale: 1 },
+    exit: (d) => ({ zIndex: 0, x: d < 0 ? 200 : -200, opacity: 0, scale: 0.9 }),
   };
 
   return (
     <section className="flex w-full flex-col items-center">
+      {/* Applicant status toast */}
+      <AnimatePresence>
+        {toastMsg && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 30 }}
+            className="fixed bottom-24 left-1/2 z-[999] -translate-x-1/2 rounded-2xl bg-emerald-500 px-5 py-3 text-xs font-black uppercase tracking-widest text-black shadow-xl whitespace-nowrap"
+          >
+            {toastMsg}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="mb-4 flex w-full max-w-sm items-center justify-between">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.22em] text-muted">Team cards</p>
@@ -195,27 +255,26 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
             exit="exit"
             transition={{
               x: { type: "spring", stiffness: 300, damping: 30 },
-              opacity: { duration: 0.2 }
+              opacity: { duration: 0.2 },
             }}
             className="absolute inset-0 w-full h-full flex flex-col"
           >
-            <CollabCard 
-              card={currentCard} 
+            <CollabCard
+              card={currentCard}
               currentUser={currentUser}
-              onContribute={() => setShowModal(true)} 
+              hasApplied={hasApplied}
+              appStatus={appStatus}
+              onContribute={() => setShowModal(true)}
               onShare={(c) => setShareCard(c)}
               onDelete={handleDelete}
               onNext={handleNext}
               onPrev={handlePrev}
               currentIndex={currentIndex}
               totalCards={cards.length}
-              appliedOverride={appliedCardIds.has(currentCard.id)}
             />
           </motion.div>
         </AnimatePresence>
       </div>
-
-
 
       {/* Contribute Modal */}
       <ContributeModal
@@ -224,7 +283,8 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
         card={currentCard}
         currentUser={currentUser}
         onApplied={() => {
-          setAppliedCardIds(prev => new Set([...prev, currentCard.id]));
+          setAppliedCards((prev) => ({ ...prev, [currentCard.id]: true }));
+          setAppStatusByCard((prev) => ({ ...prev, [currentCard.id]: 'pending' }));
           setShowModal(false);
         }}
       />
@@ -237,8 +297,8 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
         currentUser={currentUser}
       />
 
-      {/* Applications Panel for Card Owner */}
-      {currentUser && currentCard.user_id === (currentUser.id || currentUser._id) && (
+      {/* Applications Panel — only for card owner */}
+      {isCardOwner && (
         <ApplicationsPanel cardId={currentCard.id} currentUser={currentUser} />
       )}
     </section>

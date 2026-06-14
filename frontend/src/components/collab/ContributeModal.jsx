@@ -43,7 +43,7 @@ export default function ContributeModal({ isOpen, onClose, card, currentUser, on
     setIsSubmitting(true);
     try {
       // 1. Insert into collab_applications
-      const { error: appError } = await supabase
+      const { data: savedApp, error: appError } = await supabase
         .from('collab_applications')
         .insert({
           applicant_user_id: userId,
@@ -58,8 +58,11 @@ export default function ContributeModal({ isOpen, onClose, card, currentUser, on
           linkedin_url: profileUrl.includes('linkedin.com') ? profileUrl : null,
           portfolio_url: !profileUrl.includes('linkedin.com') && profileUrl ? profileUrl : null,
           status: 'pending'
-        });
+        })
+        .select()
+        .single();
 
+      console.log('=== APPLICATION SAVED ===', savedApp, appError);
       if (appError) throw appError;
 
       // 2. Insert into messages
