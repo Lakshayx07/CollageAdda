@@ -1,172 +1,557 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { X, Upload, Gamepad2, Activity, Save } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Upload, ChevronRight, ChevronLeft, Gamepad2, Dumbbell, Check } from 'lucide-react';
 import clsx from 'clsx';
 
+// ─── Game → 3 relevant skills mapping ────────────────────────────────────────
+const SKILL_MAP = {
+  // Esports
+  'BGMI':       ['Accuracy 🎯', 'Game Sense 🧠', 'Clutch 💪'],
+  'Valorant':   ['Accuracy 🎯', 'Game Sense 🧠', 'Clutch 💪'],
+  'Free Fire':  ['Accuracy 🎯', 'Game Sense 🧠', 'Clutch 💪'],
+  'FIFA':       ['Game Sense 🧠', 'Teamwork 🤝', 'Clutch 💪'],
+  'Rocket League': ['Game Sense 🧠', 'Teamwork 🤝', 'Clutch 💪'],
+  'Chess':      ['Game Sense 🧠', 'Accuracy 🎯', 'Clutch 💪'],
+  // Sports
+  'Cricket':    ['Batting 🏏', 'Bowling 🎯', 'Fielding 🏃'],
+  'Football':   ['Dribbling ⚽', 'Teamwork 🤝', 'Finishing 🥅'],
+  'Basketball': ['Shooting 🏀', 'Dribbling ⚽', 'Defense 🛡️'],
+  'Badminton':  ['Accuracy 🎯', 'Speed 🏃', 'Stamina ⚡'],
+  'Tennis':     ['Accuracy 🎯', 'Speed 🏃', 'Clutch 💪'],
+};
+const DEFAULT_SKILLS = ['Game Sense 🧠', 'Teamwork 🤝', 'Accuracy 🎯'];
+
+// ─── Skill level buttons: Beginner=1, Good=4, Pro=7, Elite=10 ─────────────────
+const SKILL_LEVELS = [
+  { label: 'Beginner', value: 1 },
+  { label: 'Good',     value: 4 },
+  { label: 'Pro',      value: 7 },
+  { label: 'Elite',    value: 10 },
+];
+
+// ─── Tab accent colors ────────────────────────────────────────────────────────
+const THEME = {
+  esports: {
+    accent: '#39FF82',
+    accentMuted: 'rgba(57,255,130,0.15)',
+    accentBorder: 'rgba(57,255,130,0.35)',
+    gradient: 'linear-gradient(135deg, #6C3AFF, #1A0A2E)',
+    glow: '0 4px 24px rgba(108,58,255,0.4)',
+    tabLabel: '🎮 Esports',
+  },
+  sports: {
+    accent: '#FF6B35',
+    accentMuted: 'rgba(255,107,53,0.15)',
+    accentBorder: 'rgba(255,107,53,0.35)',
+    gradient: 'linear-gradient(135deg, #FF6B35, #2A1000)',
+    glow: '0 4px 24px rgba(255,107,53,0.4)',
+    tabLabel: '🏆 Sports',
+  },
+};
+
+// ─── Step progress bar ────────────────────────────────────────────────────────
+function StepBar({ step, accent }) {
+  return (
+    <div className="flex items-center gap-2 mb-1">
+      {[1, 2, 3].map(s => (
+        <React.Fragment key={s}>
+          <div
+            className="h-1.5 flex-1 rounded-full transition-all duration-400"
+            style={{ background: step >= s ? accent : 'rgba(255,255,255,0.08)' }}
+          />
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
+// ─── Mini Live Preview Card ───────────────────────────────────────────────────
+function PreviewCard({ name, game, photo, skills, skillRatings, accent, accentMuted, accentBorder }) {
+  const displayName = name || '—';
+  const displayGame = game || '—';
+
+  return (
+    <div
+      className="rounded-2xl p-4 mb-5 relative overflow-hidden border"
+      style={{ background: 'rgba(0,0,0,0.6)', borderColor: accentBorder }}
+    >
+      {/* Subtle glow */}
+      <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(circle at 50% 0%, ${accentMuted}, transparent 70%)` }} />
+
+      <div className="flex items-center gap-3 relative z-10">
+        {/* Avatar */}
+        <div
+          className="w-14 h-14 rounded-xl overflow-hidden shrink-0 border-2 flex items-center justify-center bg-black/40"
+          style={{ borderColor: accentBorder }}
+        >
+          {photo
+            ? <img src={photo} alt="you" className="w-full h-full object-cover" />
+            : <span className="text-2xl font-black text-white/30">?</span>
+          }
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-black text-white truncate">{displayName}</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest mt-0.5 truncate" style={{ color: accent }}>{displayGame}</p>
+
+          {/* Skill pills — live */}
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {skills.map(sk => {
+              const key = sk;
+              const val = skillRatings[key];
+              const lvl = SKILL_LEVELS.find(l => l.value === val);
+              return (
+                <span
+                  key={sk}
+                  className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full"
+                  style={
+                    val
+                      ? { background: accentMuted, color: accent, border: `1px solid ${accentBorder}` }
+                      : { background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.25)', border: '1px solid rgba(255,255,255,0.08)' }
+                  }
+                >
+                  {sk.split(' ')[0]} {lvl ? lvl.label : '—'}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function PlayerCardForm({ onClose, initialCategory = 'esports' }) {
-  const [category, setCategory] = useState(initialCategory); // 'esports' or 'sports'
+  const [category, setCategory] = useState(initialCategory);
+  const [step, setStep] = useState(1);
+
+  // Auto-fill name from localStorage
+  const [autoName, setAutoName] = useState('');
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('collegeadda_user');
+      if (stored) {
+        const u = JSON.parse(stored);
+        setAutoName(u.name || u.fullName || '');
+      }
+    } catch (_) {}
+  }, []);
+
+  // Form state — keep all fields so submit payload doesn't change
   const [formData, setFormData] = useState({
-    name: '',
     username: '',
     game_or_sport: '',
     role_or_position: '',
     rank: '',
     experience_level: '',
-    availability: '',
+    availability: 'Both',
     bio: '',
     photo_url: '',
-    skills: {
-      s1: 5, s2: 5, s3: 5, s4: 5, s5: 5
-    }
+    skills: { s1: null, s2: null, s3: null, s4: null, s5: null }
   });
 
   const isEsports = category === 'esports';
+  const theme = THEME[category];
+  const { accent, accentMuted, accentBorder, gradient, glow } = theme;
 
-  const handleSkillChange = (key, val) => {
-    setFormData(prev => ({ ...prev, skills: { ...prev.skills, [key]: val } }));
+  // Derived: 3 relevant skills for selected game/sport
+  const activeSkillLabels = SKILL_MAP[formData.game_or_sport] || DEFAULT_SKILLS;
+
+  // Map skill labels → s1/s2/s3 keys
+  const skillKeys = ['s1', 's2', 's3'];
+  const skillRatingsByLabel = {};
+  activeSkillLabels.forEach((lbl, i) => {
+    skillRatingsByLabel[lbl] = formData.skills[skillKeys[i]];
+  });
+
+  // ── Handlers ────────────────────────────────────────────────────────────
+  const handleCategorySwitch = (cat) => {
+    setCategory(cat);
+    // Reset game selection and skills on tab switch
+    setFormData(prev => ({
+      ...prev,
+      game_or_sport: '',
+      skills: { s1: null, s2: null, s3: null, s4: null, s5: null }
+    }));
   };
 
   const handlePhotoUpload = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData({ ...formData, photo_url: reader.result });
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => setFormData(prev => ({ ...prev, photo_url: reader.result }));
+    reader.readAsDataURL(file);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    alert('Card Created Successfully! (Mock)');
+  const handleSkillTap = (keyIndex, value) => {
+    const key = skillKeys[keyIndex];
+    setFormData(prev => ({
+      ...prev,
+      skills: { ...prev.skills, [key]: value }
+    }));
+  };
+
+  const handleSubmit = () => {
+    // Emit full payload matching existing backend shape
+    // name is auto-filled from user profile
+    const payload = {
+      name: autoName,
+      ...formData,
+      category,
+    };
+    console.log('PlayerCard submit:', payload);
+    alert('Card Created Successfully! 🎉');
     onClose();
   };
 
-  const themeColors = isEsports ? "from-cyan-500 to-purple-600" : "from-orange-500 to-red-600";
-  const bgTheme = isEsports ? "bg-cyan-500/10 border-cyan-500/30" : "bg-orange-500/10 border-orange-500/30";
+  // ── Step validation ──────────────────────────────────────────────────────
+  const canGoStep2 = !!formData.game_or_sport;  // game/sport must be selected
+  const canSubmit = skillKeys.every((_, i) => formData.skills[skillKeys[i]] !== null); // all 3 skills rated
+
+  // ── Games / Sports lists ─────────────────────────────────────────────────
+  const gameList = isEsports
+    ? ['BGMI', 'Valorant', 'Free Fire', 'Chess', 'FIFA']
+    : ['Cricket', 'Football', 'Badminton', 'Basketball', 'Tennis'];
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-xl overflow-y-auto">
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="app-panel w-full max-w-2xl rounded-[1.75rem] relative overflow-hidden my-auto"
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-xl">
+      <motion.div
+        initial={{ opacity: 0, y: 60, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 60, scale: 0.97 }}
+        transition={{ type: 'spring', stiffness: 280, damping: 28 }}
+        className="w-full sm:max-w-md app-panel rounded-t-[2rem] sm:rounded-[2rem] relative overflow-hidden flex flex-col"
+        style={{ maxHeight: '92vh' }}
       >
+        {/* Accent top bar */}
+        <div className="h-1 w-full" style={{ background: gradient }} />
+
         {/* Header */}
-        <div className={clsx("p-6 border-b border-white/10 relative overflow-hidden")}>
-          <div className={clsx("absolute inset-0 bg-gradient-to-r opacity-20", themeColors)} />
-          <button type="button" onClick={onClose} className="absolute top-6 right-6 text-white/50 hover:text-white z-50 bg-black/50 p-2 rounded-full backdrop-blur-md cursor-pointer pointer-events-auto">
-            <X size={20} />
-          </button>
-          
-          <h2 className="text-2xl font-black text-white uppercase tracking-widest relative z-10 flex items-center">
-            {isEsports ? <Gamepad2 className="mr-3 text-cyan-400" /> : <Activity className="mr-3 text-orange-400" />}
-            Create Player Card
-          </h2>
-          <p className="text-white/60 text-sm mt-2 relative z-10 font-medium">Design your unique collectible player profile.</p>
-        </div>
-
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
-          {/* Category Toggle */}
-          <div className="flex space-x-2 bg-black/50 p-1 rounded-xl border border-white/5">
-            <button type="button" onClick={() => setCategory('esports')} className={clsx("flex-1 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition", isEsports ? "bg-white/10 text-cyan-400 border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.2)]" : "text-white/40 hover:text-white")}>🎮 Esports</button>
-            <button type="button" onClick={() => setCategory('sports')} className={clsx("flex-1 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition", !isEsports ? "bg-white/10 text-orange-400 border border-orange-500/30 shadow-[0_0_15px_rgba(249,115,22,0.2)]" : "text-white/40 hover:text-white")}>⚽ Sports</button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Left Column */}
-            <div className="space-y-4">
-              {/* Photo Upload */}
-              <label className={clsx("w-32 h-32 rounded-full mx-auto border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 transition relative overflow-hidden", bgTheme)}>
-                {formData.photo_url ? (
-                  <img src={formData.photo_url} alt="Profile" className="absolute inset-0 w-full h-full object-cover" />
-                ) : (
-                  <>
-                    <Upload size={24} className={isEsports ? "text-cyan-400 mb-2" : "text-orange-400 mb-2"} />
-                    <span className="text-[10px] text-white/50 uppercase font-bold tracking-widest text-center px-2">Upload<br/>Photo</span>
-                  </>
-                )}
-                <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
-              </label>
-
-              <div>
-                <label className="block text-[10px] font-bold text-white/50 uppercase tracking-widest mb-1">Full Name</label>
-                <input required type="text" className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-white/30 transition" placeholder="John Doe" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold text-white/50 uppercase tracking-widest mb-1">{isEsports ? 'Game Username / ID' : 'Jersey Name'}</label>
-                <input required type="text" className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-white/30 transition" placeholder={isEsports ? "Viper_X#123" : "Arjun"} value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} />
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold text-white/50 uppercase tracking-widest mb-1">{isEsports ? 'Select Game' : 'Select Sport'}</label>
-                <select required className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-white/30 transition appearance-none" value={formData.game_or_sport} onChange={e => setFormData({...formData, game_or_sport: e.target.value})}>
-                  <option value="">Select...</option>
-                  {isEsports 
-                    ? ['BGMI', 'Valorant', 'Free Fire', 'Chess', 'FIFA'].map(g => <option key={g} value={g}>{g}</option>)
-                    : ['Cricket', 'Football', 'Badminton', 'Basketball', 'Tennis'].map(s => <option key={s} value={s}>{s}</option>)
-                  }
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-[10px] font-bold text-white/50 uppercase tracking-widest mb-1">{isEsports ? 'Current Rank' : 'Experience Level'}</label>
-                <input required type="text" className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-white/30 transition" placeholder={isEsports ? "Diamond 3" : "Inter-College"} value={isEsports ? formData.rank : formData.experience_level} onChange={e => isEsports ? setFormData({...formData, rank: e.target.value}) : setFormData({...formData, experience_level: e.target.value})} />
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold text-white/50 uppercase tracking-widest mb-1">{isEsports ? 'Favourite Role' : 'Playing Position'}</label>
-                <input required type="text" className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-white/30 transition" placeholder={isEsports ? "IGL / Assaulter" : "Forward / Bowler"} value={formData.role_or_position} onChange={e => setFormData({...formData, role_or_position: e.target.value})} />
-              </div>
+        <div className="px-6 pt-5 pb-3 shrink-0">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-black text-white uppercase tracking-widest flex items-center gap-2">
+                {isEsports ? <Gamepad2 size={18} style={{ color: accent }} /> : <Dumbbell size={18} style={{ color: accent }} />}
+                Create Player Card
+              </h2>
+              <p className="text-[10px] text-white/40 font-bold mt-0.5">
+                Step {step} of 3 · {['Identity', 'Details', 'Skills'][step - 1]}
+              </p>
             </div>
-
-            {/* Right Column (Skills) */}
-            <div className="space-y-4">
-              <h3 className="text-white font-black uppercase tracking-widest text-sm mb-4 border-b border-white/10 pb-2">Rate Your Skills (1-10)</h3>
-              
-              {[
-                { key: 's1', label: isEsports ? 'Accuracy 🎯' : 'Speed 🏃' },
-                { key: 's2', label: isEsports ? 'Game Sense 🧠' : 'Stamina ⚡' },
-                { key: 's3', label: isEsports ? 'Clutch 💪' : 'Technique 🎯' },
-                { key: 's4', label: 'Teamwork 🤝' },
-                { key: 's5', label: isEsports ? 'Comms 📢' : 'Leadership 👑' }
-              ].map((skill) => (
-                <div key={skill.key} className="bg-black/50 p-3 rounded-xl border border-white/5">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-[10px] font-bold text-white/70 uppercase tracking-widest">{skill.label}</span>
-                    <span className={clsx("text-xs font-black", isEsports ? "text-cyan-400" : "text-orange-400")}>{formData.skills[skill.key]}</span>
-                  </div>
-                  <input type="range" min="1" max="10" value={formData.skills[skill.key]} onChange={(e) => handleSkillChange(skill.key, parseInt(e.target.value))} className="w-full accent-white" />
-                </div>
-              ))}
-
-              <div className="pt-2">
-                <label className="block text-[10px] font-bold text-white/50 uppercase tracking-widest mb-1">Availability</label>
-                <select className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-white/30 transition appearance-none" value={formData.availability} onChange={e => setFormData({...formData, availability: e.target.value})}>
-                  <option value="Both">Flexible / Both</option>
-                  <option value="Tournaments">Tournaments Only</option>
-                  <option value="Casual">Casual / Weekends</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold text-white/50 uppercase tracking-widest mb-1">Short Bio</label>
-                <textarea maxLength="100" rows="2" className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-white/30 transition resize-none custom-scrollbar" placeholder="IGL main, 3000+ matches..." value={formData.bio} onChange={e => setFormData({...formData, bio: e.target.value})} />
-              </div>
-            </div>
-          </div>
-
-          <div className="pt-6 border-t border-white/10 flex space-x-4">
-            <button type="button" onClick={onClose} className="flex-1 py-4 rounded-xl border border-white/10 text-white/70 font-black uppercase tracking-widest text-xs hover:bg-white/5 transition">Cancel</button>
-            <button type="submit" className={clsx("flex-1 py-4 rounded-xl text-black font-black uppercase tracking-widest text-xs shadow-lg transition flex items-center justify-center bg-gradient-to-r", themeColors)}>
-              <Save size={16} className="mr-2" /> Generate Card
+            <button
+              onClick={onClose}
+              className="p-2 glass rounded-xl text-white/40 hover:text-white transition-colors"
+            >
+              <X size={18} />
             </button>
           </div>
-        </form>
+
+          {/* Progress bar */}
+          <StepBar step={step} accent={accent} />
+
+          {/* Tab switcher */}
+          <div className="flex gap-1.5 mt-4 bg-black/50 p-1 rounded-xl border border-white/5">
+            {(['esports', 'sports'] ).map(cat => {
+              const t = THEME[cat];
+              const active = category === cat;
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => { handleCategorySwitch(cat); setStep(1); }}
+                  className="flex-1 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all"
+                  style={
+                    active
+                      ? { background: t.gradient, color: '#fff', boxShadow: t.glow }
+                      : { color: 'rgba(255,255,255,0.35)' }
+                  }
+                >
+                  {t.tabLabel}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Auto-name display */}
+          <p className="text-[10px] text-white/35 font-bold mt-3 flex items-center gap-1">
+            <span className="text-white/20">Creating card for:</span>
+            <span style={{ color: accent }}>{autoName || '—'}</span>
+          </p>
+        </div>
+
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar px-6 pb-4">
+          <AnimatePresence mode="wait">
+
+            {/* ── STEP 1: Identity ─────────────────────────────────────── */}
+            {step === 1 && (
+              <motion.div
+                key="step1"
+                initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-5 pt-2"
+              >
+                {/* Photo upload */}
+                <div className="flex flex-col items-center">
+                  <label
+                    className="relative w-24 h-24 rounded-2xl overflow-hidden cursor-pointer flex items-center justify-center border-2 border-dashed transition hover:opacity-80"
+                    style={{ borderColor: accentBorder, background: accentMuted }}
+                  >
+                    {formData.photo_url
+                      ? <img src={formData.photo_url} alt="photo" className="absolute inset-0 w-full h-full object-cover" />
+                      : (
+                        <div className="flex flex-col items-center gap-1">
+                          <Upload size={22} style={{ color: accent }} />
+                          <span className="text-[9px] text-white/40 font-black uppercase tracking-wider text-center">Photo</span>
+                        </div>
+                      )
+                    }
+                    <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+                  </label>
+                  <p className="text-[9px] text-white/25 mt-2 font-bold">Optional — tap to upload</p>
+                </div>
+
+                {/* Game Username / Jersey Name */}
+                <div>
+                  <label className="block text-[10px] font-black text-white/50 uppercase tracking-widest mb-2">
+                    {isEsports ? 'Game Username / ID' : 'Jersey Name'}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={isEsports ? 'Viper_X#1234' : 'Arjun'}
+                    value={formData.username}
+                    onChange={e => setFormData(p => ({ ...p, username: e.target.value }))}
+                    className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none transition"
+                    style={{ focusBorderColor: accent }}
+                  />
+                </div>
+
+                {/* Select Game / Sport */}
+                <div>
+                  <label className="block text-[10px] font-black text-white/50 uppercase tracking-widest mb-2">
+                    {isEsports ? 'Select Game' : 'Select Sport'}
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {gameList.map(g => {
+                      const active = formData.game_or_sport === g;
+                      return (
+                        <button
+                          key={g}
+                          type="button"
+                          onClick={() => setFormData(p => ({
+                            ...p,
+                            game_or_sport: g,
+                            // reset skills when game changes
+                            skills: { s1: null, s2: null, s3: null, s4: null, s5: null }
+                          }))}
+                          className="py-3 px-3 rounded-xl text-sm font-black text-left transition-all"
+                          style={
+                            active
+                              ? { background: accentMuted, color: accent, border: `1.5px solid ${accentBorder}` }
+                              : { background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.5)', border: '1.5px solid rgba(255,255,255,0.08)' }
+                          }
+                        >
+                          {active && <Check size={12} className="inline mr-1.5 mb-0.5" />}
+                          {g}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── STEP 2: Details ──────────────────────────────────────── */}
+            {step === 2 && (
+              <motion.div
+                key="step2"
+                initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-5 pt-2"
+              >
+                {/* Rank / Experience */}
+                <div>
+                  <label className="block text-[10px] font-black text-white/50 uppercase tracking-widest mb-2">
+                    {isEsports ? 'Current Rank' : 'Experience Level'}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={isEsports ? 'Diamond 3' : 'Inter-College'}
+                    value={isEsports ? formData.rank : formData.experience_level}
+                    onChange={e =>
+                      isEsports
+                        ? setFormData(p => ({ ...p, rank: e.target.value }))
+                        : setFormData(p => ({ ...p, experience_level: e.target.value }))
+                    }
+                    className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none transition"
+                  />
+                </div>
+
+                {/* Role / Position */}
+                <div>
+                  <label className="block text-[10px] font-black text-white/50 uppercase tracking-widest mb-2">
+                    {isEsports ? 'Favourite Role' : 'Playing Position'}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={isEsports ? 'IGL / Assaulter' : 'Forward / Bowler'}
+                    value={formData.role_or_position}
+                    onChange={e => setFormData(p => ({ ...p, role_or_position: e.target.value }))}
+                    className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none transition"
+                  />
+                </div>
+
+                {/* Availability */}
+                <div>
+                  <label className="block text-[10px] font-black text-white/50 uppercase tracking-widest mb-2">Availability</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['Both', 'Tournaments', 'Casual'].map(opt => {
+                      const active = formData.availability === opt;
+                      return (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => setFormData(p => ({ ...p, availability: opt }))}
+                          className="py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+                          style={
+                            active
+                              ? { background: accentMuted, color: accent, border: `1.5px solid ${accentBorder}` }
+                              : { background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)', border: '1.5px solid rgba(255,255,255,0.08)' }
+                          }
+                        >
+                          {opt}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Short Bio */}
+                <div>
+                  <label className="block text-[10px] font-black text-white/50 uppercase tracking-widest mb-2">Short Bio (optional)</label>
+                  <textarea
+                    maxLength={100}
+                    rows={2}
+                    placeholder={isEsports ? 'IGL main, 3000+ matches...' : 'Playing since age 10...'}
+                    value={formData.bio}
+                    onChange={e => setFormData(p => ({ ...p, bio: e.target.value }))}
+                    className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none transition resize-none custom-scrollbar"
+                  />
+                  <p className="text-[9px] text-white/25 mt-1 font-bold text-right">{formData.bio.length}/100</p>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── STEP 3: Skills ───────────────────────────────────────── */}
+            {step === 3 && (
+              <motion.div
+                key="step3"
+                initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-4 pt-2"
+              >
+                {/* Live preview card */}
+                <PreviewCard
+                  name={autoName}
+                  game={formData.game_or_sport}
+                  photo={formData.photo_url}
+                  skills={activeSkillLabels}
+                  skillRatings={skillRatingsByLabel}
+                  accent={accent}
+                  accentMuted={accentMuted}
+                  accentBorder={accentBorder}
+                />
+
+                <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">
+                  Rate Your Skills
+                </p>
+
+                {/* Tap-to-select skill levels — 3 game-specific skills */}
+                {activeSkillLabels.map((skillLabel, idx) => {
+                  const currentVal = formData.skills[skillKeys[idx]];
+                  return (
+                    <div key={skillLabel} className="space-y-2">
+                      <p className="text-xs font-black text-white/70">{skillLabel}</p>
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {SKILL_LEVELS.map(({ label, value }) => {
+                          const active = currentVal === value;
+                          return (
+                            <button
+                              key={label}
+                              type="button"
+                              onClick={() => handleSkillTap(idx, value)}
+                              className="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
+                              style={
+                                active
+                                  ? {
+                                      background: accentMuted,
+                                      color: accent,
+                                      border: `1.5px solid ${accentBorder}`,
+                                      boxShadow: `0 0 12px ${accentMuted}`,
+                                    }
+                                  : {
+                                      background: 'rgba(255,255,255,0.04)',
+                                      color: 'rgba(255,255,255,0.4)',
+                                      border: '1.5px solid rgba(255,255,255,0.08)',
+                                    }
+                              }
+                            >
+                              {label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* ── Navigation Buttons ─────────────────────────────────────────── */}
+        <div className="px-6 py-4 border-t border-white/8 flex gap-3 shrink-0">
+          {step > 1 && (
+            <button
+              type="button"
+              onClick={() => setStep(s => s - 1)}
+              className="flex items-center gap-1 py-3 px-5 rounded-xl bg-white/5 border border-white/10 text-white/70 text-xs font-black uppercase tracking-widest hover:bg-white/10 transition"
+            >
+              <ChevronLeft size={14} /> Back
+            </button>
+          )}
+
+          {step < 3 ? (
+            <button
+              type="button"
+              onClick={() => setStep(s => s + 1)}
+              disabled={step === 1 && !canGoStep2}
+              className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all"
+              style={
+                !(step === 1 && !canGoStep2)
+                  ? { background: accent, color: '#000', boxShadow: `0 4px 20px ${accentMuted}` }
+                  : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.25)', cursor: 'not-allowed' }
+              }
+            >
+              Next <ChevronRight size={14} />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={!canSubmit}
+              className="flex-1 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all"
+              style={
+                canSubmit
+                  ? { background: accent, color: '#000', boxShadow: `0 4px 20px ${accentMuted}` }
+                  : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.25)', cursor: 'not-allowed' }
+              }
+            >
+              Generate Card ✨
+            </button>
+          )}
+        </div>
       </motion.div>
     </div>
   );
