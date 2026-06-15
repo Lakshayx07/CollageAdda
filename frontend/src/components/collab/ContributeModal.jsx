@@ -43,22 +43,29 @@ export default function ContributeModal({ isOpen, onClose, card, currentUser, on
     setIsSubmitting(true);
     try {
       // 1. Insert into collab_applications
+      const insertApp = {
+        applicant_user_id: (currentUser?.id || currentUser?._id || '').toString().trim(),
+        card_id: card.id,
+        card_owner_user_id: (card.user_id || '').toString().trim(),
+        name,
+        course_branch: courseBranch,
+        year,
+        skills: skills.split(",").map(s => s.trim()).filter(Boolean),
+        why_join: whyJoin,
+        role_applying: roleApplying,
+        linkedin_url: profileUrl.includes('linkedin.com') ? profileUrl : null,
+        portfolio_url: !profileUrl.includes('linkedin.com') && profileUrl ? profileUrl : null,
+        status: 'pending'
+      };
+
+      try {
+        insertApp.applicant_name = currentUser?.name || currentUser?.username || currentUser?.fullName || name || 'Student';
+        insertApp.applicant_avatar = currentUser?.avatar || currentUser?.photo || currentUser?.profilePic || null;
+      } catch (e) {}
+
       const { data: savedApp, error: appError } = await supabase
         .from('collab_applications')
-        .insert({
-          applicant_user_id: (currentUser?.id || currentUser?._id || '').toString().trim(),
-          card_id: card.id,
-          card_owner_user_id: (card.user_id || '').toString().trim(),
-          name,
-          course_branch: courseBranch,
-          year,
-          skills: skills.split(",").map(s => s.trim()).filter(Boolean),
-          why_join: whyJoin,
-          role_applying: roleApplying,
-          linkedin_url: profileUrl.includes('linkedin.com') ? profileUrl : null,
-          portfolio_url: !profileUrl.includes('linkedin.com') && profileUrl ? profileUrl : null,
-          status: 'pending'
-        })
+        .insert(insertApp)
         .select()
         .single();
 

@@ -72,17 +72,33 @@ export default function FriendsPage() {
     
     setSelectedProfileId(targetId);
     setProfileLoading(true);
-    setSelectedProfileData({ ...person, rank, badgeTitle: topBadge?.label });
+    setSelectedProfileData({ ...person, rank, badgeTitle: topBadge?.label, postsCount: undefined });
     
     try {
       const token = getToken();
-      const res = await fetch(`${apiUrl}/api/users/${targetId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      
+      const [res, postsRes] = await Promise.all([
+        fetch(`${apiUrl}/api/users/${targetId}`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${apiUrl}/api/posts`, { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+
+      let fullData = {};
       if (res.ok) {
-        const fullData = await res.json();
-        setSelectedProfileData(prev => ({ ...prev, ...fullData }));
+        fullData = await res.json();
       }
+
+      let realPostCount = 0;
+      if (postsRes.ok) {
+        const allPosts = await postsRes.json();
+        const pPosts = allPosts.filter(p => p.author?._id === targetId || p.author?.id === targetId);
+        realPostCount = pPosts.length;
+      }
+
+      setSelectedProfileData(prev => ({ 
+        ...prev, 
+        ...fullData, 
+        postsCount: fullData.postsCount ?? fullData.posts?.length ?? realPostCount 
+      }));
     } catch (err) {
       console.error(err);
     } finally {
@@ -1009,21 +1025,21 @@ export default function FriendsPage() {
                     {/* Stats Row */}
                     <motion.div variants={modalVars.statsContainer} className="grid grid-cols-4 gap-2 mt-6">
                       <motion.div variants={modalVars.statCard} whileHover={{ y: -3, backgroundColor: 'rgba(255,255,255,0.08)' }} className="glass p-3 rounded-2xl text-center border border-white/5 flex flex-col justify-center transition-colors cursor-default">
-                        <p className="text-lg font-black text-white">{getSocialCount(selectedProfileData.followers)}</p>
+                        <p className="text-lg font-black text-white">{selectedProfileData.followers !== undefined ? getSocialCount(selectedProfileData.followers) : "—"}</p>
                         <p className="text-[9px] uppercase tracking-wider text-white/40 font-bold mt-1">Followers</p>
                       </motion.div>
                       <motion.div variants={modalVars.statCard} whileHover={{ y: -3, backgroundColor: 'rgba(255,255,255,0.08)' }} className="glass p-3 rounded-2xl text-center border border-white/5 flex flex-col justify-center transition-colors cursor-default">
-                        <p className="text-lg font-black text-white">{getSocialCount(selectedProfileData.following)}</p>
+                        <p className="text-lg font-black text-white">{selectedProfileData.following !== undefined ? getSocialCount(selectedProfileData.following) : "—"}</p>
                         <p className="text-[9px] uppercase tracking-wider text-white/40 font-bold mt-1">Following</p>
                       </motion.div>
                       <motion.div variants={modalVars.statCard} whileHover={{ y: -3, scale: 1.02 }} className="glass p-3 rounded-2xl text-center border border-white/5 bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border-yellow-500/20 flex flex-col justify-center transition-transform cursor-default">
                         <p className="text-lg font-black text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]">
-                          {getSocialCount(selectedProfileData.followers) + getSocialCount(selectedProfileData.following)}
+                          {(selectedProfileData.followers !== undefined && selectedProfileData.following !== undefined) ? getSocialCount(selectedProfileData.followers) + getSocialCount(selectedProfileData.following) : "—"}
                         </p>
                         <p className="text-[9px] uppercase tracking-wider text-yellow-500/60 font-bold mt-1">Score</p>
                       </motion.div>
                       <motion.div variants={modalVars.statCard} whileHover={{ y: -3, backgroundColor: 'rgba(255,255,255,0.08)' }} className="glass p-3 rounded-2xl text-center border border-white/5 flex flex-col justify-center transition-colors cursor-default">
-                        <p className="text-lg font-black text-white">{selectedProfileData.postsCount || Math.floor(Math.random() * 15 + 2)}</p>
+                        <p className="text-lg font-black text-white">{selectedProfileData.postsCount !== undefined ? selectedProfileData.postsCount : "—"}</p>
                         <p className="text-[9px] uppercase tracking-wider text-white/40 font-bold mt-1">Posts</p>
                       </motion.div>
                     </motion.div>

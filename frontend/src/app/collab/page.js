@@ -62,21 +62,26 @@ export default function CollabPage() {
 
     setIsPosting(true);
     try {
+      const insertData = {
+        user_id: userId,
+        skills: skillset.split(",").map(s => s.trim()).filter(Boolean),
+        building,
+        year_major: yearMajor,
+        project_type: projectType,
+        urgency,
+        roles_needed: rolesNeeded.split(",").map(r => r.trim()).filter(Boolean),
+        description,
+        status: 'active'
+      };
+
+      try {
+        insertData.poster_name = currentUser?.name || currentUser?.username || currentUser?.fullName || 'Student';
+        insertData.poster_avatar = currentUser?.avatar || currentUser?.photo || currentUser?.profilePic || null;
+      } catch(e) {}
+
       const { error } = await supabase
         .from('collab_cards')
-        .insert({
-          user_id: userId,
-          poster_name: currentUser?.name || currentUser?.username || 'Student',
-          poster_avatar: currentUser?.avatar || currentUser?.photo || null,
-          skills: skillset.split(",").map(s => s.trim()).filter(Boolean),
-          building,
-          year_major: yearMajor,
-          project_type: projectType,
-          urgency,
-          roles_needed: rolesNeeded.split(",").map(r => r.trim()).filter(Boolean),
-          description,
-          status: 'active'
-        });
+        .insert(insertData);
 
       if (error) throw error;
       
