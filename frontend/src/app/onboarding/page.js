@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight, Camera, Check, PartyPopper, Phone, SkipForward, 
 import VerifiedBadge from "@/components/VerifiedBadge";
 import clsx from "clsx";
 import AnimatedBackground from "@/components/AnimatedBackground";
+import { saveProfileAvatarUrl, uploadAvatar } from "@/utils/supabaseUploads";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001").trim();
 
@@ -45,6 +46,40 @@ const emptyForm = {
 const initialsAvatar = (name) => (
   `https://ui-avatars.com/api/?name=${encodeURIComponent(name || "Campus Student")}&background=2563EB&color=fff&bold=true`
 );
+
+const MAX_LOCAL_AVATAR_LENGTH = 350_000;
+
+const persistLocalUser = (profile) => {
+  if (!profile) return;
+
+  const localProfile = { ...profile };
+  if (
+    typeof localProfile.profilePic === "string" &&
+    localProfile.profilePic.startsWith("data:") &&
+    localProfile.profilePic.length > MAX_LOCAL_AVATAR_LENGTH
+  ) {
+    delete localProfile.profilePic;
+  }
+
+  try {
+    localStorage.setItem("collegeadda_user", JSON.stringify(localProfile));
+  } catch (storageError) {
+    try {
+      const minimalProfile = {
+        _id: profile._id,
+        id: profile.id,
+        name: profile.name,
+        email: profile.email,
+        university: profile.university,
+        onboardingStep: profile.onboardingStep,
+        onboardingComplete: profile.onboardingComplete
+      };
+      localStorage.setItem("collegeadda_user", JSON.stringify(minimalProfile));
+    } catch {
+      console.warn("Could not cache the user profile locally.", storageError);
+    }
+  }
+};
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -105,7 +140,7 @@ export default function OnboardingPage() {
             return;
           }
           setUser(profile);
-          localStorage.setItem("collegeadda_user", JSON.stringify(profile));
+          persistLocalUser(profile);
           setForm({
             ...emptyForm,
             name: profile.name || "",
@@ -154,7 +189,7 @@ export default function OnboardingPage() {
       if (!res.ok) throw new Error(data.message || "Could not save onboarding.");
       setUser(data);
       setForm(prev => ({ ...prev, ...payload }));
-      localStorage.setItem("collegeadda_user", JSON.stringify(data));
+      persistLocalUser(data);
       return true;
     } catch (err) {
       setError(err.message);
@@ -198,12 +233,27 @@ export default function OnboardingPage() {
     if (await saveProgress(9, true)) router.push("/");
   };
 
-  const handlePhoto = (e) => {
+  const handlePhoto = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => setForm(prev => ({ ...prev, profilePic: reader.result }));
-    reader.readAsDataURL(file);
+    setError("");
+    setSaving(true);
+    try {
+      const userId = user?._id || user?.id;
+      const { publicUrl } = await uploadAvatar(file, userId);
+      await saveProfileAvatarUrl({
+        userId,
+        avatarUrl: publicUrl,
+        name: form.name || user?.name,
+        university: user?.university
+      });
+      setForm(prev => ({ ...prev, profilePic: publicUrl }));
+    } catch (err) {
+      setError(err.message || "Could not upload your profile picture.");
+    } finally {
+      setSaving(false);
+      e.target.value = "";
+    }
   };
 
   const toggleInterest = (interest) => {

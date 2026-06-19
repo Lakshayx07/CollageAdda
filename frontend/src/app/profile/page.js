@@ -26,6 +26,7 @@ import UniversityBadges from "@/components/UniversityBadges";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import clsx from "clsx";
 import { extractInstagramUsername } from "@/utils/socials";
+import { saveProfileAvatarUrl, uploadAvatar } from "@/utils/supabaseUploads";
 
 const INTEREST_OPTIONS = [
   { name: "Hackathons", icon: <Trophy size={12} /> },
@@ -88,6 +89,7 @@ export default function ProfilePage() {
   });
   const [saved, setSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isAvatarUploading, setIsAvatarUploading] = useState(false);
   const [unfollowingId, setUnfollowingId] = useState(null);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
@@ -244,6 +246,12 @@ export default function ProfilePage() {
       });
       if (res.ok) {
         const updatedUser = await res.json();
+        await saveProfileAvatarUrl({
+          userId: updatedUser._id || updatedUser.id,
+          avatarUrl: updatedUser.profilePic,
+          name: updatedUser.name,
+          university: updatedUser.university
+        });
         setUser(updatedUser);
         localStorage.setItem("collegeadda_user", JSON.stringify(updatedUser));
         setSaved(true);
@@ -256,6 +264,30 @@ export default function ProfilePage() {
       console.error(err);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleProfilePictureFile = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsAvatarUploading(true);
+    try {
+      const userId = user?._id || user?.id;
+      const { publicUrl } = await uploadAvatar(file, userId);
+      await saveProfileAvatarUrl({
+        userId,
+        avatarUrl: publicUrl,
+        name: editData.name || user?.name,
+        university: user?.university
+      });
+      setEditData(prev => ({ ...prev, profilePic: publicUrl }));
+    } catch (error) {
+      console.error("Profile picture upload failed:", error);
+      alert(error.message || "Could not upload the profile picture.");
+    } finally {
+      setIsAvatarUploading(false);
+      event.target.value = "";
     }
   };
 
@@ -1039,13 +1071,7 @@ export default function ProfilePage() {
                   type="file"
                   accept="image/*"
                   className="hidden"
-                  onChange={e => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onloadend = () => setEditData(prev => ({ ...prev, profilePic: reader.result }));
-                    reader.readAsDataURL(file);
-                  }}
+                  onChange={handleProfilePictureFile}
                 />
                 <div className="w-full flex flex-col items-center justify-center gap-3 py-8 rounded-2xl border-2 border-dashed border-purple-500/30 bg-purple-500/5 hover:bg-purple-500/10 transition-all">
                   <Camera size={32} className="text-purple-400" />
@@ -1056,10 +1082,10 @@ export default function ProfilePage() {
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={saveProfile}
-                disabled={!editData.profilePic}
+                disabled={!editData.profilePic || isAvatarUploading || isSaving}
                 className="w-full gradient-bg py-4 rounded-2xl text-sm font-black text-white uppercase tracking-widest shadow-xl shadow-purple-500/20 disabled:opacity-40"
               >
-                {saved ? "Saved! ✅" : "Save Picture"}
+                {isAvatarUploading ? "Uploading..." : saved ? "Saved! ✅" : "Save Picture"}
               </motion.button>
             </motion.div>
           </motion.div>

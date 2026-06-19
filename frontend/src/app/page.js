@@ -9,6 +9,11 @@ import ThemeToggle from "../components/ThemeToggle";
 import VerifiedBadge from "../components/VerifiedBadge";
 import clsx from "clsx";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  removeUploadedImage,
+  savePostImageRecord,
+  uploadPostImage
+} from "@/utils/supabaseUploads";
 
 export default function Home() {
   const router = useRouter();
@@ -26,6 +31,7 @@ export default function Home() {
   const [stories, setStories] = useState([]);
   const [newPostContent, setNewPostContent] = useState("");
   const [selectedMedia, setSelectedMedia] = useState(null);
+  const [selectedMediaFile, setSelectedMediaFile] = useState(null);
   const [mediaType, setMediaType] = useState('none');
   const [currentUser, setCurrentUser] = useState(null);
   const [loadingPosts, setLoadingPosts] = useState(true);
@@ -395,19 +401,42 @@ export default function Home() {
   const handleMediaSelect = (e, type) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    if (selectedMedia?.startsWith("blob:")) URL.revokeObjectURL(selectedMedia);
+
+    if (type === "image") {
+      setSelectedMedia(URL.createObjectURL(file));
+      setSelectedMediaFile(file);
+      setMediaType(type);
+      e.target.value = "";
+      return;
+    }
+
     const reader = new FileReader();
     reader.onloadend = () => {
       setSelectedMedia(reader.result);
+      setSelectedMediaFile(null);
       setMediaType(type);
     };
     reader.readAsDataURL(file);
+    e.target.value = "";
   };
 
   const handleCreatePost = async () => {
     if ((!newPostContent.trim() && !selectedMedia) || isPosting || isTextTooShort) return;
     setIsPosting(true);
+    let uploadedPostImage = null;
+    let createdPostId = null;
     try {
       const token = localStorage.getItem("collegeadda_token");
+      const userId = currentUser?._id || currentUser?.id;
+      let mediaUrl = selectedMedia || "";
+
+      if (mediaType === "image" && selectedMediaFile) {
+        uploadedPostImage = await uploadPostImage(selectedMediaFile, userId);
+        mediaUrl = uploadedPostImage.publicUrl;
+      }
+
       const res = await fetch(`${apiUrl.trim()}/api/posts`, {
         method: 'POST',
         headers: { 
@@ -416,24 +445,49 @@ export default function Home() {
         },
         body: JSON.stringify({ 
           content: newPostContent,
-          mediaUrl: selectedMedia || '',
+          mediaUrl,
           mediaType: mediaType
         })
       });
       if (res.ok) {
+        const createdPost = await res.json();
+        createdPostId = createdPost._id || createdPost.id;
+
+        if (mediaType === "image" && uploadedPostImage) {
+          await savePostImageRecord({
+            postId: createdPostId,
+            userId,
+            caption: newPostContent,
+            imageUrl: uploadedPostImage.publicUrl,
+            university: createdPost.university || currentUser?.university,
+            createdAt: createdPost.createdAt
+          });
+        }
+
         fetchPosts();
         setNewPostContent("");
+        if (selectedMedia?.startsWith("blob:")) URL.revokeObjectURL(selectedMedia);
         setSelectedMedia(null);
+        setSelectedMediaFile(null);
         setMediaType('none');
         setToastMsg("Post created!");
         setTimeout(() => setToastMsg(""), 2000);
       } else {
         const errorData = await res.json().catch(() => ({}));
+        if (uploadedPostImage) await removeUploadedImage("posts", uploadedPostImage.path);
         alert(errorData.message || "Failed to create post. Please try again.");
       }
     } catch (err) {
       console.error("Error creating post:", err);
-      alert("Network error: Could not connect to the backend server. Please make sure the backend is running at " + apiUrl);
+      if (createdPostId) {
+        const token = localStorage.getItem("collegeadda_token");
+        await fetch(`${apiUrl}/api/posts/${createdPostId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` }
+        }).catch(() => {});
+      }
+      if (uploadedPostImage) await removeUploadedImage("posts", uploadedPostImage.path);
+      alert(err.message || "Could not upload and create the post.");
     } finally {
       setIsPosting(false);
     }
@@ -1112,7 +1166,12 @@ export default function Home() {
                   <img src={selectedMedia} className="w-full h-full object-cover" alt="Preview" />
                 )}
                 <button 
-                  onClick={() => { setSelectedMedia(null); setMediaType('none'); }}
+                  onClick={() => {
+                    if (selectedMedia?.startsWith("blob:")) URL.revokeObjectURL(selectedMedia);
+                    setSelectedMedia(null);
+                    setSelectedMediaFile(null);
+                    setMediaType('none');
+                  }}
                   className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white p-2 rounded-full hover:bg-black/80 transition-all border border-white/10"
                 >
                   <X size={16} />
