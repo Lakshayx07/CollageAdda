@@ -20,7 +20,17 @@ const generateToken = (id) => {
 router.post('/register', async (req, res) => {
   const { name, email, password, university, referralCode: usedCode } = req.body;
   try {
-    const existingUser = await User.findOne({ email });
+    const normalizedName = name?.trim();
+    const normalizedEmail = email?.trim().toLowerCase();
+
+    if (!normalizedName || !normalizedEmail || !password || !university?.trim()) {
+      return res.status(400).json({ message: 'Name, email, password and university are required' });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
+    const existingUser = await User.findOne({ email: normalizedEmail });
     
     // If user already exists (e.g. Google OAuth re-registration), 
     // update university if it was missing/Other, then return success
@@ -44,7 +54,7 @@ router.post('/register', async (req, res) => {
     }
 
     // Generate unique referral code (First name + random string)
-    const genCode = `${name.split(' ')[0].toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    const genCode = `${normalizedName.split(' ')[0].toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
     let referredBy = null;
     if (usedCode) {
@@ -58,8 +68,8 @@ router.post('/register', async (req, res) => {
     }
 
     const user = await User.create({ 
-      name, 
-      email, 
+      name: normalizedName,
+      email: normalizedEmail,
       password, 
       university: normalizeUniversityName(university), 
       referralCode: genCode,
@@ -82,7 +92,12 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
   try {
-    const user = await User.findOne({ email });
+    const normalizedEmail = email?.trim().toLowerCase();
+    if (!normalizedEmail || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
+
+    const user = await User.findOne({ email: normalizedEmail });
     if (user && (await user.matchPassword(password))) {
       syncVerificationStatus(user);
       await user.save();

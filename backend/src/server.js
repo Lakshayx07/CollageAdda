@@ -27,6 +27,9 @@ const httpServer = createServer(app);
 // Allow multiple frontend origins (local, Render, Vercel)
 const allowedOrigins = [
   'http://localhost:3000',
+  'http://localhost:3001',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:3001',
   'https://campus-adda-frontend.onrender.com',
   'https://collage-adda.vercel.app',
   process.env.CLIENT_URL,
