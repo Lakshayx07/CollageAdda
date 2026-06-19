@@ -6,6 +6,8 @@ import {
   Check,
   ChevronDown,
   GraduationCap,
+  Eye,
+  EyeOff,
   Mail,
   Medal,
   MessageSquareText,
@@ -156,6 +158,7 @@ export default function LoginPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [university, setUniversity] = useState("");
   const [message, setMessage] = useState("");
 
@@ -391,15 +394,26 @@ export default function LoginPage() {
                       autoComplete="email"
                       required
                     />
-                    <input
-                      type="password"
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                      placeholder="Password"
-                      autoComplete={isSignUp ? "new-password" : "current-password"}
-                      minLength={6}
-                      required
-                    />
+                    <div className={styles.passwordField}>
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
+                        placeholder="Password"
+                        autoComplete={isSignUp ? "new-password" : "current-password"}
+                        minLength={6}
+                        required
+                      />
+                      <button
+                        type="button"
+                        className={styles.passwordToggle}
+                        onClick={() => setShowPassword((visible) => !visible)}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        aria-pressed={showPassword}
+                      >
+                        {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+                      </button>
+                    </div>
                     <button className={styles.submitButton} type="submit" disabled={isLoading}>
                       {isLoading ? "Please wait..." : isSignUp ? "Create Account" : "Continue with Email"}
                     </button>
