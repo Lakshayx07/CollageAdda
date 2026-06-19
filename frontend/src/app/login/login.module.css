@@ -419,21 +419,72 @@
 }
 
 .googleWrap {
+  position: relative;
   display: flex;
-  min-height: 60px;
+  height: 60px;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border-radius: 11px;
-  padding: 5px;
-  background: #1a73e8;
-  border: 1px solid rgba(255, 255, 255, .18);
-  box-shadow: 0 15px 35px rgba(0, 0, 0, .22);
+  border-radius: 999px;
+  padding: 0;
+  background: linear-gradient(110deg, #6d28d9, #8b5cf6 52%, #5b4df7);
+  border: 1px solid rgba(196, 181, 253, .72);
+  box-shadow:
+    0 15px 35px rgba(0, 0, 0, .25),
+    0 0 22px rgba(124, 58, 237, .34);
+  animation: googlePulse 2.8s ease-in-out infinite;
 }
 
-.googleWrap > div,
-.googleWrap iframe {
+.googleButtonFace {
+  position: absolute;
+  inset: 4px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+  border-radius: 999px;
+  background: linear-gradient(110deg, #5b21b6, #7c3aed 50%, #5544e8);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 750;
+  letter-spacing: -.01em;
+  pointer-events: none;
+}
+
+.googleButtonFace span {
+  color: #fff !important;
+}
+
+.googleLogo {
+  display: grid;
+  width: 31px;
+  height: 31px;
+  place-items: center;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .2);
+}
+
+.googleLogo svg {
+  width: 21px;
+  height: 21px;
+}
+
+.googleAuthControl {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  border-radius: 999px;
+  opacity: .001;
+}
+
+.googleAuthControl > div,
+.googleAuthControl iframe {
   width: 100% !important;
+  height: 60px !important;
+  border-radius: 999px !important;
 }
 
 .divider {
@@ -644,6 +695,19 @@
   50% { translate: 0 -7px; }
 }
 
+@keyframes googlePulse {
+  0%, 100% {
+    box-shadow:
+      0 15px 35px rgba(0, 0, 0, .25),
+      0 0 16px rgba(124, 58, 237, .3);
+  }
+  50% {
+    box-shadow:
+      0 15px 35px rgba(0, 0, 0, .28),
+      0 0 34px rgba(139, 92, 246, .72);
+  }
+}
+
 @media (max-width: 1120px) {
   .content {
     grid-template-columns: 1fr minmax(360px, 410px);
@@ -735,6 +799,7 @@
   .travelGroup path,
   .networkDot,
   .feature,
+  .googleWrap,
   .waves span {
     animation: none;
   }
