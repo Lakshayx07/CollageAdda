@@ -46,15 +46,16 @@ export default function Sidebar() {
   if (pathname === "/login" || pathname === "/onboarding") return null;
 
   return (
-    <aside className="nav-rail hidden lg:flex fixed left-0 top-0 z-50 h-full w-72 flex-col px-6 py-7">
+    <aside className="nav-rail hidden lg:flex fixed left-0 top-0 z-50 h-full w-72 flex-col px-6 py-7 bg-[#0d0f1a] border-r border-purple-900/20">
       <div className="mb-10 space-y-5">
         <div className="flex items-center gap-3">
           <div className="brand-mark flex h-12 w-12 items-center justify-center rounded-2xl text-white">
             <Zap size={22} fill="currentColor" />
           </div>
           <div>
-            <h1 className="text-[1.35rem] font-black tracking-tight text-white">
-              Campus Adda<span className="text-cyan-300">.</span>
+            <h1 className="text-[1.35rem] tracking-tight">
+              <span className="text-white font-bold">Campus</span>
+              <span className="text-purple-400 font-bold">Adda</span>
             </h1>
             <p className="text-[11px] font-semibold tracking-[0.16em] text-white/38 uppercase">
               Student Social Network
@@ -87,15 +88,17 @@ export default function Sidebar() {
             >
               <div
                 className={clsx(
-                  "relative z-10 flex items-center gap-4 rounded-[1.35rem] px-4 py-3.5 transition-all duration-300",
-                  isActive ? "text-white" : "text-white/42 hover:bg-white/[0.035] hover:text-white/88"
+                  "relative z-10 flex items-center gap-4 px-4 py-3.5",
+                  isActive 
+                    ? "ca-nav-active" 
+                    : "text-slate-400 hover:text-white hover:bg-purple-900/20 rounded-xl transition-all duration-200 group"
                 )}
               >
                 <div className={clsx(
-                  "relative flex h-10 w-10 items-center justify-center rounded-2xl border transition-all duration-300 shrink-0",
+                  "relative flex h-10 w-10 items-center justify-center rounded-2xl transition-all duration-300 shrink-0",
                   isActive
-                    ? "border-transparent bg-gradient-to-br from-purple-500 to-cyan-400 text-white shadow-md shadow-purple-500/20"
-                    : "border-white/6 bg-white/[0.03] group-hover:border-white/20 group-hover:bg-white/[0.08]"
+                    ? "text-white"
+                    : "text-inherit"
                 )}>
                   <Icon size={20} strokeWidth={isActive ? 2.45 : 2} />
                   {isFriends && hasRequest && (
@@ -106,7 +109,7 @@ export default function Sidebar() {
                 <div className="min-w-0 flex-1 relative z-20">
                   <p className={clsx(
                     "text-sm font-black uppercase tracking-[0.12em] transition-colors duration-300",
-                    isActive ? "text-cyan-300" : "text-white/60 group-hover:text-white"
+                    isActive ? "text-white" : "text-inherit"
                   )}>
                     {item.name}
                   </p>
@@ -127,7 +130,7 @@ export default function Sidebar() {
                 {isActive && (
                   <motion.div
                     layoutId="sidebar-active"
-                    className="absolute inset-0 rounded-[1.35rem] bg-[linear-gradient(135deg,rgba(124,92,255,0.25),rgba(34,199,214,0.22))] ring-2 ring-purple-500/20 shadow-[0_0_20px_rgba(124,92,255,0.15)]"
+                    className="absolute inset-0 rounded-[0.75rem] shadow-[0_0_15px_rgba(124,58,237,0.3)] ring-1 ring-purple-500/20"
                     initial={false}
                     transition={{ type: "spring", stiffness: 320, damping: 30 }}
                   />

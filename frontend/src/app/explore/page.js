@@ -483,7 +483,7 @@ export default function ExplorePage() {
                       onChange={(e) => setSearch(e.target.value)}
                       type="text"
                       placeholder={exploreMode === "colleges" ? "Search college..." : "Search players..."}
-                      className="input-surface w-full rounded-2xl py-3 pl-10 pr-4 text-sm placeholder:text-white/25"
+                      className="ca-input w-full py-3 pl-10 pr-4 text-sm"
                     />
                   </div>
                   <motion.button
@@ -518,10 +518,10 @@ export default function ExplorePage() {
                     <button
                       onClick={() => setArenaSportFilter("All")}
                       className={clsx(
-                        "shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all border",
+                        "shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all",
                         arenaSportFilter === "All"
-                          ? "bg-foreground text-background border-foreground shadow-md"
-                          : "glass border-border/50 text-muted hover:text-foreground hover:border-border"
+                          ? "ca-nav-active"
+                          : "ca-nav-inactive"
                       )}
                     >
                       All Sports
@@ -531,10 +531,10 @@ export default function ExplorePage() {
                         key={sport}
                         onClick={() => setArenaSportFilter(sport)}
                         className={clsx(
-                          "shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all border",
+                          "shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all",
                           arenaSportFilter === sport
-                            ? "bg-foreground text-background border-foreground shadow-md"
-                            : "glass border-border/50 text-muted hover:text-foreground hover:border-border"
+                            ? "ca-nav-active"
+                            : "ca-nav-inactive"
                         )}
                       >
                         {sport}
@@ -714,9 +714,7 @@ export default function ExplorePage() {
                     onClick={() => setArenaCategory("esports")}
                     className={clsx(
                       "flex-1 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all",
-                      arenaCategory === "esports"
-                        ? "bg-gradient-to-r from-cyan-500 to-emerald-500 text-black shadow-[0_0_20px_rgba(6,182,212,0.4)]"
-                        : "glass text-white/50 hover:text-white border border-white/10"
+                      arenaCategory === "esports" ? "ca-btn-primary" : "ca-btn-secondary"
                     )}
                   >
                     🎮 Esports
@@ -725,9 +723,7 @@ export default function ExplorePage() {
                     onClick={() => setArenaCategory("sports")}
                     className={clsx(
                       "flex-1 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all",
-                      arenaCategory === "sports"
-                        ? "bg-gradient-to-r from-purple-600 to-orange-500 text-white shadow-[0_0_20px_rgba(147,51,234,0.4)]"
-                        : "glass text-white/50 hover:text-white border border-white/10"
+                      arenaCategory === "sports" ? "ca-btn-primary" : "ca-btn-secondary"
                     )}
                   >
                     ⚽ Sports
@@ -749,7 +745,7 @@ export default function ExplorePage() {
                         <div className="flex justify-end">
                           <button
                             onClick={() => setShowPlayerCardForm(true)}
-                            className="bg-gradient-to-r from-cyan-500 to-purple-500 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-cyan-500/20 hover:scale-105 transition"
+                            className="ca-btn-primary px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition"
                           >
                             + Create My Card
                           </button>

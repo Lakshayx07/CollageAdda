@@ -33,6 +33,19 @@
   /* Message Bubbles */
   --msg-received-bg: #1e1e35;
   --msg-received-text: #ffffff;
+
+  /* CA Phase 2 New Design Variables */
+  --bg-primary: #0d0f1a;
+  --bg-card: #13152b;
+  --bg-card-hover: #1a1d35;
+  --border-purple: rgba(124, 58, 237, 0.25);
+  --border-purple-hover: rgba(124, 58, 237, 0.45);
+  --accent: #7c3aed;
+  --accent-dark: #6d28d9;
+  --accent-glow: rgba(124, 58, 237, 0.15);
+  --text-primary: #ffffff;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
 }
 
 [data-theme="light"] {
@@ -80,6 +93,16 @@
   --color-foreground: var(--color-text-primary);
   --color-primary: var(--color-accent-from);
   --color-primary-end: var(--color-accent-to);
+
+  /* CA Phase 3 Tailwind Variables */
+  --color-navy: #0d0f1a;
+  --color-navy-card: #13152b;
+  --color-navy-hover: #1a1d35;
+  --color-accent: #7c3aed;
+  --color-accent-dark: #6d28d9;
+  --color-accent-glow: rgba(124, 58, 237, 0.15);
+  --shadow-purple-glow: 0 0 20px rgba(124, 58, 237, 0.3);
+  --shadow-purple-glow-lg: 0 0 40px rgba(124, 58, 237, 0.2);
 }
 
 /* ══════════════════════════════════════════════
@@ -87,12 +110,101 @@
 ══════════════════════════════════════════════ */
 
 body {
-  background-color: var(--color-bg-base) !important;
-  color: var(--color-text-primary) !important;
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+  background-image: radial-gradient(
+    ellipse at 50% 0%, 
+    rgba(124, 58, 237, 0.10) 0%, 
+    transparent 65%
+  );
+  background-attachment: fixed;
   transition: background-color 0.3s ease, color 0.2s ease;
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
+
+/* ══════════════════════════════════════════════
+   CA PHASE 2 UTILITY CLASSES
+══════════════════════════════════════════════ */
+
+/* Card utility class */
+.ca-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-purple);
+  border-radius: 0.75rem;
+  transition: all 0.2s ease;
+}
+.ca-card:hover {
+  border-color: var(--border-purple-hover);
+  box-shadow: 0 0 24px var(--accent-glow);
+}
+
+/* Button utility class */
+.ca-btn-primary {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  color: white;
+  border-radius: 9999px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+.ca-btn-primary:hover {
+  box-shadow: 0 0 20px rgba(124, 58, 237, 0.5);
+  transform: translateY(-1px);
+}
+
+/* Input utility class */
+.ca-input {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-purple);
+  color: var(--text-primary);
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+.ca-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+  outline: none;
+}
+
+/* Active nav item */
+.ca-nav-active {
+  background: linear-gradient(135deg, rgba(124,58,237,0.3), rgba(109,40,217,0.2));
+  color: #ffffff;
+  box-shadow: 0 0 15px rgba(124, 58, 237, 0.3);
+  border-radius: 0.75rem;
+}
+
+/* Poll bar */
+.ca-poll-bar-leading {
+  background: linear-gradient(90deg, #7c3aed, #6d28d9);
+}
+.ca-poll-bar-default {
+  background: rgba(51, 65, 85, 0.5);
+}
+
+/* Badge/chip */
+.ca-badge {
+  background: rgba(124, 58, 237, 0.2);
+  color: #c4b5fd;
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  border-radius: 9999px;
+  padding: 2px 10px;
+  font-size: 0.75rem;
+}
+
+/* Chat bubbles */
+.ca-chat-sent {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  color: white;
+  border-radius: 18px 18px 4px 18px;
+}
+.ca-chat-received {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-purple);
+  border-radius: 18px 18px 18px 4px;
+}
+
 
 /* Keep the cool background grid for dark mode only */
 [data-theme="dark"] body::before {

@@ -41,7 +41,7 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
   const rolesArray = Array.isArray(card.roles_needed) ? card.roles_needed : (card.roles_needed ? card.roles_needed.split(",") : []);
 
   return (
-    <div className="app-panel rounded-[1.75rem] flex flex-col w-full h-[520px] bg-gradient-to-b from-white/[0.04] to-black/40 border border-white/10 shadow-2xl relative overflow-hidden ring-1 ring-white/5">
+    <div className="ca-card !p-0 flex flex-col w-full h-[520px] relative overflow-hidden ring-1 ring-white/5">
       {/* Background glow */}
       <div className="absolute -top-32 -right-32 w-64 h-64 bg-violet-500/20 rounded-full blur-[100px] pointer-events-none" />
 
@@ -224,7 +224,7 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
         ) : isOwner ? null : (
           <button
             onClick={() => onContribute(card)}
-            className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-2xl py-3 font-bold uppercase tracking-widest text-xs transition-all shadow-lg hover:from-violet-500 hover:to-indigo-500 flex items-center justify-center gap-2"
+            className="ca-btn-primary w-full rounded-2xl py-3 font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2"
           >
             ✦ Contribute Now
           </button>

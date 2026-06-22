@@ -603,7 +603,7 @@ function MessagesContent() {
         initial={{ x: -20, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         className={clsx(
-          "inbox-panel",
+          "inbox-panel bg-[#13152b] border-r border-purple-900/20",
           activeChat && "chat-active"
         )}
       >
@@ -646,7 +646,7 @@ function MessagesContent() {
               className={clsx(
                 "group relative flex w-full items-center space-x-3 rounded-[1.35rem] p-3 transition-all sm:space-x-4 sm:rounded-[1.5rem] sm:p-4",
                 activeChat?.id === chat.id 
-                  ? "bg-white/5 border border-white/10 shadow-xl" 
+                  ? "bg-purple-900/30 border-l-2 border-purple-500 shadow-xl rounded-l-none" 
                   : "hover:bg-white/[0.03] border border-transparent"
               )}
             >
@@ -702,7 +702,7 @@ function MessagesContent() {
 
       {/* Chat Area */}
       <div className={clsx(
-        "chat-panel",
+        "chat-panel bg-[#0d0f1a]",
         activeChat && "chat-active"
       )}>
         {activeChat ? (
@@ -888,8 +888,8 @@ function MessagesContent() {
                           <div className={clsx(
                             "px-3.5 py-2.5 text-[14px] leading-relaxed shadow-2xl relative",
                             isMe 
-                              ? "message-bubble-sent shadow-purple-500/10" 
-                              : "message-bubble-received"
+                              ? "ca-chat-sent" 
+                              : "ca-chat-received"
                           )}>
                             {msg.mediaUrl && (
                               <div className="mb-2 rounded-xl overflow-hidden border border-white/10">
@@ -972,7 +972,7 @@ function MessagesContent() {
 
             {/* Message Input */}
             <div className="relative z-20 flex min-h-[60px] w-full shrink-0 items-center justify-between border-t border-white/5 bg-background px-3 py-2.5 sm:px-4">
-              <div className="w-full h-full bg-white/[0.04] border border-white/5 rounded-full flex items-center px-1.5 py-0.5 shadow-2xl focus-within:border-purple-500/30 transition-all">
+              <div className="w-full h-full ca-input rounded-full flex items-center px-1.5 py-0.5 shadow-2xl transition-all">
                 {/* Plus button */}
                 <button 
                   onClick={() => setShowAttachments(!showAttachments)}
@@ -1032,7 +1032,7 @@ function MessagesContent() {
                   whileTap={{ scale: 0.95 }}
                   onClick={sendMessage}
                   disabled={isSending || (!input.trim() && !selectedMedia)}
-                  className="gradient-bg text-white p-2.5 rounded-full shadow-lg shadow-purple-500/20 disabled:opacity-50 disabled:grayscale transition-all flex items-center justify-center shrink-0 w-9 h-9"
+                  className="ca-btn-primary p-2 rounded-full disabled:opacity-50 disabled:grayscale transition-all flex items-center justify-center shrink-0 w-9 h-9"
                 >
                   {isSending ? (
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

@@ -132,7 +132,7 @@ export default function CollabPage() {
           </div>
           <button
             onClick={() => setShowPostModal(true)}
-            className="primary-button flex w-full items-center justify-center rounded-2xl px-6 py-3 text-xs font-black uppercase tracking-widest transition hover:scale-[1.03] sm:w-auto"
+            className="ca-btn-primary flex w-full items-center justify-center rounded-2xl px-6 py-3 text-xs font-black uppercase tracking-widest transition sm:w-auto"
           >
             <Plus size={16} className="mr-2" /> Post Your Card
           </button>
@@ -255,7 +255,7 @@ export default function CollabPage() {
                 <button
                   type="submit"
                   disabled={isPosting}
-                  className="w-full py-4 bg-primary text-black rounded-xl text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="ca-btn-primary w-full py-4 rounded-xl text-xs font-black uppercase tracking-widest disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {isPosting ? <Loader size={14} className="animate-spin" /> : <Zap size={14} />}
                   {isPosting ? "Posting..." : "Go Live 🚀"}

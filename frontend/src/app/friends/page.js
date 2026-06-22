@@ -863,7 +863,7 @@ export default function FriendsPage() {
                         hidden: { y: 20, opacity: 0 },
                         visible: { y: 0, opacity: 1 }
                       }}
-                      className="glass-card p-6 rounded-[2.5rem] border border-white/5 hover:border-white/20 transition-all group relative overflow-hidden cursor-pointer"
+                      className="bg-[#13152b] p-6 rounded-[2.5rem] border border-purple-900/25 hover:border-purple-500/50 transition-all group relative overflow-hidden cursor-pointer"
                     >
                       <div className="absolute top-0 right-0 w-32 h-32 gradient-bg opacity-[0.03] blur-3xl -rotate-45 translate-x-16 -translate-y-16" />
                       
@@ -911,7 +911,7 @@ export default function FriendsPage() {
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
                               onClick={(e) => { e.stopPropagation(); handleDirectMessage(person._id); }}
-                              className="flex-1 md:w-32 py-3 gradient-bg rounded-2xl text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-purple-500/20"
+                              className="ca-btn-primary flex-1 md:w-32 py-3 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-purple-500/20"
                             >
                               <span className="flex items-center justify-center gap-2">
                                 <MessageCircle size={14} /> 
@@ -923,7 +923,7 @@ export default function FriendsPage() {
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
                               onClick={(e) => { e.stopPropagation(); toggleFollow(person._id); }}
-                              className="flex-1 md:w-32 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-xs font-black uppercase tracking-widest text-white shadow-xl"
+                              className="ca-btn-primary flex-1 md:w-32 py-3 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl"
                             >
                               <span className="flex items-center justify-center gap-2">
                                 <UserPlus size={14} /> 

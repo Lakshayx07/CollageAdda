@@ -1118,7 +1118,7 @@ export default function Home() {
         {/* Create Post Prompt */}
         <motion.div 
           variants={itemVariants}
-          className="glass-card relative flex min-w-0 max-w-full flex-col space-y-4 overflow-hidden rounded-[1.6rem] p-4 shadow-2xl group sm:rounded-3xl sm:p-5"
+          className="relative flex min-w-0 max-w-full flex-col space-y-4 overflow-hidden bg-[#13152b] border border-purple-900/25 rounded-xl p-4 shadow-2xl group sm:p-5"
         >
           <div className="absolute top-0 left-0 w-full h-1 gradient-bg opacity-30 group-focus-within:opacity-100 transition-opacity" />
           <div className="flex min-w-0 items-start space-x-3 sm:space-x-4">
@@ -1142,7 +1142,7 @@ export default function Home() {
                   }
                 }}
                 placeholder={placeholderText}
-                className="min-w-0 w-full resize-none bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none sm:text-base mt-2 min-h-[60px]"
+                className="ca-input w-full min-w-0 resize-none sm:text-base mt-2 min-h-[60px] p-3"
               />
               {isTextTooShort && (
                 <div className="flex items-center space-x-2 text-orange-400 text-xs font-semibold animate-pulse">
@@ -1187,7 +1187,7 @@ export default function Home() {
                
                <button 
                  onClick={() => photoInputRef.current?.click()}
-                 className="flex min-w-0 items-center justify-center space-x-1.5 rounded-2xl bg-white/[0.03] px-2 py-2 text-white/50 transition-all hover:text-white group sm:justify-start sm:bg-transparent sm:px-0 sm:space-x-2"
+                 className="flex min-w-0 items-center justify-center space-x-1.5 rounded-2xl px-2 py-2 text-slate-400 transition-colors hover:text-purple-400 group sm:justify-start sm:px-0 sm:space-x-2"
                >
                  <div className="p-2 rounded-full group-hover:bg-purple-500/10 transition-colors">
                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
@@ -1196,18 +1196,18 @@ export default function Home() {
                </button>
                <button 
                  onClick={() => videoInputRef.current?.click()}
-                 className="flex min-w-0 items-center justify-center space-x-1.5 rounded-2xl bg-white/[0.03] px-2 py-2 text-white/50 transition-all hover:text-white group sm:justify-start sm:bg-transparent sm:px-0 sm:space-x-2"
+                 className="flex min-w-0 items-center justify-center space-x-1.5 rounded-2xl px-2 py-2 text-slate-400 transition-colors hover:text-purple-400 group sm:justify-start sm:px-0 sm:space-x-2"
                >
-                 <div className="p-2 rounded-full group-hover:bg-cyan-500/10 transition-colors">
+                 <div className="p-2 rounded-full group-hover:bg-purple-500/10 transition-colors">
                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
                  </div>
                  <span className="text-xs font-semibold">Video</span>
                </button>
                <button 
                  onClick={() => setShowPollModal(true)}
-                 className="flex min-w-0 items-center justify-center space-x-1.5 rounded-2xl bg-white/[0.03] px-2 py-2 text-white/50 transition-all hover:text-white group sm:justify-start sm:bg-transparent sm:px-0 sm:space-x-2"
+                 className="flex min-w-0 items-center justify-center space-x-1.5 rounded-2xl px-2 py-2 text-slate-400 transition-colors hover:text-purple-400 group sm:justify-start sm:px-0 sm:space-x-2"
                >
-                 <div className="p-2 rounded-full group-hover:bg-green-500/10 transition-colors">
+                 <div className="p-2 rounded-full group-hover:bg-purple-500/10 transition-colors">
                    <BarChart2 size={20} />
                  </div>
                  <span className="text-xs font-semibold">Poll</span>
@@ -1218,7 +1218,7 @@ export default function Home() {
                whileTap={{ scale: 0.95 }}
                onClick={handleCreatePost} 
                disabled={isPosting || isTextTooShort || (!newPostContent.trim() && !selectedMedia)}
-               className="gradient-bg flex w-full items-center justify-center rounded-2xl px-5 py-3 text-sm font-bold text-white shadow-xl shadow-purple-500/20 disabled:opacity-50 sm:w-auto sm:min-w-[120px] sm:rounded-full sm:px-7 sm:py-2.5 cursor-pointer"
+               className="ca-btn-primary flex w-full sm:w-auto sm:min-w-[120px] px-5 py-3 sm:px-7 sm:py-2.5 items-center justify-center disabled:opacity-50 cursor-pointer"
              >
                {isPosting ? (
                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -1297,7 +1297,7 @@ export default function Home() {
             <motion.article
               key={post.id} 
               variants={itemVariants}
-              className="glass-card relative min-w-0 rounded-[1.6rem] p-4 group border-l-[3px] border-l-transparent transition-all duration-500 hover:border-l-purple-500 sm:rounded-[2rem] sm:p-6"
+              className="ca-card relative min-w-0 p-4 group sm:p-6"
             >
               {/* Post Header */}
               <div className="flex items-center justify-between mb-5">
@@ -1313,11 +1313,11 @@ export default function Home() {
                     </div>
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <h3 className="text-white font-semibold flex items-center gap-2">
                       {post.author}
                       <VerifiedBadge user={post.authorUser} size={16} /> 
                     </h3>
-                    <p className="text-xs text-white/40 font-medium">{post.university} • {post.time}</p>
+                    <p className="text-slate-500 text-sm">{post.university} • {post.time}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -1369,9 +1369,8 @@ export default function Home() {
                 </div>
               </div>
               
-              {/* Post Content */}
               {post.content && (
-                <p className="text-[15px] text-white/90 mb-5 leading-relaxed font-medium">
+                <p className="text-slate-300 text-[15px] mb-5 leading-relaxed">
                   {post.content}
                 </p>
               )}
@@ -1385,22 +1384,24 @@ export default function Home() {
                   </div>
                   <div className="space-y-2.5">
                     {post.poll.options.map((option, idx) => {
+                      const maxVotes = Math.max(...post.poll.options.map(o => o.votes?.length || 0));
                       const totalVotes = post.poll.options.reduce((sum, opt) => sum + (opt.votes?.length || 0), 0);
                       const optionVotes = option.votes?.length || 0;
                       const percentage = totalVotes === 0 ? 0 : Math.round((optionVotes / totalVotes) * 100);
                       const hasVoted = option.votes?.includes(currentUser?._id || currentUser?.id);
+                      const isLeading = optionVotes === maxVotes && maxVotes > 0;
                       
                       return (
                         <div 
                           key={idx}
                           onClick={() => handleVote(post.id, idx)}
-                          className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] transition-all hover:bg-white/[0.04] hover:border-white/20 cursor-pointer group"
+                          className="relative overflow-hidden rounded-lg bg-slate-800/50 transition-all hover:opacity-90 cursor-pointer group"
                         >
                           {/* Percentage Bar Fill */}
                           <motion.div 
                             initial={{ width: 0 }}
                             animate={{ width: `${percentage}%` }}
-                            className="absolute top-0 bottom-0 left-0 bg-gradient-to-r from-purple-600/25 to-cyan-500/20"
+                            className={`absolute top-0 bottom-0 left-0 ${isLeading ? 'ca-poll-bar-leading' : 'ca-poll-bar-default'}`}
                             transition={{ type: "spring", stiffness: 80, damping: 15 }}
                           />
                           
@@ -1408,16 +1409,16 @@ export default function Home() {
                             <div className="flex items-center space-x-3 min-w-0">
                               <div className={clsx(
                                 "w-5 h-5 rounded-md border flex items-center justify-center transition-all shrink-0",
-                                hasVoted ? "border-cyan-400 bg-cyan-400 text-black" : "border-white/30"
+                                hasVoted ? "border-purple-400 bg-purple-400 text-white" : "border-slate-500"
                               )}>
                                 {hasVoted && <Check size={12} strokeWidth={4} />}
                               </div>
-                              <span className="text-sm font-semibold text-white/90 truncate">{option.text}</span>
+                              <span className="text-slate-300 text-sm truncate">{option.text}</span>
                             </div>
                             
                             <div className="flex items-center justify-end space-x-2 shrink-0 bg-black/20 px-2.5 py-1 rounded-lg border border-white/5 backdrop-blur-sm w-20">
-                              <span className="text-[11px] font-black text-cyan-300">{percentage}%</span>
-                              <span className="text-[10px] font-medium text-white/40">({optionVotes})</span>
+                              <span className="text-white font-semibold">{percentage}%</span>
+                              <span className="text-[10px] font-medium text-slate-500">({optionVotes})</span>
                             </div>
                           </div>
                         </div>
@@ -1425,11 +1426,11 @@ export default function Home() {
                     })}
                   </div>
                   <div className="flex items-center justify-between pt-3 border-t border-white/5 text-[10px] font-bold uppercase tracking-wider">
-                    <button className="flex items-center gap-1.5 rounded-full bg-purple-500/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-purple-300 transition-all hover:bg-purple-500/20 hover:scale-105 border border-purple-500/20">
+                    <button className="text-purple-400 border border-purple-700/40 hover:bg-purple-900/20 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all">
                       <BarChart2 size={12} />
                       View Breakdown
                     </button>
-                    <span className="text-white/30">{post.poll.options.reduce((sum, opt) => sum + (opt.votes?.length || 0), 0)} total votes</span>
+                    <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">{post.poll.options.reduce((sum, opt) => sum + (opt.votes?.length || 0), 0)} total votes</span>
                   </div>
                 </div>
               )}
@@ -1452,27 +1453,27 @@ export default function Home() {
                       whileTap={{ scale: 1.5 }}
                       onClick={() => toggleLike(post.id)}
                       className={clsx(
-                        "flex items-center space-x-2 transition-all p-2 rounded-full",
-                        post.isLiked ? "text-pink-500 bg-pink-500/10" : "text-white/40 hover:text-pink-500 hover:bg-pink-500/5"
+                        "flex items-center space-x-2 transition-colors p-2 rounded-full",
+                        post.isLiked ? "text-purple-400" : "text-slate-400 hover:text-purple-400"
                       )}
                     >
-                      <Heart size={22} className={clsx("transition-all", post.isLiked && "fill-pink-500")} />
-                      <span className="text-sm font-bold">{post.likes}</span>
+                      <Heart size={22} className={clsx("transition-all", post.isLiked && "fill-purple-400")} />
+                      <span className="text-sm text-slate-400">{post.likes}</span>
                     </motion.button>
                   </div>
 
                   <button 
                     onClick={() => setActiveCommentPost(activeCommentPost === post.id ? null : post.id)}
-                    className="flex items-center space-x-2 text-white/40 hover:text-cyan-400 hover:bg-cyan-400/5 p-2 rounded-full transition-all"
+                    className="flex items-center space-x-2 text-slate-400 hover:text-purple-400 p-2 rounded-full transition-colors"
                   >
                     <MessageCircle size={22} />
-                    <span className="text-sm font-bold">{post.comments}</span>
+                    <span className="text-sm text-slate-400">{post.comments}</span>
                   </button>
                 </div>
 
                 <button 
                   onClick={() => setShareModal(post.id)}
-                  className="flex items-center space-x-2 text-white/40 hover:text-purple-400 hover:bg-purple-400/5 p-2 rounded-full transition-all"
+                  className="flex items-center space-x-2 text-slate-400 hover:text-purple-400 p-2 rounded-full transition-colors"
                 >
                   <Send size={20} />
                 </button>

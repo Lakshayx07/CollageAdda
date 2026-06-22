@@ -221,7 +221,7 @@ export default function HustleHubPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   onClick={() => setSelectedItem(item)}
-                  className="app-panel rounded-[1.5rem] overflow-hidden group hover:border-emerald-400/30 transition cursor-pointer flex flex-col justify-between"
+                  className="ca-card overflow-hidden group transition cursor-pointer flex flex-col justify-between"
                 >
                   <div>
                     <div className="h-48 overflow-hidden relative">
@@ -258,7 +258,7 @@ export default function HustleHubPage() {
                     </div>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleMessageSeller(item); }}
-                      className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-white text-xs font-black uppercase tracking-widest transition flex items-center justify-center"
+                      className="ca-btn-primary w-full py-3 rounded-xl text-xs font-black uppercase tracking-widest transition flex items-center justify-center"
                     >
                       Message Seller <MessageSquare size={14} className="ml-2" />
                     </button>
@@ -282,7 +282,7 @@ export default function HustleHubPage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   onClick={() => setSelectedItem(gig)}
-                  className="app-panel rounded-[1.5rem] p-5 flex flex-col sm:flex-row sm:items-center justify-between group hover:border-emerald-400/30 transition cursor-pointer"
+                  className="ca-card flex flex-col sm:flex-row sm:items-center justify-between group transition cursor-pointer"
                 >
                   <div className="flex-1">
                     <div className="flex items-center flex-wrap gap-2 mb-2">
@@ -310,7 +310,7 @@ export default function HustleHubPage() {
                     <span className="text-2xl font-black text-white">{gig.price}</span>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleMessageSeller(gig); }}
-                      className="mt-3 px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black rounded-xl text-xs font-black uppercase tracking-widest transition flex items-center"
+                      className="ca-btn-primary mt-3 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition flex items-center"
                     >
                       Hire <ChevronRight size={14} className="ml-1" />
                     </button>

@@ -478,14 +478,14 @@ export default function ProfilePage() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setModal("edit")}
-              className="flex-1 gradient-bg py-4 rounded-2xl text-sm font-black text-white uppercase tracking-widest shadow-xl shadow-purple-500/20"
+              className="ca-btn-secondary flex-1 py-4 rounded-2xl text-sm font-black uppercase tracking-widest shadow-xl"
             >
               Edit Profile
             </motion.button>
             <motion.button 
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="p-4 glass rounded-2xl text-white/40 border border-white/10"
+              className="ca-btn-secondary p-4 rounded-2xl"
             >
               <Zap size={20} />
             </motion.button>

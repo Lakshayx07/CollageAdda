@@ -37,7 +37,7 @@ export default function BottomNav() {
   if (pathname === "/login" || pathname === "/onboarding") return null;
 
   return (
-    <nav className="mobile-bottom-nav">
+    <nav className="mobile-bottom-nav bg-[#0d0f1a] border-t border-purple-900/20">
       {navItems.map((item) => {
         const isActive = pathname === item.path;
         const Icon = item.icon;
@@ -48,16 +48,19 @@ export default function BottomNav() {
             key={item.name}
             href={item.path}
             onClick={() => { if (isFriends) localStorage.setItem("collegeadda_friends_viewed", "true"); }}
-            className={clsx("nav-item", isActive && "active")}
+            className={clsx("nav-item relative", isActive ? "text-purple-400" : "text-slate-500")}
             aria-label={item.name}
           >
-            <div className="relative">
-              <Icon className="icon" />
+            <div className="relative flex flex-col items-center">
+              <Icon className="icon" color={isActive ? "#c084fc" : "#64748b"} />
               {isFriends && hasRequest && (
-                <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border border-white bg-orange-400"></span>
+                <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border border-[#0d0f1a] bg-orange-400"></span>
               )}
             </div>
             <span>{item.name}</span>
+            {isActive && (
+              <span className="absolute bottom-1 h-1 w-1 rounded-full bg-purple-400"></span>
+            )}
           </Link>
         );
       })}
