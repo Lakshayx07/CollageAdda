@@ -22,7 +22,7 @@ export default function Sidebar() {
   ];
 
   useEffect(() => {
-    if (pathname === "/login" || pathname === "/onboarding") return;
+    if (pathname === "/login" || pathname === "/onboarding" || pathname === "/welcome-tour") return;
     const checkRequests = () => {
       const incoming = JSON.parse(localStorage.getItem("collegeadda_incoming") || "[]");
       const viewed = localStorage.getItem("collegeadda_friends_viewed") === "true";
@@ -43,7 +43,7 @@ export default function Sidebar() {
     router.push("/login");
   };
 
-  if (pathname === "/login" || pathname === "/onboarding") return null;
+  if (pathname === "/login" || pathname === "/onboarding" || pathname === "/welcome-tour") return null;
 
   return (
     <aside className="nav-rail hidden lg:flex fixed left-0 top-0 z-50 h-full w-72 flex-col px-6 py-7 bg-[#0d0f1a] border-r border-purple-900/20">

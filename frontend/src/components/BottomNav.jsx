@@ -34,7 +34,7 @@ export default function BottomNav() {
     };
   }, [pathname]);
 
-  if (pathname === "/login" || pathname === "/onboarding") return null;
+  if (pathname === "/login" || pathname === "/onboarding" || pathname === "/welcome-tour") return null;
 
   return (
     <nav className="mobile-bottom-nav bg-[#0d0f1a] border-t border-purple-900/20">

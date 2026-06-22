@@ -183,7 +183,10 @@ export default function LoginPage() {
   const finishLogin = (data) => {
     localStorage.setItem("collegeadda_token", data.token);
     localStorage.setItem("collegeadda_user", JSON.stringify(data));
-    window.location.href = data.onboardingComplete ? "/" : "/onboarding";
+    const hasSeenTour = localStorage.getItem("campusadda_tour_completed") === "true";
+    window.location.href = data.onboardingComplete
+      ? (hasSeenTour ? "/" : "/welcome-tour")
+      : "/onboarding";
   };
 
   const handleAuth = async (event) => {

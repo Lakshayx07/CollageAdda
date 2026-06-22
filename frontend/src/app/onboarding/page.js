@@ -230,7 +230,7 @@ export default function OnboardingPage() {
       setError("Complete steps 1 to 6 to enter Campus Adda.");
       return;
     }
-    if (await saveProgress(9, true)) router.push("/");
+    if (await saveProgress(9, true)) router.push("/welcome-tour");
   };
 
   const handlePhoto = async (e) => {

@@ -53,7 +53,7 @@ export default function RootLayout({ children }) {
       <body className="app-shell h-full bg-background text-foreground transition-colors duration-300">
         <ThemeProvider>
           <Sidebar />
-          <main className="app-surface flex min-h-screen flex-col overflow-x-hidden overflow-y-auto pb-[calc(8.5rem+env(safe-area-inset-bottom))] lg:ml-72 lg:pb-0">
+          <main className="app-surface flex min-h-screen flex-col overflow-x-hidden overflow-y-auto pb-[calc(8.5rem+env(safe-area-inset-bottom))] lg:pb-0 [&:has([data-page=welcome-tour])]:ml-0 [&:has([data-page=welcome-tour])]:pb-0 lg:ml-72">
             {children}
           </main>
           <BottomNav />
