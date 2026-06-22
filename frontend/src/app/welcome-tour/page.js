@@ -29,19 +29,17 @@ export default function WelcomeTourPage() {
   const router = useRouter();
   const containerRef = useRef(null);
   const [activeSection, setActiveSection] = useState(0);
-  const [ready, setReady] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("collegeadda_token");
-    if (!token) { router.replace("/login"); return; }
-    setReady(true);
-  }, [router]);
+    setMounted(true);
+  }, []);
 
-  const { scrollYProgress } = useScroll({ container: containerRef });
+  const { scrollYProgress } = useScroll(); // Use viewport for scroll animation
   const progressWidth = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
 
   useEffect(() => {
-    if (!ready) return;
+    if (!mounted) return;
     const els = containerRef.current?.querySelectorAll("[data-section]");
     if (!els) return;
 
@@ -51,12 +49,12 @@ export default function WelcomeTourPage() {
           if (e.isIntersecting) setActiveSection(Number(e.target.dataset.section));
         });
       },
-      { root: containerRef.current, rootMargin: "-40% 0px -40% 0px", threshold: 0 }
+      { root: null, rootMargin: "-40% 0px -40% 0px", threshold: 0 } // Use viewport
     );
 
     els.forEach((el) => io.observe(el));
     return () => io.disconnect();
-  }, [ready]);
+  }, [mounted]);
 
   const completeTour = () => {
     localStorage.setItem("campusadda_tour_completed", "true");
@@ -69,14 +67,13 @@ export default function WelcomeTourPage() {
       [idx]?.scrollIntoView({ behavior: "smooth" });
   };
 
-  if (!ready) return null;
+  if (!mounted) return null;
 
   return (
-    <div data-page="welcome-tour" className="fixed inset-0 z-50" style={{ background: "#0b0c16" }}>
+    <div data-page="welcome-tour" className="relative z-50 min-h-screen text-white" style={{ background: "#0b0c16" }}>
     <div
       ref={containerRef}
-      className="relative h-full overflow-y-auto"
-      style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      className="relative"
     >
       {/* ─── Scroll progress bar ──────────────────── */}
       <div className="fixed top-0 left-0 w-full h-[3px] bg-white/5 z-[200]">
