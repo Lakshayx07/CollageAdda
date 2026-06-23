@@ -1,195 +1,155 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import {
-  HeroSection,
-  PulseSection,
-  FindPeopleSection,
-  ExploreSection,
-  HustleHubSection,
-  CollabSection,
-  PrideSection,
-  FinalCTASection,
-} from "@/components/onboarding/OnboardingSections";
+import { AnimatePresence, motion } from "framer-motion";
 
-const NAV_LABELS = [
-  "Welcome",
-  "Campus Pulse",
-  "Find People",
-  "Explore",
-  "Hustle Hub",
-  "Collab",
-  "College Pride",
-  "Get Started",
+const SLIDES = [
+  { src: "/welcome-tour/slide-1.png", alt: "Welcome to CampusAdda" },
+  { src: "/welcome-tour/slide-2.png", alt: "Campus Pulse" },
+  { src: "/welcome-tour/slide-3.png", alt: "Find your people" },
+  { src: "/welcome-tour/slide-4.png", alt: "Explore beyond your circle" },
+  { src: "/welcome-tour/slide-5.png", alt: "Hustle Hub" },
+  { src: "/welcome-tour/slide-6.png", alt: "Collab" },
+  { src: "/welcome-tour/slide-7.png", alt: "College Pride" },
+  { src: "/welcome-tour/slide-8.png", alt: "Your campus journey starts now" },
 ];
+
+const skipSlides = new Set([1, 3, 4, 5, 6]);
 
 export default function WelcomeTourPage() {
   const router = useRouter();
-  const containerRef = useRef(null);
-  const [activeSection, setActiveSection] = useState(0);
-  const [mounted, setMounted] = useState(false);
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [direction, setDirection] = useState(1);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const isFirst = activeSlide === 0;
+  const isLast = activeSlide === SLIDES.length - 1;
 
-  const { scrollYProgress } = useScroll(); // Use viewport for scroll animation
-  const progressWidth = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
-
-  useEffect(() => {
-    if (!mounted) return;
-    const els = containerRef.current?.querySelectorAll("[data-section]");
-    if (!els) return;
-
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) setActiveSection(Number(e.target.dataset.section));
-        });
-      },
-      { root: null, rootMargin: "-40% 0px -40% 0px", threshold: 0 } // Use viewport
-    );
-
-    els.forEach((el) => io.observe(el));
-    return () => io.disconnect();
-  }, [mounted]);
-
-  const completeTour = () => {
-    localStorage.setItem("campusadda_tour_completed", "true");
+  const completeTour = useCallback(() => {
     router.push("/");
-  };
+  }, [router]);
 
-  const scrollToSection = (idx) => {
-    containerRef.current
-      ?.querySelectorAll("[data-section]")
-      [idx]?.scrollIntoView({ behavior: "smooth" });
-  };
+  const goToSlide = useCallback((nextIndex) => {
+    const safeIndex = Math.min(Math.max(nextIndex, 0), SLIDES.length - 1);
+    if (safeIndex === activeSlide) return;
+    setDirection(safeIndex > activeSlide ? 1 : -1);
+    setActiveSlide(safeIndex);
+  }, [activeSlide]);
 
-  if (!mounted) return null;
+  const goBack = useCallback(() => goToSlide(activeSlide - 1), [activeSlide, goToSlide]);
+  const goNext = useCallback(() => {
+    if (isLast) {
+      completeTour();
+      return;
+    }
+    goToSlide(activeSlide + 1);
+  }, [activeSlide, completeTour, goToSlide, isLast]);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "ArrowRight") goNext();
+      if (event.key === "ArrowLeft" && !isFirst) goBack();
+      if (event.key === "Escape" && !isFirst && !isLast) completeTour();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [completeTour, goBack, goNext, isFirst, isLast]);
 
   return (
-    <div data-page="welcome-tour" className="relative z-50 min-h-screen text-white" style={{ background: "#0b0c16" }}>
-    <div
-      ref={containerRef}
-      className="relative"
+    <main
+      data-page="welcome-tour"
+      className="fixed inset-0 z-[250] flex min-h-screen items-center justify-center overflow-hidden bg-[#020314] text-white"
     >
-      {/* ─── Scroll progress bar ──────────────────── */}
-      <div className="fixed top-0 left-0 w-full h-[3px] bg-white/5 z-[200]">
-        <motion.div
-          className="h-full bg-gradient-to-r from-purple-500 via-fuchsia-400 to-cyan-400"
-          style={{ width: progressWidth }}
-        />
-      </div>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(110,42,255,0.2),transparent_38%),linear-gradient(180deg,#020314_0%,#050016_100%)]" />
 
-      {/* ─── Floating sticky header ───────────────── */}
-      <header className="fixed top-0 left-0 right-0 z-[180] flex items-center justify-between px-6 pt-4 pointer-events-none">
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.5 }}
-          className="pointer-events-auto"
-        >
-          <span className="text-lg font-black tracking-tight text-white select-none">
-            Campus
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400">
-              Adda
-            </span>
-          </span>
-        </motion.div>
-
-        <motion.button
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.5 }}
-          onClick={completeTour}
-          className="pointer-events-auto text-xs font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 backdrop-blur-md"
-        >
-          Skip Tour
-        </motion.button>
-      </header>
-
-      {/* ─── Side nav dots ────────────────────────── */}
-      <nav className="fixed right-4 md:right-8 top-1/2 -translate-y-1/2 z-[150] flex flex-col gap-2 items-end">
-        {NAV_LABELS.map((label, i) => (
-          <button
-            key={label}
-            onClick={() => scrollToSection(i)}
-            className="group flex items-center gap-2 cursor-pointer"
-            aria-label={`Jump to ${label}`}
+      <div className="relative h-screen w-screen overflow-hidden">
+        <AnimatePresence initial={false} custom={direction} mode="popLayout">
+          <motion.div
+            key={SLIDES[activeSlide].src}
+            custom={direction}
+            initial={{ opacity: 0, x: direction * 80, scale: 0.985 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: direction * -80, scale: 0.985 }}
+            transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute inset-0 flex items-center justify-center"
           >
-            <span
-              className={`text-[10px] font-black uppercase tracking-widest transition-all duration-300 hidden md:block ${
-                activeSection === i
-                  ? "text-white opacity-100"
-                  : "text-white/0 group-hover:text-white/60 group-hover:opacity-100"
-              }`}
-            >
-              {label}
-            </span>
-            <span
-              className={`block rounded-full transition-all duration-300 ${
-                activeSection === i
-                  ? "w-2 h-6 bg-gradient-to-b from-purple-400 to-cyan-400 shadow-[0_0_8px_rgba(139,92,246,0.8)]"
-                  : "w-1.5 h-1.5 bg-white/20 hover:bg-white/50"
-              }`}
+            <img
+              src={SLIDES[activeSlide].src}
+              alt={SLIDES[activeSlide].alt}
+              className="h-auto max-h-screen w-auto max-w-screen select-none object-contain"
+              draggable={false}
             />
-          </button>
-        ))}
-      </nav>
+          </motion.div>
+        </AnimatePresence>
 
-      {/* ─── Global ambient background glows ─────── */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-[-15%] left-[-5%] w-[55%] h-[55%] bg-purple-700/15 blur-[160px] rounded-full" />
-        <div className="absolute bottom-[-15%] right-[-5%] w-[55%] h-[55%] bg-cyan-700/15 blur-[160px] rounded-full" />
-      </div>
-
-      {/* ─── Grain texture overlay ────────────────── */}
-      <div
-        className="fixed inset-0 pointer-events-none z-0 opacity-[0.025]"
-        style={{
-          backgroundImage:
-            'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")',
-        }}
-      />
-
-      {/* ─── Sections ─────────────────────────────── */}
-      <div data-section="0">
-        <HeroSection
-          onStart={() => scrollToSection(1)}
-          onSkip={completeTour}
+        <motion.div
+          key={`pulse-${activeSlide}`}
+          aria-hidden="true"
+          initial={{ opacity: 0, scale: 0.82 }}
+          animate={{ opacity: [0, 0.45, 0], scale: [0.82, 1, 1.08] }}
+          transition={{ duration: 1.1, ease: "easeOut" }}
+          className="pointer-events-none absolute inset-[12%] rounded-[48px] border border-purple-400/30 shadow-[0_0_80px_rgba(117,67,255,0.35)]"
         />
-      </div>
 
-      <div data-section="1">
-        <PulseSection />
-      </div>
+        <ResponsiveHitLayer>
+          {skipSlides.has(activeSlide) && (
+            <button
+              type="button"
+              onClick={completeTour}
+              aria-label="Skip welcome tour"
+              className="absolute left-[88%] top-[2.5%] h-[7%] w-[10%] rounded-2xl transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-white/80"
+            />
+          )}
 
-      <div data-section="2">
-        <FindPeopleSection />
-      </div>
+          {!isFirst && !isLast && (
+            <button
+              type="button"
+              onClick={goBack}
+              aria-label="Go to previous tour slide"
+              className="absolute left-[69%] top-[88.5%] h-[9%] w-[10%] rounded-2xl transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-white/80"
+            />
+          )}
 
-      <div data-section="3">
-        <ExploreSection />
-      </div>
+          {!isLast && (
+            <button
+              type="button"
+              onClick={goNext}
+              aria-label="Go to next tour slide"
+              className="absolute left-[80.5%] top-[88.5%] h-[9%] w-[16%] rounded-2xl transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-white/80"
+            />
+          )}
 
-      <div data-section="4">
-        <HustleHubSection />
-      </div>
+          {isLast && (
+            <button
+              type="button"
+              onClick={completeTour}
+              aria-label="Enter CampusAdda"
+              className="absolute left-[18%] top-[81%] h-[10%] w-[64%] rounded-2xl transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-white/80"
+            />
+          )}
 
-      <div data-section="5">
-        <CollabSection />
+          <div className="absolute left-[36%] top-[90%] flex h-[7%] w-[28%] items-center justify-center gap-[2.5%]">
+            {SLIDES.map((slide, index) => (
+              <button
+                key={slide.src}
+                type="button"
+                onClick={() => goToSlide(index)}
+                aria-label={`Go to slide ${index + 1}`}
+                className="h-[34%] min-h-3 w-[7%] min-w-3 rounded-full transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-white/80"
+              />
+            ))}
+          </div>
+        </ResponsiveHitLayer>
       </div>
+    </main>
+  );
+}
 
-      <div data-section="6">
-        <PrideSection />
-      </div>
-
-      <div data-section="7">
-        <FinalCTASection onComplete={completeTour} />
-      </div>
-    </div>
+function ResponsiveHitLayer({ children }) {
+  return (
+    <div className="pointer-events-none absolute left-1/2 top-1/2 aspect-[3/2] h-auto max-h-screen w-screen max-w-[150vh] -translate-x-1/2 -translate-y-1/2">
+      <div className="pointer-events-auto absolute inset-0">{children}</div>
     </div>
   );
 }
