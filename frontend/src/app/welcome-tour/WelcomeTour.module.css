@@ -1,0 +1,80 @@
+.container {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+  position: relative;
+  background-color: #0b0813;
+  color: #ffffff;
+}
+
+.leftColumn {
+  width: 50%;
+  padding: 0 8%;
+  z-index: 2;
+}
+
+.featureStep {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  opacity: 0.25;
+  transition: opacity 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.activeText {
+  opacity: 1;
+}
+
+.badge {
+  color: #a855f7;
+  font-weight: 700;
+  font-size: 0.875rem;
+  letter-spacing: 0.1em;
+  margin-bottom: 1rem;
+}
+
+.featureStep h2 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 1.5rem;
+  line-height: 1.2;
+}
+
+.featureStep p {
+  font-size: 1.125rem;
+  color: #94a3b8;
+  line-height: 1.6;
+}
+
+.rightColumn {
+  width: 50%;
+  height: 100vh; 
+  position: sticky;
+  top: 0; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.stickyWrapper {
+  width: 85%;
+  aspect-ratio: 16 / 10;
+  position: relative;
+}
+
+.mockupFrame {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0px 30px 60px -15px rgba(0, 0, 0, 0.8);
+}
+
+.mockupImage {
+  object-fit: cover;
+  transition: opacity 0.35s ease-in-out;
+}
