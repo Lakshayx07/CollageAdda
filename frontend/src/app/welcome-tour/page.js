@@ -88,6 +88,7 @@ const features = [
 export default function WelcomeTourPage() {
   const [activeIndex, setActiveIndex] = useState(0)
   const [isMobile, setIsMobile] = useState(false)
+  const scrollRootRef = useRef(null)
   const cardRefs = useRef([])
 
   // Track responsive screen size
@@ -106,35 +107,54 @@ export default function WelcomeTourPage() {
     return () => { document.documentElement.style.scrollBehavior = 'auto' }
   }, [])
 
-  // IntersectionObserver — updates activeIndex when a card enters center viewport
-  // NO setInterval, NO auto-cycling — 100% scroll-driven
+  // Scroll-driven active feature. The tour uses its own fixed scroll container,
+  // so we measure card centers against that container instead of the window.
   useEffect(() => {
-    setActiveIndex(0) // Explicitly set to 0 on mount
+    const scrollRoot = scrollRootRef.current
+    if (!scrollRoot) return
 
-    const observers = []
-    cardRefs.current.forEach((ref, index) => {
-      if (!ref) return
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              setActiveIndex(index)
-            }
-          })
-        },
-        {
-          threshold: 0.4,
-          rootMargin: '-5% 0px -5% 0px',
+    let frame = null
+
+    const updateActiveFeature = () => {
+      const rootRect = scrollRoot.getBoundingClientRect()
+      const rootCenter = rootRect.top + rootRect.height / 2
+      let closestIndex = 0
+      let closestDistance = Infinity
+
+      cardRefs.current.forEach((card, index) => {
+        if (!card) return
+        const rect = card.getBoundingClientRect()
+        const cardCenter = rect.top + rect.height / 2
+        const distance = Math.abs(cardCenter - rootCenter)
+
+        if (distance < closestDistance) {
+          closestDistance = distance
+          closestIndex = index
         }
-      )
-      observer.observe(ref)
-      observers.push(observer)
-    })
-    return () => observers.forEach((o) => o.disconnect())
+      })
+
+      setActiveIndex(closestIndex)
+      frame = null
+    }
+
+    const requestUpdate = () => {
+      if (frame !== null) return
+      frame = window.requestAnimationFrame(updateActiveFeature)
+    }
+
+    updateActiveFeature()
+    scrollRoot.addEventListener('scroll', requestUpdate, { passive: true })
+    window.addEventListener('resize', requestUpdate)
+
+    return () => {
+      if (frame !== null) window.cancelAnimationFrame(frame)
+      scrollRoot.removeEventListener('scroll', requestUpdate)
+      window.removeEventListener('resize', requestUpdate)
+    }
   }, [])
 
   return (
-    <div style={{
+    <div ref={scrollRootRef} data-tour-scroll-root style={{
       position: 'fixed',
       top: 0,
       left: 0,
@@ -150,7 +170,7 @@ export default function WelcomeTourPage() {
         minHeight: '100vh',
         fontFamily: 'Inter, -apple-system, sans-serif',
         position: 'relative',
-        overflowX: 'hidden',
+        overflowX: 'clip',
       }}
     >
 
@@ -321,8 +341,8 @@ export default function WelcomeTourPage() {
       {/* ============ STICKY SCROLL SECTION ============
           ARCHITECTURE (mirrored from hatch.co.in):
           - LEFT: normal flow, 100vh per card (auto on mobile) — SCROLLS NATURALLY
-          - RIGHT: position sticky, height 100vh — DESKTOP MONITOR — NEVER MOVES
-          - IntersectionObserver watches each card, updates activeIndex
+          - RIGHT: position sticky, height 100vh — DESKTOP MOCKUP — NEVER MOVES
+          - Scroll listener watches each card center and updates activeIndex
           - NO snap, NO hijack, NO setInterval
       ============================================= */}
       <div style={{
@@ -332,15 +352,16 @@ export default function WelcomeTourPage() {
         maxWidth: '100%',
         margin: '0 auto',
         paddingTop: '0px',
-        minHeight: `${features.length * 100}vh`,
+        minHeight: isMobile ? 'auto' : `${features.length * 100}vh`,
       }}>
         <div style={{ 
-          display: 'flex', 
+          display: isMobile ? 'block' : 'grid', 
+          gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1fr) minmax(460px, 580px)',
           width: '100%', 
           maxWidth: '1400px', 
           margin: '0 auto', 
-          padding: isMobile ? '0 20px' : '0 48px', 
-          gap: '80px', 
+          padding: isMobile ? '0 20px' : '0 48px',
+          columnGap: isMobile ? 0 : '88px',
           alignItems: 'flex-start' 
         }}>
 
@@ -513,7 +534,7 @@ export default function WelcomeTourPage() {
               position: 'sticky',
               top: 0,
               height: '100vh',
-              width: '520px',
+              width: '580px',
               flexShrink: 0,
               display: 'flex',
               flexDirection: 'column',
@@ -526,8 +547,8 @@ export default function WelcomeTourPage() {
               <div
                 style={{
                   position: 'absolute',
-                  width: '420px',
-                  height: '280px',
+                  width: '470px',
+                  height: '310px',
                   borderRadius: '50%',
                   background: features[activeIndex].color,
                   opacity: 0.08,
@@ -585,6 +606,7 @@ export default function WelcomeTourPage() {
                     <AnimatePresence mode="wait">
                       <motion.img
                         key={activeIndex}
+                        data-tour-desktop-mockup
                         src={features[activeIndex].image}
                         alt={features[activeIndex].tag}
                         initial={{ opacity: 0, scale: 1.06 }}
