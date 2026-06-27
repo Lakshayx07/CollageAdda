@@ -65,8 +65,8 @@ function LeaderboardRow({ college, rank, cfg, onChallenge, challenged }) {
       <span className="text-xl w-8 text-center shrink-0">{rankLabel}</span>
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-black text-white truncate">{college.name}</p>
-        <p className="text-[10px] text-white/40 font-bold flex items-center gap-1 mt-0.5 truncate">
+        <p className="text-sm font-black text-[#1A1A1A] truncate">{college.name}</p>
+        <p className="text-[10px] text-[#6B6B6B] font-bold flex items-center gap-1 mt-0.5 truncate">
           <MapPin size={9} /> {college.location || "India"}
         </p>
       </div>
@@ -78,7 +78,7 @@ function LeaderboardRow({ college, rank, cfg, onChallenge, challenged }) {
             <p className="text-lg font-black" style={{ color: cfg.color }}>
               {college.activityScore}
             </p>
-            <p className="text-[9px] text-white/30 font-bold uppercase tracking-wider">activity</p>
+            <p className="text-[9px] text-[#6B6B6B] font-bold uppercase tracking-wider">activity</p>
           </>
         ) : (
           <Sk className="h-6 w-12" />
@@ -92,7 +92,7 @@ function LeaderboardRow({ college, rank, cfg, onChallenge, challenged }) {
         className={clsx(
           "shrink-0 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all",
           challenged
-            ? "bg-white/5 text-white/30 border border-white/10 cursor-default"
+            ? "bg-[#F3F2EE] text-[#6B6B6B] border border-[#E8E6E0] cursor-default"
             : "border hover:scale-105 active:scale-95"
         )}
         style={
@@ -124,7 +124,7 @@ function PlayerCard({ player, cfg, onClick }) {
       whileHover={{ y: -4, scale: 1.02 }}
       whileTap={{ scale: 0.97 }}
       onClick={onClick}
-      className="shrink-0 w-32 app-panel rounded-[1.25rem] p-3 flex flex-col items-center gap-2 cursor-pointer border border-white/5 hover:border-white/15 transition-all"
+      className="shrink-0 w-32 app-panel rounded-[1.25rem] p-3 flex flex-col items-center gap-2 cursor-pointer border border-[#E8E6E0] hover:border-white/15 transition-all"
     >
       <div
         className="w-14 h-14 rounded-2xl overflow-hidden border-2 shrink-0"
@@ -133,8 +133,8 @@ function PlayerCard({ player, cfg, onClick }) {
         <img src={avatar} alt={player.name} className="w-full h-full object-cover" />
       </div>
       <div className="text-center w-full min-w-0">
-        <p className="text-[11px] font-black text-white truncate">{player.name}</p>
-        <p className="text-[9px] text-white/40 truncate">{player.university || "—"}</p>
+        <p className="text-[11px] font-black text-[#1A1A1A] truncate">{player.name}</p>
+        <p className="text-[9px] text-[#6B6B6B] truncate">{player.university || "—"}</p>
         {badge && (
           <span
             className="mt-1 inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider"
@@ -153,10 +153,10 @@ function SportPill({ entry, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="shrink-0 flex flex-col items-center gap-1.5 px-4 py-3 rounded-2xl border border-white/8 bg-white/[0.04] hover:border-white/20 hover:bg-white/8 transition-all group"
+      className="shrink-0 flex flex-col items-center gap-1.5 px-4 py-3 rounded-2xl border border-white/8 bg-[#F3F2EE] hover:border-[#E8E6E0] hover:bg-white/8 transition-all group"
     >
       <span className="text-2xl group-hover:scale-110 transition-transform">{entry.icon}</span>
-      <span className="text-[10px] font-black text-white/50 uppercase tracking-wider group-hover:text-white transition-colors">
+      <span className="text-[10px] font-black text-[#6B6B6B] uppercase tracking-wider group-hover:text-[#1A1A1A] transition-colors">
         {entry.key}
       </span>
     </button>
@@ -312,10 +312,10 @@ export default function ArenaPage() {
               <cfg.icon size={22} style={{ color: tabColor }} />
             </div>
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-white">
+              <h1 className="text-2xl font-black tracking-tight text-[#1A1A1A]">
                 Arena<span style={{ color: tabColor }}>.</span>
               </h1>
-              <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">
+              <p className="text-[10px] text-[#6B6B6B] font-bold uppercase tracking-widest">
                 {activeTab === "sports" ? "Sports Championships" : "Esports Battles"}
               </p>
             </div>
@@ -324,7 +324,7 @@ export default function ArenaPage() {
           <button
             onClick={() => fetchAll(activeTab)}
             disabled={loading}
-            className="p-2 glass rounded-xl text-white/40 hover:text-white transition-colors disabled:opacity-40"
+            className="p-2 bg-[#F9F8F5] border border-[#E8E6E0] rounded-xl text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors disabled:opacity-40"
           >
             <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
           </button>
@@ -341,7 +341,7 @@ export default function ArenaPage() {
               onClick={() => { if (tab.id !== activeTab) setActiveTab(tab.id); }}
               className={clsx(
                 "rounded-[1rem] px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] transition-all flex items-center justify-center gap-2",
-                activeTab === tab.id ? "text-black" : "text-white/45 hover:text-white"
+                activeTab === tab.id ? "text-black" : "text-[#6B6B6B] hover:text-[#1A1A1A]"
               )}
               style={
                 activeTab === tab.id
@@ -357,7 +357,7 @@ export default function ArenaPage() {
 
         {/* ── Pick Your Sport ─────────────────────────────────────────────── */}
         <section>
-          <h2 className="text-[11px] font-black text-white/30 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+          <h2 className="text-[11px] font-black text-[#6B6B6B] uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
             <Shield size={12} style={{ color: tabColor }} />
             {activeTab === "sports" ? "Compete In" : "Play On"}
           </h2>
@@ -374,7 +374,7 @@ export default function ArenaPage() {
 
         {/* ── Featured Match — no match API yet, show honest empty state ── */}
         <section>
-          <h2 className="text-[11px] font-black text-white/30 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+          <h2 className="text-[11px] font-black text-[#6B6B6B] uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
             <Activity size={12} style={{ color: tabColor }} />
             Featured Match
           </h2>
@@ -388,8 +388,8 @@ export default function ArenaPage() {
             >
               <CalendarX size={24} style={{ color: tabColor }} />
             </div>
-            <p className="text-sm font-black text-white">No matches scheduled</p>
-            <p className="text-[11px] text-white/35 font-medium max-w-xs">
+            <p className="text-sm font-black text-[#1A1A1A]">No matches scheduled</p>
+            <p className="text-[11px] text-[#888888] font-medium max-w-xs">
               Challenge a college from the leaderboard below to create a match.
               Live match tracking coming soon.
             </p>
@@ -399,12 +399,12 @@ export default function ArenaPage() {
         {/* ── Campus Leaderboard ──────────────────────────────────────────── */}
         <section>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-[11px] font-black text-white/30 uppercase tracking-[0.2em] flex items-center gap-2">
+            <h2 className="text-[11px] font-black text-[#6B6B6B] uppercase tracking-[0.2em] flex items-center gap-2">
               <Trophy size={12} style={{ color: tabColor }} />
               Campus Rankings
             </h2>
             <span
-              className="text-[10px] glass px-3 py-1 rounded-full font-bold border"
+              className="text-[10px] bg-[#F9F8F5] border border-[#E8E6E0] px-3 py-1 rounded-full font-bold border"
               style={{ color: tabColor, borderColor: `${tabColor}30` }}
             >
               {colleges === null ? "—" : `${colleges.length} colleges`}
@@ -415,7 +415,7 @@ export default function ArenaPage() {
             {colleges === null ? (
               // Loading skeletons
               Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3 p-4 rounded-[1.25rem] bg-white/5 border border-white/8">
+                <div key={i} className="flex items-center gap-3 p-4 rounded-[1.25rem] bg-[#F3F2EE] border border-white/8">
                   <Sk className="w-8 h-8 rounded-xl shrink-0" />
                   <div className="flex-1 space-y-1.5">
                     <Sk className="h-4 w-40" />
@@ -426,9 +426,9 @@ export default function ArenaPage() {
                 </div>
               ))
             ) : colleges.length === 0 ? (
-              <div className="app-panel rounded-[1.5rem] py-12 text-center border border-white/5">
-                <Trophy size={32} className="mx-auto text-white/10 mb-3" />
-                <p className="text-sm font-black text-white/20">No colleges found</p>
+              <div className="app-panel rounded-[1.5rem] py-12 text-center border border-[#E8E6E0]">
+                <Trophy size={32} className="mx-auto text-[#888888] mb-3" />
+                <p className="text-sm font-black text-[#888888]">No colleges found</p>
               </div>
             ) : (
               colleges.map((college, idx) => (
@@ -448,12 +448,12 @@ export default function ArenaPage() {
         {/* ── Players to Watch ────────────────────────────────────────────── */}
         <section>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-[11px] font-black text-white/30 uppercase tracking-[0.2em] flex items-center gap-2">
+            <h2 className="text-[11px] font-black text-[#6B6B6B] uppercase tracking-[0.2em] flex items-center gap-2">
               <Star size={12} style={{ color: tabColor }} />
               Players to Watch
             </h2>
             <span
-              className="text-[10px] glass px-3 py-1 rounded-full font-bold border"
+              className="text-[10px] bg-[#F9F8F5] border border-[#E8E6E0] px-3 py-1 rounded-full font-bold border"
               style={{ color: tabColor, borderColor: `${tabColor}30` }}
             >
               {players === null ? "—" : players.length > 0 ? `${players.length} found` : "none"}
@@ -464,17 +464,17 @@ export default function ArenaPage() {
             {players === null ? (
               // Loading skeletons
               Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="shrink-0 w-32 app-panel rounded-[1.25rem] p-3 flex flex-col items-center gap-2 border border-white/5">
+                <div key={i} className="shrink-0 w-32 app-panel rounded-[1.25rem] p-3 flex flex-col items-center gap-2 border border-[#E8E6E0]">
                   <Sk className="w-14 h-14 rounded-2xl" />
                   <Sk className="h-3 w-20" />
                   <Sk className="h-3 w-14" />
                 </div>
               ))
             ) : players.length === 0 ? (
-              <div className="w-full py-10 text-center text-white/30">
+              <div className="w-full py-10 text-center text-[#6B6B6B]">
                 <Users size={30} className="mx-auto mb-2 opacity-30" />
                 <p className="text-xs font-bold">No players found for this category</p>
-                <p className="text-[10px] mt-1 text-white/20">
+                <p className="text-[10px] mt-1 text-[#888888]">
                   Students with matching interests will appear here
                 </p>
               </div>
@@ -512,10 +512,10 @@ export default function ArenaPage() {
               : <Flame size={26} style={{ color: tabColor }} />
             }
           </div>
-          <h3 className="text-lg font-black text-white mb-1">
+          <h3 className="text-lg font-black text-[#1A1A1A] mb-1">
             {activeTab === "sports" ? "Register Your Team" : "Join the Battle"}
           </h3>
-          <p className="text-xs text-white/40 mb-5 font-medium max-w-xs mx-auto">
+          <p className="text-xs text-[#6B6B6B] mb-5 font-medium max-w-xs mx-auto">
             {activeTab === "sports"
               ? "Build your college sports team and challenge other universities."
               : "Form your esports squad and dominate the campus leaderboard."}

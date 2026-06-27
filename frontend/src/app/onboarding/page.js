@@ -267,30 +267,30 @@ export default function OnboardingPage() {
 
   if (!user) return null;
 
-  const fieldClass = "w-full rounded-2xl border border-cyan-500/20 bg-white/[0.02] backdrop-blur-sm px-4 py-3 text-sm font-semibold text-white outline-none transition focus:border-cyan-400 focus:bg-cyan-900/10 focus:shadow-[0_0_15px_rgba(34,211,238,0.2)]";
+  const fieldClass = "w-full rounded-2xl border border-[#E8E6E0] bg-[#F3F2EE] backdrop-blur-sm px-4 py-3 text-sm font-semibold text-[#1A1A1A] outline-none transition focus:border-cyan-400 focus:bg-cyan-900/10 focus:shadow-[0_0_15px_rgba(34,211,238,0.2)]";
 
   return (
-    <div className="relative min-h-screen bg-[#040814] px-4 py-5 text-white sm:px-6 lg:-ml-72 lg:px-10 overflow-hidden">
+    <div className="relative min-h-screen bg-[#FAFAF8] px-4 py-5 text-[#1A1A1A] sm:px-6 lg:-ml-72 lg:px-10 overflow-hidden">
       <AnimatedBackground />
       <div className="relative z-10 mx-auto flex min-h-[calc(100vh-2.5rem)] max-w-3xl flex-col">
         <div className="mb-6">
-          <div className="mb-3 flex items-center justify-between text-xs font-black uppercase tracking-[0.18em] text-cyan-400/80">
+          <div className="mb-3 flex items-center justify-between text-xs font-black uppercase tracking-[0.18em] text-[#C8922A]">
             <span>Step {Math.min(step, 8)} of 8</span>
             <span>{Math.round((Math.min(step, 8) / 8) * 100)}%</span>
           </div>
           <div className="h-1.5 overflow-hidden rounded-full bg-blue-900/40">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 transition-all shadow-[0_0_10px_rgba(34,211,238,0.8)]"
+              className="h-full rounded-full bg-gradient-to-r from-[#D4A843] to-[#C8922A] transition-all shadow-[0_0_10px_rgba(34,211,238,0.8)]"
               style={{ width: `${(Math.min(step, 8) / 8) * 100}%` }}
             />
           </div>
         </div>
 
         <section className="flex flex-1 items-center">
-          <div className="w-full rounded-[1.75rem] border border-cyan-500/20 bg-[#060B18]/60 backdrop-blur-xl p-5 shadow-[0_0_40px_rgba(0,0,0,0.5),inset_0_0_20px_rgba(34,211,238,0.05)] sm:p-10 relative overflow-hidden">
+          <div className="w-full rounded-[1.75rem] border border-[#E8E6E0] bg-white/80 backdrop-blur-xl p-5 shadow-[0_0_40px_rgba(0,0,0,0.5),inset_0_0_20px_rgba(34,211,238,0.05)] sm:p-10 relative overflow-hidden">
             {step === 1 && (
               <div className="space-y-5">
-                <User className="text-cyan-300" size={34} />
+                <User className="text-[#C8922A]" size={34} />
                 <h1 className="text-3xl font-black tracking-tight">What&apos;s your full name?</h1>
                 <input className={fieldClass} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Your full name" />
               </div>
@@ -298,10 +298,10 @@ export default function OnboardingPage() {
 
             {step === 2 && (
               <div className="space-y-6">
-                <Camera className="text-cyan-300" size={34} />
+                <Camera className="text-[#C8922A]" size={34} />
                 <div>
                   <h1 className="text-3xl font-black tracking-tight">Add your profile picture</h1>
-                  <p className="mt-2 text-sm text-white/55">Use a campus-friendly photo or continue with your initials.</p>
+                  <p className="mt-2 text-sm text-[#888888]5">Use a campus-friendly photo or continue with your initials.</p>
                 </div>
                 <div className="flex flex-col items-center gap-5 sm:flex-row">
                   <div className="h-32 w-32 overflow-hidden rounded-full border-4 border-cyan-300/40 bg-white/8">
@@ -312,7 +312,7 @@ export default function OnboardingPage() {
                       Upload Photo
                       <input type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
                     </label>
-                    <button onClick={skipPhoto} className="inline-flex items-center justify-center rounded-2xl border border-white/10 px-5 py-3 text-sm font-black text-white/70">
+                    <button onClick={skipPhoto} className="inline-flex items-center justify-center rounded-2xl border border-[#E8E6E0] px-5 py-3 text-sm font-black text-[#4A4A4A]">
                       <SkipForward size={16} className="mr-2" /> Use Initials Avatar
                     </button>
                   </div>
@@ -324,8 +324,8 @@ export default function OnboardingPage() {
               <div className="space-y-5">
                 <h1 className="text-3xl font-black tracking-tight">Select your graduation year</h1>
                 <select className={fieldClass} value={form.passOutBatch} onChange={e => setForm({ ...form, passOutBatch: e.target.value })}>
-                  <option value="" className="bg-[#080C11]">Pass out batch</option>
-                  {batchOptions.map(year => <option key={year} value={year} className="bg-[#080C11]">{year}</option>)}
+                  <option value="" className="bg-white">Pass out batch</option>
+                  {batchOptions.map(year => <option key={year} value={year} className="bg-white">{year}</option>)}
                 </select>
               </div>
             )}
@@ -335,8 +335,8 @@ export default function OnboardingPage() {
                 <h1 className="text-3xl font-black tracking-tight">Course and branch</h1>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <select className={fieldClass} value={form.course} onChange={e => setForm({ ...form, course: e.target.value })}>
-                    <option value="" className="bg-[#080C11]">Course</option>
-                    {courseOptions.map(course => <option key={course} value={course} className="bg-[#080C11]">{course}</option>)}
+                    <option value="" className="bg-white">Course</option>
+                    {courseOptions.map(course => <option key={course} value={course} className="bg-white">{course}</option>)}
                   </select>
                   <input className={fieldClass} value={form.branch} onChange={e => setForm({ ...form, branch: e.target.value })} placeholder="Computer Science, ECE, Marketing" />
                 </div>
@@ -348,7 +348,7 @@ export default function OnboardingPage() {
                 <h1 className="text-3xl font-black tracking-tight">Current year of study</h1>
                 <div className="grid gap-2 sm:grid-cols-3">
                   {studyYearOptions.map(option => (
-                    <button key={option} onClick={() => setForm({ ...form, studyYear: option })} className={clsx("rounded-2xl border px-4 py-3 text-sm font-black", form.studyYear === option ? "border-cyan-300 bg-cyan-300 text-black" : "border-white/10 bg-white/[0.04] text-white/60")}>{option}</button>
+                    <button key={option} onClick={() => setForm({ ...form, studyYear: option })} className={clsx("rounded-2xl border px-4 py-3 text-sm font-black", form.studyYear === option ? "border-cyan-300 bg-cyan-300 text-black" : "border-[#E8E6E0] bg-[#F3F2EE] text-[#6B6B6B]")}>{option}</button>
                   ))}
                 </div>
               </div>
@@ -358,11 +358,11 @@ export default function OnboardingPage() {
               <div className="space-y-5">
                 <div>
                   <h1 className="text-3xl font-black tracking-tight">What are you into?</h1>
-                  <p className="mt-2 text-sm text-white/55">Choose at least 3 interests.</p>
+                  <p className="mt-2 text-sm text-[#888888]5">Choose at least 3 interests.</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {interestOptions.map(interest => (
-                    <button key={interest} onClick={() => toggleInterest(interest)} className={clsx("rounded-full border px-4 py-2 text-xs font-black transition", form.interests.includes(interest) ? "border-blue-400 bg-blue-500 text-white" : "border-white/10 bg-white/[0.04] text-white/55")}>{interest}</button>
+                    <button key={interest} onClick={() => toggleInterest(interest)} className={clsx("rounded-full border px-4 py-2 text-xs font-black transition", form.interests.includes(interest) ? "border-blue-400 bg-blue-500 text-[#1A1A1A]" : "border-[#E8E6E0] bg-[#F3F2EE] text-[#888888]5")}>{interest}</button>
                   ))}
                 </div>
               </div>
@@ -370,32 +370,32 @@ export default function OnboardingPage() {
 
             {step === 7 && (
               <div className="space-y-5">
-                <Sparkles className="text-cyan-300" size={34} />
+                <Sparkles className="text-[#C8922A]" size={34} />
                 <h1 className="text-3xl font-black tracking-tight">Write a short bio</h1>
                 <input className={fieldClass} maxLength={100} value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} placeholder="Final year CSE | Dev | CAT 2025 Aspirant" />
-                <p className="text-right text-xs font-bold text-white/35">{form.bio.length}/100</p>
+                <p className="text-right text-xs font-bold text-[#888888]">{form.bio.length}/100</p>
               </div>
             )}
 
             {step === 8 && (
               <div className="space-y-5">
-                <Phone className="text-cyan-300" size={34} />
+                <Phone className="text-[#C8922A]" size={34} />
                 <h1 className="text-3xl font-black tracking-tight">Phone number</h1>
-                <div className="flex rounded-2xl border border-white/10 bg-white/[0.04]">
-                  <span className="border-r border-white/10 px-4 py-3 text-sm font-black text-white/55">+91</span>
-                  <input className="min-w-0 flex-1 bg-transparent px-4 py-3 text-sm font-semibold text-white outline-none" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="Optional" />
+                <div className="flex rounded-2xl border border-[#E8E6E0] bg-[#F3F2EE]">
+                  <span className="border-r border-[#E8E6E0] px-4 py-3 text-sm font-black text-[#888888]5">+91</span>
+                  <input className="min-w-0 flex-1 bg-transparent px-4 py-3 text-sm font-semibold text-[#1A1A1A] outline-none" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="Optional" />
                 </div>
               </div>
             )}
 
             {step === 9 && (
               <div className="space-y-6 text-center">
-                <PartyPopper className="mx-auto text-cyan-300" size={44} />
+                <PartyPopper className="mx-auto text-[#C8922A]" size={44} />
                 <div>
                   <h1 className="text-3xl font-black tracking-tight">You&apos;re all set, {form.name.split(" ")[0] || "student"}!</h1>
-                  <p className="mt-2 text-sm text-white/55">Your Campus Adda profile is ready.</p>
+                  <p className="mt-2 text-sm text-[#888888]5">Your Campus Adda profile is ready.</p>
                 </div>
-                <div className="mx-auto max-w-sm rounded-[1.5rem] border border-white/10 bg-white/[0.05] p-5 text-left">
+                <div className="mx-auto max-w-sm rounded-[1.5rem] border border-[#E8E6E0] bg-[#F3F2EE] p-5 text-left">
                   <div className="flex items-center gap-4">
                     <img src={form.profilePic || initialsAvatar(form.name)} className="h-16 w-16 rounded-full object-cover" alt="Profile" />
                     <div>
@@ -406,7 +406,7 @@ export default function OnboardingPage() {
                       <p className="text-xs font-bold text-cyan-200">{user.university}</p>
                     </div>
                   </div>
-                  <p className="mt-4 text-sm text-white/70">{form.bio || `${form.course} ${form.branch} · Batch of ${form.passOutBatch}`}</p>
+                  <p className="mt-4 text-sm text-[#4A4A4A]">{form.bio || `${form.course} ${form.branch} · Batch of ${form.passOutBatch}`}</p>
                   <div className="mt-4 flex flex-wrap gap-2">
                     {form.interests.map(item => <span key={item} className="rounded-full bg-blue-500/15 px-3 py-1 text-[10px] font-black text-blue-200">{item}</span>)}
                   </div>
@@ -417,20 +417,20 @@ export default function OnboardingPage() {
             {error && <p className="mt-6 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-200">{error}</p>}
 
             <div className="mt-8 flex items-center justify-between gap-3 relative z-10">
-              <button onClick={() => setStep(Math.max(1, step - 1))} disabled={step === 1 || saving} className="inline-flex items-center rounded-2xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-black text-white/60 transition hover:bg-white/10 hover:text-white disabled:opacity-30">
+              <button onClick={() => setStep(Math.max(1, step - 1))} disabled={step === 1 || saving} className="inline-flex items-center rounded-2xl border border-[#E8E6E0] bg-[#F3F2EE] px-6 py-3 text-sm font-black text-[#6B6B6B] transition hover:bg-[#F3F2EE] hover:text-[#1A1A1A] disabled:opacity-30">
                 <ArrowLeft size={16} className="mr-2" /> Back
               </button>
               {step === 7 || step === 8 ? (
-                <button onClick={() => goNext()} disabled={saving} className="rounded-2xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-black text-white/70 transition hover:bg-white/10 hover:text-white">
+                <button onClick={() => goNext()} disabled={saving} className="rounded-2xl border border-[#E8E6E0] bg-[#F3F2EE] px-6 py-3 text-sm font-black text-[#4A4A4A] transition hover:bg-[#F3F2EE] hover:text-[#1A1A1A]">
                   {step === 8 ? "Skip All" : "Skip"}
                 </button>
               ) : null}
               {step < 9 ? (
-                <button onClick={() => goNext()} disabled={saving} className="ml-auto inline-flex items-center rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-500 px-6 py-3 text-sm font-black text-black shadow-[0_0_20px_rgba(34,211,238,0.4)] disabled:opacity-60 transition hover:scale-105 hover:shadow-[0_0_30px_rgba(34,211,238,0.6)]">
+                <button onClick={() => goNext()} disabled={saving} className="ml-auto inline-flex items-center rounded-2xl bg-gradient-to-r from-[#D4A843] to-[#C8922A] px-6 py-3 text-sm font-black text-black shadow-[0_0_20px_rgba(34,211,238,0.4)] disabled:opacity-60 transition hover:scale-105 hover:shadow-[0_0_30px_rgba(34,211,238,0.6)]">
                   {saving ? "Saving..." : "Continue"} <ArrowRight size={16} className="ml-2" />
                 </button>
               ) : (
-                <button onClick={finish} disabled={saving} className="ml-auto inline-flex items-center rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-500 px-6 py-3 text-sm font-black text-black shadow-[0_0_20px_rgba(34,211,238,0.4)] disabled:opacity-60 transition hover:scale-105 hover:shadow-[0_0_30px_rgba(34,211,238,0.6)]">
+                <button onClick={finish} disabled={saving} className="ml-auto inline-flex items-center rounded-2xl bg-gradient-to-r from-[#D4A843] to-[#C8922A] px-6 py-3 text-sm font-black text-black shadow-[0_0_20px_rgba(34,211,238,0.4)] disabled:opacity-60 transition hover:scale-105 hover:shadow-[0_0_30px_rgba(34,211,238,0.6)]">
                   Enter Campus Adda <Check size={16} className="ml-2" />
                 </button>
               )}

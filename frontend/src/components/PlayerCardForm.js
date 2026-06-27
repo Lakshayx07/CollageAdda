@@ -35,7 +35,7 @@ const THEME = {
     accent: '#39FF82',
     accentMuted: 'rgba(57,255,130,0.15)',
     accentBorder: 'rgba(57,255,130,0.35)',
-    gradient: 'linear-gradient(135deg, #6C3AFF, #1A0A2E)',
+    gradient: 'linear-gradient(135deg, #C8922A, #FFFFFF)',
     glow: '0 4px 24px rgba(108,58,255,0.4)',
     tabLabel: '🎮 Esports',
   },
@@ -86,12 +86,12 @@ function PreviewCard({ name, game, photo, skills, skillRatings, accent, accentMu
         >
           {photo
             ? <img src={photo} alt="you" className="w-full h-full object-cover" />
-            : <span className="text-2xl font-black text-white/30">?</span>
+            : <span className="text-2xl font-black text-[#6B6B6B]">?</span>
           }
         </div>
 
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-black text-white truncate">{displayName}</p>
+          <p className="text-sm font-black text-[#1A1A1A] truncate">{displayName}</p>
           <p className="text-[10px] font-bold uppercase tracking-widest mt-0.5 truncate" style={{ color: accent }}>{displayGame}</p>
 
           {/* Skill pills — live */}
@@ -215,7 +215,7 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
     : ['Cricket', 'Football', 'Badminton', 'Basketball', 'Tennis'];
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-xl">
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-xl">
       <motion.div
         initial={{ opacity: 0, y: 60, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -231,17 +231,17 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
         <div className="px-6 pt-5 pb-3 shrink-0">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-lg font-black text-white uppercase tracking-widest flex items-center gap-2">
+              <h2 className="text-lg font-black text-[#1A1A1A] uppercase tracking-widest flex items-center gap-2">
                 {isEsports ? <Gamepad2 size={18} style={{ color: accent }} /> : <Dumbbell size={18} style={{ color: accent }} />}
                 Create Player Card
               </h2>
-              <p className="text-[10px] text-white/40 font-bold mt-0.5">
+              <p className="text-[10px] text-[#6B6B6B] font-bold mt-0.5">
                 Step {step} of 3 · {['Identity', 'Details', 'Skills'][step - 1]}
               </p>
             </div>
             <button
               onClick={onClose}
-              className="p-2 glass rounded-xl text-white/40 hover:text-white transition-colors"
+              className="p-2 bg-[#F9F8F5] border border-[#E8E6E0] rounded-xl text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors"
             >
               <X size={18} />
             </button>
@@ -251,7 +251,7 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
           <StepBar step={step} accent={accent} />
 
           {/* Tab switcher */}
-          <div className="flex gap-1.5 mt-4 bg-black/50 p-1 rounded-xl border border-white/5">
+          <div className="flex gap-1.5 mt-4 bg-black/50 p-1 rounded-xl border border-[#E8E6E0]">
             {(['esports', 'sports'] ).map(cat => {
               const t = THEME[cat];
               const active = category === cat;
@@ -274,8 +274,8 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
           </div>
 
           {/* Auto-name display */}
-          <p className="text-[10px] text-white/35 font-bold mt-3 flex items-center gap-1">
-            <span className="text-white/20">Creating card for:</span>
+          <p className="text-[10px] text-[#888888] font-bold mt-3 flex items-center gap-1">
+            <span className="text-[#888888]">Creating card for:</span>
             <span style={{ color: accent }}>{autoName || '—'}</span>
           </p>
         </div>
@@ -303,18 +303,18 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
                       : (
                         <div className="flex flex-col items-center gap-1">
                           <Upload size={22} style={{ color: accent }} />
-                          <span className="text-[9px] text-white/40 font-black uppercase tracking-wider text-center">Photo</span>
+                          <span className="text-[9px] text-[#6B6B6B] font-black uppercase tracking-wider text-center">Photo</span>
                         </div>
                       )
                     }
                     <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
                   </label>
-                  <p className="text-[9px] text-white/25 mt-2 font-bold">Optional — tap to upload</p>
+                  <p className="text-[9px] text-[#888888] mt-2 font-bold">Optional — tap to upload</p>
                 </div>
 
                 {/* Game Username / Jersey Name */}
                 <div>
-                  <label className="block text-[10px] font-black text-white/50 uppercase tracking-widest mb-2">
+                  <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">
                     {isEsports ? 'Game Username / ID' : 'Jersey Name'}
                   </label>
                   <input
@@ -322,14 +322,14 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
                     placeholder={isEsports ? 'Viper_X#1234' : 'Arjun'}
                     value={formData.username}
                     onChange={e => setFormData(p => ({ ...p, username: e.target.value }))}
-                    className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none transition"
+                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:outline-none transition"
                     style={{ focusBorderColor: accent }}
                   />
                 </div>
 
                 {/* Select Game / Sport */}
                 <div>
-                  <label className="block text-[10px] font-black text-white/50 uppercase tracking-widest mb-2">
+                  <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">
                     {isEsports ? 'Select Game' : 'Select Sport'}
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -372,7 +372,7 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
               >
                 {/* Rank / Experience */}
                 <div>
-                  <label className="block text-[10px] font-black text-white/50 uppercase tracking-widest mb-2">
+                  <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">
                     {isEsports ? 'Current Rank' : 'Experience Level'}
                   </label>
                   <input
@@ -384,13 +384,13 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
                         ? setFormData(p => ({ ...p, rank: e.target.value }))
                         : setFormData(p => ({ ...p, experience_level: e.target.value }))
                     }
-                    className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none transition"
+                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:outline-none transition"
                   />
                 </div>
 
                 {/* Role / Position */}
                 <div>
-                  <label className="block text-[10px] font-black text-white/50 uppercase tracking-widest mb-2">
+                  <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">
                     {isEsports ? 'Favourite Role' : 'Playing Position'}
                   </label>
                   <input
@@ -398,13 +398,13 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
                     placeholder={isEsports ? 'IGL / Assaulter' : 'Forward / Bowler'}
                     value={formData.role_or_position}
                     onChange={e => setFormData(p => ({ ...p, role_or_position: e.target.value }))}
-                    className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none transition"
+                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:outline-none transition"
                   />
                 </div>
 
                 {/* Availability */}
                 <div>
-                  <label className="block text-[10px] font-black text-white/50 uppercase tracking-widest mb-2">Availability</label>
+                  <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Availability</label>
                   <div className="grid grid-cols-3 gap-2">
                     {['Both', 'Tournaments', 'Casual'].map(opt => {
                       const active = formData.availability === opt;
@@ -429,16 +429,16 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
 
                 {/* Short Bio */}
                 <div>
-                  <label className="block text-[10px] font-black text-white/50 uppercase tracking-widest mb-2">Short Bio (optional)</label>
+                  <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Short Bio (optional)</label>
                   <textarea
                     maxLength={100}
                     rows={2}
                     placeholder={isEsports ? 'IGL main, 3000+ matches...' : 'Playing since age 10...'}
                     value={formData.bio}
                     onChange={e => setFormData(p => ({ ...p, bio: e.target.value }))}
-                    className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none transition resize-none custom-scrollbar"
+                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:outline-none transition resize-none custom-scrollbar"
                   />
-                  <p className="text-[9px] text-white/25 mt-1 font-bold text-right">{formData.bio.length}/100</p>
+                  <p className="text-[9px] text-[#888888] mt-1 font-bold text-right">{formData.bio.length}/100</p>
                 </div>
               </motion.div>
             )}
@@ -463,7 +463,7 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
                   accentBorder={accentBorder}
                 />
 
-                <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">
+                <p className="text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest">
                   Rate Your Skills
                 </p>
 
@@ -472,7 +472,7 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
                   const currentVal = formData.skills[skillKeys[idx]];
                   return (
                     <div key={skillLabel} className="space-y-2">
-                      <p className="text-xs font-black text-white/70">{skillLabel}</p>
+                      <p className="text-xs font-black text-[#4A4A4A]">{skillLabel}</p>
                       <div className="grid grid-cols-4 gap-1.5">
                         {SKILL_LEVELS.map(({ label, value }) => {
                           const active = currentVal === value;
@@ -516,7 +516,7 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
             <button
               type="button"
               onClick={() => setStep(s => s - 1)}
-              className="flex items-center gap-1 py-3 px-5 rounded-xl bg-white/5 border border-white/10 text-white/70 text-xs font-black uppercase tracking-widest hover:bg-white/10 transition"
+              className="flex items-center gap-1 py-3 px-5 rounded-xl bg-[#F3F2EE] border border-[#E8E6E0] text-[#4A4A4A] text-xs font-black uppercase tracking-widest hover:bg-[#F3F2EE] transition"
             >
               <ChevronLeft size={14} /> Back
             </button>

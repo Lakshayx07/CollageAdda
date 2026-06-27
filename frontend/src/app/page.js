@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check, Plus, Flame, TrendingUp, Search, Zap, BarChart2, Compass, ShieldCheck, Flag, Globe, GraduationCap, ChevronLeft, ChevronRight } from "lucide-react";
+import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check, Plus, Flame, TrendingUp, Search, Zap, BarChart2, Compass, ShieldCheck, Flag, Globe, GraduationCap, ChevronLeft, ChevronRight, Users, Trophy } from "lucide-react";
 import Image from "next/image";
 import NotificationBell from "../components/NotificationBell";
 import ThemeToggle from "../components/ThemeToggle";
@@ -29,6 +29,10 @@ export default function Home() {
   const [shareSearchTerm, setShareSearchTerm] = useState("");
   const [toastMsg, setToastMsg] = useState("");
   const [posts, setPosts] = useState([]);
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
+  const [suggestedUsers, setSuggestedUsers] = useState([]);
+  const [loadingSuggested, setLoadingSuggested] = useState(true);
   const [stories, setStories] = useState([]);
   const [newPostContent, setNewPostContent] = useState("");
   const [selectedMedia, setSelectedMedia] = useState(null);
@@ -60,7 +64,7 @@ export default function Home() {
     ];
     return prompts[Math.floor(Math.random() * prompts.length)];
   });
-  const [selectedGradient, setSelectedGradient] = useState("from-orange-500 via-rose-500 to-purple-600");
+  const [selectedGradient, setSelectedGradient] = useState("from-orange-500 via-rose-500 to-[#D4A843]");
   const filteredPosts = posts.filter(post => {
     if (!selectedTopic) return true;
     return post.content.toLowerCase().includes(selectedTopic.toLowerCase());
@@ -83,10 +87,10 @@ export default function Home() {
   const trendingTopics = [
     { name: "Tech Fest 2024", icon: <Flame size={14} className="text-orange-500" /> },
     { name: "Exam Season", icon: <TrendingUp size={14} className="text-blue-400" /> },
-    { name: "Campus Elections", icon: <TrendingUp size={14} className="text-purple-400" /> },
+    { name: "Campus Elections", icon: <TrendingUp size={14} className="text-[#C8922A]" /> },
     { name: "Night Canteen", icon: <Flame size={14} className="text-yellow-500" /> },
     { name: "Sports Meet", icon: <Zap size={14} className="text-green-400" /> },
-    { name: "Hackathon", icon: <Search size={14} className="text-cyan-400" /> }
+    { name: "Hackathon", icon: <Search size={14} className="text-[#C8922A]" /> }
   ];
 
   useEffect(() => {
@@ -130,6 +134,8 @@ export default function Home() {
       fetchFriends();
       fetchStories();
       fetchConfessions();
+      fetchLeaderboard();
+      fetchSuggested();
     }
   }, [router]);
 
@@ -246,6 +252,39 @@ export default function Home() {
       }
     } catch (err) {
       console.error("Error fetching confessions:", err);
+    }
+  };
+
+  const fetchLeaderboard = async () => {
+    try {
+      const res = await fetch(`${apiUrl}/api/colleges/leaderboard`);
+      if (res.ok) {
+        const data = await res.json();
+        const rows = Array.isArray(data) ? data : data.leaderboard || [];
+        setLeaderboard(rows.slice(0, 5));
+      }
+    } catch (err) {
+      console.error("Leaderboard fetch error:", err);
+    } finally {
+      setLoadingLeaderboard(false);
+    }
+  };
+
+  const fetchSuggested = async () => {
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      if (!token) return;
+      const res = await fetch(`${apiUrl}/api/users/daily-drop`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSuggestedUsers(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error("Error fetching suggested users:", err);
+    } finally {
+      setLoadingSuggested(false);
     }
   };
 
@@ -667,13 +706,13 @@ export default function Home() {
 
   return (
     <div className="relative flex min-h-screen flex-col overflow-x-hidden bg-transparent pb-[90px] lg:pb-0">
-      <header className="sticky top-0 z-40 border-b app-divider bg-[rgba(11,15,23,0.78)] px-4 py-4 backdrop-blur-xl sm:px-6">
+      <header className="sticky top-0 z-40 border-b border-[#E8E6E0] bg-white/90 px-4 py-4 backdrop-blur-xl sm:px-6">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-300/78">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#C8922A]">
               Campus pulse
             </p>
-            <h1 className="mt-1 text-2xl font-black tracking-tight text-white">
+            <h1 className="mt-1 text-2xl font-black tracking-tight text-[#1A1A1A]">
               Campus Adda
             </h1>
           </div>
@@ -682,7 +721,7 @@ export default function Home() {
           <button 
             onClick={() => router.push('/collab')}
             title="Collab"
-            className="rounded-2xl border border-white/8 bg-white/[0.04] p-2.5 text-white/70 transition-colors hover:bg-white/[0.08]"
+            className="rounded-2xl border border-[#E8E6E0] bg-[#F3F2EE] p-2.5 text-[#4A4A4A] transition-colors hover:bg-[#FFF8EC] hover:text-[#C8922A]"
           >
             <Zap size={22} />
           </button>
@@ -691,11 +730,11 @@ export default function Home() {
             onClick={() => router.push('/profile')}
             className="brand-mark h-10 w-10 cursor-pointer rounded-2xl p-[2px] transition-transform hover:scale-105"
           >
-            <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-[0.95rem] bg-[#0F1420]">
+            <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-[0.95rem] bg-white border border-[#E8E6E0]">
               {currentUser?.profilePic ? (
                 <img src={currentUser.profilePic} className="w-full h-full object-cover" alt="Me" />
               ) : (
-                <span className="text-sm font-bold">{currentUser?.name?.charAt(0) || "U"}</span>
+                <span className="text-sm font-bold text-[#C8922A]">{currentUser?.name?.charAt(0) || "U"}</span>
               )}
             </div>
           </div>
@@ -719,20 +758,20 @@ export default function Home() {
               onClick={() => router.push('/profile')}
             >
               <div className="relative">
-                <div className="w-20 h-20 rounded-full p-[3px] bg-white/10 group-hover:bg-white/20 transition-all">
-                  <div className="w-full h-full rounded-full bg-background flex items-center justify-center overflow-hidden border border-white/5">
+                <div className="w-20 h-20 rounded-full p-[3px] bg-[#F3F2EE] group-hover:bg-[#E8E6E0] transition-all">
+                  <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden border border-[#E8E6E0]">
                      {currentUser?.profilePic ? (
                        <img src={currentUser.profilePic} className="w-full h-full object-cover" alt="You" />
                      ) : (
-                       <span className="text-2xl font-bold text-white/50">{currentUser?.name?.charAt(0) || "Y"}</span>
+                       <span className="text-2xl font-bold text-[#C8922A]">{currentUser?.name?.charAt(0) || "Y"}</span>
                      )}
                   </div>
                 </div>
-                <div className="absolute bottom-1 right-1 w-6 h-6 gradient-bg rounded-full border-2 border-[#0A0A0F] flex items-center justify-center text-white shadow-lg">
+                <div className="absolute bottom-1 right-1 w-6 h-6 gradient-bg rounded-full border-2 border-white flex items-center justify-center text-white shadow-lg">
                   <Plus size={14} strokeWidth={3} />
                 </div>
               </div>
-              <span className="text-xs text-white/60 font-medium">Your Story</span>
+              <span className="text-xs text-[#6B6B6B] font-medium">Your Story</span>
             </div>
 
             {/* Others' Stories */}
@@ -744,8 +783,8 @@ export default function Home() {
                 onClick={() => setActiveStory(group)}
               >
                 <div className="w-20 h-20 rounded-full p-[3px] gradient-bg animate-rotate-gradient">
-                  <div className="w-full h-full rounded-full bg-background p-[2px]">
-                    <div className="w-full h-full rounded-full bg-[#1A1A1F] flex items-center justify-center overflow-hidden border border-white/10 shadow-inner">
+                  <div className="w-full h-full rounded-full bg-white p-[2px]">
+                    <div className="w-full h-full rounded-full bg-[#F9F8F5] flex items-center justify-center overflow-hidden border border-[#E8E6E0] shadow-inner">
                       <img 
                         src={group.author.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(group.author.name)}&background=7C3AED&color=fff`} 
                         className="w-full h-full object-cover" 
@@ -754,56 +793,17 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-                <span className="text-xs text-white/80 font-medium truncate w-20 text-center">{group.author.name.split(' ')[0]}</span>
+                <span className="text-xs text-[#4A4A4A] font-medium truncate w-20 text-center">{group.author.name.split(' ')[0]}</span>
               </motion.div>
             ))}
           </div>
         </section>
 
 
-
-        <CampusLeaderboard apiUrl={apiUrl} />
-
-        <section className="space-y-2">
-          <div className="flex items-center justify-between px-1">
-            <div className="flex items-center space-x-2 text-white/70">
-              <Flame size={16} className="text-orange-500 animate-pulse" />
-              <span className="text-xs font-bold uppercase tracking-wider">
-                {selectedTopic ? `Filtered by: #${selectedTopic}` : "Trending on Campus"}
-              </span>
-            </div>
-            {selectedTopic && (
-              <button 
-                onClick={() => setSelectedTopic(null)}
-                className="text-[10px] font-black uppercase tracking-widest text-purple-400 hover:text-purple-300"
-              >
-                Show All
-              </button>
-            )}
-          </div>
-          <div className="no-scrollbar flex max-w-full space-x-2 overflow-x-auto py-1">
-            {trendingTopics.map((topic, i) => (
-              <button 
-                key={i} 
-                onClick={() => setSelectedTopic(selectedTopic === topic.name ? null : topic.name)}
-                className={clsx(
-                  "flex-shrink-0 px-4 py-2 rounded-full text-xs font-medium border transition-all flex items-center space-x-2",
-                  selectedTopic === topic.name 
-                    ? "bg-purple-600/20 text-purple-300 border-purple-500 shadow-md shadow-purple-500/10" 
-                    : "glass text-white/80 border-white/5 hover:border-white/20 hover:bg-white/10"
-                )}
-              >
-                {topic.icon}
-                <span>{topic.name}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-
         {/* Create Post Prompt */}
         <motion.div 
           variants={itemVariants}
-          className="relative flex min-w-0 max-w-full flex-col space-y-4 overflow-hidden bg-[#13152b] border border-purple-900/25 rounded-xl p-4 shadow-2xl group sm:p-5"
+          className="relative flex min-w-0 max-w-full flex-col space-y-4 overflow-hidden bg-white border border-[#E8E6E0] rounded-xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)] group sm:p-5"
         >
           <div className="absolute top-0 left-0 w-full h-1 gradient-bg opacity-30 group-focus-within:opacity-100 transition-opacity" />
           <div className="flex min-w-0 items-start space-x-3 sm:space-x-4">
@@ -857,7 +857,7 @@ export default function Home() {
                     setSelectedMediaFile(null);
                     setMediaType('none');
                   }}
-                  className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white p-2 rounded-full hover:bg-black/80 transition-all border border-white/10"
+                  className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white p-2 rounded-full hover:bg-black/40 transition-all border border-white/10"
                 >
                   <X size={16} />
                 </button>
@@ -865,34 +865,34 @@ export default function Home() {
             )}
           </AnimatePresence>
 
-          <div className="flex flex-col gap-3 border-t border-white/5 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 border-t border-[#E8E6E0] pt-4 sm:flex-row sm:items-center sm:justify-between">
              <div className="grid grid-cols-3 gap-2 sm:flex sm:space-x-5">
                <input type="file" ref={photoInputRef} className="hidden" accept="image/*" onChange={(e) => handleMediaSelect(e, 'image')} />
                <input type="file" ref={videoInputRef} className="hidden" accept="video/*" onChange={(e) => handleMediaSelect(e, 'video')} />
                
                <button 
                  onClick={() => photoInputRef.current?.click()}
-                 className="flex min-w-0 items-center justify-center space-x-1.5 rounded-2xl px-2 py-2 text-slate-400 transition-colors hover:text-purple-400 group sm:justify-start sm:px-0 sm:space-x-2"
+                 className="flex min-w-0 items-center justify-center space-x-1.5 rounded-2xl px-2 py-2 text-[#6B6B6B] transition-colors hover:text-[#C8922A] group sm:justify-start sm:px-0 sm:space-x-2"
                >
-                 <div className="p-2 rounded-full group-hover:bg-purple-500/10 transition-colors">
+                 <div className="p-2 rounded-full group-hover:bg-[#FFF8EC] transition-colors">
                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                  </div>
                  <span className="text-xs font-semibold">Photo</span>
                </button>
                <button 
                  onClick={() => videoInputRef.current?.click()}
-                 className="flex min-w-0 items-center justify-center space-x-1.5 rounded-2xl px-2 py-2 text-slate-400 transition-colors hover:text-purple-400 group sm:justify-start sm:px-0 sm:space-x-2"
+                 className="flex min-w-0 items-center justify-center space-x-1.5 rounded-2xl px-2 py-2 text-[#6B6B6B] transition-colors hover:text-[#C8922A] group sm:justify-start sm:px-0 sm:space-x-2"
                >
-                 <div className="p-2 rounded-full group-hover:bg-purple-500/10 transition-colors">
+                 <div className="p-2 rounded-full group-hover:bg-[#FFF8EC] transition-colors">
                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
                  </div>
                  <span className="text-xs font-semibold">Video</span>
                </button>
                <button 
                  onClick={() => setShowPollModal(true)}
-                 className="flex min-w-0 items-center justify-center space-x-1.5 rounded-2xl px-2 py-2 text-slate-400 transition-colors hover:text-purple-400 group sm:justify-start sm:px-0 sm:space-x-2"
+                 className="flex min-w-0 items-center justify-center space-x-1.5 rounded-2xl px-2 py-2 text-[#6B6B6B] transition-colors hover:text-[#C8922A] group sm:justify-start sm:px-0 sm:space-x-2"
                >
-                 <div className="p-2 rounded-full group-hover:bg-purple-500/10 transition-colors">
+                 <div className="p-2 rounded-full group-hover:bg-[#FFF8EC] transition-colors">
                    <BarChart2 size={20} />
                  </div>
                  <span className="text-xs font-semibold">Poll</span>
@@ -919,23 +919,23 @@ export default function Home() {
           {loadingPosts && (
             <div className="space-y-6">
               {[1, 2, 3].map((n) => (
-                <div key={n} className="glass-card rounded-[2rem] p-6 space-y-4 animate-pulse border border-white/5 bg-white/5">
+                <div key={n} className="rounded-[2rem] p-6 space-y-4 animate-pulse border border-[#E8E6E0] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
                   <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 rounded-full bg-white/5" />
+                    <div className="w-12 h-12 rounded-full bg-[#F3F2EE]" />
                     <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-white/10 rounded w-1/3" />
-                      <div className="h-3 bg-white/5 rounded w-1/4" />
+                      <div className="h-4 bg-[#F3F2EE] rounded w-1/3" />
+                      <div className="h-3 bg-[#F0EFE9] rounded w-1/4" />
                     </div>
                   </div>
                   <div className="space-y-2 pt-2">
-                    <div className="h-4 bg-white/10 rounded w-full" />
-                    <div className="h-4 bg-white/10 rounded w-5/6" />
+                    <div className="h-4 bg-[#F3F2EE] rounded w-full" />
+                    <div className="h-4 bg-[#F3F2EE] rounded w-5/6" />
                   </div>
-                  <div className="h-40 bg-white/5 rounded-2xl w-full" />
-                  <div className="flex justify-between pt-2 border-t border-white/5">
-                    <div className="h-6 bg-white/5 rounded w-12" />
-                    <div className="h-6 bg-white/5 rounded w-12" />
-                    <div className="h-6 bg-white/5 rounded w-8" />
+                  <div className="h-40 bg-[#F0EFE9] rounded-2xl w-full" />
+                  <div className="flex justify-between pt-2 border-t border-[#E8E6E0]">
+                    <div className="h-6 bg-[#F0EFE9] rounded w-12" />
+                    <div className="h-6 bg-[#F0EFE9] rounded w-12" />
+                    <div className="h-6 bg-[#F0EFE9] rounded w-8" />
                   </div>
                 </div>
               ))}
@@ -943,17 +943,17 @@ export default function Home() {
           )}
 
           {!loadingPosts && posts.length === 0 && (
-            <div className="glass-card rounded-[2rem] p-8 text-center border-dashed border-2 border-white/10 flex flex-col items-center justify-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400">
+            <div className="bg-white rounded-[2rem] p-8 text-center border border-dashed border-[#E8E6E0] flex flex-col items-center justify-center space-y-4">
+              <div className="w-16 h-16 rounded-full bg-[#FFF8EC] flex items-center justify-center text-[#C8922A]">
                 <Compass size={32} />
               </div>
-              <h3 className="text-xl font-bold text-white">Welcome to Campus Adda!</h3>
-              <p className="text-sm text-white/50 max-w-sm">
+              <h3 className="text-xl font-bold text-[#1A1A1A]">Welcome to Campus Adda!</h3>
+              <p className="text-sm text-[#6B6B6B] max-w-sm">
                 Your feed is currently empty. Follow students at your college or explore other campuses to see posts and start connecting!
               </p>
               <button 
                 onClick={() => router.push('/explore')}
-                className="gradient-bg text-white px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest shadow-lg shadow-purple-500/20 hover:scale-105 transition-transform animate-[pulse_2s_ease-in-out_infinite]"
+                className="gradient-bg text-white px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)] hover:scale-105 transition-transform animate-[pulse_2s_ease-in-out_infinite]"
               >
                 Explore Campuses
               </button>
@@ -961,17 +961,17 @@ export default function Home() {
           )}
 
           {!loadingPosts && posts.length > 0 && filteredPosts.length === 0 && (
-            <div className="glass-card rounded-[2rem] p-8 text-center border-dashed border-2 border-white/10 flex flex-col items-center justify-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400">
+            <div className="bg-white rounded-[2rem] p-8 text-center border border-dashed border-[#E8E6E0] flex flex-col items-center justify-center space-y-4">
+              <div className="w-16 h-16 rounded-full bg-[#FFF8EC] flex items-center justify-center text-[#C8922A]">
                 <Flame size={32} />
               </div>
-              <h3 className="text-xl font-bold text-white">No posts for #{selectedTopic}</h3>
-              <p className="text-sm text-white/50 max-w-sm">
+              <h3 className="text-xl font-bold text-[#1A1A1A]">No posts for #{selectedTopic}</h3>
+              <p className="text-sm text-[#6B6B6B] max-w-sm">
                 Be the first one to post about this topic on your campus!
               </p>
               <button 
                 onClick={() => setSelectedTopic(null)}
-                className="gradient-bg text-white px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest shadow-lg shadow-purple-500/20 hover:scale-105 transition-transform"
+                className="gradient-bg text-white px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)] hover:scale-105 transition-transform"
               >
                 Show All Posts
               </button>
@@ -988,47 +988,47 @@ export default function Home() {
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center space-x-4">
                   <div className="relative">
-                    <div className="w-12 h-12 rounded-full p-[2px] bg-white/10 overflow-hidden">
+                    <div className="w-12 h-12 rounded-full p-[2px] bg-[#F3F2EE] overflow-hidden">
                       <img 
                         src={post.avatar} 
                         alt={post.author} 
                         className="w-full h-full object-cover rounded-full" 
-                        onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author)}&background=7C3AED&color=fff`; }}
+                        onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author)}&background=C8922A&color=fff`; }}
                       />
                     </div>
                   </div>
                   <div>
-                    <h3 className="text-white font-semibold flex items-center gap-2">
+                    <h3 className="text-[#1A1A1A] font-semibold flex items-center gap-2">
                       {post.author}
                       <VerifiedBadge user={post.authorUser} size={16} /> 
                     </h3>
-                    <p className="text-slate-500 text-sm">{post.university} • {post.time}</p>
+                    <p className="text-[#888888] text-sm">{post.university} • {post.time}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
                   {friendsList.some(f => f.id === post.authorId) ? (
-                    <span className="text-[10px] font-black uppercase tracking-widest text-purple-400 bg-purple-500/10 px-3 py-1 rounded-full border border-purple-500/20">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[#C8922A] bg-[#C8922A]/10 px-3 py-1 rounded-full border border-[#C8922A]/20">
                       Your Squad
                     </span>
                   ) : currentUser?._id !== post.authorId && currentUser?.id !== post.authorId ? (
                     <motion.button 
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      className="text-[11px] font-bold px-4 py-1.5 rounded-full border border-white/10 hover:bg-white/5 transition-all text-white"
+                      className="text-[11px] font-bold px-4 py-1.5 rounded-full border border-[#E8E6E0] hover:bg-[#FFF8EC] hover:border-[#C8922A]/30 transition-all text-[#4A4A4A]"
                     >
                       Follow
                     </motion.button>
                   ) : null}
                   <div className="relative">
-                    <button onClick={() => setPostMenu(postMenu === post.id ? null : post.id)} className="text-white/40 hover:text-white p-1">
+                    <button onClick={() => setPostMenu(postMenu === post.id ? null : post.id)} className="text-[#888888] hover:text-[#1A1A1A] p-1">
                       <MoreHorizontal size={20} />
                     </button>
                     {postMenu === post.id && (
-                      <div className="absolute right-0 top-full mt-2 w-40 bg-[#1A1A1F] border border-white/10 rounded-xl shadow-2xl py-1 z-50 overflow-hidden">
+                      <div className="absolute right-0 top-full mt-2 w-40 bg-white border border-[#E8E6E0] rounded-xl shadow-lg py-1 z-50 overflow-hidden">
                         {currentUser?._id === post.authorId || currentUser?.id === post.authorId ? (
                           <button 
                             onClick={() => { handleDeletePost(post.id); setPostMenu(null); }} 
-                            className="w-full text-left px-4 py-2.5 text-[13px] font-bold text-red-500 hover:bg-white/5 transition-colors cursor-pointer"
+                            className="w-full text-left px-4 py-2.5 text-[13px] font-bold text-red-500 hover:bg-[#FFF8EC] transition-colors cursor-pointer"
                           >
                             Delete Post
                           </button>
@@ -1036,13 +1036,13 @@ export default function Home() {
                           <>
                             <button 
                               onClick={() => { handleHidePost(post.id); setPostMenu(null); }}
-                              className="w-full text-left px-4 py-2.5 text-[13px] font-bold text-white/70 hover:bg-white/5 hover:text-white transition-colors cursor-pointer"
+                              className="w-full text-left px-4 py-2.5 text-[13px] font-bold text-[#4A4A4A] hover:bg-[#F9F8F5] hover:text-[#1A1A1A] transition-colors cursor-pointer"
                             >
                               Hide Post
                             </button>
                             <button 
                               onClick={() => { handleReportPost(post.id); setPostMenu(null); }}
-                              className="w-full text-left px-4 py-2.5 text-[13px] font-bold text-red-400 hover:bg-white/5 hover:text-red-300 transition-colors border-t border-white/5 cursor-pointer"
+                              className="w-full text-left px-4 py-2.5 text-[13px] font-bold text-red-500 hover:bg-[#FFF8EC] hover:text-red-600 transition-colors border-t border-[#E8E6E0] cursor-pointer"
                             >
                               Report Spam
                             </button>
@@ -1055,17 +1055,17 @@ export default function Home() {
               </div>
               
               {post.content && (
-                <p className="text-slate-300 text-[15px] mb-5 leading-relaxed">
+                <p className="text-[#1A1A1A] text-[15px] mb-5 leading-relaxed">
                   {post.content}
                 </p>
               )}
 
               {/* Poll Section */}
               {post.poll && post.poll.options && post.poll.options.length > 0 && (
-                <div className="glass-card p-5 rounded-2xl border border-white/10 space-y-4 mb-5 bg-white/[0.01]">
-                  <div className="flex items-center justify-between pb-2 border-b border-white/5">
-                    <p className="text-xs font-semibold text-white/50">{post.poll.allowMultiple ? "Select multiple answers" : "Select one answer"}</p>
-                    <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider bg-cyan-400/10 px-2.5 py-0.5 rounded">Active Poll</span>
+                <div className="bg-[#F9F8F5] p-5 rounded-2xl border border-[#E8E6E0] space-y-4 mb-5">
+                  <div className="flex items-center justify-between pb-2 border-b border-[#EBEBEB]">
+                    <p className="text-xs font-semibold text-[#888888]">{post.poll.allowMultiple ? "Select multiple answers" : "Select one answer"}</p>
+                    <span className="text-[10px] text-[#C8922A] font-bold uppercase tracking-wider bg-[#C8922A]/10 px-2.5 py-0.5 rounded">Active Poll</span>
                   </div>
                   <div className="space-y-2.5">
                     {post.poll.options.map((option, idx) => {
@@ -1080,7 +1080,7 @@ export default function Home() {
                         <div 
                           key={idx}
                           onClick={() => handleVote(post.id, idx)}
-                          className="relative overflow-hidden rounded-lg bg-slate-800/50 transition-all hover:opacity-90 cursor-pointer group"
+                          className="relative overflow-hidden rounded-lg bg-[#F3F2EE] transition-all hover:opacity-90 cursor-pointer group"
                         >
                           {/* Percentage Bar Fill */}
                           <motion.div 
@@ -1094,34 +1094,34 @@ export default function Home() {
                             <div className="flex items-center space-x-3 min-w-0">
                               <div className={clsx(
                                 "w-5 h-5 rounded-md border flex items-center justify-center transition-all shrink-0",
-                                hasVoted ? "border-purple-400 bg-purple-400 text-white" : "border-slate-500"
+                                hasVoted ? "border-[#C8922A] bg-[#C8922A] text-white" : "border-[#D1CFC8]"
                               )}>
                                 {hasVoted && <Check size={12} strokeWidth={4} />}
                               </div>
-                              <span className="text-slate-300 text-sm truncate">{option.text}</span>
+                              <span className="text-[#1A1A1A] text-sm truncate">{option.text}</span>
                             </div>
                             
-                            <div className="flex items-center justify-end space-x-2 shrink-0 bg-black/20 px-2.5 py-1 rounded-lg border border-white/5 backdrop-blur-sm w-20">
-                              <span className="text-white font-semibold">{percentage}%</span>
-                              <span className="text-[10px] font-medium text-slate-500">({optionVotes})</span>
+                            <div className="flex items-center justify-end space-x-2 shrink-0 bg-white/80 px-2.5 py-1 rounded-lg border border-[#E8E6E0] backdrop-blur-sm w-20">
+                              <span className="text-[#1A1A1A] font-semibold">{percentage}%</span>
+                              <span className="text-[10px] font-medium text-[#888888]">({optionVotes})</span>
                             </div>
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                  <div className="flex items-center justify-between pt-3 border-t border-white/5 text-[10px] font-bold uppercase tracking-wider">
-                    <button className="text-purple-400 border border-purple-700/40 hover:bg-purple-900/20 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all">
+                  <div className="flex items-center justify-between pt-3 border-t border-[#EBEBEB] text-[10px] font-bold uppercase tracking-wider">
+                    <button className="text-[#C8922A] border border-[#C8922A]/30 hover:bg-[#FFF8EC] flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all">
                       <BarChart2 size={12} />
                       View Breakdown
                     </button>
-                    <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">{post.poll.options.reduce((sum, opt) => sum + (opt.votes?.length || 0), 0)} total votes</span>
+                    <span className="text-[#888888] text-[10px] font-bold uppercase tracking-wider">{post.poll.options.reduce((sum, opt) => sum + (opt.votes?.length || 0), 0)} total votes</span>
                   </div>
                 </div>
               )}
 
               {post.mediaUrl && (
-                <div className="rounded-2xl overflow-hidden mb-5 border border-white/5 bg-black/20 shadow-inner">
+                <div className="rounded-2xl overflow-hidden mb-5 border border-[#E8E6E0] bg-[#F3F2EE] shadow-sm">
                   {post.mediaType === 'video' ? (
                     <video src={post.mediaUrl} controls className="w-full h-auto max-h-[500px] object-contain" />
                   ) : (
@@ -1131,7 +1131,7 @@ export default function Home() {
               )}
 
               {/* Action Bar */}
-              <div className="flex items-center justify-between border-t border-white/5 pt-4">
+              <div className="flex items-center justify-between border-t border-[#EBEBEB] pt-4">
                 <div className="flex items-center space-x-6 relative">
                   <div className="flex flex-col items-center group/like">
                     <motion.button 
@@ -1139,26 +1139,26 @@ export default function Home() {
                       onClick={() => toggleLike(post.id)}
                       className={clsx(
                         "flex items-center space-x-2 transition-colors p-2 rounded-full",
-                        post.isLiked ? "text-purple-400" : "text-slate-400 hover:text-purple-400"
+                        post.isLiked ? "text-[#C8922A]" : "text-[#888888] hover:text-[#C8922A]"
                       )}
                     >
-                      <Heart size={22} className={clsx("transition-all", post.isLiked && "fill-purple-400")} />
-                      <span className="text-sm text-slate-400">{post.likes}</span>
+                      <Heart size={22} className={clsx("transition-all", post.isLiked && "fill-[#C8922A]")} />
+                      <span className="text-sm text-[#888888]">{post.likes}</span>
                     </motion.button>
                   </div>
 
                   <button 
                     onClick={() => setActiveCommentPost(activeCommentPost === post.id ? null : post.id)}
-                    className="flex items-center space-x-2 text-slate-400 hover:text-purple-400 p-2 rounded-full transition-colors"
+                    className="flex items-center space-x-2 text-[#888888] hover:text-[#C8922A] p-2 rounded-full transition-colors"
                   >
                     <MessageCircle size={22} />
-                    <span className="text-sm text-slate-400">{post.comments}</span>
+                    <span className="text-sm text-[#888888]">{post.comments}</span>
                   </button>
                 </div>
 
                 <button 
                   onClick={() => setShareModal(post.id)}
-                  className="flex items-center space-x-2 text-slate-400 hover:text-purple-400 p-2 rounded-full transition-colors"
+                  className="flex items-center space-x-2 text-[#888888] hover:text-[#C8922A] p-2 rounded-full transition-colors"
                 >
                   <Send size={20} />
                 </button>
@@ -1171,37 +1171,37 @@ export default function Home() {
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    className="mt-4 border-t border-white/5 pt-4 overflow-hidden"
+                    className="mt-4 border-t border-[#EBEBEB] pt-4 overflow-hidden"
                   >
                     <div className="space-y-4 mb-5 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
                       {(post.commentsList || []).map(comment => (
-                        <div key={comment.id} className="flex space-x-3 items-start bg-white/5 p-3 rounded-2xl">
+                        <div key={comment.id} className="flex space-x-3 items-start bg-[#F9F8F5] p-3 rounded-2xl">
                           <div className="w-7 h-7 rounded-full gradient-bg p-[1px] flex-shrink-0">
-                            <div className="w-full h-full bg-[#1A1A1F] rounded-full flex items-center justify-center text-[10px] font-bold">
+                            <div className="w-full h-full bg-white rounded-full flex items-center justify-center text-[10px] font-bold text-[#C8922A]">
                               {comment.author.charAt(0)}
                             </div>
                           </div>
                           <div className="flex-1">
-                            <p className="text-xs font-bold text-white/90">{comment.author}</p>
-                            <p className="text-xs text-white/60 mt-0.5">{comment.text}</p>
+                            <p className="text-xs font-bold text-[#1A1A1A]">{comment.author}</p>
+                            <p className="text-xs text-[#6B6B6B] mt-0.5">{comment.text}</p>
                           </div>
                         </div>
                       ))}
                     </div>
                     
-                    <div className="flex items-center space-x-3 bg-white/5 p-2 rounded-full border border-white/10 focus-within:border-purple-500/50 transition-all">
+                    <div className="flex items-center space-x-3 bg-[#F3F2EE] p-2 rounded-full border border-[#E8E6E0] focus-within:border-[#C8922A]/50 transition-all">
                       <input 
                         type="text" 
                         value={commentInputs[post.id] || ""}
                         onChange={(e) => setCommentInputs(prev => ({ ...prev, [post.id]: e.target.value }))}
                         onKeyDown={(e) => e.key === "Enter" && handleComment(post.id)}
                         placeholder={`Reply to ${post.author}...`} 
-                        className="flex-1 bg-transparent px-4 py-1.5 text-sm focus:outline-none text-white placeholder:text-white/20" 
+                        className="flex-1 bg-transparent px-4 py-1.5 text-sm focus:outline-none text-[#1A1A1A] placeholder:text-[#AAAAAA]" 
                       />
                       <motion.button 
                         whileTap={{ scale: 0.9 }}
                         onClick={() => handleComment(post.id)}
-                        className="gradient-bg p-2 rounded-full text-white shadow-lg shadow-purple-500/20"
+                        className="gradient-bg p-2 rounded-full text-white shadow-md"
                       >
                         <Send size={16} />
                       </motion.button>
@@ -1213,18 +1213,131 @@ export default function Home() {
           ))}
         </div>
         </div>
+
+        {/* Right Sidebar */}
+        <aside className="hidden xl:flex flex-col w-[280px] shrink-0 space-y-6 self-start sticky top-24">
+          
+          {/* College Leaderboard */}
+          <div className="bg-white border border-[#E8E6E0] rounded-2xl p-4 shadow-sm space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-[#F3F2EE]">
+              <Trophy size={18} className="text-[#C8922A]" />
+              <h3 className="text-xs font-black uppercase tracking-wider text-[#1A1A1A]">College Leaderboard</h3>
+            </div>
+            <div className="space-y-3.5">
+              {loadingLeaderboard ? (
+                <div className="text-center py-4 text-xs text-[#888888]">Loading...</div>
+              ) : leaderboard.length === 0 ? (
+                <div className="text-center py-4 text-xs text-[#888888]">No rankings yet.</div>
+              ) : (
+                leaderboard.map((item, idx) => {
+                  const name = item.college || item.name || item._id || "Unknown";
+                  const count = item.verifiedStudents ?? item.verifiedCount ?? 0;
+                  const points = item.points ?? item.score ?? 0;
+                  
+                  return (
+                    <div key={idx} className="flex items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={clsx(
+                          "w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0",
+                          idx === 0 ? "bg-amber-100 text-amber-800" :
+                          idx === 1 ? "bg-slate-100 text-slate-700" :
+                          idx === 2 ? "bg-orange-100 text-orange-800" :
+                          "bg-[#F3F2EE] text-[#6B6B6B]"
+                        )}>
+                          {idx + 1}
+                        </span>
+                        <span className="font-semibold text-[#1A1A1A] truncate max-w-[130px]" title={name}>{name}</span>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="font-bold text-[#1A1A1A]">{points} pts</p>
+                        <p className="text-[9px] text-[#888888]">{count} stds</p>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* Suggested for you */}
+          <div className="bg-white border border-[#E8E6E0] rounded-2xl p-4 shadow-sm space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-[#F3F2EE]">
+              <Users size={18} className="text-[#C8922A]" />
+              <h3 className="text-xs font-black uppercase tracking-wider text-[#1A1A1A]">Suggested for you</h3>
+            </div>
+            <div className="space-y-4">
+              {loadingSuggested ? (
+                <div className="text-center py-4 text-xs text-[#888888]">Loading...</div>
+              ) : suggestedUsers.length === 0 ? (
+                <div className="text-center py-4 text-xs text-[#888888]">No suggestions right now.</div>
+              ) : (
+                suggestedUsers.slice(0, 5).map((user) => {
+                  const isPending = connectStatus[user._id] === 'pending';
+                  const isConnected = connectStatus[user._id] === 'connected';
+                  
+                  return (
+                    <div key={user._id} className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div 
+                          className="w-9 h-9 rounded-full overflow-hidden border border-[#E8E6E0] bg-[#F9F8F5] flex-shrink-0 cursor-pointer"
+                          onClick={() => router.push(`/profile/${user._id}`)}
+                        >
+                          {user.profilePic ? (
+                            <img src={user.profilePic} alt={user.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-xs font-bold text-[#C8922A] bg-[#FFF8EC]">
+                              {user.name.charAt(0)}
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1">
+                            <p 
+                              className="text-xs font-bold text-[#1A1A1A] truncate cursor-pointer hover:underline"
+                              onClick={() => router.push(`/profile/${user._id}`)}
+                            >
+                              {user.name}
+                            </p>
+                            {user.isVerified && <VerifiedBadge size={12} />}
+                          </div>
+                          <p className="text-[10px] text-[#888888] truncate max-w-[120px]">
+                            {user.university || "CampusAdda User"}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <button
+                        onClick={() => handleConnectUser(user._id)}
+                        disabled={isPending || isConnected}
+                        className={clsx(
+                          "text-[10px] font-bold px-3 py-1.5 rounded-full border transition-all shrink-0",
+                          isConnected 
+                            ? "bg-[#F3F2EE] text-[#888888] border-transparent" 
+                            : "bg-white border-[#C8922A]/40 text-[#C8922A] hover:bg-[#FFF8EC]"
+                        )}
+                      >
+                        {isPending ? "Connecting..." : isConnected ? "Connected" : "Connect"}
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+        </aside>
         </div>
       </motion.div>
 
       {/* Create Poll Modal */}
       <AnimatePresence>
         {showPollModal && (
-          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/90 px-3 py-3 backdrop-blur-xl sm:items-center sm:px-4" onClick={() => setShowPollModal(false)}>
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 px-3 py-3 backdrop-blur-sm sm:items-center sm:px-4" onClick={() => setShowPollModal(false)}>
             <motion.div
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-[1.75rem] border border-white/10 p-5 shadow-2xl glass custom-scrollbar sm:rounded-[3rem] sm:p-8"
+              className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-[1.75rem] border border-[#E8E6E0] p-5 shadow-xl bg-white custom-scrollbar sm:rounded-[3rem] sm:p-8"
               onClick={e => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-8">
@@ -1232,24 +1345,24 @@ export default function Home() {
                   <div className="p-2.5 bg-green-500/10 rounded-2xl text-green-500">
                     <BarChart2 size={24} />
                   </div>
-                  <h2 className="text-2xl font-bold text-white tracking-tight">Create Poll</h2>
+                  <h2 className="text-2xl font-bold text-[#1A1A1A] tracking-tight">Create Poll</h2>
                 </div>
-                <button onClick={() => setShowPollModal(false)} className="p-2.5 hover:bg-white/5 rounded-full transition-colors text-white/40"><X size={24} /></button>
+                <button onClick={() => setShowPollModal(false)} className="p-2.5 hover:bg-[#F3F2EE] rounded-full transition-colors text-[#888888]"><X size={24} /></button>
               </div>
 
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">Question</label>
+                  <label className="text-[11px] font-black uppercase tracking-[0.2em] text-[#888888] ml-2">Question</label>
                   <textarea 
                     placeholder="Ask something to the campus..." 
                     value={pollQuestion}
                     onChange={(e) => setPollQuestion(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-[1.5rem] p-5 text-sm text-white focus:outline-none focus:border-green-500/50 transition-all min-h-[100px] resize-none"
+                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-[1.5rem] p-5 text-sm text-[#1A1A1A] focus:outline-none focus:border-[#C8922A]/50 transition-all min-h-[100px] resize-none"
                   />
                 </div>
 
                 <div className="space-y-3">
-                  <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 ml-2">Options</label>
+                  <label className="text-[11px] font-black uppercase tracking-[0.2em] text-[#888888] ml-2">Options</label>
                   {pollOptions.map((opt, i) => (
                     <div key={i} className="relative group">
                       <input 
@@ -1261,12 +1374,12 @@ export default function Home() {
                           newOpts[i] = e.target.value;
                           setPollOptions(newOpts);
                         }}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-5 pr-12 text-sm text-white focus:outline-none focus:border-green-500/50 transition-all"
+                        className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-2xl py-4 pl-5 pr-12 text-sm text-[#1A1A1A] focus:outline-none focus:border-[#C8922A]/50 transition-all"
                       />
                       {pollOptions.length > 2 && (
                         <button 
                           onClick={() => setPollOptions(prev => prev.filter((_, idx) => idx !== i))}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 hover:text-red-500 p-1"
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-[#AAAAAA] hover:text-red-500 p-1"
                         >
                           <X size={16} />
                         </button>
@@ -1277,7 +1390,7 @@ export default function Home() {
                   {pollOptions.length < 5 && (
                     <button 
                       onClick={() => setPollOptions(prev => [...prev, ""])}
-                      className="w-full py-4 rounded-2xl border border-dashed border-white/10 text-white/30 text-xs font-bold hover:bg-white/5 hover:text-white transition-all flex items-center justify-center space-x-2"
+                      className="w-full py-4 rounded-2xl border border-dashed border-[#E8E6E0] text-[#AAAAAA] text-xs font-bold hover:bg-[#F9F8F5] hover:text-[#4A4A4A] transition-all flex items-center justify-center space-x-2"
                     >
                       <Plus size={14} />
                       <span>Add Option</span>
@@ -1285,20 +1398,20 @@ export default function Home() {
                   )}
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-white/5 rounded-3xl border border-white/5">
+                <div className="flex items-center justify-between p-4 bg-[#F9F8F5] rounded-3xl border border-[#E8E6E0]">
                   <div className="flex items-center space-x-3">
-                    <Check size={18} className={pollAllowMultiple ? "text-green-500" : "text-white/20"} />
-                    <span className="text-sm font-bold text-white/70">Allow multiple answers</span>
+                    <Check size={18} className={pollAllowMultiple ? "text-green-500" : "text-[#AAAAAA]"} />
+                    <span className="text-sm font-bold text-[#4A4A4A]">Allow multiple answers</span>
                   </div>
                   <button 
                     onClick={() => setPollAllowMultiple(!pollAllowMultiple)}
                     className={clsx(
                       "w-12 h-6 rounded-full p-1 transition-all duration-300",
-                      pollAllowMultiple ? "bg-green-500" : "bg-white/10"
+                      pollAllowMultiple ? "bg-green-500" : "bg-[#D1CFC8]"
                     )}
                   >
                     <div className={clsx(
-                      "w-4 h-4 bg-white rounded-full shadow-lg transition-all transform",
+                      "w-4 h-4 bg-white rounded-full shadow-md transition-all transform",
                       pollAllowMultiple ? "translate-x-6" : "translate-x-0"
                     )} />
                   </button>
@@ -1321,43 +1434,43 @@ export default function Home() {
 
       {/* Campus Adda Share Modal */}
       {shareModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 px-3 py-3 backdrop-blur-md sm:items-center sm:px-4" onClick={() => setShareModal(null)}>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 px-3 py-3 backdrop-blur-sm sm:items-center sm:px-4" onClick={() => setShareModal(null)}>
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="max-h-[88dvh] w-full max-w-md overflow-y-auto rounded-[1.75rem] border border-white/10 p-5 shadow-2xl glass-card custom-scrollbar sm:rounded-[2.5rem] sm:p-6"
+            className="max-h-[88dvh] w-full max-w-md overflow-y-auto rounded-[1.75rem] border border-[#E8E6E0] p-5 shadow-xl bg-white custom-scrollbar sm:rounded-[2.5rem] sm:p-6"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-white tracking-tight">Share with Squad</h2>
-              <button onClick={() => setShareModal(null)} className="p-2 hover:bg-white/5 rounded-full transition-colors text-white/40"><X size={20} /></button>
+              <h2 className="text-xl font-bold text-[#1A1A1A] tracking-tight">Share with Squad</h2>
+              <button onClick={() => setShareModal(null)} className="p-2 hover:bg-[#F3F2EE] rounded-full transition-colors text-[#888888]"><X size={20} /></button>
             </div>
             <div className="relative mb-6">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#AAAAAA]" size={18} />
               <input 
                 type="text" 
                 placeholder="Find people to share with..." 
                 value={shareSearchTerm}
                 onChange={(e) => setShareSearchTerm(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-purple-500/50 transition-all"
+                className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-2xl py-3 pl-12 pr-4 text-sm text-[#1A1A1A] focus:outline-none focus:border-[#C8922A]/50 transition-all"
               />
             </div>
             <div className="space-y-3 max-h-72 overflow-y-auto pr-1 custom-scrollbar">
               {friendsList.length === 0 && (
                 <div className="text-center py-10 space-y-2">
-                  <p className="text-white/30 text-sm">No connections found yet.</p>
-                  <button onClick={() => router.push('/friends')} className="text-purple-400 text-xs font-bold hover:underline">Find Campus Squad</button>
+                  <p className="text-[#888888] text-sm">No connections found yet.</p>
+                  <button onClick={() => router.push('/friends')} className="text-[#C8922A] text-xs font-bold hover:underline">Find Campus Squad</button>
                 </div>
               )}
               {friendsList.filter(f => f.name.toLowerCase().includes(shareSearchTerm.toLowerCase())).map(friend => (
-                <div key={friend.id} className="flex items-center justify-between p-3 hover:bg-white/5 rounded-2xl transition-all border border-transparent hover:border-white/5 group">
+                <div key={friend.id} className="flex items-center justify-between p-3 hover:bg-[#F9F8F5] rounded-2xl transition-all border border-transparent hover:border-[#E8E6E0] group">
                   <div className="flex items-center space-x-4">
-                    <img src={friend.avatar} alt={friend.name} className="w-11 h-11 rounded-full object-cover border border-white/10" />
-                    <p className="text-sm font-bold text-white/90">{friend.name}</p>
+                    <img src={friend.avatar} alt={friend.name} className="w-11 h-11 rounded-full object-cover border border-[#E8E6E0]" />
+                    <p className="text-sm font-bold text-[#1A1A1A]">{friend.name}</p>
                   </div>
                   <button 
                     onClick={() => handleShareToFriend(friend.id, shareModal)}
-                    className="gradient-bg text-white text-[11px] font-bold px-5 py-2 rounded-full shadow-lg shadow-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="gradient-bg text-white text-[11px] font-bold px-5 py-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     Send Now
                   </button>
@@ -1394,17 +1507,17 @@ export default function Home() {
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 rounded-full p-[2px] gradient-bg">
                       <img 
-                        src={activeStory.author.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(activeStory.author.name)}&background=7C3AED&color=fff`} 
-                        className="w-full h-full rounded-full border border-[#0A0A0F] object-cover" 
+                        src={activeStory.author.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(activeStory.author.name)}&background=C8922A&color=fff`} 
+                        className="w-full h-full rounded-full border border-black object-cover" 
                         alt="" 
                       />
                     </div>
                     <div>
                       <p className="text-white font-bold text-sm leading-tight">{activeStory.author.name}</p>
-                      <p className="text-white/50 text-[10px] uppercase font-bold tracking-widest">{new Date(activeStory.stories[0].createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                      <p className="text-white/80 text-[10px] uppercase font-bold tracking-widest">{new Date(activeStory.stories[0].createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
                     </div>
                   </div>
-                  <button onClick={() => setActiveStory(null)} className="text-white/60 hover:text-white p-2 bg-white/5 rounded-full transition-all">
+                  <button onClick={() => setActiveStory(null)} className="text-white hover:bg-white/20 p-2 bg-white/10 rounded-full transition-all">
                     <X size={24} />
                   </button>
               </div>
@@ -1420,14 +1533,14 @@ export default function Home() {
 
               {/* Story Actions */}
               <div className="absolute bottom-10 left-6 right-6 flex items-center space-x-4 z-20" onClick={e => e.stopPropagation()}>
-                  <div className="flex-1 glass rounded-full flex items-center px-5 py-3 border border-white/10">
+                  <div className="flex-1 rounded-full flex items-center px-5 py-3 border border-white/30 bg-black/40 backdrop-blur-md">
                     <input 
                       type="text" 
                       placeholder={`Reply to ${activeStory.author.name.split(' ')[0]}...`} 
-                      className="bg-transparent text-white text-sm focus:outline-none w-full"
+                      className="bg-transparent text-white text-sm focus:outline-none w-full placeholder:text-white/70"
                     />
                   </div>
-                  <button className="p-3 glass rounded-full text-white hover:text-pink-500 transition-colors">
+                  <button className="p-3 rounded-full text-white hover:text-red-500 bg-black/40 border border-white/30 backdrop-blur-md transition-colors">
                     <Heart size={24} />
                   </button>
                   <button className="p-3 gradient-bg rounded-full text-white shadow-lg">

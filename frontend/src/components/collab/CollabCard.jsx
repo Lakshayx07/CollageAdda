@@ -12,11 +12,11 @@ const URGENCY_COLORS = {
 
 const PROJECT_TYPE_COLORS = {
   Hackathon: "text-blue-400 bg-blue-500/10 border-blue-500/20",
-  Startup: "text-purple-400 bg-purple-500/10 border-purple-500/20",
-  Research: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20",
+  Startup: "text-[#C8922A] bg-[#C8922A]/10 border-[#C8922A]/30",
+  Research: "text-[#C8922A] bg-[#C8922A]/10 border-[#E8E6E0]",
   "Side Project": "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
   Society: "text-orange-400 bg-orange-500/10 border-orange-500/20",
-  Other: "text-white/40 bg-white/5 border-white/10"
+  Other: "text-[#6B6B6B] bg-[#F3F2EE] border-[#E8E6E0]"
 };
 
 export default function CollabCard({ card, currentUser, hasApplied, appStatus, onContribute, onShare, onDelete, onNext, onPrev, currentIndex, totalCards }) {
@@ -67,7 +67,7 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
         <div className="relative">
           <button 
             onClick={() => setShowOptions(!showOptions)}
-            className="p-1.5 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+            className="p-1.5 text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#F3F2EE] rounded-full transition-colors"
           >
             <MoreVertical size={18} />
           </button>
@@ -78,14 +78,14 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
                 initial={{ opacity: 0, scale: 0.95, y: -10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                className="absolute right-0 top-full mt-1 w-36 bg-[#1a1a1a] border border-white/10 shadow-2xl rounded-xl overflow-hidden z-50"
+                className="absolute right-0 top-full mt-1 w-36 bg-[#1a1a1a] border border-[#E8E6E0] shadow-2xl rounded-xl overflow-hidden z-50"
               >
                 <button
                   onClick={() => {
                     setShowOptions(false);
                     onShare(card);
                   }}
-                  className="w-full px-4 py-3 text-left text-xs font-bold text-white hover:bg-white/5 flex items-center gap-2 transition-colors"
+                  className="w-full px-4 py-3 text-left text-xs font-bold text-[#1A1A1A] hover:bg-[#F3F2EE] flex items-center gap-2 transition-colors"
                 >
                   <Share2 size={14} /> Share
                 </button>
@@ -97,7 +97,7 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
                         onDelete(card.id);
                       }
                     }}
-                    className="w-full px-4 py-3 text-left text-xs font-bold text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors border-t border-white/5"
+                    className="w-full px-4 py-3 text-left text-xs font-bold text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors border-t border-[#E8E6E0]"
                   >
                     <Trash2 size={14} /> Delete
                   </button>
@@ -111,27 +111,27 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
       {/* Author */}
       <div className="flex items-center gap-3 mb-4">
         {card.poster_avatar ? (
-          <img src={card.poster_avatar} alt={card.poster_name || "Student"} className="w-12 h-12 rounded-full object-cover border border-white/20" />
+          <img src={card.poster_avatar} alt={card.poster_name || "Student"} className="w-12 h-12 rounded-full object-cover border border-[#E8E6E0]" />
         ) : (
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-[10px] font-black text-white shrink-0 uppercase tracking-widest">
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-600 to-[#D4A843] flex items-center justify-center text-[10px] font-black text-[#1A1A1A] shrink-0 uppercase tracking-widest">
             {card.user_id ? String(card.user_id).slice(-4) : "?"}
           </div>
         )}
         
         <div>
           <div className="flex items-center gap-1">
-            <p className="text-sm font-black text-white">{card.poster_name || "Campus Student"}</p>
+            <p className="text-sm font-black text-[#1A1A1A]">{card.poster_name || "Campus Student"}</p>
           </div>
-          <p className="text-[11px] text-white/50 font-medium">{card.year_major || "Student"}</p>
+          <p className="text-[11px] text-[#6B6B6B] font-medium">{card.year_major || "Student"}</p>
         </div>
       </div>
 
       {/* What they're building */}
       <div className="mb-6">
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-indigo-400 mb-2 flex items-center gap-1.5">
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-[#D4A843] mb-2 flex items-center gap-1.5">
           <Rocket size={12} className="text-violet-400" /> What I&apos;m Building
         </p>
-        <h2 className="text-base font-bold text-white leading-tight tracking-tight line-clamp-2">
+        <h2 className="text-base font-bold text-[#1A1A1A] leading-tight tracking-tight line-clamp-2">
           {card.building}
         </h2>
       </div>
@@ -139,7 +139,7 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
       {/* Skillset */}
       {skillsArray.length > 0 && (
         <div className="mb-5">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-2 flex items-center gap-1.5">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#6B6B6B] mb-2 flex items-center gap-1.5">
             <Code size={12} /> My Skillset
           </p>
           <div className="flex flex-wrap gap-2">
@@ -155,7 +155,7 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
       {/* Roles Needed */}
       {rolesArray.length > 0 && (
         <div className="mb-5">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-2 flex items-center gap-1.5">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#6B6B6B] mb-2 flex items-center gap-1.5">
             <Users size={12} /> Roles Needed
           </p>
           <div className="flex flex-wrap gap-2">
@@ -171,9 +171,9 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
       {/* Description */}
       {card.description && (
         <div className="mb-6 flex-1">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-2">Description</p>
-          <div className="bg-white/[0.03] rounded-xl p-4 border border-white/[0.05] shadow-inner">
-            <p className="text-[13px] text-white/70 leading-relaxed font-medium">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#6B6B6B] mb-2">Description</p>
+          <div className="bg-[#F3F2EE] rounded-xl p-4 border border-[#E8E6E0] shadow-inner">
+            <p className="text-[13px] text-[#4A4A4A] leading-relaxed font-medium">
               {card.description}
             </p>
           </div>
@@ -182,17 +182,17 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
       </div>
 
       {/* Fixed footer - never scrolls away */}
-      <div className="border-t border-white/10 p-4 space-y-3 shrink-0 bg-black/20 backdrop-blur-md relative z-20">
+      <div className="border-t border-[#E8E6E0] p-4 space-y-3 shrink-0 bg-black/20 backdrop-blur-md relative z-20">
         {/* Arrow navigation */}
         {totalCards > 1 && (
           <div className="flex items-center justify-between px-2">
-            <button onClick={onPrev} className="p-2 text-white/50 hover:text-white transition">
+            <button onClick={onPrev} className="p-2 text-[#6B6B6B] hover:text-[#1A1A1A] transition">
               <ChevronLeft size={20} />
             </button>
-            <span className="text-[10px] font-black uppercase tracking-widest text-white/40">
+            <span className="text-[10px] font-black uppercase tracking-widest text-[#6B6B6B]">
               Card {currentIndex + 1} of {totalCards}
             </span>
-            <button onClick={onNext} className="p-2 text-white/50 hover:text-white transition">
+            <button onClick={onNext} className="p-2 text-[#6B6B6B] hover:text-[#1A1A1A] transition">
               <ChevronRight size={20} />
             </button>
           </div>
@@ -216,7 +216,7 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
               </p>
             )}
             {appStatus === 'rejected' && (
-              <p className="text-white/40 text-xs text-center mt-1">
+              <p className="text-[#6B6B6B] text-xs text-center mt-1">
                 Application not selected this time. Keep building! 💪
               </p>
             )}

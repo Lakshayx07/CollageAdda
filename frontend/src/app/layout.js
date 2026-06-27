@@ -29,7 +29,7 @@ export default function RootLayout({ children }) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
         <script
@@ -37,13 +37,8 @@ export default function RootLayout({ children }) {
             __html: `
               (function() {
                 try {
-                  var saved = localStorage.getItem("campus_adda_theme");
-                  if (saved) {
-                    document.documentElement.setAttribute("data-theme", saved);
-                  } else {
-                    var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-                    document.documentElement.setAttribute("data-theme", prefersDark ? "dark" : "light");
-                  }
+                  localStorage.setItem("campus_adda_theme", "light");
+                  document.documentElement.setAttribute("data-theme", "light");
                 } catch (e) {}
               })();
             `,

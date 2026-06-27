@@ -58,7 +58,7 @@ export default function UniversityBadges({ userId }) {
             className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-bold cursor-default transition-transform hover:scale-105 overflow-hidden ${getBadgeStyle(badge.rank)}`}
           >
             {badge.rank === 1 && (
-              <span className="absolute inset-0 bg-white/30 translate-x-[-100%] group-hover:animate-[shimmer_1.5s_infinite] skew-x-[-20deg]" />
+              <span className="absolute inset-0 bg-[#F3F2EE] translate-x-[-100%] group-hover:animate-[shimmer_1.5s_infinite] skew-x-[-20deg]" />
             )}
             <span className="relative z-10 flex items-center space-x-1">
               <span>{getBadgeIcon(badge.rank)}</span>
@@ -70,7 +70,7 @@ export default function UniversityBadges({ userId }) {
           </motion.div>
           
           {/* Tooltip */}
-          <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-[10px] sm:text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-20 shadow-lg">
+          <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-[#1A1A1A] text-[10px] sm:text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-20 shadow-lg">
             {badge.university} ({badge.count} connections)
           </div>
         </div>

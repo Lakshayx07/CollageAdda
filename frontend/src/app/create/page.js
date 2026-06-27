@@ -50,7 +50,7 @@ export default function CreatePage() {
               <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-muted">Campus post</p>
             </div>
           </div>
-          <div className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-muted sm:flex">
+          <div className="hidden items-center gap-2 rounded-full border border-[#E8E6E0] bg-[#F3F2EE] px-3 py-2 text-xs font-semibold text-muted sm:flex">
             <UsersRound size={14} />
             Student feed
           </div>
@@ -59,14 +59,14 @@ export default function CreatePage() {
 
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-6 sm:px-5 sm:py-8">
         <section className="app-panel overflow-hidden rounded-[1.75rem]">
-          <div className="border-b border-white/10 p-5 sm:p-6">
+          <div className="border-b border-[#E8E6E0] p-5 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.22em] text-primary">New update</p>
-                <h2 className="mt-2 text-2xl font-black tracking-tight text-white">What is happening on campus?</h2>
+                <h2 className="mt-2 text-2xl font-black tracking-tight text-[#1A1A1A]">What is happening on campus?</h2>
               </div>
               <div className="brand-mark flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl">
-                <Sparkles size={22} className="text-white" />
+                <Sparkles size={22} className="text-[#1A1A1A]" />
               </div>
             </div>
           </div>
@@ -79,13 +79,13 @@ export default function CreatePage() {
               onChange={(e) => setContent(e.target.value)}
               placeholder="Share a thought, event, win, question, or campus moment..."
               rows={8}
-              className="input-surface w-full resize-none rounded-[1.35rem] py-4 pl-12 pr-4 text-sm leading-6 placeholder:text-white/25"
+              className="input-surface w-full resize-none rounded-[1.35rem] py-4 pl-12 pr-4 text-sm leading-6 placeholder:text-[#888888]"
             />
           </div>
 
-            <div className="flex flex-col gap-3 border-t border-white/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 border-t border-[#E8E6E0] pt-5 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2 text-xs font-semibold text-muted">
-                <button className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-white/70 transition hover:border-primary/40 hover:text-white" type="button">
+                <button className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#E8E6E0] bg-[#F3F2EE] text-[#4A4A4A] transition hover:border-primary/40 hover:text-[#1A1A1A]" type="button">
                   <ImagePlus size={18} />
                 </button>
                 <span>{content.trim().length} characters</span>

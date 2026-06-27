@@ -1,88 +1,62 @@
 @import "tailwindcss";
 
 /* ══════════════════════════════════════════════
-   STEP 1 — THEME SYSTEM
+   STEP 1 — THEME SYSTEM (Light-first warm UI)
 ══════════════════════════════════════════════ */
 :root {
-  color-scheme: dark;
-}
-
-[data-theme="dark"], :root {
-  --color-bg-base: #0d0d1a;
-  --color-bg-elevated: #13131f;
-  --color-bg-card: #1a1a2e;
-  --color-bg-subtle: rgba(255,255,255,0.05);
-  --color-bg-muted: rgba(255,255,255,0.08);
-
-  --color-text-primary: #ffffff;
-  --color-text-secondary: #9ca3af;
-  --color-text-muted: rgba(255,255,255,0.45);
-  --color-text-placeholder: rgba(255,255,255,0.3);
-
-  --color-border: rgba(255,255,255,0.08);
-  --color-border-strong: rgba(255,255,255,0.15);
-
-  --color-icon: rgba(255,255,255,0.55);
-  --color-divider: rgba(255,255,255,0.06);
-  --color-shadow: rgba(0,0,0,0.5);
-  --color-overlay: rgba(0,0,0,0.6);
-  --color-input-bg: rgba(255,255,255,0.06);
-  --color-pill-bg: rgba(255,255,255,0.1);
-  --color-hover: rgba(255,255,255,0.05);
-
-  /* Message Bubbles */
-  --msg-received-bg: #1e1e35;
-  --msg-received-text: #ffffff;
-
-  /* CA Phase 2 New Design Variables */
-  --bg-primary: #0d0f1a;
-  --bg-card: #13152b;
-  --bg-card-hover: #1a1d35;
-  --border-purple: rgba(124, 58, 237, 0.25);
-  --border-purple-hover: rgba(124, 58, 237, 0.45);
-  --accent: #7c3aed;
-  --accent-dark: #6d28d9;
-  --accent-glow: rgba(124, 58, 237, 0.15);
-  --text-primary: #ffffff;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-}
-
-[data-theme="light"] {
   color-scheme: light;
-  --color-bg-base: #f0f4ff;
-  --color-bg-elevated: #e8eeff;
-  --color-bg-card: #ffffff;
+}
+
+/* DEFAULT (light warm) theme — applied to :root and light mode */
+[data-theme="light"], :root {
+  --color-bg-base: #FAFAF8;
+  --color-bg-elevated: #F5F4F0;
+  --color-bg-card: #FFFFFF;
   --color-bg-subtle: rgba(0,0,0,0.03);
   --color-bg-muted: rgba(0,0,0,0.05);
 
-  --color-text-primary: #0f172a;
-  --color-text-secondary: #475569;
-  --color-text-muted: #94a3b8;
-  --color-text-placeholder: #94a3b8;
+  --color-text-primary: #1A1A1A;
+  --color-text-secondary: #6B6B6B;
+  --color-text-muted: #888888;
+  --color-text-placeholder: #AAAAAA;
 
-  --color-border: #e2e8f0;
-  --color-border-strong: #cbd5e1;
+  --color-border: #E8E6E0;
+  --color-border-strong: #D1CFC8;
 
-  --color-icon: #64748b;
-  --color-divider: #e2e8f0;
-  --color-shadow: rgba(0,0,0,0.08);
+  --color-icon: #4A4A4A;
+  --color-divider: #EBEBEB;
+  --color-shadow: rgba(0,0,0,0.06);
   --color-overlay: rgba(0,0,0,0.4);
-  --color-input-bg: #f1f5f9;
-  --color-pill-bg: #e2e8f0;
-  --color-hover: rgba(0,0,0,0.03);
+  --color-input-bg: #F3F2EE;
+  --color-pill-bg: #F0EFE9;
+  --color-hover: #FFF8EC;
 
   /* Message Bubbles */
-  --msg-received-bg: #e2e8f0;
-  --msg-received-text: #0f172a;
+  --msg-received-bg: #F0EFE9;
+  --msg-received-text: #1A1A1A;
+
+  /* CA Core Design Variables */
+  --bg-primary: #FAFAF8;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #F9F8F5;
+  --border-purple: #E8E6E0;
+  --border-purple-hover: #D4A843;
+  --accent: #C8922A;
+  --accent-dark: #B07D20;
+  --accent-glow: rgba(200, 146, 42, 0.15);
+  --text-primary: #1A1A1A;
+  --text-secondary: #6B6B6B;
+  --text-muted: #888888;
 }
+
+/* DARK theme overrides */
 
 /* These NEVER change between themes */
 :root {
-  --color-accent-from: #7c3aed;
-  --color-accent-to: #06b6d4;
-  --color-accent-gradient: linear-gradient(135deg, #7c3aed, #06b6d4);
-  --color-gold: #f59e0b;
+  --color-accent-from: #C8922A;
+  --color-accent-to: #D4A843;
+  --color-accent-gradient: linear-gradient(135deg, #C8922A, #D4A843);
+  --color-gold: #C8922A;
   --color-success: #10b981;
   --color-danger: #ef4444;
 }
@@ -94,15 +68,15 @@
   --color-primary: var(--color-accent-from);
   --color-primary-end: var(--color-accent-to);
 
-  /* CA Phase 3 Tailwind Variables */
-  --color-navy: #0d0f1a;
-  --color-navy-card: #13152b;
-  --color-navy-hover: #1a1d35;
-  --color-accent: #7c3aed;
-  --color-accent-dark: #6d28d9;
-  --color-accent-glow: rgba(124, 58, 237, 0.15);
-  --shadow-purple-glow: 0 0 20px rgba(124, 58, 237, 0.3);
-  --shadow-purple-glow-lg: 0 0 40px rgba(124, 58, 237, 0.2);
+  /* CA Theme Tailwind Variables */
+  --color-navy: #FAFAF8;
+  --color-navy-card: #FFFFFF;
+  --color-navy-hover: #F9F8F5;
+  --color-accent: #C8922A;
+  --color-accent-dark: #B07D20;
+  --color-accent-glow: rgba(200, 146, 42, 0.15);
+  --shadow-purple-glow: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-purple-glow-lg: 0 4px 16px rgba(0,0,0,0.08);
 }
 
 /* ══════════════════════════════════════════════
@@ -112,11 +86,7 @@
 body {
   background-color: var(--bg-primary) !important;
   color: var(--text-primary) !important;
-  background-image: radial-gradient(
-    ellipse at 50% 0%, 
-    rgba(124, 58, 237, 0.10) 0%, 
-    transparent 65%
-  );
+  background-image: none;
   background-attachment: fixed;
   transition: background-color 0.3s ease, color 0.2s ease;
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
@@ -133,29 +103,30 @@ body {
   border: 1px solid var(--border-purple);
   border-radius: 0.75rem;
   transition: all 0.2s ease;
+  box-shadow: 0 1px 3px var(--color-shadow);
 }
 .ca-card:hover {
   border-color: var(--border-purple-hover);
-  box-shadow: 0 0 24px var(--accent-glow);
+  box-shadow: 0 4px 12px var(--color-shadow);
 }
 
 /* Button utility class */
 .ca-btn-primary {
-  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  background: linear-gradient(135deg, #C8922A, #D4A843);
   color: white;
   border-radius: 9999px;
   font-weight: 600;
   transition: all 0.2s ease;
 }
 .ca-btn-primary:hover {
-  box-shadow: 0 0 20px rgba(124, 58, 237, 0.5);
+  box-shadow: 0 4px 16px rgba(200, 146, 42, 0.4);
   transform: translateY(-1px);
 }
 
 /* Input utility class */
 .ca-input {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-purple);
+  background: var(--color-input-bg);
+  border: 1px solid var(--color-border);
   color: var(--text-primary);
   border-radius: 0.5rem;
   transition: all 0.2s ease;
@@ -168,25 +139,25 @@ body {
 
 /* Active nav item */
 .ca-nav-active {
-  background: linear-gradient(135deg, rgba(124,58,237,0.3), rgba(109,40,217,0.2));
+  background: #C8922A;
   color: #ffffff;
-  box-shadow: 0 0 15px rgba(124, 58, 237, 0.3);
+  box-shadow: 0 2px 8px rgba(200, 146, 42, 0.35);
   border-radius: 0.75rem;
 }
 
 /* Poll bar */
 .ca-poll-bar-leading {
-  background: linear-gradient(90deg, #7c3aed, #6d28d9);
+  background: linear-gradient(90deg, #C8922A, #D4A843);
 }
 .ca-poll-bar-default {
-  background: rgba(51, 65, 85, 0.5);
+  background: rgba(200, 146, 42, 0.12);
 }
 
 /* Badge/chip */
 .ca-badge {
-  background: rgba(124, 58, 237, 0.2);
-  color: #c4b5fd;
-  border: 1px solid rgba(124, 58, 237, 0.3);
+  background: rgba(200, 146, 42, 0.12);
+  color: #B07D20;
+  border: 1px solid rgba(200, 146, 42, 0.3);
   border-radius: 9999px;
   padding: 2px 10px;
   font-size: 0.75rem;
@@ -194,7 +165,7 @@ body {
 
 /* Chat bubbles */
 .ca-chat-sent {
-  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  background: linear-gradient(135deg, #C8922A, #D4A843);
   color: white;
   border-radius: 18px 18px 4px 18px;
 }
@@ -206,30 +177,8 @@ body {
 }
 
 
-/* Keep the cool background grid for dark mode only */
-[data-theme="dark"] body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  opacity: 0.025;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-  z-index: -1;
-}
+/* Dark mode body decorations */
 
-[data-theme="dark"] body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
-  background-size: 48px 48px;
-  mask-image: radial-gradient(circle at center, black 35%, transparent 90%);
-  opacity: 0.35;
-  z-index: -1;
-}
 
 /* All cards and panels */
 .card, [class*="card"], 
@@ -378,16 +327,16 @@ header, [class*="navbar"], [class*="topbar"], .page-header {
   color: #ffffff !important; 
 }
 
-/* Gold score in leaderboard */
+/* Gold/amber score in leaderboard */
 [class*="score-value"],
 [class*="total-score"] {
   color: var(--color-gold) !important;
 }
 
-/* Rank badges stay yellow */
+/* Rank badges stay amber */
 [class*="rank-badge"] {
-  background-color: #f59e0b !important;
-  color: #000000 !important;
+  background-color: #C8922A !important;
+  color: #ffffff !important;
 }
 
 /* Global Pulse Leader card */
@@ -402,10 +351,10 @@ header, [class*="navbar"], [class*="topbar"], .page-header {
   color: #ffffff !important;
 }
 
-/* DROP button always orange */
+/* DROP button always amber */
 [class*="drop-btn"] {
-  background: #f59e0b !important;
-  color: #000 !important;
+  background: #C8922A !important;
+  color: #ffffff !important;
 }
 
 /* Heat count always keeps its color */
@@ -413,11 +362,11 @@ header, [class*="navbar"], [class*="topbar"], .page-header {
   color: #f97316 !important;
 }
 
-/* Brand mark always colored */
+/* Brand mark always colored — golden amber */
 .brand-mark {
   background:
     radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.22), transparent 35%),
-    linear-gradient(135deg, var(--color-accent-from), var(--color-accent-to) 55%, var(--color-gold));
+    linear-gradient(135deg, #C8922A, #D4A843 55%, #e8b84b);
 }
 
 .brand-mark * {
@@ -448,7 +397,7 @@ header, [class*="navbar"], [class*="topbar"], .page-header {
    MESSAGE BUBBLES AND LAYOUT
 ══════════════════════════════════════════════ */
 .message-bubble-sent {
-  background: linear-gradient(135deg, #7c3aed, #06b6d4) !important;
+  background: linear-gradient(135deg, #C8922A, #D4A843) !important;
   color: #ffffff !important;
   border-radius: 18px 18px 4px 18px;
   margin-left: auto;
@@ -851,12 +800,12 @@ body:not(.messages-page-active) {
 }
 
 .mobile-bottom-nav .nav-item.active {
-  color: #7c3aed;
+  color: #C8922A;
 }
 
 .mobile-bottom-nav .nav-item.active svg,
 .mobile-bottom-nav .nav-item.active .icon {
-  color: #7c3aed;
+  color: #C8922A;
 }
 
 /* Push page content above bottom nav */

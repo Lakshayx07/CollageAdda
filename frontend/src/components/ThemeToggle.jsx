@@ -12,7 +12,7 @@ export default function ThemeToggle({ compact = false }) {
       <button
         onClick={toggle}
         aria-label="Toggle theme"
-        className="flex items-center justify-center w-9 h-9 rounded-2xl border border-white/8 bg-white/[0.04] text-white/50 hover:text-white hover:bg-white/10 transition-all duration-200"
+        className="flex items-center justify-center w-9 h-9 rounded-2xl border border-white/8 bg-[#F3F2EE] text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#F3F2EE] transition-all duration-200"
       >
         <motion.span
           key={isDark ? "moon" : "sun"}

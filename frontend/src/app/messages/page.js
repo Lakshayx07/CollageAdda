@@ -86,13 +86,15 @@ function MessagesContent() {
       if (res.ok) {
         const savedMsg = await res.json();
         if (socketRef.current) {
-          socketRef.current.emit("send_message", {
+          socketRef.current.emit("forward_message", {
             room: roomId,
             senderId: u._id || u.id,
             senderName: u.name,
             text: textMsg,
             mediaUrl: "",
-            mediaType: "none"
+            mediaType: "none",
+            _id: savedMsg._id,
+            createdAt: savedMsg.createdAt || new Date().toISOString()
           });
         }
         setMessages(prev => {
@@ -214,7 +216,7 @@ function MessagesContent() {
             id: room._id,
             name: room.isGroup ? (room.groupName || `${room.university} Hub`) : (room.participants.find(p => p._id !== u._id)?.name || "Chat"),
             type: room.isGroup ? "group" : "private",
-            avatar: room.isGroup ? <Users size={20} className="text-purple-400" /> : (room.participants.find(p => p._id !== u._id)?.profilePic || `https://ui-avatars.com/api/?name=User&background=7C3AED&color=fff`),
+            avatar: room.isGroup ? <Users size={20} className="text-[#C8922A]" /> : (room.participants.find(p => p._id !== u._id)?.profilePic || `https://ui-avatars.com/api/?name=User&background=7C3AED&color=fff`),
             lastMsg: room.lastMessage?.text || "No messages yet",
             time: room.lastMessage ? new Date(room.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "",
             timestamp: room.lastMessage?.createdAt ? new Date(room.lastMessage.createdAt).getTime() : new Date(room.updatedAt || room.createdAt || 0).getTime(),
@@ -290,7 +292,8 @@ function MessagesContent() {
     return () => {
       if (socketRef.current) socketRef.current.disconnect();
     };
-  }, [searchParams, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (activeChat && socketRef.current) {
@@ -357,7 +360,7 @@ function MessagesContent() {
     reader.readAsDataURL(file);
   };
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if ((!input.trim() && !selectedMedia) || !activeChat || isSending) return;
 
     setIsSending(true);
@@ -404,7 +407,40 @@ function MessagesContent() {
       return c;
     }));
     
-    socketRef.current.emit('send_message', data);
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+      
+      const res = await fetch(`${apiUrl}/api/chat/rooms/${activeChat.id}/messages`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          text: data.text,
+          mediaUrl: data.mediaUrl,
+          mediaType: data.mediaType
+        })
+      });
+      
+      if (res.ok) {
+        const savedMsg = await res.json();
+        if (socketRef.current) {
+          // Forward the saved message to other users via socket
+          socketRef.current.emit('forward_message', {
+            ...data,
+            _id: savedMsg._id,
+            createdAt: savedMsg.createdAt || new Date().toISOString()
+          });
+        }
+      } else {
+        console.error("Failed to send message via API");
+      }
+    } catch (err) {
+      console.error("Error sending message:", err);
+    }
+
     setInput("");
     setSelectedMedia(null);
     setMediaType('none');
@@ -455,7 +491,7 @@ function MessagesContent() {
           id: newRoom._id,
           name: newRoom.groupName,
           type: "group",
-          avatar: <Users size={20} className="text-purple-400" />,
+          avatar: <Users size={20} className="text-[#C8922A]" />,
           lastMsg: "Group created",
           time: "",
           timestamp: Date.now(),
@@ -603,13 +639,13 @@ function MessagesContent() {
         initial={{ x: -20, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         className={clsx(
-          "inbox-panel bg-[#13152b] border-r border-purple-900/20",
+          "inbox-panel bg-white border-r border-[#E8E6E0]",
           activeChat && "chat-active"
         )}
       >
         <header className="inbox-header flex flex-col pt-4">
           <div className="mb-4 flex items-center justify-between sm:mb-6">
-            <h1 className="text-2xl font-bold text-white tracking-tight sm:text-3xl">Inbox</h1>
+            <h1 className="text-2xl font-bold text-[#1A1A1A] tracking-tight sm:text-3xl">Inbox</h1>
             <motion.button 
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
@@ -617,20 +653,20 @@ function MessagesContent() {
                 setShowCreateGroup(true);
                 fetchConnections();
               }}
-              className="p-3 rounded-2xl text-purple-300 border border-white/10 bg-white/[0.05] hover:bg-white/[0.08]"
+              className="p-3 rounded-2xl text-[#C8922A] border border-[#E8E6E0] bg-[#F3F2EE] hover:bg-[#F3F2EE]"
             >
               <Plus size={22} />
             </motion.button>
           </div>
 
           <div className="inbox-search relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-purple-400 transition-colors" size={20} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6B6B6B] group-focus-within:text-[#C8922A] transition-colors" size={20} />
             <input
               type="text"
               value={chatSearch}
               onChange={e => setChatSearch(e.target.value)}
               placeholder="Search conversations..."
-              className="input-surface w-full rounded-[1.25rem] py-3.5 pl-12 pr-4 text-sm placeholder:text-white/25"
+              className="input-surface w-full rounded-[1.25rem] py-3.5 pl-12 pr-4 text-sm placeholder:text-[#888888]"
             />
           </div>
         </header>
@@ -646,15 +682,15 @@ function MessagesContent() {
               className={clsx(
                 "group relative flex w-full items-center space-x-3 rounded-[1.35rem] p-3 transition-all sm:space-x-4 sm:rounded-[1.5rem] sm:p-4",
                 activeChat?.id === chat.id 
-                  ? "bg-purple-900/30 border-l-2 border-purple-500 shadow-xl rounded-l-none" 
-                  : "hover:bg-white/[0.03] border border-transparent"
+                  ? "bg-purple-900/30 border-l-2 border-[#C8922A] shadow-xl rounded-l-none" 
+                  : "hover:bg-[#F3F2EE] border border-transparent"
               )}
             >
               <div className="relative">
                 <div className="h-12 w-12 rounded-full p-[2px] gradient-bg shadow-lg sm:h-14 sm:w-14">
-                  <div className="w-full h-full rounded-full bg-background flex items-center justify-center overflow-hidden">
+                  <div className="w-full h-full rounded-full bg-[#FAFAF8] flex items-center justify-center overflow-hidden">
                     {chat.type === "group" ? (
-                      <div className="text-purple-400">{chat.avatar}</div>
+                      <div className="text-[#C8922A]">{chat.avatar}</div>
                     ) : (
                       <img 
                         src={chat.avatar} 
@@ -669,20 +705,20 @@ function MessagesContent() {
               <div className="flex-1 text-left min-w-0">
                 <div className="flex justify-between items-center mb-1">
                   <div className="flex min-w-0 items-center">
-                    <p className="font-bold text-[15px] text-white truncate leading-tight">{chat.name}</p>
+                    <p className="font-bold text-[15px] text-[#1A1A1A] truncate leading-tight">{chat.name}</p>
                     {chat.partner && <VerifiedBadge user={chat.partner} size={12} />}
                   </div>
-                  <span className="text-[10px] text-white/30 font-medium">{chat.time}</span>
+                  <span className="text-[10px] text-[#6B6B6B] font-medium">{chat.time}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <p className={clsx(
                     "text-xs truncate flex-1 leading-normal",
-                    chat.unreadCount > 0 ? "text-white font-bold" : "text-white/40"
+                    chat.unreadCount > 0 ? "text-[#1A1A1A] font-bold" : "text-[#6B6B6B]"
                   )}>
                     {chat.lastMsg}
                   </p>
                   {chat.unreadCount > 0 && (
-                    <span className="ml-3 px-2 py-0.5 min-w-[20px] bg-[#EC4899] text-white text-[10px] font-black rounded-full shadow-lg shadow-pink-500/20">
+                    <span className="ml-3 px-2 py-0.5 min-w-[20px] bg-[#EC4899] text-[#1A1A1A] text-[10px] font-black rounded-full shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)]">
                       {chat.unreadCount}
                     </span>
                   )}
@@ -702,7 +738,7 @@ function MessagesContent() {
 
       {/* Chat Area */}
       <div className={clsx(
-        "chat-panel bg-[#0d0f1a]",
+        "chat-panel bg-white",
         activeChat && "chat-active"
       )}>
         {activeChat ? (
@@ -710,14 +746,14 @@ function MessagesContent() {
             {/* Chat Header */}
             <header className="chat-header page-header flex items-center justify-between px-4 md:px-6 py-2">
               <div className="flex items-center space-x-3 min-w-0">
-                <button onClick={closeChat} className="lg:hidden p-2 text-white/40 hover:text-white bg-white/5 rounded-full mr-1 flex-shrink-0" aria-label="Back to conversations">
+                <button onClick={closeChat} className="lg:hidden p-2 text-[#6B6B6B] hover:text-[#1A1A1A] bg-[#F3F2EE] rounded-full mr-1 flex-shrink-0" aria-label="Back to conversations">
                   <ChevronLeft size={20} />
                 </button>
                 <div className="relative flex-shrink-0">
                   <div className="w-9 h-9 rounded-full p-[2px] gradient-bg">
-                    <div className="w-full h-full rounded-full bg-background flex items-center justify-center overflow-hidden">
+                    <div className="w-full h-full rounded-full bg-[#FAFAF8] flex items-center justify-center overflow-hidden">
                       {activeChat.type === "group" ? (
-                        <div className="w-full h-full gradient-bg flex items-center justify-center text-white font-black text-sm">
+                        <div className="w-full h-full gradient-bg flex items-center justify-center text-[#1A1A1A] font-black text-sm">
                           {activeChat.name.charAt(0)}
                         </div>
                       ) : <img 
@@ -730,7 +766,7 @@ function MessagesContent() {
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center space-x-1.5 min-w-0">
-                    <h2 className="font-bold text-white text-[14px] truncate max-w-[120px] xs:max-w-[150px] sm:max-w-none leading-tight">{activeChat.name}</h2>
+                    <h2 className="font-bold text-[#1A1A1A] text-[14px] truncate max-w-[120px] xs:max-w-[150px] sm:max-w-none leading-tight">{activeChat.name}</h2>
                     {activeChat.partner && <VerifiedBadge user={activeChat.partner} size={12} />}
                   </div>
                 </div>
@@ -743,7 +779,7 @@ function MessagesContent() {
                       setShowMemberCount(true);
                       setTimeout(() => setShowMemberCount(false), 10000);
                     }}
-                    className="p-2 text-white/40 hover:text-white hover:bg-white/5 rounded-xl transition-all flex items-center justify-center min-w-[32px]"
+                    className="p-2 text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#F3F2EE] rounded-xl transition-all flex items-center justify-center min-w-[32px]"
                   >
                     <AnimatePresence mode="wait">
                       {showMemberCount ? (
@@ -752,7 +788,7 @@ function MessagesContent() {
                           initial={{ opacity: 0, scale: 0.8 }}
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0, scale: 0.8 }}
-                          className="text-purple-400 font-black text-xs"
+                          className="text-[#C8922A] font-black text-xs"
                         >
                           {activeChat.participants?.length || 0}
                         </motion.span>
@@ -772,7 +808,7 @@ function MessagesContent() {
                 <div className="relative">
                   <button 
                     onClick={() => setShowChatOptions(!showChatOptions)}
-                    className="p-2 text-white/40 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                    className="p-2 text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#F3F2EE] rounded-xl transition-all"
                   >
                     <MoreVertical size={18} />
                   </button>
@@ -783,13 +819,13 @@ function MessagesContent() {
                         initial={{ opacity: 0, scale: 0.95, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                        className="absolute right-0 mt-2 w-48 glass rounded-2xl border border-white/5 shadow-2xl py-2 z-50 overflow-hidden"
+                        className="absolute right-0 mt-2 w-48 bg-[#F9F8F5] border border-[#E8E6E0] rounded-2xl border border-[#E8E6E0] shadow-2xl py-2 z-50 overflow-hidden"
                       >
                         {activeChat.type === 'group' ? (
                           <>
                             <button 
                               onClick={() => { setShowAddMemberModal(true); setShowChatOptions(false); fetchConnections(); }}
-                              className="w-full text-left px-4 py-3 text-sm font-bold text-green-500 hover:bg-green-500/10 flex items-center space-x-2 transition-colors border-b border-white/5"
+                              className="w-full text-left px-4 py-3 text-sm font-bold text-green-500 hover:bg-green-500/10 flex items-center space-x-2 transition-colors border-b border-[#E8E6E0]"
                             >
                               <UserPlus size={16} />
                               <span>Add Member</span>
@@ -803,7 +839,7 @@ function MessagesContent() {
                             </button>
                           </>
                         ) : (
-                          <div className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-white/20">
+                          <div className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-[#888888]">
                             No options available
                           </div>
                         )}
@@ -817,7 +853,7 @@ function MessagesContent() {
             {/* Chat Messages */}
             <div className="chat-messages-area custom-scrollbar relative">
               <div className="flex justify-center mb-6 shrink-0">
-                <span className="text-[10px] glass px-4 py-1.5 rounded-full text-white/30 font-bold uppercase tracking-[0.2em] border border-white/5">
+                <span className="text-[10px] bg-[#F9F8F5] border border-[#E8E6E0] px-4 py-1.5 rounded-full text-[#6B6B6B] font-bold uppercase tracking-[0.2em] border border-[#E8E6E0]">
                   Begin your secure campus connection
                 </span>
               </div>
@@ -830,7 +866,7 @@ function MessagesContent() {
                     if (msg.isSystem) {
                       return (
                         <div key={msg.id} className="flex justify-center w-full my-4">
-                          <span className="text-[10px] glass px-4 py-1.5 rounded-full text-white/30 font-bold uppercase tracking-[0.2em] border border-white/5">
+                          <span className="text-[10px] bg-[#F9F8F5] border border-[#E8E6E0] px-4 py-1.5 rounded-full text-[#6B6B6B] font-bold uppercase tracking-[0.2em] border border-[#E8E6E0]">
                             {msg.text}
                           </span>
                         </div>
@@ -852,7 +888,7 @@ function MessagesContent() {
                           {showAvatar ? (
                             <img 
                               src={msg.senderAvatar} 
-                              className="w-full h-full rounded-full object-cover border border-white/10" 
+                              className="w-full h-full rounded-full object-cover border border-[#E8E6E0]" 
                             />
                           ) : null}
                         </div>
@@ -863,7 +899,7 @@ function MessagesContent() {
                         isMe ? "items-end" : "items-start"
                       )}>
                         {!isMe && showAvatar && (
-                          <span className="text-[10px] text-white/30 font-bold mb-1 ml-1">
+                          <span className="text-[10px] text-[#6B6B6B] font-bold mb-1 ml-1">
                             {msg.senderName.split(' ')[0]}
                           </span>
                         )}
@@ -892,7 +928,7 @@ function MessagesContent() {
                               : "ca-chat-received"
                           )}>
                             {msg.mediaUrl && (
-                              <div className="mb-2 rounded-xl overflow-hidden border border-white/10">
+                              <div className="mb-2 rounded-xl overflow-hidden border border-[#E8E6E0]">
                                 {msg.mediaType === 'video' ? (
                                   <video src={msg.mediaUrl} controls className="max-w-full h-auto max-h-48 object-cover" />
                                 ) : (
@@ -905,11 +941,11 @@ function MessagesContent() {
                         )}
                         
                         <div className="flex items-center space-x-1 mt-1">
-                          <span className="text-[11px] text-white/40 font-semibold">{msg.time}</span>
+                          <span className="text-[11px] text-[#6B6B6B] font-semibold">{msg.time}</span>
                           {isMe && (
                             <div className={clsx(
                               "w-1 h-1 rounded-full",
-                              msg.status === 'sending' ? "bg-white/20 animate-pulse" : "bg-cyan-400 shadow-[0_0_5px_rgba(34,211,238,0.5)]"
+                              msg.status === 'sending' ? "bg-[#F3F2EE] animate-pulse" : "bg-cyan-400 shadow-[0_0_5px_rgba(34,211,238,0.5)]"
                             )} />
                           )}
                         </div>
@@ -925,12 +961,12 @@ function MessagesContent() {
             {/* Selected Media Preview */}
             <AnimatePresence>
               {selectedMedia && (
-                <div className="px-4 py-2 shrink-0 bg-background/80 backdrop-blur-xl border-t border-white/5 relative z-20">
+                <div className="px-4 py-2 shrink-0 bg-[#FAFAF8]/80 backdrop-blur-xl border-t border-[#E8E6E0] relative z-20">
                   <motion.div 
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    className="relative rounded-2xl overflow-hidden border border-white/10 max-h-32 w-32"
+                    className="relative rounded-2xl overflow-hidden border border-[#E8E6E0] max-h-32 w-32"
                   >
                     {mediaType === 'video' ? (
                       <video src={selectedMedia} className="w-full h-full object-cover" />
@@ -939,7 +975,7 @@ function MessagesContent() {
                     )}
                     <button 
                       onClick={() => { setSelectedMedia(null); setMediaType('none'); }}
-                      className="absolute top-1 right-1 bg-black/60 backdrop-blur-md text-white p-1 rounded-full hover:bg-black/80 transition-all"
+                      className="absolute top-1 right-1 bg-black/60 backdrop-blur-md text-[#1A1A1A] p-1 rounded-full hover:bg-black/40 transition-all"
                     >
                       <X size={12} />
                     </button>
@@ -949,11 +985,11 @@ function MessagesContent() {
             </AnimatePresence>
 
             {/* Quick Reply Pills */}
-            <div className="h-11 shrink-0 px-4 py-1.5 overflow-x-auto no-scrollbar flex items-center space-x-2 bg-transparent z-10 border-t border-white/[0.02]">
+            <div className="h-11 shrink-0 px-4 py-1.5 overflow-x-auto no-scrollbar flex items-center space-x-2 bg-transparent z-10 border-t border-[#E8E6E0]">
               {[
                 { text: "Sup?", icon: <Zap size={12} className="text-yellow-400" /> },
-                { text: "Let's meet!", icon: <Users size={12} className="text-purple-400" /> },
-                { text: "Class?", icon: <TrendingUp size={12} className="text-cyan-400" /> },
+                { text: "Let's meet!", icon: <Users size={12} className="text-[#C8922A]" /> },
+                { text: "Class?", icon: <TrendingUp size={12} className="text-[#C8922A]" /> },
                 { text: "Exam check", icon: <TrendingUp size={12} className="text-blue-400" /> },
                 { text: "Canteen?", icon: <Flame size={12} className="text-orange-400" /> }
               ].map(pill => (
@@ -962,7 +998,7 @@ function MessagesContent() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setInput(pill.text)}
-                  className="whitespace-nowrap px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-full text-[10px] font-bold text-white/55 hover:text-white transition-all border border-white/5 flex items-center space-x-1.5 shrink-0"
+                  className="whitespace-nowrap px-3 py-1.5 bg-[#F3F2EE] hover:bg-[#F3F2EE] rounded-full text-[10px] font-bold text-[#888888]5 hover:text-[#1A1A1A] transition-all border border-[#E8E6E0] flex items-center space-x-1.5 shrink-0"
                 >
                   {pill.icon}
                   <span>{pill.text}</span>
@@ -971,12 +1007,12 @@ function MessagesContent() {
             </div>
 
             {/* Message Input */}
-            <div className="relative z-20 flex min-h-[60px] w-full shrink-0 items-center justify-between border-t border-white/5 bg-background px-3 py-2.5 sm:px-4">
+            <div className="relative z-20 flex min-h-[60px] w-full shrink-0 items-center justify-between border-t border-[#E8E6E0] bg-[#FAFAF8] px-3 py-2.5 sm:px-4">
               <div className="w-full h-full ca-input rounded-full flex items-center px-1.5 py-0.5 shadow-2xl transition-all">
                 {/* Plus button */}
                 <button 
                   onClick={() => setShowAttachments(!showAttachments)}
-                  className="p-2 text-white/40 hover:text-purple-400 hover:bg-white/5 rounded-full transition-all flex items-center justify-center shrink-0"
+                  className="p-2 text-[#6B6B6B] hover:text-[#C8922A] hover:bg-[#F3F2EE] rounded-full transition-all flex items-center justify-center shrink-0"
                 >
                   <Plus size={20} className={clsx("transition-transform duration-500", showAttachments && "rotate-45")} />
                 </button>
@@ -986,8 +1022,8 @@ function MessagesContent() {
                   <button 
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                     className={clsx(
-                      "p-2 hover:bg-white/5 rounded-full transition-all flex items-center justify-center shrink-0",
-                      showEmojiPicker ? "text-yellow-400" : "text-white/40"
+                      "p-2 hover:bg-[#F3F2EE] rounded-full transition-all flex items-center justify-center shrink-0",
+                      showEmojiPicker ? "text-yellow-400" : "text-[#6B6B6B]"
                     )}
                   >
                     <Smile size={20} />
@@ -999,7 +1035,7 @@ function MessagesContent() {
                         initial={{ opacity: 0, y: 10, scale: 0.9 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                        className="absolute bottom-12 left-0 z-50 w-[min(14rem,calc(100vw-2rem))] rounded-[1.5rem] border border-white/10 bg-[#16161D] p-3 shadow-2xl"
+                        className="absolute bottom-12 left-0 z-50 w-[min(14rem,calc(100vw-2rem))] rounded-[1.5rem] border border-[#E8E6E0] bg-[#16161D] p-3 shadow-2xl"
                       >
                         <div className="grid grid-cols-5 gap-1.5">
                           {emojis.map((emoji, i) => (
@@ -1024,7 +1060,7 @@ function MessagesContent() {
                   onKeyDown={e => e.key === "Enter" && sendMessage()}
                   type="text"
                   placeholder="Share a campus moment..."
-                  className="flex-1 bg-transparent py-1 px-2 text-[14px] text-white placeholder:text-white/30 focus:outline-none font-medium min-w-0"
+                  className="flex-1 bg-transparent py-1 px-2 text-[14px] text-[#1A1A1A] placeholder:text-[#6B6B6B] focus:outline-none font-medium min-w-0"
                 />
 
                 {/* Send Button */}
@@ -1035,7 +1071,7 @@ function MessagesContent() {
                   className="ca-btn-primary p-2 rounded-full disabled:opacity-50 disabled:grayscale transition-all flex items-center justify-center shrink-0 w-9 h-9"
                 >
                   {isSending ? (
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-[#E8E6E0] border-t-white rounded-full animate-spin" />
                   ) : (
                     <Send size={16} />
                   )}
@@ -1050,24 +1086,24 @@ function MessagesContent() {
                   initial={{ opacity: 0, y: 10, scale: 0.9 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                  className="absolute bottom-16 left-3 z-50 w-[min(14rem,calc(100vw-1.5rem))] overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#16161D] shadow-2xl sm:left-4 sm:w-56"
+                  className="absolute bottom-16 left-3 z-50 w-[min(14rem,calc(100vw-1.5rem))] overflow-hidden rounded-[1.5rem] border border-[#E8E6E0] bg-[#16161D] shadow-2xl sm:left-4 sm:w-56"
                 >
                   <button 
                     onClick={() => { setShowAttachments(false); fileInputRef.current?.click(); }}
-                    className="w-full flex items-center space-x-4 px-6 py-4 hover:bg-white/5 transition-all text-left group"
+                    className="w-full flex items-center space-x-4 px-6 py-4 hover:bg-[#F3F2EE] transition-all text-left group"
                   >
-                    <div className="bg-purple-500/10 p-2.5 rounded-xl text-purple-400 group-hover:scale-110 transition-transform">
+                    <div className="bg-[#C8922A]/10 p-2.5 rounded-xl text-[#C8922A] group-hover:scale-110 transition-transform">
                       <ImageIcon size={20} />
                     </div>
-                    <span className="text-sm font-bold text-white/80">Gallery</span>
+                    <span className="text-sm font-bold text-[#4A4A4A]">Gallery</span>
                   </button>
                   <button 
-                    className="w-full flex items-center space-x-4 px-6 py-4 hover:bg-white/5 transition-all text-left group border-t border-white/5"
+                    className="w-full flex items-center space-x-4 px-6 py-4 hover:bg-[#F3F2EE] transition-all text-left group border-t border-[#E8E6E0]"
                   >
-                    <div className="bg-cyan-500/10 p-2.5 rounded-xl text-cyan-400 group-hover:scale-110 transition-transform">
+                    <div className="bg-[#C8922A]/10 p-2.5 rounded-xl text-[#C8922A] group-hover:scale-110 transition-transform">
                       <Plus size={20} />
                     </div>
-                    <span className="text-sm font-bold text-white/80">Documents</span>
+                    <span className="text-sm font-bold text-[#4A4A4A]">Documents</span>
                   </button>
                 </motion.div>
               )}
@@ -1081,19 +1117,19 @@ function MessagesContent() {
               <motion.div 
                 animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.6, 0.3] }}
                 transition={{ duration: 4, repeat: Infinity }}
-                className="absolute inset-0 bg-purple-500 blur-3xl rounded-full opacity-20" 
+                className="absolute inset-0 bg-[#C8922A] blur-3xl rounded-full opacity-20" 
               />
-              <div className="w-24 h-24 rounded-[2.5rem] glass flex items-center justify-center relative z-10 border-white/10">
-                <MessageSquare size={44} className="text-purple-500/50" />
+              <div className="w-24 h-24 rounded-[2.5rem] bg-[#F9F8F5] border border-[#E8E6E0] flex items-center justify-center relative z-10 border-[#E8E6E0]">
+                <MessageSquare size={44} className="text-[#C8922A]/50" />
               </div>
             </div>
             <div className="max-w-xs">
-              <h3 className="text-xl font-black text-white mb-2 tracking-tight">Your Inbox is Waiting</h3>
-              <p className="text-sm text-white/30 font-medium leading-relaxed">
+              <h3 className="text-xl font-black text-[#1A1A1A] mb-2 tracking-tight">Your Inbox is Waiting</h3>
+              <p className="text-sm text-[#6B6B6B] font-medium leading-relaxed">
                 Connect with your campus squad or join university hubs to start vibrating.
               </p>
             </div>
-            <button className="gradient-bg px-8 py-3 rounded-full text-sm font-bold text-white shadow-xl shadow-purple-500/10">
+            <button className="gradient-bg px-8 py-3 rounded-full text-sm font-bold text-[#1A1A1A] shadow-xl shadow-[0_4px_14px_rgba(200,146,42,0.15)]">
               New Message
             </button>
           </div>
@@ -1107,38 +1143,38 @@ function MessagesContent() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-end justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-4"
+            className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-3 backdrop-blur-sm sm:p-4"
             onClick={() => setShowCreateGroup(false)}
           >
             <motion.div 
               initial={{ y: 100 }}
               animate={{ y: 0 }}
               exit={{ y: 100 }}
-              className="flex max-h-[88dvh] w-full max-w-md flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#111118] sm:max-h-[85vh] sm:rounded-[2.5rem]"
+              className="flex max-h-[88dvh] w-full max-w-md flex-col overflow-hidden rounded-[1.75rem] border border-[#E8E6E0] bg-[#111118] sm:max-h-[85vh] sm:rounded-[2.5rem]"
               onClick={e => e.stopPropagation()}
             >
-              <div className="p-6 border-b border-white/5 flex items-center justify-between shrink-0">
-                <h3 className="text-lg font-black text-white">Create Squad Group</h3>
-                <button onClick={() => setShowCreateGroup(false)} className="p-2 glass rounded-full text-white/30"><X size={20} /></button>
+              <div className="p-6 border-b border-[#E8E6E0] flex items-center justify-between shrink-0">
+                <h3 className="text-lg font-black text-[#1A1A1A]">Create Squad Group</h3>
+                <button onClick={() => setShowCreateGroup(false)} className="p-2 bg-[#F9F8F5] border border-[#E8E6E0] rounded-full text-[#6B6B6B]"><X size={20} /></button>
               </div>
               <div className="p-6 space-y-5 overflow-y-auto custom-scrollbar">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-2">Group Name</label>
+                  <label className="text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest ml-2">Group Name</label>
                   <input 
                     value={newGroupName}
                     onChange={e => setNewGroupName(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white focus:outline-none focus:border-purple-500/50 transition-all"
+                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-2xl p-4 text-sm text-[#1A1A1A] focus:outline-none focus:border-purple-500/50 transition-all"
                     placeholder="E.g. Weekend Hackers..."
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-2 flex justify-between">
+                  <label className="text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest ml-2 flex justify-between">
                     <span>Select Members ({selectedMembers.length})</span>
                   </label>
-                  <div className="space-y-2 max-h-[40vh] overflow-y-auto custom-scrollbar bg-white/[0.02] p-2 rounded-2xl border border-white/5">
+                  <div className="space-y-2 max-h-[40vh] overflow-y-auto custom-scrollbar bg-[#F3F2EE] p-2 rounded-2xl border border-[#E8E6E0]">
                     {connections.length === 0 ? (
-                      <p className="text-white/30 text-xs text-center py-4 font-medium italic">No connections found. Follow people first!</p>
+                      <p className="text-[#6B6B6B] text-xs text-center py-4 font-medium italic">No connections found. Follow people first!</p>
                     ) : (
                       connections.map(c => (
                         <div 
@@ -1146,17 +1182,17 @@ function MessagesContent() {
                           onClick={() => toggleMemberSelection(c._id)}
                           className={clsx(
                             "flex items-center space-x-3 p-3 rounded-[1.5rem] cursor-pointer transition-all border",
-                            selectedMembers.includes(c._id) ? "bg-purple-500/10 border-purple-500/50" : "bg-white/5 border-transparent hover:bg-white/10"
+                            selectedMembers.includes(c._id) ? "bg-[#C8922A]/10 border-purple-500/50" : "bg-[#F3F2EE] border-transparent hover:bg-[#F3F2EE]"
                           )}
                         >
                           <img src={c.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=7C3AED&color=fff`} className="w-10 h-10 rounded-full object-cover" />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-white truncate">{c.name}</p>
-                            <p className="text-[10px] text-white/40 truncate">{c.university}</p>
+                            <p className="text-sm font-bold text-[#1A1A1A] truncate">{c.name}</p>
+                            <p className="text-[10px] text-[#6B6B6B] truncate">{c.university}</p>
                           </div>
                           {selectedMembers.includes(c._id) && (
-                            <div className="w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center">
-                              <span className="text-white text-xs font-black">✓</span>
+                            <div className="w-5 h-5 rounded-full bg-[#C8922A] flex items-center justify-center">
+                              <span className="text-[#1A1A1A] text-xs font-black">✓</span>
                             </div>
                           )}
                         </div>
@@ -1169,7 +1205,7 @@ function MessagesContent() {
                   whileTap={{ scale: 0.97 }}
                   onClick={handleCreateGroup}
                   disabled={creatingGroup || !newGroupName.trim() || selectedMembers.length === 0}
-                  className="w-full gradient-bg py-4 rounded-2xl text-sm font-black text-white uppercase tracking-widest shadow-xl shadow-purple-500/20 disabled:opacity-40"
+                  className="w-full gradient-bg py-4 rounded-2xl text-sm font-black text-[#1A1A1A] uppercase tracking-widest shadow-xl shadow-[0_4px_14px_rgba(200,146,42,0.15)] disabled:opacity-40"
                 >
                   {creatingGroup ? "Creating..." : "Create Group"}
                 </motion.button>
@@ -1185,41 +1221,41 @@ function MessagesContent() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-end justify-center bg-black/80 p-3 backdrop-blur-md sm:items-center sm:p-4"
+            className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-3 backdrop-blur-md sm:items-center sm:p-4"
             onClick={() => setShowAddMemberModal(false)}
           >
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="w-full max-w-md overflow-hidden rounded-[1.75rem] border border-white/10 shadow-2xl glass sm:rounded-[2.5rem]"
+              className="w-full max-w-md overflow-hidden rounded-[1.75rem] border border-[#E8E6E0] shadow-2xl bg-[#F9F8F5] border border-[#E8E6E0] sm:rounded-[2.5rem]"
               onClick={e => e.stopPropagation()}
             >
-              <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
-                <h3 className="text-xl font-bold text-white tracking-tight">Add to Group</h3>
-                <button onClick={() => setShowAddMemberModal(false)} className="p-2 hover:bg-white/10 rounded-full transition-all text-white/40"><X size={20} /></button>
+              <div className="p-6 border-b border-[#E8E6E0] flex items-center justify-between bg-[#F3F2EE]">
+                <h3 className="text-xl font-bold text-[#1A1A1A] tracking-tight">Add to Group</h3>
+                <button onClick={() => setShowAddMemberModal(false)} className="p-2 hover:bg-[#F3F2EE] rounded-full transition-all text-[#6B6B6B]"><X size={20} /></button>
               </div>
               <div className="max-h-[60vh] overflow-y-auto p-4 space-y-2 custom-scrollbar">
                 {connections.length === 0 ? (
-                  <div className="py-10 text-center text-white/20 font-bold uppercase tracking-widest text-[10px]">No friends found</div>
+                  <div className="py-10 text-center text-[#888888] font-bold uppercase tracking-widest text-[10px]">No friends found</div>
                 ) : (
                   connections
                     .filter(f => !activeChat.participants.includes(f._id || f.id))
                     .map((f, i) => (
-                      <div key={i} className="flex items-center justify-between p-3 hover:bg-white/5 rounded-2xl transition-all border border-transparent hover:border-white/5 group">
+                      <div key={i} className="flex items-center justify-between p-3 hover:bg-[#F3F2EE] rounded-2xl transition-all border border-transparent hover:border-[#E8E6E0] group">
                         <div className="flex items-center space-x-4">
                           <img 
                             src={f.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(f.name)}&background=7C3AED&color=fff`} 
-                            className="w-11 h-11 rounded-full object-cover border border-white/10" 
+                            className="w-11 h-11 rounded-full object-cover border border-[#E8E6E0]" 
                           />
                           <div>
-                            <p className="text-sm font-bold text-white">{f.name}</p>
-                            <p className="text-[10px] text-white/30 font-bold uppercase tracking-wider">{f.university}</p>
+                            <p className="text-sm font-bold text-[#1A1A1A]">{f.name}</p>
+                            <p className="text-[10px] text-[#6B6B6B] font-bold uppercase tracking-wider">{f.university}</p>
                           </div>
                         </div>
                         <button 
                           onClick={() => handleAddMember(f._id || f.id, f.name)}
-                          className="px-4 py-2 bg-green-500/10 hover:bg-green-500 text-green-500 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-green-500/20 transition-all"
+                          className="px-4 py-2 bg-green-500/10 hover:bg-green-500 text-green-500 hover:text-[#1A1A1A] rounded-xl text-[10px] font-black uppercase tracking-widest border border-green-500/20 transition-all"
                         >
                           Add
                         </button>
@@ -1238,8 +1274,8 @@ function MessagesContent() {
 export default function MessagesPage() {
   return (
     <Suspense fallback={
-      <div className="flex h-[100dvh] items-center justify-center bg-background">
-        <div className="w-12 h-12 border-4 border-white/5 border-t-purple-500 rounded-full animate-spin"></div>
+      <div className="flex h-[100dvh] items-center justify-center bg-[#FAFAF8]">
+        <div className="w-12 h-12 border-4 border-[#E8E6E0] border-t-purple-500 rounded-full animate-spin"></div>
       </div>
     }>
       <MessagesContent />
