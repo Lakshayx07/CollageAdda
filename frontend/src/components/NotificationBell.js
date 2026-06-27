@@ -77,10 +77,10 @@ export default function NotificationBell() {
   const getIcon = (type) => {
     switch (type) {
       case 'like': return <Heart size={10} className="text-pink-500 fill-pink-500" />;
-      case 'comment': return <MessageSquare size={10} className="text-cyan-400 fill-cyan-400" />;
-      case 'follow': return <UserPlus size={10} className="text-purple-500" />;
+      case 'comment': return <MessageSquare size={10} className="text-[#C8922A] fill-cyan-400" />;
+      case 'follow': return <UserPlus size={10} className="text-[#C8922A]" />;
       case 'message': return <Zap size={10} className="text-amber-400 fill-amber-400" />;
-      default: return <Bell size={10} className="text-white" />;
+      default: return <Bell size={10} className="text-[#1A1A1A]" />;
     }
   };
 
@@ -88,7 +88,7 @@ export default function NotificationBell() {
     <div className="relative" ref={dropdownRef}>
       <button 
         onClick={toggleDropdown}
-        className="relative p-2.5 glass rounded-2xl hover:bg-white/5 transition-all border border-white/5 active:scale-90"
+        className="relative p-2.5 bg-[#F9F8F5] border border-[#E8E6E0] rounded-2xl hover:bg-[#F3F2EE] transition-all border border-[#E8E6E0] active:scale-90"
       >
         <motion.div
           animate={vibrate ? { 
@@ -101,7 +101,7 @@ export default function NotificationBell() {
             size={20} 
             className={clsx(
               "transition-colors",
-              unreadCount > 0 ? "text-amber-400 fill-amber-400" : "text-white/40"
+              unreadCount > 0 ? "text-amber-400 fill-amber-400" : "text-[#6B6B6B]"
             )} 
           />
         </motion.div>
@@ -112,7 +112,7 @@ export default function NotificationBell() {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0 }}
-              className="absolute -top-1 -right-1 w-5 h-5 gradient-bg text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-[#0A0A0F] shadow-lg shadow-purple-500/30"
+              className="absolute -top-1 -right-1 w-5 h-5 gradient-bg text-[#1A1A1A] text-[10px] font-black rounded-full flex items-center justify-center border-2 border-[#0A0A0F] shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)]"
             >
               {unreadCount > 9 ? '9+' : unreadCount}
             </motion.span>
@@ -128,12 +128,12 @@ export default function NotificationBell() {
             exit={{ opacity: 0, y: 15, scale: 0.95 }}
             className="app-panel absolute right-0 z-[100] mt-4 w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-[1.5rem]"
           >
-            <div className="p-5 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
-              <h3 className="text-xs font-black text-white uppercase tracking-widest">Recent Activity</h3>
+            <div className="p-5 border-b border-[#E8E6E0] flex justify-between items-center bg-[#F3F2EE]">
+              <h3 className="text-xs font-black text-[#1A1A1A] uppercase tracking-widest">Recent Activity</h3>
               {unreadCount > 0 && (
                 <button 
                   onClick={markAsRead}
-                  className="text-[9px] text-purple-400 font-black uppercase tracking-widest hover:text-purple-300 transition-colors"
+                  className="text-[9px] text-[#C8922A] font-black uppercase tracking-widest hover:text-[#C8922A] transition-colors"
                 >
                   Clear All
                 </button>
@@ -143,10 +143,10 @@ export default function NotificationBell() {
             <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
               {notifications.length === 0 ? (
                 <div className="p-12 text-center">
-                   <div className="w-12 h-12 glass rounded-2xl flex items-center justify-center text-white/10 mx-auto mb-4 border border-white/5">
+                   <div className="w-12 h-12 bg-[#F9F8F5] border border-[#E8E6E0] rounded-2xl flex items-center justify-center text-[#888888] mx-auto mb-4 border border-[#E8E6E0]">
                       <Sparkles size={24} />
                    </div>
-                   <p className="text-[10px] text-white/20 font-black uppercase tracking-widest">No activity found</p>
+                   <p className="text-[10px] text-[#888888] font-black uppercase tracking-widest">No activity found</p>
                 </div>
               ) : (
                 <div className="divide-y divide-white/5">
@@ -157,7 +157,7 @@ export default function NotificationBell() {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.05 }}
                       className={clsx(
-                        "p-4 flex items-start space-x-3 hover:bg-white/[0.03] transition-all",
+                        "p-4 flex items-start space-x-3 hover:bg-[#F3F2EE] transition-all",
                         !notif.isRead && "bg-purple-500/[0.03]"
                       )}
                     >
@@ -168,19 +168,19 @@ export default function NotificationBell() {
                             className="w-full h-full rounded-[0.9rem] object-cover border-2 border-[#0A0A0F]"
                           />
                         </div>
-                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-background rounded-lg border border-white/10 flex items-center justify-center shadow-lg">
+                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-[#FAFAF8] rounded-lg border border-[#E8E6E0] flex items-center justify-center shadow-lg">
                           {getIcon(notif.type)}
                         </div>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[11px] text-white/90 leading-tight">
-                          <span className="inline-flex items-center font-black text-white mr-1">
+                        <p className="text-[11px] text-[#4A4A4A] leading-tight">
+                          <span className="inline-flex items-center font-black text-[#1A1A1A] mr-1">
                             {notif.sender?.name}
                             <VerifiedBadge user={notif.sender} size={12} />
                           </span> 
                           {notif.text}
                         </p>
-                        <span className="text-[9px] text-white/20 font-bold uppercase tracking-widest mt-1 block">
+                        <span className="text-[9px] text-[#888888] font-bold uppercase tracking-widest mt-1 block">
                           {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
@@ -190,8 +190,8 @@ export default function NotificationBell() {
               )}
             </div>
             
-            <div className="p-4 bg-white/[0.02] text-center border-t border-white/5">
-              <button className="text-[9px] text-white/20 font-black uppercase tracking-[0.2em] hover:text-white transition-colors">
+            <div className="p-4 bg-[#F3F2EE] text-center border-t border-[#E8E6E0]">
+              <button className="text-[9px] text-[#888888] font-black uppercase tracking-[0.2em] hover:text-[#1A1A1A] transition-colors">
                 View Full Logs
               </button>
             </div>

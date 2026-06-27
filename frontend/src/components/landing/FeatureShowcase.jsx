@@ -73,7 +73,7 @@ const tabs = [
 export function CampusCTA() {
   return (
     <div className="w-full bg-[#050814] py-24 px-6 flex flex-col items-center justify-center text-center">
-      <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+      <h2 className="text-4xl md:text-5xl font-bold text-[#1A1A1A] mb-6">
         Your campus journey starts now.
       </h2>
       <p className="text-[#94a3b8] text-lg md:text-xl max-w-2xl mx-auto mb-12">
@@ -81,9 +81,9 @@ export function CampusCTA() {
       </p>
       
       <div className="flex items-center justify-center gap-4 md:gap-8 mb-16 relative">
-        <div className="absolute top-1/2 left-0 right-0 h-[2px] border-t-2 border-dashed border-purple-500/30 z-0" />
+        <div className="absolute top-1/2 left-0 right-0 h-[2px] border-t-2 border-dashed border-[#C8922A]/30 z-0" />
         {['💬', '👥', '⚡', '🏆'].map((emoji, idx) => (
-          <div key={idx} className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-[#1e1e2e] border-2 border-purple-500/30 flex items-center justify-center text-2xl md:text-3xl relative z-10 shadow-[0_0_15px_rgba(124,58,237,0.2)]">
+          <div key={idx} className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-[#1e1e2e] border-2 border-[#C8922A]/30 flex items-center justify-center text-2xl md:text-3xl relative z-10 shadow-[0_0_15px_rgba(124,58,237,0.2)]">
             {emoji}
           </div>
         ))}
@@ -91,7 +91,7 @@ export function CampusCTA() {
       
       <button 
         onClick={() => window.open('https://campusadda.social/', '_blank', 'noopener,noreferrer')}
-        className="block w-full max-w-sm mx-auto px-12 py-4 text-lg font-semibold rounded-full text-white bg-gradient-to-r from-purple-600 to-violet-500 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/40 transition-all duration-300"
+        className="block w-full max-w-sm mx-auto px-12 py-4 text-lg font-semibold rounded-full text-[#1A1A1A] bg-gradient-to-r from-[#C8922A] to-violet-500 hover:scale-105 hover:shadow-lg hover:shadow-[0_4px_14px_rgba(200,146,42,0.15)] transition-all duration-300"
       >
         Let's Go to CampusAdda 🚀
       </button>
@@ -121,7 +121,7 @@ export default function FeatureShowcase() {
               FEATURES
             </span>
             <h2 className="text-[#f1f5f9] text-4xl md:text-[56px] leading-tight font-bold mb-6">
-              Everything in <span className="bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">One Place.</span>
+              Everything in <span className="bg-gradient-to-r from-[#C8922A] to-violet-400 bg-clip-text text-transparent">One Place.</span>
             </h2>
             <p className="text-[#94a3b8] text-lg md:text-xl">
               One platform. Every part of your college life.
@@ -148,7 +148,7 @@ export default function FeatureShowcase() {
                   >
                     <div className="flex items-center gap-3">
                       {isActive && (
-                        <div className="w-6 h-6 rounded-full bg-[#7c3aed] flex items-center justify-center text-xs text-white font-medium">
+                        <div className="w-6 h-6 rounded-full bg-[#7c3aed] flex items-center justify-center text-xs text-[#1A1A1A] font-medium">
                           {tab.number}
                         </div>
                       )}
@@ -184,7 +184,7 @@ export default function FeatureShowcase() {
             <div className="flex-1 w-full flex flex-col items-center">
               <div className="relative w-full max-w-[580px]">
                 {/* Glow behind */}
-                <div className="absolute inset-0 bg-purple-600 opacity-20 blur-3xl rounded-full z-0" />
+                <div className="absolute inset-0 bg-[#C8922A] opacity-20 blur-3xl rounded-full z-0" />
                 
                 <div className="relative z-10">
                   {/* TOP: screen */}
@@ -232,7 +232,7 @@ export default function FeatureShowcase() {
                         href="https://campusadda.social/"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-block px-12 py-4 text-lg font-semibold rounded-full text-white bg-gradient-to-r from-purple-600 to-violet-500 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/40 transition-all duration-300"
+                        className="inline-block px-12 py-4 text-lg font-semibold rounded-full text-[#1A1A1A] bg-gradient-to-r from-[#C8922A] to-violet-500 hover:scale-105 hover:shadow-lg hover:shadow-[0_4px_14px_rgba(200,146,42,0.15)] transition-all duration-300"
                       >
                         Let's Go to CampusAdda 🚀
                       </a>

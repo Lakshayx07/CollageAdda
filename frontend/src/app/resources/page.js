@@ -23,7 +23,7 @@ export default function ResourcesPage() {
               <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-muted">Notes and PYQs</p>
             </div>
           </div>
-          <button className="hidden h-10 items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-xs font-bold text-white/70 transition hover:border-primary/40 hover:text-white sm:flex">
+          <button className="hidden h-10 items-center gap-2 rounded-2xl border border-[#E8E6E0] bg-[#F3F2EE] px-4 text-xs font-bold text-[#4A4A4A] transition hover:border-primary/40 hover:text-[#1A1A1A] sm:flex">
             <Filter size={15} />
             Filter
           </button>
@@ -34,18 +34,18 @@ export default function ResourcesPage() {
         <section className="app-panel rounded-[1.75rem] p-5 sm:p-6">
           <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             <div>
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-muted">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#E8E6E0] bg-[#F3F2EE] px-3 py-1.5 text-xs font-bold text-muted">
                 <TrendingUp size={14} className="text-primary" />
                 Top campus downloads
               </div>
-              <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">Find study material faster.</h2>
+              <h2 className="text-2xl font-black tracking-tight text-[#1A1A1A] sm:text-3xl">Find study material faster.</h2>
             </div>
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={18} />
               <input
                 type="text"
                 placeholder="Search notes, PYQs, manuals..."
-                className="input-surface h-[3.25rem] w-full rounded-2xl py-4 pl-12 pr-4 text-sm placeholder:text-white/25"
+                className="input-surface h-[3.25rem] w-full rounded-2xl py-4 pl-12 pr-4 text-sm placeholder:text-[#888888]"
               />
             </div>
           </div>
@@ -64,7 +64,7 @@ export default function ResourcesPage() {
                   <span className="mt-2 inline-flex rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-accent">{res.type}</span>
                 </div>
               </div>
-              <button className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-muted transition hover:border-primary/40 hover:text-primary">
+              <button className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-2xl border border-[#E8E6E0] bg-[#F3F2EE] text-muted transition hover:border-primary/40 hover:text-primary">
                 <Download size={18} />
                 <span className="text-[10px]">{res.downloads}</span>
               </button>

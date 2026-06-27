@@ -12,7 +12,7 @@ export default function ApplicationCard({ application, onImpressive }) {
   const skillsArray = Array.isArray(application.skills) ? application.skills : (application.skills ? application.skills.split(",") : []);
 
   return (
-    <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 relative overflow-hidden transition-all hover:bg-white/[0.05] hover:border-white/20 shadow-md">
+    <div className="bg-[#F3F2EE] border border-[#E8E6E0] rounded-2xl p-5 relative overflow-hidden transition-all hover:bg-[#F3F2EE] hover:border-[#E8E6E0] shadow-md">
       {/* Status badge */}
       {application.status === 'impressive' ? (
         <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-green-500/10 border border-green-500/20 text-green-400 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase">
@@ -37,13 +37,13 @@ export default function ApplicationCard({ application, onImpressive }) {
           {profile.avatar_url ? (
             <img src={profile.avatar_url} alt={application.name} className="w-16 h-16 rounded-full object-cover border-2 border-primary/40 shadow-[0_0_15px_rgba(139,92,246,0.3)]" />
           ) : (
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-xl font-black text-white shadow-[0_0_15px_rgba(139,92,246,0.3)]">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#C8922A] to-[#D4A843] flex items-center justify-center text-xl font-black text-[#1A1A1A] shadow-[0_0_15px_rgba(139,92,246,0.3)]">
               {application.name?.charAt(0) || "?"}
             </div>
           )}
           
           <div>
-            <h3 className="text-sm font-black text-white leading-tight">{application.name}</h3>
+            <h3 className="text-sm font-black text-[#1A1A1A] leading-tight">{application.name}</h3>
             <div className="mt-2 bg-primary/20 text-primary border border-primary/30 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg">
               {application.role_applying || "Member"}
             </div>
@@ -54,12 +54,12 @@ export default function ApplicationCard({ application, onImpressive }) {
         <div className="flex-1 w-full space-y-4">
           {/* Info Chips */}
           <div className="flex flex-wrap gap-2">
-            <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 text-white/70 px-2.5 py-1.5 rounded-xl text-[10px] font-bold">
-              <GraduationCap size={12} className="text-white/40" />
+            <div className="flex items-center gap-1.5 bg-[#F3F2EE] border border-[#E8E6E0] text-[#4A4A4A] px-2.5 py-1.5 rounded-xl text-[10px] font-bold">
+              <GraduationCap size={12} className="text-[#6B6B6B]" />
               {application.course_branch}
             </div>
-            <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 text-white/70 px-2.5 py-1.5 rounded-xl text-[10px] font-bold">
-              <User size={12} className="text-white/40" />
+            <div className="flex items-center gap-1.5 bg-[#F3F2EE] border border-[#E8E6E0] text-[#4A4A4A] px-2.5 py-1.5 rounded-xl text-[10px] font-bold">
+              <User size={12} className="text-[#6B6B6B]" />
               {application.year}
             </div>
           </div>
@@ -67,10 +67,10 @@ export default function ApplicationCard({ application, onImpressive }) {
           {/* Skills */}
           {skillsArray.length > 0 && (
             <div>
-              <p className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-1.5">Skills</p>
+              <p className="text-[9px] font-black uppercase tracking-widest text-[#6B6B6B] mb-1.5">Skills</p>
               <div className="flex flex-wrap gap-1.5">
                 {skillsArray.map((s, i) => (
-                  <span key={i} className="text-[10px] font-bold text-white bg-white/10 px-2 py-1 rounded-md">
+                  <span key={i} className="text-[10px] font-bold text-[#1A1A1A] bg-[#F3F2EE] px-2 py-1 rounded-md">
                     {s.trim()}
                   </span>
                 ))}
@@ -81,9 +81,9 @@ export default function ApplicationCard({ application, onImpressive }) {
           {/* Message */}
           {application.why_join && (
             <div>
-              <p className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-1.5">Why I want to join</p>
-              <div className="bg-black/30 border border-white/5 rounded-xl p-3">
-                <p className="text-xs text-white/70 leading-relaxed italic">
+              <p className="text-[9px] font-black uppercase tracking-widest text-[#6B6B6B] mb-1.5">Why I want to join</p>
+              <div className="bg-black/30 border border-[#E8E6E0] rounded-xl p-3">
+                <p className="text-xs text-[#4A4A4A] leading-relaxed italic">
                   "{application.why_join}"
                 </p>
               </div>
@@ -92,14 +92,14 @@ export default function ApplicationCard({ application, onImpressive }) {
 
           {/* Links */}
           {(application.linkedin_url || application.portfolio_url) && (
-            <div className="flex gap-3 pt-1 border-t border-white/5 pb-2">
+            <div className="flex gap-3 pt-1 border-t border-[#E8E6E0] pb-2">
               {application.linkedin_url && (
-                <a href={application.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-blue-400 transition flex items-center gap-1 text-xs font-medium">
+                <a href={application.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-[#6B6B6B] hover:text-blue-400 transition flex items-center gap-1 text-xs font-medium">
                   <Link size={14} /> LinkedIn
                 </a>
               )}
               {application.portfolio_url && (
-                <a href={application.portfolio_url} target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-emerald-400 transition flex items-center gap-1 text-xs font-medium">
+                <a href={application.portfolio_url} target="_blank" rel="noopener noreferrer" className="text-[#6B6B6B] hover:text-emerald-400 transition flex items-center gap-1 text-xs font-medium">
                   <Code size={14} /> Portfolio / GitHub
                 </a>
               )}
@@ -108,17 +108,17 @@ export default function ApplicationCard({ application, onImpressive }) {
           
           {/* Action Buttons */}
           {application.status !== 'impressive' && (
-            <div className="pt-2 border-t border-white/5 flex justify-end">
+            <div className="pt-2 border-t border-[#E8E6E0] flex justify-end">
               <button
                 onClick={() => onImpressive && onImpressive(application)}
-                className="bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl px-4 py-2 font-bold text-sm hover:scale-105 transition-transform shadow-lg"
+                className="bg-gradient-to-r from-[#C8922A] to-[#D4A843] text-[#1A1A1A] rounded-xl px-4 py-2 font-bold text-sm hover:scale-105 transition-transform shadow-lg"
               >
                 ✨ Impressive
               </button>
             </div>
           )}
           {application.status === 'impressive' && (
-            <div className="pt-2 border-t border-white/5 flex justify-end">
+            <div className="pt-2 border-t border-[#E8E6E0] flex justify-end">
               <button
                 disabled
                 className="bg-green-500/20 text-green-400 border border-green-500/30 rounded-xl px-4 py-2 font-bold text-sm cursor-not-allowed"

@@ -33,7 +33,8 @@ import {
   Crosshair,
   Activity,
   Medal,
-  Play
+  Play,
+  Loader2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import VerifiedBadge from "@/components/VerifiedBadge";
@@ -64,6 +65,7 @@ export default function ExplorePage() {
   const [chatWithStudent, setChatWithStudent] = useState(null);
   const [chatMessages, setChatMessages] = useState({});
   const [loading, setLoading] = useState(true);
+  const [loadingCollegeId, setLoadingCollegeId] = useState(null);
 
   const [currentStudentIndices, setCurrentStudentIndices] = useState({});
   const [studentSearch, setStudentSearch] = useState("");
@@ -93,14 +95,26 @@ export default function ExplorePage() {
     const fetchInitialData = async () => {
       try {
         const token = localStorage.getItem("collegeadda_token");
+        const me = JSON.parse(localStorage.getItem('collegeadda_user') || '{}');
+        const myId = me._id || me.id;
 
-        // Fetch colleges
+        // Fetch colleges with real counts
         const res = await fetch(`${apiUrl}/api/colleges`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {
           const data = await res.json();
           setColleges(data);
+          // Pre-populate followed state from each college's followers array
+          const followedMap = {};
+          data.forEach(c => {
+            if (Array.isArray(c.followers)) {
+              followedMap[c._id] = c.followers.some(f =>
+                (f._id || f) === myId
+              );
+            }
+          });
+          setFollowed(followedMap);
         }
 
         // Fetch my following list to check connections
@@ -313,6 +327,7 @@ export default function ExplorePage() {
   };
 
   const fetchCollegeDetails = async (college) => {
+    setLoadingCollegeId(college._id || college.id);
     try {
       const token = localStorage.getItem("collegeadda_token");
       const res = await fetch(`${apiUrl}/api/colleges/${college._id || college.id}`, {
@@ -338,6 +353,8 @@ export default function ExplorePage() {
       }
     } catch (err) {
       console.error("Error fetching college details:", err);
+    } finally {
+      setLoadingCollegeId(null);
     }
   };
 
@@ -441,20 +458,28 @@ export default function ExplorePage() {
     setFilterStream("All");
   };
 
-  const toggleFollow = (id) => {
-    setFollowed(prev => {
-      const isCurrentlyFollowing = prev[id];
-      setSelectedCollege(curr => {
-        const currId = curr?._id || curr?.id;
-        if (currId !== id) return curr;
-        let currentStudents = parseInt(curr.students) || 0;
-        return {
-          ...curr,
-          students: isCurrentlyFollowing ? currentStudents - 1 : currentStudents + 1
-        };
+  const toggleFollow = async (id) => {
+    try {
+      const token = localStorage.getItem('collegeadda_token');
+      const res = await fetch(`${apiUrl}/api/colleges/${id}/follow`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` }
       });
-      return { ...prev, [id]: !isCurrentlyFollowing };
-    });
+      if (res.ok) {
+        const data = await res.json(); // { following: bool, followersCount: number }
+        setFollowed(prev => ({ ...prev, [id]: data.following }));
+        setSelectedCollege(curr => {
+          if (!curr) return curr;
+          return { ...curr, followersCount: data.followersCount };
+        });
+        // Also update the college in the grid list
+        setColleges(prev => prev.map(c =>
+          (c._id === id || c.id === id) ? { ...c, followersCount: data.followersCount } : c
+        ));
+      }
+    } catch (err) {
+      console.error('Follow error:', err);
+    }
   };
 
   const toggleAddStudent = (id) => {
@@ -526,7 +551,7 @@ export default function ExplorePage() {
               <div className="mx-auto flex w-full max-w-6xl flex-col space-y-4">
                 <div className="flex items-center space-x-3">
                   <div className={clsx("icon-tile h-11 w-11", exploreMode === "colleges" ? "text-primary" : "gradient-bg")}>
-                    {exploreMode === "colleges" ? <Building2 className="text-primary" size={20} /> : <Trophy className="text-white" size={20} />}
+                    {exploreMode === "colleges" ? <Building2 className="text-primary" size={20} /> : <Trophy className="text-[#1A1A1A]" size={20} />}
                   </div>
                   <h1 className="text-xl font-black tracking-tight text-foreground">
                     {exploreMode === "colleges" ? "Explore Colleges" : "Campus Arena"}
@@ -553,8 +578,8 @@ export default function ExplorePage() {
                     className={clsx(
                       "flex w-full items-center justify-center space-x-2 rounded-2xl border px-4 py-3 text-sm font-black shadow-lg transition-all sm:w-1/2",
                       exploreMode === "colleges"
-                        ? "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white border-transparent shadow-purple-500/30 hover:shadow-purple-500/50"
-                        : "glass border-border/50 text-foreground hover:bg-surface-hover"
+                        ? "bg-gradient-to-r from-[#C8922A] via-[#D4A843] to-[#C8922A] text-[#1A1A1A] border-transparent shadow-[0_4px_14px_rgba(200,146,42,0.15)] hover:shadow-[#C8922A]/50"
+                        : "bg-[#F9F8F5] border border-[#E8E6E0] border-border/50 text-foreground hover:bg-surface-hover"
                     )}
                   >
                     {exploreMode === "colleges" ? (
@@ -605,95 +630,6 @@ export default function ExplorePage() {
 
             {exploreMode === "colleges" ? (
               <>
-                <section className="mx-auto w-full max-w-6xl px-4 pt-5 sm:px-5">
-                  <div className="app-panel overflow-hidden rounded-[1.6rem] p-4 sm:rounded-[2rem] sm:p-5">
-                    <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                      <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-300">Daily Discovery</p>
-                        <h2 className="mt-1 text-xl font-black tracking-tight text-white">Students picked for your campus circle</h2>
-                      </div>
-                      <span className="inline-flex w-fit rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white/45">
-                        {refreshCountdown || "Refreshes in 12h"}
-                      </span>
-                    </div>
-
-                    <div className="no-scrollbar flex max-w-full gap-3 overflow-x-auto">
-                      {dailyDiscoveryLoading ? (
-                        <div className="flex w-full justify-center py-10">
-                          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-cyan-400" />
-                        </div>
-                      ) : dailyDiscovery.length === 0 ? (
-                        <div className="flex w-full flex-col items-center justify-center rounded-[1.35rem] border border-dashed border-white/10 py-10 text-center gap-3 px-6">
-                          <p className="text-sm font-black text-white/40">Be the first to invite friends! 🎉</p>
-                          <button
-                            onClick={() => navigator.share ? navigator.share({ title: 'Campus Adda', text: 'Join me on Campus Adda!', url: window.location.origin }) : null}
-                            className="gradient-bg text-white text-[10px] font-black uppercase tracking-widest px-5 py-2.5 rounded-full shadow-lg"
-                          >
-                            Share Invite 🚀
-                          </button>
-                        </div>
-                      ) : dailyDiscovery.map((student) => {
-                        const uid = student._id || student.id;
-                        const status = discoveryConnectStatus[uid] || 'idle';
-                        const gradients = ["from-cyan-400 to-blue-600", "from-fuchsia-500 to-purple-600", "from-orange-400 to-rose-500"];
-                        const gIdx = dailyDiscovery.indexOf(student) % 3;
-                        const avatarUrl = student.profilePic
-                          ? student.profilePic
-                          : `https://ui-avatars.com/api/?name=${encodeURIComponent(student.name || "U")}&background=7C3AED&color=fff`;
-
-                        return (
-                          <div key={uid} className="min-w-[280px] flex-1 rounded-[1.5rem] border border-white/10 bg-white/[0.02] p-5 flex flex-col hover:bg-white/[0.04] transition-colors">
-                            <div className="flex justify-end mb-4">
-                              <span className="rounded-full bg-white/5 border border-white/10 px-3 py-1 text-[10px] font-bold text-white/70 shadow-sm">
-                                {student.tag}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-4 mb-4">
-                              <div className="h-[60px] w-[60px] shrink-0 rounded-full overflow-hidden border-2 border-white/10">
-                                <img src={avatarUrl} alt={student.name} className="w-full h-full object-cover" />
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate text-[16px] font-bold text-white">{student.name}</p>
-                                <p className="truncate text-[13px] text-white/60 mt-0.5">{student.university || "Campus Adda"}</p>
-                                <p className="truncate text-[12px] text-white/40 mt-0.5">
-                                  {student.studyYear || student.year ? `${student.studyYear || student.year} ` : ""}
-                                  {(student.course || student.branch) ? `• ${student.course || student.branch}` : ""}
-                                </p>
-                              </div>
-                            </div>
-                            
-                            <div className="flex flex-wrap gap-1.5 mb-5 flex-1 content-start">
-                              {Array.isArray(student.interests) && student.interests.length > 0 ? (
-                                student.interests.slice(0, 3).map((interest, i) => (
-                                  <span key={i} className="px-3 py-1.5 text-[10px] font-bold bg-white/5 border border-white/10 text-white/70 rounded-full">
-                                    {interest}
-                                  </span>
-                                ))
-                              ) : (
-                                <p className="text-[12px] text-white/40 italic line-clamp-2">{student.bio || "No bio added yet"}</p>
-                              )}
-                            </div>
-
-                            <button
-                              onClick={() => status === 'idle' && handleDiscoveryConnect(student)}
-                              disabled={status !== 'idle'}
-                              className={clsx(
-                                "mt-auto w-full rounded-xl py-3 text-[12px] font-black uppercase tracking-widest transition-all",
-                                status === 'connected'
-                                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 cursor-default"
-                                  : status === 'pending'
-                                  ? "bg-white/5 text-white/40 border border-white/10 cursor-wait"
-                                  : "bg-gradient-to-r from-purple-500 to-cyan-500 text-white hover:opacity-90 shadow-lg shadow-purple-500/20 hover:scale-105 active:scale-95"
-                              )}
-                            >
-                              {status === 'connected' ? "👥 Squad ✓" : status === 'pending' ? "⏳ Pending" : "⚡ Connect"}
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </section>
 
                 {/* ── Filter Bar ────────────────────────────────────────────── */}
                 <section className="mx-auto w-full max-w-6xl px-4 pt-3 pb-1 sm:px-5">
@@ -701,7 +637,7 @@ export default function ExplorePage() {
                     <div className="flex flex-wrap items-center gap-3">
                       {/* City filter */}
                       <div className="flex-1 min-w-[140px]">
-                        <label className="block text-[9px] font-black uppercase tracking-[0.18em] text-white/40 mb-1.5 pl-1">🌍 City</label>
+                        <label className="block text-[9px] font-black uppercase tracking-[0.18em] text-[#6B6B6B] mb-1.5 pl-1">🌍 City</label>
                         <select
                           value={filterCity}
                           onChange={e => setFilterCity(e.target.value)}
@@ -717,7 +653,7 @@ export default function ExplorePage() {
 
                       {/* Category filter */}
                       <div className="flex-1 min-w-[130px]">
-                        <label className="block text-[9px] font-black uppercase tracking-[0.18em] text-white/40 mb-1.5 pl-1">🏛️ Category</label>
+                        <label className="block text-[9px] font-black uppercase tracking-[0.18em] text-[#6B6B6B] mb-1.5 pl-1">🏛️ Category</label>
                         <select
                           value={filterCategory}
                           onChange={e => setFilterCategory(e.target.value)}
@@ -733,7 +669,7 @@ export default function ExplorePage() {
 
                       {/* Stream filter */}
                       <div className="flex-1 min-w-[150px]">
-                        <label className="block text-[9px] font-black uppercase tracking-[0.18em] text-white/40 mb-1.5 pl-1">📚 Stream</label>
+                        <label className="block text-[9px] font-black uppercase tracking-[0.18em] text-[#6B6B6B] mb-1.5 pl-1">📚 Stream</label>
                         <select
                           value={filterStream}
                           onChange={e => setFilterStream(e.target.value)}
@@ -751,7 +687,7 @@ export default function ExplorePage() {
                       {hasActiveFilters && (
                         <button
                           onClick={clearFilters}
-                          className="shrink-0 self-end mb-0.5 flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-white/60 transition-all hover:bg-white/10 hover:text-white/90 hover:border-white/40 active:scale-95"
+                          className="shrink-0 self-end mb-0.5 flex items-center gap-1.5 rounded-full border border-[#E8E6E0] bg-[#F3F2EE] px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-[#6B6B6B] transition-all hover:bg-[#F3F2EE] hover:text-[#4A4A4A] hover:border-[#E8E6E0] active:scale-95"
                           aria-label="Clear all filters"
                         >
                           ✕ Clear
@@ -761,23 +697,23 @@ export default function ExplorePage() {
 
                     {/* Active filter summary + college count */}
                     <div className="mt-3 flex items-center justify-between">
-                      <p className="text-[10px] text-white/35 font-medium">
+                      <p className="text-[10px] text-[#888888] font-medium">
                         {!loading && (
                           <>
-                            Showing <span className="text-white/60 font-black">{filteredColleges.length}</span> college{filteredColleges.length !== 1 ? "s" : ""}
-                            {hasActiveFilters && <span className="text-white/35"> (filtered)</span>}
+                            Showing <span className="text-[#6B6B6B] font-black">{filteredColleges.length}</span> college{filteredColleges.length !== 1 ? "s" : ""}
+                            {hasActiveFilters && <span className="text-[#888888]"> (filtered)</span>}
                           </>
                         )}
                       </p>
                       {hasActiveFilters && (
                         <div className="flex flex-wrap gap-1.5">
                           {filterCategory !== "All" && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 px-2.5 py-1 text-[9px] font-black text-purple-300 uppercase tracking-wider">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-[#C8922A]/20 to-[#C8922A]/20 border border-[#C8922A]/30 px-2.5 py-1 text-[9px] font-black text-[#C8922A] uppercase tracking-wider">
                               {filterCategory}
                             </span>
                           )}
                           {filterStream !== "All" && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 px-2.5 py-1 text-[9px] font-black text-cyan-300 uppercase tracking-wider">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-[#D4A843]/20 to-[#C8922A]/20 border border-cyan-500/30 px-2.5 py-1 text-[9px] font-black text-[#C8922A] uppercase tracking-wider">
                               {filterStream}
                             </span>
                           )}
@@ -800,57 +736,69 @@ export default function ExplorePage() {
               )}
 
               {filteredColleges.map(college => (
-                <motion.button
+                <motion.div
+                  whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.98 }}
                   key={college._id || college.id}
                   onClick={() => fetchCollegeDetails(college)}
-                  className="app-panel flex flex-col rounded-[1.5rem] overflow-hidden text-left hover:border-primary/50 transition-all group h-full"
+                  className="relative flex flex-col rounded-[1.5rem] overflow-hidden text-left group cursor-pointer shadow-md hover:shadow-xl transition-all duration-300"
+                  style={{ height: '420px' }}
                 >
-                  {/* Full Image Container */}
-                  <div className="h-44 w-full overflow-hidden bg-muted sm:h-[200px]">
-                    <img
-                      src={college.banner}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      alt={college.name}
-                    />
-                  </div>
+                  {/* Full-bleed background image */}
+                  <img
+                    src={college.banner}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    alt={college.name}
+                  />
 
-                  {/* Info Section Below Image */}
-                  <div className="p-4 flex flex-col flex-1 space-y-3 bg-transparent">
-                    <div className="space-y-1">
-                        <div className="bg-primary/10 p-1.5 rounded-lg mr-2">
-                          <Building2 size={16} style={{ color: college.accent }} />
+                  {/* Dark gradient overlay — stronger at bottom */}
+                  <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.1) 100%)' }} />
+
+                  {/* Content overlaid on image */}
+                  <div className="absolute inset-0 flex flex-col justify-end p-5 space-y-3">
+                    {/* College name + followers badge */}
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-bold text-base leading-snug line-clamp-2 flex-1" style={{ color: 'white', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
+                        {college.name}
+                      </h3>
+                      {(college.followersCount ?? 0) > 0 && (
+                        <div className="flex items-center gap-1 shrink-0 bg-black/40 rounded-full px-2 py-0.5">
+                          <Users size={10} color="white" />
+                          <span className="text-[10px] font-bold" style={{ color: 'white' }}>
+                            {college.followersCount}
+                          </span>
                         </div>
-                        <h3 className="font-bold text-sm text-foreground leading-tight line-clamp-2">
-                          {college.name}
-                        </h3>
-                      <div className="flex items-center text-[11px] text-muted">
-                        <MapPin size={12} className="mr-1 text-primary" />
-                        <span className="truncate">{college.location}</span>
+                      )}
+                    </div>
+
+                    {/* Location & students pills */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex items-center gap-1 rounded-full px-3 py-1" style={{ backgroundColor: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }}>
+                        <MapPin size={11} color="white" />
+                        <span className="text-[11px] font-semibold truncate max-w-[120px]" style={{ color: 'white' }}>{college.location}</span>
+                      </div>
+                      <div className="flex items-center gap-1 rounded-full px-3 py-1" style={{ backgroundColor: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }}>
+                        <Users size={11} color="white" />
+                        <span className="text-[11px] font-semibold" style={{ color: 'white' }}>{college.students} Students</span>
                       </div>
                     </div>
 
-                    <div className="flex items-center text-[11px] text-muted font-medium pb-2">
-                      <Users size={12} className="mr-1.5 text-secondary" />
-                      {college.students} Students
-                    </div>
-
-                    {/* Visit Me Button */}
-                    <div className="mt-auto pt-2">
-                      <div
-                        className="w-full py-2.5 rounded-xl text-[11px] font-bold text-center transition-all shadow-sm active:scale-95"
-                        style={{
-                          backgroundColor: `${college.accent}15`,
-                          color: college.accent,
-                          border: `1.5px solid ${college.accent}30`
-                        }}
-                      >
-                        Visit Now
-                      </div>
-                    </div>
+                    {/* Explore Now button */}
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); fetchCollegeDetails(college); }}
+                      disabled={loadingCollegeId === (college._id || college.id)}
+                      className="w-full bg-white rounded-2xl py-3 flex items-center justify-center text-sm font-bold text-[#1A1A1A] shadow-lg group-hover:bg-[#FFF8EC] transition-colors disabled:opacity-80"
+                    >
+                      {loadingCollegeId === (college._id || college.id) ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        "Explore Now"
+                      )}
+                    </button>
                   </div>
-                </motion.button>
+                </motion.div>
               ))}
+
             </div>
 
             {!loading && filteredColleges.length === 0 && (
@@ -858,12 +806,12 @@ export default function ExplorePage() {
                 <div className="app-panel mx-auto max-w-sm rounded-[1.6rem] p-8 flex flex-col items-center gap-4">
                   <span className="text-4xl">🔍</span>
                   <div>
-                    <p className="text-sm font-black text-white/80 mb-1">
+                    <p className="text-sm font-black text-[#4A4A4A] mb-1">
                       {hasActiveFilters
                         ? "No colleges match these filters"
                         : `No colleges found matching "${search}"`}
                     </p>
-                    <p className="text-xs text-white/40">
+                    <p className="text-xs text-[#6B6B6B]">
                       {hasActiveFilters
                         ? "Try adjusting or clearing your filters."
                         : "Try a different search term."}
@@ -872,7 +820,7 @@ export default function ExplorePage() {
                   {hasActiveFilters && (
                     <button
                       onClick={clearFilters}
-                      className="mt-1 rounded-xl bg-gradient-to-r from-purple-500 to-cyan-500 px-5 py-2.5 text-[11px] font-black uppercase tracking-widest text-white shadow-lg shadow-purple-500/20 hover:opacity-90 active:scale-95 transition-all"
+                      className="mt-1 rounded-xl bg-gradient-to-r from-[#C8922A] to-[#C8922A] px-5 py-2.5 text-[11px] font-black uppercase tracking-widest text-[#1A1A1A] shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)] hover:opacity-90 active:scale-95 transition-all"
                     >
                       Reset Filters
                     </button>
@@ -885,7 +833,7 @@ export default function ExplorePage() {
               /* --- ARENA VIEW --- */
               <div className="flex flex-col flex-1 relative bg-transparent">
                 {/* Top Toggle: Esports vs Sports */}
-                <div className="px-4 py-3 flex space-x-2 bg-background/80 backdrop-blur-md sticky top-0 z-30 border-b border-white/5">
+                <div className="px-4 py-3 flex space-x-2 bg-[#FAFAF8]/80 backdrop-blur-md sticky top-0 z-30 border-b border-[#E8E6E0]">
                   <button
                     onClick={() => setArenaCategory("esports")}
                     className={clsx(
@@ -928,8 +876,8 @@ export default function ExplorePage() {
                         </div>
                         {/* Esports Teams */}
                         <section>
-                          <h3 className="text-white font-black uppercase tracking-wider mb-3 flex items-center text-sm">
-                            <Swords className="mr-2 text-cyan-400" size={16} /> Esports Squads
+                          <h3 className="text-[#1A1A1A] font-black uppercase tracking-wider mb-3 flex items-center text-sm">
+                            <Swords className="mr-2 text-[#C8922A]" size={16} /> Esports Squads
                           </h3>
                           <div className="flex overflow-x-auto space-x-4 pb-4 no-scrollbar -mx-4 px-4">
                             {['BGMI', 'Valorant', 'FIFA'].map(game => (
@@ -939,7 +887,7 @@ export default function ExplorePage() {
                                 className="app-panel min-w-[120px] h-24 rounded-2xl hover:border-primary/30 transition flex flex-col items-center justify-center relative overflow-hidden group"
                               >
                                 <span className="text-2xl mb-1 group-hover:scale-110 transition-transform">🎮</span>
-                                <span className="text-[10px] font-black text-white uppercase tracking-widest">{game}</span>
+                                <span className="text-[10px] font-black text-[#1A1A1A] uppercase tracking-widest">{game}</span>
                               </button>
                             ))}
                           </div>
@@ -947,7 +895,7 @@ export default function ExplorePage() {
 
                         {/* Player Profile Card (FIFA Style) */}
                         <section>
-                          <h3 className="text-white font-black uppercase tracking-wider mb-3 flex items-center text-sm">
+                          <h3 className="text-[#1A1A1A] font-black uppercase tracking-wider mb-3 flex items-center text-sm">
                             <Target className="mr-2 text-pink-500" size={16} /> Top Players
                           </h3>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -955,7 +903,7 @@ export default function ExplorePage() {
                             {/* {realEsportsPlayers.map(player => ( ... ))} */}
                           </div>
                           <div className="text-center py-10">
-                            <p className="text-white/40 text-xs font-bold uppercase tracking-widest">No players yet. Create your card!</p>
+                            <p className="text-[#6B6B6B] text-xs font-bold uppercase tracking-widest">No players yet. Create your card!</p>
                           </div>
                         </section>
                       </motion.div>
@@ -972,14 +920,14 @@ export default function ExplorePage() {
                         <div className="flex justify-end">
                           <button
                             onClick={() => setShowPlayerCardForm(true)}
-                            className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-orange-500/20 hover:scale-105 transition"
+                            className="bg-gradient-to-r from-orange-500 to-red-600 text-[#1A1A1A] px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-orange-500/20 hover:scale-105 transition"
                           >
                             + Create My Card
                           </button>
                         </div>
                         {/* Sports Teams */}
                         <section>
-                          <h3 className="text-white font-black uppercase tracking-wider mb-3 flex items-center text-sm">
+                          <h3 className="text-[#1A1A1A] font-black uppercase tracking-wider mb-3 flex items-center text-sm">
                             <Flame className="mr-2 text-orange-400" size={16} /> Campus Teams
                           </h3>
                           <div className="flex overflow-x-auto space-x-4 pb-4 no-scrollbar -mx-4 px-4">
@@ -998,7 +946,7 @@ export default function ExplorePage() {
                                 className="app-panel min-w-[120px] h-24 rounded-2xl hover:border-primary/30 transition flex flex-col items-center justify-center relative overflow-hidden group"
                               >
                                 <span className="text-2xl mb-1 group-hover:scale-110 transition-transform">{sport.icon}</span>
-                                <span className="text-[10px] font-black text-white uppercase tracking-widest">{sport.name}</span>
+                                <span className="text-[10px] font-black text-[#1A1A1A] uppercase tracking-widest">{sport.name}</span>
                               </button>
                             ))}
                           </div>
@@ -1006,7 +954,7 @@ export default function ExplorePage() {
 
                         {/* Player Cards (Sports) */}
                         <section>
-                          <h3 className="text-white font-black uppercase tracking-wider mb-3 flex items-center text-sm">
+                          <h3 className="text-[#1A1A1A] font-black uppercase tracking-wider mb-3 flex items-center text-sm">
                             <Users className="mr-2 text-orange-400" size={16} /> Top Athletes
                           </h3>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1014,7 +962,7 @@ export default function ExplorePage() {
                             {/* {realSportsPlayers.map(player => ( ... ))} */}
                           </div>
                           <div className="text-center py-10">
-                            <p className="text-white/40 text-xs font-bold uppercase tracking-widest">No athletes yet. Create your card!</p>
+                            <p className="text-[#6B6B6B] text-xs font-bold uppercase tracking-widest">No athletes yet. Create your card!</p>
                           </div>
                         </section>
 
@@ -1048,20 +996,20 @@ export default function ExplorePage() {
             <div className="relative">
               <div className="h-64 w-full bg-surface relative">
                 <img src={selectedCollege.banner} className="w-full h-full object-cover" alt="" />
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-black/40 to-black/20" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 
                 {/* Back Button */}
                 <button
                   onClick={() => setSelectedCollege(null)}
-                  className="absolute top-4 left-4 p-2 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-black/60 transition-colors z-20"
+                  className="absolute top-4 left-4 p-2 bg-black/40 backdrop-blur-md rounded-full text-[#1A1A1A] hover:bg-black/60 transition-colors z-20"
                 >
                   <ChevronLeft size={20} />
                 </button>
 
                 {/* College Info on Banner */}
                 <div className="absolute bottom-6 left-4 right-4 flex items-center space-x-4 z-10">
-                  <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-2xl">
-                    <Building2 size={32} className="text-white" />
+                  <div className="w-16 h-16 rounded-2xl bg-[#F3F2EE] backdrop-blur-md border border-[#E8E6E0] flex items-center justify-center shadow-2xl">
+                    <Building2 size={32} className="text-[#1A1A1A]" />
                   </div>
                   <div className="flex-1">
                     <h2 className="text-2xl font-bold text-white drop-shadow-md leading-tight">{selectedCollege.name}</h2>
@@ -1076,11 +1024,15 @@ export default function ExplorePage() {
             <div className="mt-8 px-4 flex items-center justify-between">
               <div className="flex space-x-6 text-center">
                 <div>
-                  <p className="font-bold text-foreground">{selectedCollege.students}</p>
+                  <p className="font-bold text-foreground">
+                    {selectedCollege.realStudentCount ?? selectedCollege.students}
+                  </p>
                   <p className="text-[10px] text-muted uppercase">Students</p>
                 </div>
                 <div>
-                  <p className="font-bold text-foreground">{selectedCollege.posts}</p>
+                  <p className="font-bold text-foreground">
+                    {selectedCollege.realPostCount ?? selectedCollege.posts}
+                  </p>
                   <p className="text-[10px] text-muted uppercase">Posts</p>
                 </div>
                 <div>
@@ -1088,18 +1040,28 @@ export default function ExplorePage() {
                   <p className="text-[10px] text-muted uppercase">Depts</p>
                 </div>
               </div>
-              <button
-                onClick={() => toggleFollow(selectedCollege.id)}
-                className={clsx(
-                  "px-6 py-2 rounded-xl text-sm font-bold transition-all active:scale-95",
-                  followed[selectedCollege.id]
-                    ? "bg-surface-hover text-muted border border-border/50"
-                    : "text-white shadow-lg shadow-opacity-20"
-                )}
-                style={!followed[selectedCollege.id] ? { backgroundColor: selectedCollege.accent, boxShadow: `0 10px 15px -3px ${selectedCollege.accent}30` } : {}}
-              >
-                {followed[selectedCollege.id] ? "Following" : "Follow"}
-              </button>
+
+              {/* Follower count + Follow toggle */}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-3 py-1.5">
+                  <Users size={13} className="text-[#6B6B6B]" />
+                  <span className="text-sm font-bold text-[#1A1A1A]">
+                    {selectedCollege.followersCount ?? 0}
+                  </span>
+                </div>
+                <button
+                  onClick={() => toggleFollow(selectedCollege._id || selectedCollege.id)}
+                  className={clsx(
+                    "px-6 py-2 rounded-xl text-sm font-bold transition-all active:scale-95",
+                    followed[selectedCollege._id || selectedCollege.id]
+                      ? "bg-[#F3F2EE] text-[#6B6B6B] border border-[#E8E6E0]"
+                      : "text-white shadow-lg"
+                  )}
+                  style={!followed[selectedCollege._id || selectedCollege.id] ? { backgroundColor: selectedCollege.accent, boxShadow: `0 10px 15px -3px ${selectedCollege.accent}30` } : {}}
+                >
+                  {followed[selectedCollege._id || selectedCollege.id] ? "✓ Following" : "Follow"}
+                </button>
+              </div>
             </div>
 
             {/* Tabs Navigation */}
@@ -1222,7 +1184,7 @@ export default function ExplorePage() {
                                   />
                                   <button
                                     onClick={() => handleComment(post._id)}
-                                    className="bg-primary text-white p-2 rounded-full hover:scale-105 active:scale-95 transition-all shadow-md shadow-primary/20"
+                                    className="bg-primary text-[#1A1A1A] p-2 rounded-full hover:scale-105 active:scale-95 transition-all shadow-md shadow-primary/20"
                                   >
                                     <Send size={14} />
                                   </button>
@@ -1259,7 +1221,7 @@ export default function ExplorePage() {
                           onClick={() => setViewMode('cards')}
                           className={clsx(
                             "px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all",
-                            viewMode === 'cards' ? "bg-primary text-white shadow-sm" : "text-muted hover:text-foreground"
+                            viewMode === 'cards' ? "bg-primary text-[#1A1A1A] shadow-sm" : "text-muted hover:text-foreground"
                           )}
                         >
                           Cards
@@ -1268,7 +1230,7 @@ export default function ExplorePage() {
                           onClick={() => setViewMode('list')}
                           className={clsx(
                             "px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all",
-                            viewMode === 'list' ? "bg-primary text-white shadow-sm" : "text-muted hover:text-foreground"
+                            viewMode === 'list' ? "bg-primary text-[#1A1A1A] shadow-sm" : "text-muted hover:text-foreground"
                           )}
                         >
                           List
@@ -1367,7 +1329,7 @@ export default function ExplorePage() {
 
                                 {/* Details Area - only for top card */}
                                 {isTop && (
-                                  <div className="flex-1 p-5 space-y-4 bg-background/70 overflow-y-auto custom-scrollbar flex flex-col relative z-10">
+                                  <div className="flex-1 p-5 space-y-4 bg-[#FAFAF8]/70 overflow-y-auto custom-scrollbar flex flex-col relative z-10">
                                     <div>
                                       <h2 className="text-2xl font-black text-foreground flex items-center gap-2 tracking-tight line-clamp-1">
                                         {student.name}
@@ -1392,7 +1354,7 @@ export default function ExplorePage() {
                                         <motion.button
                                           whileTap={{ scale: 0.98 }}
                                           onClick={() => handleDirectMessage(student)}
-                                          className="w-full py-4 gradient-bg rounded-2xl text-xs font-black text-white uppercase tracking-widest shadow-xl flex items-center justify-center space-x-2"
+                                          className="w-full py-4 gradient-bg rounded-2xl text-xs font-black text-[#1A1A1A] uppercase tracking-widest shadow-xl flex items-center justify-center space-x-2"
                                         >
                                           <MessageSquare size={16} />
                                           <span>Chat Now</span>
@@ -1401,7 +1363,7 @@ export default function ExplorePage() {
                                         <motion.button
                                           whileTap={{ scale: 0.98 }}
                                           onClick={() => handleConnect(student)}
-                                          className="w-full py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-xs font-black text-white uppercase tracking-widest flex items-center justify-center space-x-2"
+                                          className="w-full py-4 bg-[#F3F2EE] hover:bg-[#F3F2EE] border border-[#E8E6E0] rounded-2xl text-xs font-black text-[#1A1A1A] uppercase tracking-widest flex items-center justify-center space-x-2"
                                         >
                                           <Plus size={16} />
                                           <span>Connect</span>
@@ -1447,7 +1409,7 @@ export default function ExplorePage() {
                               {myFollowing.includes(student._id || student.id) ? (
                                 <button
                                   onClick={() => handleDirectMessage(student)}
-                                  className="p-2.5 bg-primary/10 text-primary rounded-xl hover:bg-primary hover:text-white transition-all shadow-sm"
+                                  className="p-2.5 bg-primary/10 text-primary rounded-xl hover:bg-primary hover:text-[#1A1A1A] transition-all shadow-sm"
                                   title="Message"
                                 >
                                   <MessageSquare size={18} />
@@ -1507,7 +1469,7 @@ export default function ExplorePage() {
                     {selectedCollege.postsData && selectedCollege.postsData.filter(p => p.image).length > 0 ? (
                       <div className="grid grid-cols-3 gap-1 md:gap-2 p-2">
                         {selectedCollege.postsData.filter(p => p.image).map((post, i) => (
-                          <div key={post._id || i} className="aspect-square relative group overflow-hidden bg-white/5 rounded-lg">
+                          <div key={post._id || i} className="aspect-square relative group overflow-hidden bg-[#F3F2EE] rounded-lg">
                             <img src={post.image} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
                           </div>
                         ))}
@@ -1542,12 +1504,12 @@ export default function ExplorePage() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed top-0 right-0 bottom-0 w-full max-w-sm bg-background z-[101] shadow-2xl flex flex-col"
+              className="fixed top-0 right-0 bottom-0 w-full max-w-sm bg-[#FAFAF8] z-[101] shadow-2xl flex flex-col"
             >
               <header className="p-4 border-b border-border/50 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-[#1A1A1A] font-bold"
                     style={{ background: `linear-gradient(135deg, ${selectedCollege.accent}, #a5b4fc)` }}
                   >
                     {chatWithStudent.avatar}
@@ -1577,7 +1539,7 @@ export default function ExplorePage() {
                     className="flex justify-end"
                   >
                     <div
-                      className="p-3 rounded-2xl rounded-tr-none text-sm text-white shadow-lg"
+                      className="p-3 rounded-2xl rounded-tr-none text-sm text-[#1A1A1A] shadow-lg"
                       style={{ backgroundColor: selectedCollege.accent }}
                     >
                       {msg.text}
@@ -1616,7 +1578,7 @@ export default function ExplorePage() {
                       }));
                       el.value = '';
                     }}
-                    className="p-3 rounded-xl text-white shadow-lg active:scale-95 transition-all"
+                    className="p-3 rounded-xl text-[#1A1A1A] shadow-lg active:scale-95 transition-all"
                     style={{ backgroundColor: selectedCollege.accent }}
                   >
                     <Send size={18} />

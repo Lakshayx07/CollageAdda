@@ -110,29 +110,29 @@ export default function ContributeModal({ isOpen, onClose, card, currentUser, on
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
         <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
           className="app-panel rounded-[1.75rem] w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]"
         >
-          <div className="p-5 border-b border-white/10 flex justify-between items-center bg-white/5 shrink-0">
-            <h3 className="font-black uppercase tracking-widest text-sm text-white flex items-center">
+          <div className="p-5 border-b border-[#E8E6E0] flex justify-between items-center bg-[#F3F2EE] shrink-0">
+            <h3 className="font-black uppercase tracking-widest text-sm text-[#1A1A1A] flex items-center">
               <Send size={16} className="mr-2 text-primary" /> Apply for Team
             </h3>
-            <button onClick={onClose} className="text-white/50 hover:text-white">
+            <button onClick={onClose} className="text-[#6B6B6B] hover:text-[#1A1A1A]">
               <X size={18} />
             </button>
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
             <div>
-              <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">Role</label>
+              <label className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest block mb-2">Role</label>
               <select
                 value={roleApplying}
                 onChange={e => setRoleApplying(e.target.value)}
-                className="w-full bg-black border border-white/10 rounded-xl px-3 py-3 text-white text-sm focus:border-primary focus:outline-none transition appearance-none"
+                className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-3 py-3 text-[#1A1A1A] text-sm focus:border-primary focus:outline-none transition appearance-none"
                 required
               >
                 {rolesArray.length === 0 ? (
@@ -146,35 +146,35 @@ export default function ContributeModal({ isOpen, onClose, card, currentUser, on
             </div>
 
             <div>
-              <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">Full Name</label>
+              <label className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest block mb-2">Full Name</label>
               <input
                 type="text"
                 placeholder="Your name"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-primary focus:outline-none transition"
+                className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:border-primary focus:outline-none transition"
                 required
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">Course & Branch</label>
+                <label className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest block mb-2">Course & Branch</label>
                 <input
                   type="text"
                   placeholder="B.Tech CSE"
                   value={courseBranch}
                   onChange={e => setCourseBranch(e.target.value)}
-                  className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-primary focus:outline-none transition"
+                  className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:border-primary focus:outline-none transition"
                   required
                 />
               </div>
               <div>
-                <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">Year</label>
+                <label className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest block mb-2">Year</label>
                 <select
                   value={year}
                   onChange={e => setYear(e.target.value)}
-                  className="w-full bg-black border border-white/10 rounded-xl px-3 py-3 text-white text-sm focus:border-primary focus:outline-none transition appearance-none"
+                  className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-3 py-3 text-[#1A1A1A] text-sm focus:border-primary focus:outline-none transition appearance-none"
                 >
                   <option>1st Year</option>
                   <option>2nd Year</option>
@@ -186,19 +186,19 @@ export default function ContributeModal({ isOpen, onClose, card, currentUser, on
             </div>
 
             <div>
-              <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">Your Skills</label>
+              <label className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest block mb-2">Your Skills</label>
               <input
                 type="text"
                 placeholder="React, Node.js, Design..."
                 value={skills}
                 onChange={e => setSkills(e.target.value)}
-                className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-primary focus:outline-none transition"
+                className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:border-primary focus:outline-none transition"
                 required
               />
             </div>
 
             <div>
-              <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">
+              <label className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest block mb-2">
                 Why do you want to join? ({whyJoin.length}/200)
               </label>
               <textarea
@@ -207,26 +207,26 @@ export default function ContributeModal({ isOpen, onClose, card, currentUser, on
                 onChange={e => setWhyJoin(e.target.value)}
                 maxLength={200}
                 rows={3}
-                className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-primary focus:outline-none transition resize-none"
+                className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:border-primary focus:outline-none transition resize-none"
                 required
               />
             </div>
 
             <div>
-              <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">LinkedIn / GitHub URL (Optional)</label>
+              <label className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest block mb-2">LinkedIn / GitHub URL (Optional)</label>
               <input
                 type="url"
                 placeholder="https://linkedin.com/in/..."
                 value={profileUrl}
                 onChange={e => setProfileUrl(e.target.value)}
-                className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-primary focus:outline-none transition"
+                className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:border-primary focus:outline-none transition"
               />
             </div>
 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full mt-4 py-4 bg-gradient-to-r from-primary to-purple-600 hover:from-purple-500 hover:to-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full mt-4 py-4 bg-gradient-to-r from-primary to-[#D4A843] hover:from-[#C8922A] hover:to-[#C8922A] text-[#1A1A1A] rounded-xl text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {isSubmitting ? <Loader size={14} className="animate-spin" /> : <Send size={14} />}
               {isSubmitting ? "Sending..." : "Apply Now"}

@@ -167,7 +167,7 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
     return (
       <section className="flex w-full flex-col items-center">
         <div className="relative w-full max-w-sm" style={{ minHeight: 480 }}>
-          <div className="absolute inset-0 flex flex-col items-center justify-center rounded-[1.75rem] app-panel border border-white/10 bg-white/[0.02]">
+          <div className="absolute inset-0 flex flex-col items-center justify-center rounded-[1.75rem] app-panel border border-[#E8E6E0] bg-[#F3F2EE]">
             <Loader size={32} className="animate-spin text-primary mb-4" />
             <p className="text-sm text-muted font-bold">Loading campus cards…</p>
           </div>
@@ -180,11 +180,11 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
     return (
       <section className="flex w-full flex-col items-center">
         <div className="relative w-full max-w-sm" style={{ minHeight: 480 }}>
-          <div className="app-panel absolute inset-0 flex flex-col items-center justify-center rounded-[1.75rem] p-7 text-center border border-white/10 bg-white/[0.02]">
+          <div className="app-panel absolute inset-0 flex flex-col items-center justify-center rounded-[1.75rem] p-7 text-center border border-[#E8E6E0] bg-[#F3F2EE]">
             <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-primary/10 text-primary">
               <Briefcase size={34} />
             </div>
-            <h3 className="text-2xl font-black tracking-tight text-white">No cards on campus</h3>
+            <h3 className="text-2xl font-black tracking-tight text-[#1A1A1A]">No cards on campus</h3>
             <p className="mt-3 text-sm leading-6 text-muted">
               Be the first to post a collab card for your campus!
             </p>
@@ -230,9 +230,9 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
       <div className="mb-4 flex w-full max-w-sm items-center justify-between">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.22em] text-muted">Team cards</p>
-          <h2 className="text-lg font-black text-white">Campus Collabs</h2>
+          <h2 className="text-lg font-black text-[#1A1A1A]">Campus Collabs</h2>
         </div>
-        <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-black text-muted">
+        <span className="rounded-full border border-[#E8E6E0] bg-[#F3F2EE] px-3 py-1 text-[10px] font-black text-muted">
           Swipe
         </span>
       </div>

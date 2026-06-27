@@ -73,7 +73,7 @@ function CollegeMark({ college, size = "md" }) {
         <Image src={college.logo} alt="" width={72} height={72} className="h-full w-full rounded-full object-contain" />
       ) : (
         <div
-          className="grid h-full w-full place-items-center rounded-full text-sm font-black text-white"
+          className="grid h-full w-full place-items-center rounded-full text-sm font-black text-[#1A1A1A]"
           style={{ backgroundColor: college.accent }}
         >
           {college.fallbackLogo && college.fallbackLogo.length <= 3 ? college.fallbackLogo : initials}
@@ -148,7 +148,7 @@ function PodiumCard({ college, variant }) {
       <Ribbon rank={college.rank} tone={variant} />
       {isWinner && <WinnerSparkles />}
       <CollegeMark college={college} size={isWinner ? "lg" : "md"} />
-      <h3 className="mt-4 max-w-[14rem] text-base font-black leading-tight tracking-tight text-white sm:text-lg">
+      <h3 className="mt-4 max-w-[14rem] text-base font-black leading-tight tracking-tight text-[#1A1A1A] sm:text-lg">
         {college.name}
       </h3>
       {isWinner && (
@@ -158,9 +158,9 @@ function PodiumCard({ college, variant }) {
       )}
       <div className="mt-4 flex items-end justify-center gap-1.5">
         <span className="text-3xl font-black leading-none sm:text-4xl" style={{ color: pointsColor }}>{college.points}</span>
-        <span className="pb-0.5 text-lg font-black text-white">pts</span>
+        <span className="pb-0.5 text-lg font-black text-[#1A1A1A]">pts</span>
       </div>
-      <p className="mt-3 flex items-center justify-center gap-1.5 text-xs font-semibold text-white/72 sm:text-sm">
+      <p className="mt-3 flex items-center justify-center gap-1.5 text-xs font-semibold text-[#4A4A4A] sm:text-sm">
         <UsersRound size={15} />
         {pluralizeStudents(college.verifiedStudents)}
       </p>
@@ -215,7 +215,7 @@ export default function CampusLeaderboard({ apiUrl }) {
   const tableRows = leaders.filter(item => item.rank >= 4);
 
   return (
-    <section className="relative mx-auto max-w-[980px] overflow-visible rounded-[1.35rem] border border-white/10 bg-[#0a0a14] p-4 shadow-2xl shadow-black/30 sm:p-5 lg:p-6">
+    <section className="relative mx-auto max-w-[980px] overflow-visible rounded-[1.35rem] border border-[#E8E6E0] bg-[#0a0a14] p-4 shadow-2xl shadow-black/30 sm:p-5 lg:p-6">
       <style>{`
         @keyframes leaderboardTwinkle {
           0%, 100% { opacity: 0.32; transform: scale(1); }
@@ -229,33 +229,33 @@ export default function CampusLeaderboard({ apiUrl }) {
           <div className="flex items-center gap-3">
             <Trophy size={32} strokeWidth={2.4} style={{ color: "#8b5cf6" }} />
             <h2 className="text-2xl font-black uppercase tracking-tight sm:text-3xl">
-              <span className="text-white">Campus </span>
-              <span className="bg-gradient-to-r from-violet-400 to-purple-500 bg-clip-text text-transparent">Leaderboard</span>
+              <span className="text-[#1A1A1A]">Campus </span>
+              <span className="bg-gradient-to-r from-violet-400 to-[#D4A843] bg-clip-text text-transparent">Leaderboard</span>
             </h2>
           </div>
-          <p className="mt-2 text-sm font-medium text-white/62">
+          <p className="mt-2 text-sm font-medium text-[#6B6B6B]">
             Celebrating colleges with the most verified students on CampusAdda
           </p>
         </div>
-        <div className="flex w-full max-w-[15rem] items-center gap-2.5 rounded-xl border border-white/15 bg-white/[0.055] px-3 py-2.5 shadow-lg shadow-black/20">
+        <div className="flex w-full max-w-[15rem] items-center gap-2.5 rounded-xl border border-white/15 bg-[#F3F2EE] px-3 py-2.5 shadow-lg shadow-black/20">
           <div className="grid h-8 w-8 place-items-center rounded-lg bg-white/8">
-            <Clock3 size={17} className="text-white/78" />
+            <Clock3 size={17} className="text-[#4A4A4A]" />
           </div>
           <div>
-            <p className="text-[11px] font-semibold text-white/82">Last Updated</p>
-            <p className="mt-0.5 text-[11px] font-medium text-white/74">{formatTimestamp(lastUpdated)}</p>
+            <p className="text-[11px] font-semibold text-[#4A4A4A]">Last Updated</p>
+            <p className="mt-0.5 text-[11px] font-medium text-[#4A4A4A]">{formatTimestamp(lastUpdated)}</p>
           </div>
         </div>
       </div>
 
       {loading ? (
         <div className="relative z-10 mt-8 rounded-2xl border border-dashed border-white/12 py-10 text-center">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-white/35">Building leaderboard...</p>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-[#888888]">Building leaderboard...</p>
         </div>
       ) : leaders.length === 0 ? (
         <div className="relative z-10 mt-8 rounded-2xl border border-dashed border-white/12 py-10 text-center">
-          <p className="text-sm font-bold text-white/45">No colleges ranked yet.</p>
-          <p className="mt-2 text-xs text-white/30">Rankings appear as more verified students join.</p>
+          <p className="text-sm font-bold text-[#6B6B6B]">No colleges ranked yet.</p>
+          <p className="mt-2 text-xs text-[#6B6B6B]">Rankings appear as more verified students join.</p>
         </div>
       ) : (
         <>
@@ -265,8 +265,8 @@ export default function CampusLeaderboard({ apiUrl }) {
             {podium.third && <PodiumCard college={podium.third} variant="bronze" />}
           </div>
 
-          <div className="relative z-10 mt-5 overflow-hidden rounded-[1.05rem] border border-white/10 bg-white/[0.045] p-2.5">
-            <div className="grid grid-cols-[4.25rem_minmax(0,1fr)_7rem_5.75rem] rounded-lg bg-white/[0.045] px-3.5 py-2.5 text-[10px] font-black uppercase tracking-[0.13em] text-white/55 max-md:hidden">
+          <div className="relative z-10 mt-5 overflow-hidden rounded-[1.05rem] border border-[#E8E6E0] bg-[#F3F2EE] p-2.5">
+            <div className="grid grid-cols-[4.25rem_minmax(0,1fr)_7rem_5.75rem] rounded-lg bg-[#F3F2EE] px-3.5 py-2.5 text-[10px] font-black uppercase tracking-[0.13em] text-[#888888]5 max-md:hidden">
               <span>Rank</span>
               <span>College / University</span>
               <span className="text-center">Verified Students</span>
@@ -274,29 +274,29 @@ export default function CampusLeaderboard({ apiUrl }) {
             </div>
             <div className="mt-2 space-y-1.5">
               {tableRows.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-white/10 py-6 text-center">
-                  <p className="text-xs font-bold text-white/35">More ranked colleges will appear here.</p>
+                <div className="rounded-xl border border-dashed border-[#E8E6E0] py-6 text-center">
+                  <p className="text-xs font-bold text-[#888888]">More ranked colleges will appear here.</p>
                 </div>
               ) : tableRows.map(college => (
                 <div key={college.name} className="grid items-center gap-2.5 rounded-xl bg-[#12182a]/82 px-3.5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] md:grid-cols-[4.25rem_minmax(0,1fr)_7rem_5.75rem]">
                   <div className="flex items-center gap-2.5 md:block">
-                    <div className="grid h-9 w-9 place-items-center rounded-full bg-white/[0.075] text-sm font-black text-white/86">
+                    <div className="grid h-9 w-9 place-items-center rounded-full bg-[#F3F2EE] text-sm font-black text-[#4A4A4A]">
                       {college.rank}
                     </div>
-                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-white/38 md:hidden">Rank</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#888888] md:hidden">Rank</span>
                   </div>
                   <div className="flex min-w-0 items-center gap-3">
                     <CollegeMark college={college} size="sm" />
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-black text-white">{college.name}</p>
-                      <p className="mt-0.5 flex items-center gap-1.5 text-[11px] font-medium text-white/55">
+                      <p className="truncate text-sm font-black text-[#1A1A1A]">{college.name}</p>
+                      <p className="mt-0.5 flex items-center gap-1.5 text-[11px] font-medium text-[#888888]5">
                         <UsersRound size={12} />
                         {pluralizeStudents(college.verifiedStudents)}
                       </p>
                     </div>
                   </div>
-                  <div className="text-left text-sm font-black text-white md:text-center">{college.verifiedStudents}</div>
-                  <div className="text-left text-base font-black text-white md:text-right">{college.points} pts</div>
+                  <div className="text-left text-sm font-black text-[#1A1A1A] md:text-center">{college.verifiedStudents}</div>
+                  <div className="text-left text-base font-black text-[#1A1A1A] md:text-right">{college.points} pts</div>
                 </div>
               ))}
             </div>
@@ -304,14 +304,14 @@ export default function CampusLeaderboard({ apiUrl }) {
         </>
       )}
 
-      <div className="relative z-10 mt-4 flex flex-col gap-3 rounded-xl border border-white/10 bg-white/[0.045] p-3.5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="relative z-10 mt-4 flex flex-col gap-3 rounded-xl border border-[#E8E6E0] bg-[#F3F2EE] p-3.5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-violet-600 to-purple-800">
-            <Star size={20} className="text-white" />
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-[#C8922A] to-[#D4A843]">
+            <Star size={20} className="text-[#1A1A1A]" />
           </div>
           <div>
             <p className="text-sm font-black" style={{ color: "#a78bfa" }}>How it works?</p>
-            <p className="mt-0.5 text-xs font-medium text-white/62">
+            <p className="mt-0.5 text-xs font-medium text-[#6B6B6B]">
               Colleges earn points based on the number of verified students on CampusAdda.
             </p>
           </div>

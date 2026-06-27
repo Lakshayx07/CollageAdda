@@ -377,9 +377,9 @@ export default function FriendsPage() {
   }, [campusUsers, suggestedUsers, globalUsers, activeSquadTab, leaderboardTab, user]);
 
   const topBadgeStyles = [
-    { label: "Campus Star", className: "from-yellow-300 to-orange-500 text-black", icon: Trophy },
-    { label: "Rising Icon", className: "from-slate-200 to-cyan-300 text-slate-950", icon: Star },
-    { label: "Squad Magnet", className: "from-amber-600 to-rose-500 text-white", icon: Star },
+    { label: "Campus Star", className: "from-yellow-300 to-[#D4A843] text-black", icon: Trophy },
+    { label: "Rising Icon", className: "from-slate-200 to-amber-300 text-slate-950", icon: Star },
+    { label: "Squad Magnet", className: "from-amber-600 to-[#D4A843] text-[#1A1A1A]", icon: Star },
   ];
 
   const animSpring = [0.34, 1.56, 0.64, 1];
@@ -526,12 +526,12 @@ export default function FriendsPage() {
           animate={{ x: 0, opacity: 1 }}
           className="flex items-center space-x-3"
         >
-          <div className="w-10 h-10 gradient-bg rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20">
-            <Zap size={20} className="text-white fill-white" />
+          <div className="w-10 h-10 gradient-bg rounded-xl flex items-center justify-center shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)]">
+            <Zap size={20} className="text-[#1A1A1A] fill-white" />
           </div>
           <div>
-            <h1 className="text-xl font-black text-white tracking-tight">Squad</h1>
-            <p className="text-[10px] text-purple-400 font-bold uppercase tracking-widest">Connect</p>
+            <h1 className="text-xl font-black text-[#1A1A1A] tracking-tight">Squad</h1>
+            <p className="text-[10px] text-[#C8922A] font-bold uppercase tracking-widest">Connect</p>
           </div>
         </motion.div>
 
@@ -540,7 +540,7 @@ export default function FriendsPage() {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={handleHeartClick}
-            className="p-3 glass rounded-2xl relative border border-white/10"
+            className="p-3 bg-[#F9F8F5] border border-[#E8E6E0] rounded-2xl relative border border-[#E8E6E0]"
           >
             <Heart
               size={24}
@@ -552,7 +552,7 @@ export default function FriendsPage() {
               }}
             />
             {newFollowersCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-[#EC4899] text-white text-[9px] font-black rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shadow-lg border-2 border-[#0A0A0F]">
+              <span className="absolute -top-1 -right-1 bg-[#EC4899] text-[#1A1A1A] text-[9px] font-black rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shadow-lg border-2 border-[#0A0A0F]">
                 {newFollowersCount}
               </span>
             )}
@@ -566,19 +566,19 @@ export default function FriendsPage() {
                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
                 className="app-panel absolute right-0 top-16 z-50 w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-[1.5rem]"
               >
-                <div className="p-5 border-b border-white/5 flex items-center justify-between">
-                  <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                <div className="p-5 border-b border-[#E8E6E0] flex items-center justify-between">
+                  <h3 className="font-bold text-[#1A1A1A] text-sm flex items-center gap-2">
                     <Sparkles size={16} className="text-pink-500" />
                     New Followers
                   </h3>
-                  <button onClick={() => setShowNotifPanel(false)} className="text-white/20 hover:text-white">
+                  <button onClick={() => setShowNotifPanel(false)} className="text-[#888888] hover:text-[#1A1A1A]">
                     <X size={18} />
                   </button>
                 </div>
 
                 <div className="max-h-[350px] overflow-y-auto custom-scrollbar p-2">
                   {(Array.isArray(allFollowers) ? allFollowers : []).length === 0 ? (
-                    <div className="py-12 text-center text-white/20">
+                    <div className="py-12 text-center text-[#888888]">
                       <Heart size={40} className="mx-auto mb-3 opacity-10" />
                       <p className="text-sm font-bold">No fans yet!</p>
                       <p className="text-[10px] mt-1 uppercase tracking-widest">Connect to get followers</p>
@@ -587,7 +587,7 @@ export default function FriendsPage() {
                     (Array.isArray(allFollowers) ? allFollowers : []).map((follower) => (
                       <div
                         key={follower._id}
-                        className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-2xl transition-all group"
+                        className="flex items-center gap-3 p-3 hover:bg-[#F3F2EE] rounded-2xl transition-all group"
                       >
                         <div className="w-10 h-10 rounded-full p-[1.5px] gradient-bg shrink-0">
                           <img 
@@ -596,15 +596,15 @@ export default function FriendsPage() {
                           />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-white truncate">{follower.name}</p>
-                          <p className="text-[10px] text-white/40 truncate flex items-center">
+                          <p className="text-sm font-bold text-[#1A1A1A] truncate">{follower.name}</p>
+                          <p className="text-[10px] text-[#6B6B6B] truncate flex items-center">
                             <MapPin size={8} className="mr-1" />
                             {follower.university}
                           </p>
                         </div>
                         <button
                           onClick={() => handleDirectMessage(follower._id)}
-                          className="p-2 rounded-xl glass hover:bg-purple-500/10 text-purple-400"
+                          className="p-2 rounded-xl bg-[#F9F8F5] border border-[#E8E6E0] hover:bg-[#C8922A]/10 text-[#C8922A]"
                         >
                           <MessageCircle size={16} />
                         </button>
@@ -618,51 +618,60 @@ export default function FriendsPage() {
         </div>
       </header>
 
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-8 relative z-10 sm:px-6 sm:py-8 sm:space-y-10">
+      <div className="max-w-6xl mx-auto px-4 py-6 relative z-10 sm:px-6 sm:py-8 flex flex-col md:flex-row gap-8 items-start">
+        {/* Left Column (Search & Lists) */}
+        <div className="flex-1 w-full space-y-6 sm:space-y-8 max-w-2xl">
         {/* Search Section */}
         <motion.div 
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           className="space-y-6"
         >
-          <div className="text-center space-y-2">
-            <h2 className="text-3xl font-black text-white tracking-tight sm:text-4xl sm:tracking-tighter">Find Your <span className="gradient-text">Campus Squad</span></h2>
-            <p className="text-white/40 text-sm font-medium">Connect with the coolest minds in your university</p>
+          <div className="space-y-2">
+            <h2 className="text-3xl sm:text-4xl font-black text-[#1A1A1A] tracking-tight">Find Your <span className="gradient-text">Campus Squad</span></h2>
+            <p className="text-[#6B6B6B] text-sm font-medium">Connect with the coolest minds in your university</p>
           </div>
 
-          <div className="app-panel grid grid-cols-2 gap-1 rounded-[1.35rem] p-1">
+          <div className="flex items-center gap-6 border-b border-[#E8E6E0]">
             <button
               onClick={() => setActiveSquadTab("find")}
               className={clsx(
-                "rounded-[1.1rem] px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] transition-all",
-                activeSquadTab === "find" ? "gradient-bg text-white shadow-lg shadow-purple-500/20" : "text-white/42 hover:text-white"
+                "pb-3 text-[15px] font-black transition-colors relative",
+                activeSquadTab === "find" ? "text-[#C8922A]" : "text-[#888888] hover:text-[#1A1A1A]"
               )}
             >
               Find Friends
+              {activeSquadTab === "find" && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C8922A] rounded-t-full" />}
             </button>
             <button
               onClick={() => setActiveSquadTab("leaderboard")}
               className={clsx(
-                "rounded-[1.1rem] px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] transition-all",
-                activeSquadTab === "leaderboard" ? "gradient-bg text-white shadow-lg shadow-purple-500/20" : "text-white/42 hover:text-white"
+                "pb-3 text-[15px] font-black transition-colors relative",
+                activeSquadTab === "leaderboard" ? "text-[#C8922A]" : "text-[#888888] hover:text-[#1A1A1A]"
               )}
             >
               Leaderboard
+              {activeSquadTab === "leaderboard" && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C8922A] rounded-t-full" />}
             </button>
           </div>
 
           {activeSquadTab === "find" && (
-            <div className="relative group">
-              <div className="absolute -inset-1 gradient-bg rounded-[2rem] blur opacity-10 group-focus-within:opacity-30 transition-opacity pointer-events-none" />
-              <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-purple-400 transition-colors pointer-events-none" size={20} />
-              {searching && <Loader2 className="absolute right-5 top-1/2 -translate-y-1/2 text-purple-500 animate-spin" size={18} />}
-              <input
-                type="text"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Search by name, university or #interest..."
-                className="input-surface w-full rounded-[1.5rem] py-5 pl-14 pr-12 text-[15px] text-white placeholder:text-white/25"
-              />
+            <div className="flex gap-3">
+              <div className="relative flex-1 group">
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[#888888] group-focus-within:text-[#C8922A] transition-colors" size={18} />
+                {searching && <Loader2 className="absolute right-5 top-1/2 -translate-y-1/2 text-[#C8922A] animate-spin" size={18} />}
+                <input
+                  type="text"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Search by name, university or #interest..."
+                  className="w-full bg-[#F9F8F5] border border-[#E8E6E0] rounded-xl py-4 pl-13 pr-12 text-[15px] font-medium text-[#1A1A1A] placeholder:text-[#888888] focus:outline-none focus:border-[#C8922A] transition-colors"
+                />
+              </div>
+              <button className="flex items-center gap-2 px-4 py-3 bg-[#F9F8F5] border border-[#E8E6E0] rounded-xl text-[12px] font-bold text-[#6B6B6B] hover:bg-[#F3F2EE] transition-colors shrink-0">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                Filters
+              </button>
             </div>
           )}
         </motion.div>
@@ -675,7 +684,7 @@ export default function FriendsPage() {
                 onClick={() => setLeaderboardTab("my_campus")}
                 className={clsx(
                   "rounded-[1.1rem] px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] transition-all",
-                  leaderboardTab === "my_campus" ? "gradient-bg text-white shadow-lg shadow-purple-500/20" : "text-white/42 hover:text-white"
+                  leaderboardTab === "my_campus" ? "gradient-bg text-[#1A1A1A] shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)]" : "text-[#6B6B6B] hover:text-[#1A1A1A]"
                 )}
               >
                 My Campus
@@ -687,7 +696,7 @@ export default function FriendsPage() {
                 }}
                 className={clsx(
                   "rounded-[1.1rem] px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] transition-all",
-                  leaderboardTab === "global_pulse" ? "gradient-bg text-white shadow-lg shadow-purple-500/20" : "text-white/42 hover:text-white"
+                  leaderboardTab === "global_pulse" ? "gradient-bg text-[#1A1A1A] shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)]" : "text-[#6B6B6B] hover:text-[#1A1A1A]"
                 )}
               >
                 Global Pulse
@@ -695,24 +704,24 @@ export default function FriendsPage() {
             </div>
 
             <div className="flex items-center justify-between gap-3">
-              <h3 className="text-[11px] font-black text-white/30 uppercase tracking-[0.2em] flex items-center">
+              <h3 className="text-[11px] font-black text-[#6B6B6B] uppercase tracking-[0.2em] flex items-center">
                 <Trophy size={13} className="mr-2 text-yellow-400" />
                 {leaderboardTab === "global_pulse" ? "Top 10 Worldwide" : "Top 10 Students"}
               </h3>
-              <span className="text-[10px] glass px-3 py-1 rounded-full text-yellow-300 font-bold border border-yellow-500/10">
+              <span className="text-[10px] bg-[#F9F8F5] border border-[#E8E6E0] px-3 py-1 rounded-full text-yellow-300 font-bold border border-yellow-500/10">
                 followers + following
               </span>
             </div>
 
             {loading || (leaderboardTab === "global_pulse" && globalLoading) ? (
               <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                <div className="w-12 h-12 border-4 border-white/5 border-t-yellow-400 rounded-full animate-spin" />
-                <p className="text-[10px] text-white/30 font-black uppercase tracking-widest">Building leaderboard...</p>
+                <div className="w-12 h-12 border-4 border-[#E8E6E0] border-t-yellow-400 rounded-full animate-spin" />
+                <p className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest">Building leaderboard...</p>
               </div>
             ) : leaderboardStudents.length === 0 ? (
-              <div className="text-center py-20 app-panel rounded-[1.75rem] border-white/5 border-dashed">
-                <p className="text-2xl font-black text-white/10 mb-2">No rankings yet</p>
-                <p className="text-sm text-white/20 font-medium">Connect with students to start the leaderboard.</p>
+              <div className="text-center py-20 app-panel rounded-[1.75rem] border-[#E8E6E0] border-dashed">
+                <p className="text-2xl font-black text-[#888888] mb-2">No rankings yet</p>
+                <p className="text-sm text-[#888888] font-medium">Connect with students to start the leaderboard.</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -741,7 +750,7 @@ export default function FriendsPage() {
                             <motion.span 
                               animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
                               transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                              className="bg-[linear-gradient(45deg,#ff0095,#006aff,#00ff99,#ff0095)] bg-[length:300%_300%] text-white text-[11px] font-black uppercase tracking-[0.2em] px-5 py-2 rounded-full shadow-[0_0_20px_rgba(0,106,255,0.4)] flex items-center gap-2"
+                              className="bg-[linear-gradient(45deg,#ff0095,#006aff,#00ff99,#ff0095)] bg-[length:300%_300%] text-[#1A1A1A] text-[11px] font-black uppercase tracking-[0.2em] px-5 py-2 rounded-full shadow-[0_0_20px_rgba(0,106,255,0.4)] flex items-center gap-2"
                             >
                               🌍 Global Pulse Leader
                             </motion.span>
@@ -749,9 +758,9 @@ export default function FriendsPage() {
                           
                           <div className="relative mt-3">
                             {/* Pulse Ring Behind Avatar */}
-                            <div className="absolute inset-0 rounded-[2.2rem] bg-gradient-to-tr from-cyan-400 to-purple-500 animate-ping opacity-30 blur-md" />
+                            <div className="absolute inset-0 rounded-[2.2rem] bg-gradient-to-tr from-[#D4A843] to-[#D4A843] animate-ping opacity-30 blur-md" />
                             
-                            <img src={avatar} className="relative w-28 h-28 rounded-[2.2rem] border-4 border-white/10 object-cover shadow-2xl z-10 group-hover:scale-105 transition-transform duration-300" />
+                            <img src={avatar} className="relative w-28 h-28 rounded-[2.2rem] border-4 border-[#E8E6E0] object-cover shadow-2xl z-10 group-hover:scale-105 transition-transform duration-300" />
                             
                             <motion.div 
                               animate={{ y: [0, -10, 0], rotate: [0, 15, -10, 0] }}
@@ -768,15 +777,15 @@ export default function FriendsPage() {
                           
                           <div className="mt-3">
                             <div className="flex items-center justify-center gap-2">
-                              <p className="text-2xl font-black text-white tracking-tight">{person.name}</p>
+                              <p className="text-2xl font-black text-[#1A1A1A] tracking-tight">{person.name}</p>
                               <VerifiedBadge user={person} size={20} />
                             </div>
-                            <p className="text-xs font-bold text-white/50 mt-1 flex items-center justify-center gap-1">
-                              <MapPin size={12} className="text-purple-400" />
+                            <p className="text-xs font-bold text-[#6B6B6B] mt-1 flex items-center justify-center gap-1">
+                              <MapPin size={12} className="text-[#C8922A]" />
                               {person.university || "Campus Adda"}
                             </p>
                             <div className="mt-3 flex justify-center">
-                               <span className="inline-flex rounded-full glass px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-cyan-300 border border-cyan-400/20 shadow-[0_0_10px_rgba(6,182,212,0.2)]">
+                               <span className="inline-flex rounded-full bg-[#F9F8F5] border border-[#E8E6E0] px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-[#C8922A] border border-[#E8E6E0] shadow-[0_0_10px_rgba(6,182,212,0.2)]">
                                  {topBadge?.label || "Global Star"}
                                </span>
                             </div>
@@ -786,16 +795,16 @@ export default function FriendsPage() {
                           
                           <div className="flex gap-8 w-full justify-center items-center">
                             <div className="text-center group-hover:scale-110 transition-transform">
-                              <p className="text-3xl font-black bg-gradient-to-br from-yellow-300 to-orange-500 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(250,204,21,0.2)]" style={{ WebkitTextFillColor: 'transparent', color: 'transparent' }}>{person.influenceScore}</p>
-                              <p className="text-[10px] uppercase tracking-[0.2em] text-white/40 font-bold mt-1">Total Score</p>
+                              <p className="text-3xl font-black bg-gradient-to-br from-yellow-300 to-[#D4A843] bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(250,204,21,0.2)]" style={{ WebkitTextFillColor: 'transparent', color: 'transparent' }}>{person.influenceScore}</p>
+                              <p className="text-[10px] uppercase tracking-[0.2em] text-[#6B6B6B] font-bold mt-1">Total Score</p>
                             </div>
-                            <div className="w-[1px] h-10 bg-white/10" />
+                            <div className="w-[1px] h-10 bg-[#F3F2EE]" />
                             <div className="text-left flex flex-col justify-center gap-1">
-                              <p className="text-xs font-bold text-white/80 flex items-center gap-2">
+                              <p className="text-xs font-bold text-[#4A4A4A] flex items-center gap-2">
                                 <span className="w-2 h-2 rounded-full bg-pink-500 animate-pulse" />
                                 {person.followerCount} fans
                               </p>
-                              <p className="text-xs font-bold text-white/60 flex items-center gap-2">
+                              <p className="text-xs font-bold text-[#6B6B6B] flex items-center gap-2">
                                 <span className="w-2 h-2 rounded-full bg-cyan-500" />
                                 {person.followingCount} following
                               </p>
@@ -820,15 +829,15 @@ export default function FriendsPage() {
                     >
                       <div className={clsx(
                         "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-sm font-black",
-                        rank === 1 ? "bg-yellow-300" : rank === 2 ? "bg-slate-200" : rank === 3 ? "bg-orange-500" : "bg-white/[0.06] text-white/55"
+                        rank === 1 ? "bg-yellow-300" : rank === 2 ? "bg-slate-200" : rank === 3 ? "bg-orange-500" : "bg-[#F3F2EE] text-[#888888]5"
                       )} style={rank === 1 ? { color: '#000000' } : rank === 2 ? { color: '#020617' } : rank === 3 ? { color: '#ffffff' } : {}}>
                         #{rank}
                       </div>
 
                       <div className="relative shrink-0">
-                        <img src={avatar} className="h-14 w-14 rounded-2xl border border-white/10 object-cover" />
+                        <img src={avatar} className="h-14 w-14 rounded-2xl border border-[#E8E6E0] object-cover" />
                         {rank <= 3 && (
-                          <div className="absolute -bottom-2 -right-2 rounded-xl bg-background p-1">
+                          <div className="absolute -bottom-2 -right-2 rounded-xl bg-[#FAFAF8] p-1">
                             <div className={`flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br ${topBadge.className}`}>
                               <BadgeIcon size={13} fill="currentColor" />
                             </div>
@@ -838,10 +847,10 @@ export default function FriendsPage() {
 
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <p className="truncate text-sm font-black text-white">{person.name}</p>
+                          <p className="truncate text-sm font-black text-[#1A1A1A]">{person.name}</p>
                           <VerifiedBadge user={person} size={14} />
                         </div>
-                        <p className="mt-1 truncate text-[11px] font-bold text-white/35">{person.university || "Campus Adda"}</p>
+                        <p className="mt-1 truncate text-[11px] font-bold text-[#888888]">{person.university || "Campus Adda"}</p>
                         {rank <= 3 && (
                           <span className="mt-2 inline-flex rounded-full bg-yellow-400/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-yellow-200">
                             {topBadge.label}
@@ -850,9 +859,9 @@ export default function FriendsPage() {
                       </div>
 
                       <div className="text-right">
-                        <p className="text-lg font-black text-white">{person.influenceScore}</p>
-                        <p className="text-[9px] font-bold uppercase tracking-wider text-white/28">score</p>
-                        <p className="mt-1 text-[10px] text-white/35">
+                        <p className="text-lg font-black text-[#1A1A1A]">{person.influenceScore}</p>
+                        <p className="text-[9px] font-bold uppercase tracking-wider text-[#888888]">score</p>
+                        <p className="mt-1 text-[10px] text-[#888888]">
                           {person.followerCount} fans • {person.followingCount} following
                         </p>
                       </div>
@@ -865,19 +874,19 @@ export default function FriendsPage() {
         ) : (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-[11px] font-black text-white/30 uppercase tracking-[0.2em] flex items-center">
+            <h3 className="text-[11px] font-black text-[#6B6B6B] uppercase tracking-[0.2em] flex items-center">
               <Sparkles size={12} className="mr-2 text-yellow-500" />
               {search.trim() ? "Search Results" : "Verified Campus Peers"}
             </h3>
-            <span className="text-[10px] glass px-3 py-1 rounded-full text-purple-400 font-bold border border-purple-500/10">
+            <span className="text-[10px] bg-[#F9F8F5] border border-[#E8E6E0] px-3 py-1 rounded-full text-[#C8922A] font-bold border border-[#C8922A]/30">
               {suggestedUsers.length} peers
             </span>
           </div>
 
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 space-y-4">
-              <div className="w-12 h-12 border-4 border-white/5 border-t-purple-500 rounded-full animate-spin" />
-              <p className="text-[10px] text-white/30 font-black uppercase tracking-widest">Scanning Campus...</p>
+              <div className="w-12 h-12 border-4 border-[#E8E6E0] border-t-purple-500 rounded-full animate-spin" />
+              <p className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest">Scanning Campus...</p>
             </div>
           ) : (
             <motion.div 
@@ -889,9 +898,9 @@ export default function FriendsPage() {
               className="grid gap-6"
             >
               {suggestedUsers.length === 0 ? (
-                <div className="text-center py-20 app-panel rounded-[1.75rem] border-white/5 border-dashed">
-                  <p className="text-2xl font-black text-white/10 mb-2">Squad Not Found 🛸</p>
-                  <p className="text-sm text-white/20 font-medium">Try searching for #Tech, #Design or a name</p>
+                <div className="text-center py-20 app-panel rounded-[1.75rem] border-[#E8E6E0] border-dashed">
+                  <p className="text-2xl font-black text-[#888888] mb-2">Squad Not Found 🛸</p>
+                  <p className="text-sm text-[#888888] font-medium">Try searching for #Tech, #Design or a name</p>
                 </div>
               ) : (
                 suggestedUsers.map(person => {
@@ -906,7 +915,9 @@ export default function FriendsPage() {
                         hidden: { y: 20, opacity: 0 },
                         visible: { y: 0, opacity: 1 }
                       }}
-                      className="bg-[#13152b] p-6 rounded-[2.5rem] border border-purple-900/25 hover:border-purple-500/50 transition-all group relative overflow-hidden cursor-pointer"
+                      whileHover={{ scale: 1.03 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                      className="bg-white p-6 rounded-[2.5rem] border border-[#E8E6E0] hover:border-purple-500/50 hover:shadow-lg transition-all group relative overflow-hidden cursor-pointer"
                     >
                       <div className="absolute top-0 right-0 w-32 h-32 gradient-bg opacity-[0.03] blur-3xl -rotate-45 translate-x-16 -translate-y-16" />
                       
@@ -923,26 +934,26 @@ export default function FriendsPage() {
                         <div className="flex-1 min-w-0 space-y-3">
                           <div>
                             <div className="flex items-center space-x-2">
-                              <h4 className="font-black text-xl text-white truncate tracking-tight">{person.name}</h4>
+                              <h4 className="font-black text-xl text-[#1A1A1A] truncate tracking-tight">{person.name}</h4>
                               <VerifiedBadge user={person} size={16} />
                             </div>
-                            <p className="text-[11px] text-purple-400 font-bold uppercase tracking-widest flex items-center mt-1">
+                            <p className="text-[11px] text-[#C8922A] font-bold uppercase tracking-widest flex items-center mt-1">
                               <MapPin size={10} className="mr-1" />
                               {person.university} {person.year && `• ${person.year}`}
                             </p>
                           </div>
 
                           {person.bio && (
-                            <p className="text-sm text-white/50 line-clamp-1 font-medium italic">"{person.bio}"</p>
+                            <p className="text-sm text-[#6B6B6B] line-clamp-1 font-medium italic">"{person.bio}"</p>
                           )}
 
                           <div className="flex flex-wrap gap-2">
                             {(person.interests || []).slice(0, 3).map(interest => (
-                              <span key={interest} className="text-[10px] glass px-3 py-1 rounded-full text-white/40 font-bold border border-white/5 hover:border-purple-500/30 hover:text-purple-400 transition-all">
+                              <span key={interest} className="text-[10px] bg-[#F9F8F5] border border-[#E8E6E0] px-3 py-1 rounded-full text-[#6B6B6B] font-bold border border-[#E8E6E0] hover:border-[#C8922A]/30 hover:text-[#C8922A] transition-all">
                                 #{interest}
                               </span>
                             ))}
-                            <span className="text-[10px] glass px-3 py-1 rounded-full text-cyan-400 font-bold border border-cyan-500/10 flex items-center">
+                            <span className="text-[10px] bg-[#F9F8F5] border border-[#E8E6E0] px-3 py-1 rounded-full text-[#C8922A] font-bold border border-cyan-500/10 flex items-center">
                               <Users size={10} className="mr-1" /> 12 mutuals
                             </span>
                           </div>
@@ -954,7 +965,7 @@ export default function FriendsPage() {
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
                               onClick={(e) => { e.stopPropagation(); handleDirectMessage(person._id); }}
-                              className="ca-btn-primary flex-1 md:w-32 py-3 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-purple-500/20"
+                              className="ca-btn-primary flex-1 md:w-32 py-3 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-[0_4px_14px_rgba(200,146,42,0.15)]"
                             >
                               <span className="flex items-center justify-center gap-2">
                                 <MessageCircle size={14} /> 
@@ -984,9 +995,75 @@ export default function FriendsPage() {
           )}
         </div>
         )}
-      </div>
+      </div> {/* End Left Column */}
 
-      {/* Profile Preview Modal */}
+        {/* Right Column (Build Your Squad) - inside flex row */}
+        <div className="w-full md:w-[340px] xl:w-[400px] shrink-0 sticky top-24 space-y-6 hidden md:block">
+          {/* Build Your Squad Card */}
+          <div className="app-panel rounded-[1.6rem] p-6 text-center shadow-sm">
+            <div className="flex justify-center -space-x-4 mb-5">
+              <img src="https://ui-avatars.com/api/?name=A&background=F3D5B5&color=7C3D12" className="w-16 h-16 rounded-full border-4 border-white z-10 object-cover" alt="Avatar" />
+              <img src="https://ui-avatars.com/api/?name=B&background=FDE68A&color=92400E" className="w-20 h-20 rounded-full border-4 border-white z-20 -translate-y-2 object-cover" alt="Avatar" />
+              <img src="https://ui-avatars.com/api/?name=C&background=D1FAE5&color=065F46" className="w-16 h-16 rounded-full border-4 border-white z-10 object-cover" alt="Avatar" />
+            </div>
+
+            <h3 className="text-xl font-black text-[#1A1A1A] tracking-tight mb-2">Build Your Squad</h3>
+            <p className="text-sm text-[#6B6B6B] mb-6 font-medium px-4">
+              Connect with amazing people from your campus.
+            </p>
+
+            <button
+              onClick={() => {
+                const text = encodeURIComponent("Hey! Join me on Campus Adda — the student social network! 🎓\n\nConnect with peers, find campus events & more.\n\nJoin now 👇\nhttps://campusadda.social/");
+                window.open(`https://wa.me/?text=${text}`, '_blank');
+              }}
+              className="w-full gradient-bg text-[#1A1A1A] py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)] hover:scale-[1.02] active:scale-95 transition-all"
+            >
+              Invite Friends
+            </button>
+          </div>
+
+          {/* Your Squads Section */}
+          <div className="px-1">
+            <h4 className="text-[11px] font-black text-[#1A1A1A] mb-3 uppercase tracking-wider">Your Squads</h4>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between p-3 app-panel rounded-2xl hover:bg-[#F3F2EE] transition-colors cursor-pointer group">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[#1A1A1A] flex items-center justify-center text-white text-sm font-bold shrink-0">D</div>
+                  <div>
+                    <p className="text-sm font-bold text-[#1A1A1A]">Design Squad</p>
+                    <p className="text-[10px] text-[#6B6B6B]">9 members</p>
+                  </div>
+                </div>
+                <div className="text-[#888888] group-hover:text-[#1A1A1A] transition-colors text-lg">›</div>
+              </div>
+              <div className="flex items-center justify-between p-3 app-panel rounded-2xl hover:bg-[#F3F2EE] transition-colors cursor-pointer group">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold shrink-0">T</div>
+                  <div>
+                    <p className="text-sm font-bold text-[#1A1A1A]">Tech Innovators</p>
+                    <p className="text-[10px] text-[#6B6B6B]">12 members</p>
+                  </div>
+                </div>
+                <div className="text-[#888888] group-hover:text-[#1A1A1A] transition-colors text-lg">›</div>
+              </div>
+              <div className="flex items-center justify-between p-3 app-panel rounded-2xl hover:bg-[#F3F2EE] transition-colors cursor-pointer group">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white text-sm font-bold shrink-0">S</div>
+                  <div>
+                    <p className="text-sm font-bold text-[#1A1A1A]">Snipe Fest Team</p>
+                    <p className="text-[10px] text-[#6B6B6B]">6 members</p>
+                  </div>
+                </div>
+                <div className="text-[#888888] group-hover:text-[#1A1A1A] transition-colors text-lg">›</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div> {/* End main flex row */}
+
+      {/* Profile Preview Modal - fixed overlay, outside flex row */}
       <AnimatePresence>
         {selectedProfileId && (
           <motion.div 
@@ -1003,17 +1080,17 @@ export default function FriendsPage() {
               className="w-full sm:max-w-md app-panel backdrop-blur-2xl rounded-t-[2.5rem] sm:rounded-[2.5rem] overflow-hidden shadow-[0_0_50px_rgba(168,85,247,0.15)] relative flex flex-col max-h-[90vh]"
             >
               {/* Animated Gradient Border Layer */}
-              <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/10 via-transparent to-cyan-500/10 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-tr from-[#C8922A]/10 via-transparent to-[#C8922A]/10 pointer-events-none" />
               
               {/* Close button */}
-              <button onClick={() => setSelectedProfileId(null)} className="absolute top-4 right-4 z-20 p-2 glass rounded-full text-white/50 hover:text-white hover:rotate-90 transition-all duration-300 border border-white/10 shadow-lg bg-black/40 backdrop-blur-md">
+              <button onClick={() => setSelectedProfileId(null)} className="absolute top-4 right-4 z-20 p-2 bg-[#F9F8F5] border border-[#E8E6E0] rounded-full text-[#6B6B6B] hover:text-[#1A1A1A] hover:rotate-90 transition-all duration-300 border border-[#E8E6E0] shadow-lg bg-black/40 backdrop-blur-md">
                 <X size={20} />
               </button>
 
               {profileLoading || !selectedProfileData ? (
                 <div className="p-8 flex flex-col items-center justify-center space-y-4 min-h-[400px]">
-                  <div className="w-12 h-12 border-4 border-white/5 border-t-cyan-400 rounded-full animate-spin" />
-                  <p className="text-xs font-black uppercase tracking-widest text-white/30">Loading Profile...</p>
+                  <div className="w-12 h-12 border-4 border-[#E8E6E0] border-t-cyan-400 rounded-full animate-spin" />
+                  <p className="text-xs font-black uppercase tracking-widest text-[#6B6B6B]">Loading Profile...</p>
                 </div>
               ) : (
                 <div className="flex flex-col overflow-y-auto custom-scrollbar relative z-10 pb-6">
@@ -1042,7 +1119,7 @@ export default function FriendsPage() {
 
                     {/* Badge title pill */}
                     <motion.div variants={modalVars.slideUp2} className="flex justify-center mt-4 mb-2">
-                      <span className="bg-white/5 text-cyan-300 text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border border-cyan-500/20 shadow-sm hover:scale-105 transition-transform cursor-default">
+                      <span className="bg-[#F3F2EE] text-[#C8922A] text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border border-[#E8E6E0] shadow-sm hover:scale-105 transition-transform cursor-default">
                         {selectedProfileData.badgeTitle || "Verified Student"}
                       </span>
                     </motion.div>
@@ -1050,54 +1127,54 @@ export default function FriendsPage() {
                     {/* Name & Uni */}
                     <div className="text-center space-y-1.5">
                       <motion.div variants={modalVars.slideUp1} className="flex items-center justify-center gap-2">
-                        <h2 className="text-2xl font-black text-white tracking-tight">{selectedProfileData.name}</h2>
+                        <h2 className="text-2xl font-black text-[#1A1A1A] tracking-tight">{selectedProfileData.name}</h2>
                         <VerifiedBadge user={selectedProfileData} size={20} />
                       </motion.div>
-                      <motion.p variants={modalVars.slideUp2} className="text-xs font-bold text-white/50 flex items-center justify-center gap-1">
-                        <MapPin size={12} className="text-purple-400" />
+                      <motion.p variants={modalVars.slideUp2} className="text-xs font-bold text-[#6B6B6B] flex items-center justify-center gap-1">
+                        <MapPin size={12} className="text-[#C8922A]" />
                         {selectedProfileData.university || "Campus Adda"}
                       </motion.p>
-                      <motion.p variants={modalVars.fade1} className="text-[11px] font-bold text-white/40 mt-1 uppercase tracking-wider">
+                      <motion.p variants={modalVars.fade1} className="text-[11px] font-bold text-[#6B6B6B] mt-1 uppercase tracking-wider">
                         {[selectedProfileData.course, selectedProfileData.studyYear || selectedProfileData.year, selectedProfileData.passOutBatch ? `Batch of ${selectedProfileData.passOutBatch}` : ""].filter(Boolean).join(" • ")}
                       </motion.p>
                       {selectedProfileData.bio && (
-                        <motion.p variants={modalVars.fade2} className="text-sm text-white/60 italic font-medium mt-4">"{selectedProfileData.bio}"</motion.p>
+                        <motion.p variants={modalVars.fade2} className="text-sm text-[#6B6B6B] italic font-medium mt-4">"{selectedProfileData.bio}"</motion.p>
                       )}
                     </div>
 
                     {/* Stats Row */}
                     <motion.div variants={modalVars.statsContainer} className="grid grid-cols-4 gap-2 mt-6">
-                      <motion.div variants={modalVars.statCard} whileHover={{ y: -3, backgroundColor: 'rgba(255,255,255,0.08)' }} className="glass p-3 rounded-2xl text-center border border-white/5 flex flex-col justify-center transition-colors cursor-default">
-                        <p className="text-lg font-black text-white">{selectedProfileData.followers !== undefined ? getSocialCount(selectedProfileData.followers) : "—"}</p>
-                        <p className="text-[9px] uppercase tracking-wider text-white/40 font-bold mt-1">Followers</p>
+                      <motion.div variants={modalVars.statCard} whileHover={{ y: -3, backgroundColor: 'rgba(255,255,255,0.08)' }} className="bg-[#F9F8F5] border border-[#E8E6E0] p-3 rounded-2xl text-center border border-[#E8E6E0] flex flex-col justify-center transition-colors cursor-default">
+                        <p className="text-lg font-black text-[#1A1A1A]">{selectedProfileData.followers !== undefined ? getSocialCount(selectedProfileData.followers) : "—"}</p>
+                        <p className="text-[9px] uppercase tracking-wider text-[#6B6B6B] font-bold mt-1">Followers</p>
                       </motion.div>
-                      <motion.div variants={modalVars.statCard} whileHover={{ y: -3, backgroundColor: 'rgba(255,255,255,0.08)' }} className="glass p-3 rounded-2xl text-center border border-white/5 flex flex-col justify-center transition-colors cursor-default">
-                        <p className="text-lg font-black text-white">{selectedProfileData.following !== undefined ? getSocialCount(selectedProfileData.following) : "—"}</p>
-                        <p className="text-[9px] uppercase tracking-wider text-white/40 font-bold mt-1">Following</p>
+                      <motion.div variants={modalVars.statCard} whileHover={{ y: -3, backgroundColor: 'rgba(255,255,255,0.08)' }} className="bg-[#F9F8F5] border border-[#E8E6E0] p-3 rounded-2xl text-center border border-[#E8E6E0] flex flex-col justify-center transition-colors cursor-default">
+                        <p className="text-lg font-black text-[#1A1A1A]">{selectedProfileData.following !== undefined ? getSocialCount(selectedProfileData.following) : "—"}</p>
+                        <p className="text-[9px] uppercase tracking-wider text-[#6B6B6B] font-bold mt-1">Following</p>
                       </motion.div>
-                      <motion.div variants={modalVars.statCard} whileHover={{ y: -3, scale: 1.02 }} className="glass p-3 rounded-2xl text-center border border-white/5 bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border-yellow-500/20 flex flex-col justify-center transition-transform cursor-default">
+                      <motion.div variants={modalVars.statCard} whileHover={{ y: -3, scale: 1.02 }} className="bg-[#F9F8F5] border border-[#E8E6E0] p-3 rounded-2xl text-center border border-[#E8E6E0] bg-gradient-to-br from-yellow-500/10 to-[#D4A843]/10 border-yellow-500/20 flex flex-col justify-center transition-transform cursor-default">
                         <p className="text-lg font-black text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]">
                           {(selectedProfileData.followers !== undefined && selectedProfileData.following !== undefined) ? getSocialCount(selectedProfileData.followers) + getSocialCount(selectedProfileData.following) : "—"}
                         </p>
                         <p className="text-[9px] uppercase tracking-wider text-yellow-500/60 font-bold mt-1">Score</p>
                       </motion.div>
-                      <motion.div variants={modalVars.statCard} whileHover={{ y: -3, backgroundColor: 'rgba(255,255,255,0.08)' }} className="glass p-3 rounded-2xl text-center border border-white/5 flex flex-col justify-center transition-colors cursor-default">
-                        <p className="text-lg font-black text-white">{selectedProfileData.postsCount !== undefined ? selectedProfileData.postsCount : "—"}</p>
-                        <p className="text-[9px] uppercase tracking-wider text-white/40 font-bold mt-1">Posts</p>
+                      <motion.div variants={modalVars.statCard} whileHover={{ y: -3, backgroundColor: 'rgba(255,255,255,0.08)' }} className="bg-[#F9F8F5] border border-[#E8E6E0] p-3 rounded-2xl text-center border border-[#E8E6E0] flex flex-col justify-center transition-colors cursor-default">
+                        <p className="text-lg font-black text-[#1A1A1A]">{selectedProfileData.postsCount !== undefined ? selectedProfileData.postsCount : "—"}</p>
+                        <p className="text-[9px] uppercase tracking-wider text-[#6B6B6B] font-bold mt-1">Posts</p>
                       </motion.div>
                     </motion.div>
 
                     {/* Interests */}
                     {selectedProfileData.interests && selectedProfileData.interests.length > 0 && (
                       <motion.div variants={modalVars.interestsContainer} className="mt-6">
-                        <h3 className="text-[11px] font-black text-white/30 uppercase tracking-[0.2em] mb-3 flex items-center">✨ Interests</h3>
+                        <h3 className="text-[11px] font-black text-[#6B6B6B] uppercase tracking-[0.2em] mb-3 flex items-center">✨ Interests</h3>
                         <div className="flex flex-wrap gap-2">
                           {selectedProfileData.interests.map(int => (
                             <motion.span 
                               variants={modalVars.interestPill} 
                               whileHover={{ background: 'linear-gradient(45deg, rgba(168,85,247,0.8), rgba(236,72,153,0.8))', color: 'white' }}
                               key={int} 
-                              className="bg-black/40 border border-white/10 text-white/70 text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-sm transition-colors cursor-default"
+                              className="bg-black/40 border border-[#E8E6E0] text-[#4A4A4A] text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-sm transition-colors cursor-default"
                             >
                               💡 {int}
                             </motion.span>
@@ -1108,14 +1185,14 @@ export default function FriendsPage() {
 
                     {/* Activity Section */}
                     <motion.div variants={modalVars.activity} className="mt-6">
-                      <h3 className="text-[11px] font-black text-white/30 uppercase tracking-[0.2em] mb-3 flex items-center">🔥 Campus Vibe</h3>
-                      <div className="glass rounded-2xl p-4 border border-white/5 flex items-center gap-4 hover:bg-white/5 transition-colors cursor-default">
-                        <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center shrink-0 shadow-lg shadow-purple-500/20">
-                          <Zap size={18} className="text-white fill-white" />
+                      <h3 className="text-[11px] font-black text-[#6B6B6B] uppercase tracking-[0.2em] mb-3 flex items-center">🔥 Campus Vibe</h3>
+                      <div className="bg-[#F9F8F5] border border-[#E8E6E0] rounded-2xl p-4 border border-[#E8E6E0] flex items-center gap-4 hover:bg-[#F3F2EE] transition-colors cursor-default">
+                        <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center shrink-0 shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)]">
+                          <Zap size={18} className="text-[#1A1A1A] fill-white" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-bold text-white">Frequent Poster</p>
-                          <p className="text-[10px] text-white/40 mt-0.5">Regularly posts on campus feed</p>
+                          <p className="text-sm font-bold text-[#1A1A1A]">Frequent Poster</p>
+                          <p className="text-[10px] text-[#6B6B6B] mt-0.5">Regularly posts on campus feed</p>
                         </div>
                       </div>
                     </motion.div>
@@ -1124,25 +1201,25 @@ export default function FriendsPage() {
                     <motion.div variants={modalVars.buttonsContainer} className="mt-8 flex flex-col gap-3">
                       {user && (user._id === selectedProfileData._id || user.id === selectedProfileData._id) ? (
                         <>
-                          <motion.button variants={modalVars.primaryButton} onClick={() => router.push('/profile')} className="w-full py-4 gradient-bg rounded-2xl text-xs font-black text-white uppercase tracking-widest shadow-xl border border-white/10 hover:scale-[1.02] transition-transform">
+                          <motion.button variants={modalVars.primaryButton} onClick={() => router.push('/profile')} className="w-full py-4 gradient-bg rounded-2xl text-xs font-black text-[#1A1A1A] uppercase tracking-widest shadow-xl border border-[#E8E6E0] hover:scale-[1.02] transition-transform">
                             ✏️ Edit Profile
                           </motion.button>
                         </>
                       ) : followStatus[selectedProfileData._id] === "connected" ? (
                         <>
-                          <motion.button variants={modalVars.primaryButton} onClick={() => { handleDirectMessage(selectedProfileData._id); setSelectedProfileId(null); }} className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-2xl text-xs font-black text-white uppercase tracking-widest shadow-lg shadow-emerald-500/20 hover:scale-[1.02] transition-transform">
+                          <motion.button variants={modalVars.primaryButton} onClick={() => { handleDirectMessage(selectedProfileData._id); setSelectedProfileId(null); }} className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-2xl text-xs font-black text-[#1A1A1A] uppercase tracking-widest shadow-lg shadow-emerald-500/20 hover:scale-[1.02] transition-transform">
                             💬 Chat Now
                           </motion.button>
-                          <motion.button variants={modalVars.buttonItem} onClick={() => { router.push(`/profile/${selectedProfileData._id}`); setSelectedProfileId(null); }} className="w-full py-4 glass rounded-2xl text-xs font-black text-white uppercase tracking-widest shadow-xl border border-white/10 hover:bg-white/5 transition-colors hover:scale-[1.02]">
+                          <motion.button variants={modalVars.buttonItem} onClick={() => { router.push(`/profile/${selectedProfileData._id}`); setSelectedProfileId(null); }} className="w-full py-4 bg-[#F9F8F5] border border-[#E8E6E0] rounded-2xl text-xs font-black text-[#1A1A1A] uppercase tracking-widest shadow-xl border border-[#E8E6E0] hover:bg-[#F3F2EE] transition-colors hover:scale-[1.02]">
                             🔗 View Full Profile
                           </motion.button>
                         </>
                       ) : followStatus[selectedProfileData._id] === "pending" ? (
                         <>
-                          <motion.button variants={modalVars.primaryButton} disabled className="w-full py-4 bg-white/5 rounded-2xl text-xs font-black text-white/40 uppercase tracking-widest border border-white/10 cursor-not-allowed">
+                          <motion.button variants={modalVars.primaryButton} disabled className="w-full py-4 bg-[#F3F2EE] rounded-2xl text-xs font-black text-[#6B6B6B] uppercase tracking-widest border border-[#E8E6E0] cursor-not-allowed">
                             ⏳ Request Sent
                           </motion.button>
-                          <motion.button variants={modalVars.buttonItem} onClick={() => { router.push(`/profile/${selectedProfileData._id}`); setSelectedProfileId(null); }} className="w-full py-4 glass rounded-2xl text-xs font-black text-white uppercase tracking-widest shadow-xl border border-white/10 hover:bg-white/5 transition-colors hover:scale-[1.02]">
+                          <motion.button variants={modalVars.buttonItem} onClick={() => { router.push(`/profile/${selectedProfileData._id}`); setSelectedProfileId(null); }} className="w-full py-4 bg-[#F9F8F5] border border-[#E8E6E0] rounded-2xl text-xs font-black text-[#1A1A1A] uppercase tracking-widest shadow-xl border border-[#E8E6E0] hover:bg-[#F3F2EE] transition-colors hover:scale-[1.02]">
                             🔗 View Full Profile
                           </motion.button>
                         </>
@@ -1152,14 +1229,14 @@ export default function FriendsPage() {
                             variants={modalVars.primaryButton}
                             onClick={() => handleConnectAction(selectedProfileData._id)}
                             disabled={connectStatus !== "idle"}
-                            className="relative w-full py-4 gradient-bg rounded-2xl text-xs font-black text-white uppercase tracking-widest shadow-lg shadow-purple-500/20 hover:scale-[1.02] transition-transform overflow-hidden group"
+                            className="relative w-full py-4 gradient-bg rounded-2xl text-xs font-black text-[#1A1A1A] uppercase tracking-widest shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)] hover:scale-[1.02] transition-transform overflow-hidden group"
                           >
-                            <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div className="absolute inset-0 bg-[#F3F2EE] opacity-0 group-hover:opacity-100 transition-opacity" />
                             {connectStatus === "idle" && <span className="relative z-10">⚡ Connect</span>}
                             {connectStatus === "connecting" && <span className="relative z-10 flex items-center justify-center gap-2"><Loader2 size={14} className="animate-spin" /> Connecting...</span>}
                             {connectStatus === "connected" && <span className="relative z-10">✓ Connected!</span>}
                           </motion.button>
-                          <motion.button variants={modalVars.buttonItem} onClick={() => { router.push(`/profile/${selectedProfileData._id}`); setSelectedProfileId(null); }} className="w-full py-4 glass rounded-2xl text-xs font-black text-white uppercase tracking-widest shadow-xl border border-white/10 hover:bg-white/5 transition-colors hover:scale-[1.02]">
+                          <motion.button variants={modalVars.buttonItem} onClick={() => { router.push(`/profile/${selectedProfileData._id}`); setSelectedProfileId(null); }} className="w-full py-4 bg-[#F9F8F5] border border-[#E8E6E0] rounded-2xl text-xs font-black text-[#1A1A1A] uppercase tracking-widest shadow-xl border border-[#E8E6E0] hover:bg-[#F3F2EE] transition-colors hover:scale-[1.02]">
                             🔗 View Full Profile
                           </motion.button>
                         </>
@@ -1177,3 +1254,4 @@ export default function FriendsPage() {
     </Suspense>
   );
 }
+

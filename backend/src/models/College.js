@@ -15,7 +15,8 @@ const collegeSchema = mongoose.Schema({
     type: String,
     default: 'General',
     enum: ['IIT', 'NIT', 'Engineering', 'Medical', 'Law', 'Design', 'General']
-  }
+  },
+  followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 }, { timestamps: true });
 
 const College = mongoose.model('College', collegeSchema);

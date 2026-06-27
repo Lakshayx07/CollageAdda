@@ -1,30 +1,19 @@
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
 
-const ThemeContext = createContext({ isDark: true, toggle: () => {} });
+const ThemeContext = createContext({ isDark: false, toggle: () => {} });
 
 export function ThemeProvider({ children }) {
-  const [isDark, setIsDark] = useState(true);
+  const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    // On mount, read from localStorage (the inline script may have already set the attribute)
-    const saved = localStorage.getItem("campus_adda_theme");
-    if (saved) {
-      setIsDark(saved === "dark");
-    } else {
-      // Detect system preference on first visit
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      setIsDark(prefersDark);
-      localStorage.setItem("campus_adda_theme", prefersDark ? "dark" : "light");
-      document.documentElement.setAttribute("data-theme", prefersDark ? "dark" : "light");
-    }
+    setIsDark(false);
+    localStorage.setItem("campus_adda_theme", "light");
+    document.documentElement.setAttribute("data-theme", "light");
   }, []);
 
   const toggle = () => {
-    const next = isDark ? "light" : "dark";
-    setIsDark(!isDark);
-    document.documentElement.setAttribute("data-theme", next);
-    localStorage.setItem("campus_adda_theme", next);
+    // Theme is locked to light warm UI
   };
 
   return (

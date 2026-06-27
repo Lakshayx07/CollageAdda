@@ -13,9 +13,9 @@ export default function AnimatedBackground() {
   if (!mounted) return null;
 
   return (
-    <div className="fixed inset-0 z-0 overflow-hidden bg-[#040814]">
+    <div className="fixed inset-0 z-0 overflow-hidden bg-[#FAFAF8]">
       {/* Deep radial gradient to simulate the center glow */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-900/20 via-[#040814] to-[#040814]"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#FFF8EC]/20 via-[#FAFAF8] to-[#FAFAF8]"></div>
       
       {/* Concentric Rings */}
       <div className="absolute inset-0 flex items-center justify-center">
@@ -30,7 +30,7 @@ export default function AnimatedBackground() {
         <motion.div
           animate={{ rotate: -360 }}
           transition={{ duration: 100, repeat: Infinity, ease: "linear" }}
-          className="absolute h-[120vw] w-[120vw] sm:h-[90vw] sm:w-[90vw] lg:h-[60vw] lg:w-[60vw] rounded-full border border-cyan-400/20 opacity-60"
+          className="absolute h-[120vw] w-[120vw] sm:h-[90vw] sm:w-[90vw] lg:h-[60vw] lg:w-[60vw] rounded-full border border-[#E8E6E0] opacity-60"
           style={{ borderTopStyle: "dashed", borderRightStyle: "dotted", borderWidth: "1px" }}
         />
         {/* Ring 3 */}

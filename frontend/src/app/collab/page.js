@@ -17,11 +17,11 @@ const URGENCY_COLORS = {
 
 const PROJECT_TYPE_COLORS = {
   Hackathon: "text-blue-400 bg-blue-500/10 border-blue-500/20",
-  Startup: "text-purple-400 bg-purple-500/10 border-purple-500/20",
-  Research: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20",
+  Startup: "text-[#C8922A] bg-[#C8922A]/10 border-[#C8922A]/30",
+  Research: "text-[#C8922A] bg-[#C8922A]/10 border-[#E8E6E0]",
   "Side Project": "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
   Society: "text-orange-400 bg-orange-500/10 border-orange-500/20",
-  Other: "text-white/40 bg-white/5 border-white/10"
+  Other: "text-[#6B6B6B] bg-[#F3F2EE] border-[#E8E6E0]"
 };
 
 export default function CollabPage() {
@@ -122,7 +122,7 @@ export default function CollabPage() {
               <Zap size={24} className="text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
+              <h1 className="text-2xl font-black tracking-tight text-[#1A1A1A] sm:text-3xl">
                 Team Matchmaker<span className="text-primary">.</span>
               </h1>
               <p className="mt-1 text-sm font-medium text-muted">
@@ -150,62 +150,62 @@ export default function CollabPage() {
       {/* Post Modal */}
       <AnimatePresence>
         {showPostModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               className="app-panel rounded-[1.75rem] w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]"
             >
-              <div className="p-5 border-b border-white/10 flex justify-between items-center bg-white/5 shrink-0">
-                <h3 className="font-black uppercase tracking-widest text-sm text-white flex items-center">
+              <div className="p-5 border-b border-[#E8E6E0] flex justify-between items-center bg-[#F3F2EE] shrink-0">
+                <h3 className="font-black uppercase tracking-widest text-sm text-[#1A1A1A] flex items-center">
                   <Plus size={16} className="mr-2 text-primary" /> Post Your Collab Card
                 </h3>
-                <button onClick={() => setShowPostModal(false)} className="text-white/50 hover:text-white"><X size={18} /></button>
+                <button onClick={() => setShowPostModal(false)} className="text-[#6B6B6B] hover:text-[#1A1A1A]"><X size={18} /></button>
               </div>
 
               <form onSubmit={handlePost} className="p-6 space-y-4 overflow-y-auto">
                 <div>
-                  <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">My Skillset</label>
+                  <label className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest block mb-2">My Skillset</label>
                   <input
                     type="text"
                     placeholder="React, Node.js, Figma, Marketing..."
                     value={skillset}
                     onChange={e => setSkillset(e.target.value)}
-                    className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-primary focus:outline-none transition"
+                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:border-primary focus:outline-none transition"
                   />
-                  <p className="text-[10px] text-white/30 mt-1">Comma-separated, e.g. &quot;Python, ML, Data Analysis&quot;</p>
+                  <p className="text-[10px] text-[#6B6B6B] mt-1">Comma-separated, e.g. &quot;Python, ML, Data Analysis&quot;</p>
                 </div>
 
                 <div>
-                  <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">What I&apos;m Building</label>
+                  <label className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest block mb-2">What I&apos;m Building</label>
                   <input
                     type="text"
                     placeholder="AI-powered study assistant, Fintech startup..."
                     value={building}
                     onChange={e => setBuilding(e.target.value)}
-                    className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-primary focus:outline-none transition"
+                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:border-primary focus:outline-none transition"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">Class Year / Major</label>
+                  <label className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest block mb-2">Class Year / Major</label>
                   <input
                     type="text"
                     placeholder="3rd Year, CSE · 2nd Year, MBA..."
                     value={yearMajor}
                     onChange={e => setYearMajor(e.target.value)}
-                    className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-primary focus:outline-none transition"
+                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:border-primary focus:outline-none transition"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">Project Type</label>
+                    <label className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest block mb-2">Project Type</label>
                     <select
                       value={projectType}
                       onChange={e => setProjectType(e.target.value)}
-                      className="w-full bg-black border border-white/10 rounded-xl px-3 py-3 text-white text-sm focus:border-primary focus:outline-none transition appearance-none"
+                      className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-3 py-3 text-[#1A1A1A] text-sm focus:border-primary focus:outline-none transition appearance-none"
                     >
                       <option>Hackathon</option>
                       <option>Startup</option>
@@ -216,11 +216,11 @@ export default function CollabPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">Urgency</label>
+                    <label className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest block mb-2">Urgency</label>
                     <select
                       value={urgency}
                       onChange={e => setUrgency(e.target.value)}
-                      className="w-full bg-black border border-white/10 rounded-xl px-3 py-3 text-white text-sm focus:border-primary focus:outline-none transition appearance-none"
+                      className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-3 py-3 text-[#1A1A1A] text-sm focus:border-primary focus:outline-none transition appearance-none"
                     >
                       <option>Low</option>
                       <option>Medium</option>
@@ -230,25 +230,25 @@ export default function CollabPage() {
                 </div>
 
                 <div>
-                  <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">Roles Needed</label>
+                  <label className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest block mb-2">Roles Needed</label>
                   <input
                     type="text"
                     placeholder="Backend Dev, UI Designer, Business Lead..."
                     value={rolesNeeded}
                     onChange={e => setRolesNeeded(e.target.value)}
-                    className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-primary focus:outline-none transition"
+                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:border-primary focus:outline-none transition"
                   />
-                  <p className="text-[10px] text-white/30 mt-1">Comma-separated roles</p>
+                  <p className="text-[10px] text-[#6B6B6B] mt-1">Comma-separated roles</p>
                 </div>
 
                 <div>
-                  <label className="text-[10px] text-white/50 font-black uppercase tracking-widest block mb-2">Short Description (Optional)</label>
+                  <label className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest block mb-2">Short Description (Optional)</label>
                   <textarea
                     placeholder="Any extra context about the project or what you're looking for..."
                     value={description}
                     onChange={e => setDescription(e.target.value)}
                     rows={3}
-                    className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-primary focus:outline-none transition resize-none"
+                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:border-primary focus:outline-none transition resize-none"
                   />
                 </div>
 

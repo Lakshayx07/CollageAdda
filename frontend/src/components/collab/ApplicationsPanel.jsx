@@ -28,19 +28,19 @@ function ApplicationCard({ application, onImpressive, onPass }) {
   const isRejected = application.status === "rejected";
 
   return (
-    <div className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden transition-all hover:border-white/20">
+    <div className="bg-[#F3F2EE] border border-[#E8E6E0] rounded-2xl overflow-hidden transition-all hover:border-[#E8E6E0]">
       {/* Header */}
-      <div className="p-4 flex items-start gap-3 border-b border-white/5">
+      <div className="p-4 flex items-start gap-3 border-b border-[#E8E6E0]">
         {/* Avatar */}
         <div className="shrink-0">
           {avatarUrl ? (
             <img
               src={avatarUrl}
               alt={name}
-              className="w-10 h-10 rounded-full object-cover border border-white/20"
+              className="w-10 h-10 rounded-full object-cover border border-[#E8E6E0]"
             />
           ) : (
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-sm font-black text-white">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-600 to-[#D4A843] flex items-center justify-center text-sm font-black text-[#1A1A1A]">
               {initials}
             </div>
           )}
@@ -48,12 +48,12 @@ function ApplicationCard({ application, onImpressive, onPass }) {
 
         {/* Name + info */}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-black text-white leading-tight">{name}</p>
-          <p className="text-[11px] text-white/50 mt-0.5 truncate">
+          <p className="text-sm font-black text-[#1A1A1A] leading-tight">{name}</p>
+          <p className="text-[11px] text-[#6B6B6B] mt-0.5 truncate">
             {application.course_branch || ""}
             {application.year ? ` · ${application.year}` : ""}
           </p>
-          <p className="text-[10px] text-white/30 mt-0.5">{timeAgo(application.created_at)}</p>
+          <p className="text-[10px] text-[#6B6B6B] mt-0.5">{timeAgo(application.created_at)}</p>
         </div>
 
         {/* Role badge + status */}
@@ -86,11 +86,11 @@ function ApplicationCard({ application, onImpressive, onPass }) {
         {/* Why join */}
         {application.why_join && (
           <div>
-            <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-1.5">
+            <p className="text-[9px] font-black uppercase tracking-widest text-[#6B6B6B] mb-1.5">
               Why I want to join
             </p>
-            <div className="bg-white/5 border-l-4 border-violet-500 rounded-r-xl p-3">
-              <p className="text-xs text-white/70 leading-relaxed italic">
+            <div className="bg-[#F3F2EE] border-l-4 border-violet-500 rounded-r-xl p-3">
+              <p className="text-xs text-[#4A4A4A] leading-relaxed italic">
                 "{application.why_join}"
               </p>
             </div>
@@ -100,7 +100,7 @@ function ApplicationCard({ application, onImpressive, onPass }) {
         {/* Skills */}
         {skillsArray.length > 0 && (
           <div>
-            <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-1.5">
+            <p className="text-[9px] font-black uppercase tracking-widest text-[#6B6B6B] mb-1.5">
               Skills
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -148,13 +148,13 @@ function ApplicationCard({ application, onImpressive, onPass }) {
         <div className="px-4 pb-4 flex gap-2">
           <button
             onClick={() => onImpressive(application)}
-            className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl px-3 py-2.5 font-bold text-xs hover:scale-[1.02] transition-transform shadow-lg flex items-center justify-center gap-1.5"
+            className="flex-1 bg-gradient-to-r from-[#C8922A] to-[#D4A843] text-[#1A1A1A] rounded-xl px-3 py-2.5 font-bold text-xs hover:scale-[1.02] transition-transform shadow-lg flex items-center justify-center gap-1.5"
           >
             ✨ Mark Impressive
           </button>
           <button
             onClick={() => onPass(application)}
-            className="flex-1 bg-white/5 border border-white/10 text-white/50 hover:text-white/80 rounded-xl px-3 py-2.5 font-bold text-xs transition flex items-center justify-center gap-1.5"
+            className="flex-1 bg-[#F3F2EE] border border-[#E8E6E0] text-[#6B6B6B] hover:text-[#4A4A4A] rounded-xl px-3 py-2.5 font-bold text-xs transition flex items-center justify-center gap-1.5"
           >
             ✗ Pass
           </button>
@@ -354,7 +354,7 @@ export default function ApplicationsPanel({ cardId, currentUser }) {
             exit={{ opacity: 0, y: 20 }}
             className={`fixed bottom-24 left-1/2 -translate-x-1/2 z-[999] rounded-2xl px-5 py-3 text-xs font-black uppercase tracking-widest shadow-xl whitespace-nowrap ${
               toastType === "info"
-                ? "bg-white/10 text-white border border-white/20"
+                ? "bg-[#F3F2EE] text-[#1A1A1A] border border-[#E8E6E0]"
                 : "bg-emerald-500 text-black"
             }`}
           >
@@ -366,11 +366,11 @@ export default function ApplicationsPanel({ cardId, currentUser }) {
       {/* Header */}
       <div className="w-full max-w-sm mb-4 flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-black text-white flex items-center gap-2">
+          <h3 className="text-lg font-black text-[#1A1A1A] flex items-center gap-2">
             <Inbox size={18} className="text-primary" />
             Received Applications
             {/* Live count badge */}
-            <span className="bg-violet-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-[10px] font-black">
+            <span className="bg-violet-500 text-[#1A1A1A] rounded-full w-6 h-6 flex items-center justify-center text-[10px] font-black">
               {applications.length}
             </span>
             {pendingCount > 0 && (
@@ -397,16 +397,16 @@ export default function ApplicationsPanel({ cardId, currentUser }) {
             <p className="text-xs font-bold text-red-400 mb-2">{error}</p>
             <button
               onClick={fetchApplications}
-              className="text-xs text-white/50 hover:text-white border border-white/10 rounded-xl px-3 py-1.5 transition"
+              className="text-xs text-[#6B6B6B] hover:text-[#1A1A1A] border border-[#E8E6E0] rounded-xl px-3 py-1.5 transition"
             >
               Retry
             </button>
           </div>
         ) : (applications || []).length === 0 ? (
           <div className="app-panel rounded-[1.5rem] p-8 flex flex-col items-center justify-center text-center opacity-70">
-            <Inbox size={32} className="text-white/20 mb-3" />
-            <p className="text-sm font-bold text-white/50">No applications yet</p>
-            <p className="text-[10px] text-white/30 mt-1">
+            <Inbox size={32} className="text-[#888888] mb-3" />
+            <p className="text-sm font-bold text-[#6B6B6B]">No applications yet</p>
+            <p className="text-[10px] text-[#6B6B6B] mt-1">
               When someone applies, it will appear here.
             </p>
           </div>

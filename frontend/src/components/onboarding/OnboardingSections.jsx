@@ -27,8 +27,8 @@ export const HeroSection = ({ onSkip, onStart }) => {
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden px-6">
       {/* Background Glows */}
-      <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-purple-600/20 blur-[150px] rounded-full z-0" />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[70%] h-[70%] bg-cyan-600/20 blur-[150px] rounded-full z-0" />
+      <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-[#C8922A]/10 blur-[150px] rounded-full z-0" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[70%] h-[70%] bg-[#C8922A]/10 blur-[150px] rounded-full z-0" />
       
       {/* Network Animation Layer */}
       <div className="absolute inset-0 z-0 opacity-40">
@@ -57,13 +57,13 @@ export const HeroSection = ({ onSkip, onStart }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
         >
-          <div className="inline-flex items-center space-x-2 bg-white/5 border border-white/10 px-4 py-2 rounded-full mb-6">
+          <div className="inline-flex items-center space-x-2 bg-[#F3F2EE] border border-[#E8E6E0] px-4 py-2 rounded-full mb-6">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-xs font-black uppercase tracking-widest text-white/80">Your Campus Is Now Online</span>
+            <span className="text-xs font-black uppercase tracking-widest text-[#4A4A4A]">Your Campus Is Now Online</span>
           </div>
-          <h1 className="text-5xl md:text-7xl font-black text-white tracking-tighter leading-tight">
+          <h1 className="text-5xl md:text-7xl font-black text-[#1A1A1A] tracking-tighter leading-tight">
             The Social Layer of <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-fuchsia-500 to-cyan-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#C8922A] via-[#D4A843] to-[#C8922A]">
               Your College.
             </span>
           </h1>
@@ -73,7 +73,7 @@ export const HeroSection = ({ onSkip, onStart }) => {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4 }}
-          className="text-lg md:text-xl text-white/60 font-medium max-w-xl leading-relaxed"
+          className="text-lg md:text-xl text-[#6B6B6B] font-medium max-w-xl leading-relaxed"
         >
           Connect, discover, collaborate, and grow with students around you.
         </motion.p>
@@ -84,7 +84,7 @@ export const HeroSection = ({ onSkip, onStart }) => {
           transition={{ duration: 0.8, delay: 0.6 }}
           className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto"
         >
-          <button onClick={onStart} className="ca-btn-primary px-8 py-4 rounded-2xl text-sm font-black uppercase tracking-widest shadow-xl shadow-purple-500/20">
+          <button onClick={onStart} className="ca-btn-primary px-8 py-4 rounded-2xl text-sm font-black uppercase tracking-widest shadow-xl shadow-[0_4px_14px_rgba(200,146,42,0.15)]">
             Start Exploring
           </button>
           <button onClick={onSkip} className="ca-btn-secondary px-8 py-4 rounded-2xl text-sm font-black uppercase tracking-widest">
@@ -105,7 +105,7 @@ export const HeroSection = ({ onSkip, onStart }) => {
           initial={{ y: 0 }}
           animate={{ y: [0, -20, 0] }}
           transition={{ duration: 4, delay: avatar.delay, repeat: Infinity, ease: "easeInOut" }}
-          className="hidden lg:block absolute w-16 h-16 rounded-full border-2 border-white/20 overflow-hidden shadow-2xl z-10"
+          className="hidden lg:block absolute w-16 h-16 rounded-full border-2 border-[#E8E6E0] overflow-hidden shadow-2xl z-10"
           style={{ top: avatar.top, left: avatar.left, right: avatar.right }}
         >
           <img src={avatar.src} alt="Student" className="w-full h-full object-cover" />
@@ -123,13 +123,13 @@ export const PulseSection = () => {
     <section ref={ref} className="min-h-screen flex flex-col justify-center px-6 py-20 relative z-10">
       <motion.div style={{ opacity, y, scale }} className="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
         <div className="space-y-6">
-          <div className="w-14 h-14 gradient-bg rounded-2xl flex items-center justify-center text-white shadow-lg shadow-purple-500/20">
+          <div className="w-14 h-14 gradient-bg rounded-2xl flex items-center justify-center text-[#1A1A1A] shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)]">
             <MessageSquareText size={28} />
           </div>
-          <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter">
+          <h2 className="text-4xl md:text-5xl font-black text-[#1A1A1A] tracking-tighter">
             Everything Happening On Your Campus
           </h2>
-          <p className="text-lg text-white/60 leading-relaxed font-medium">
+          <p className="text-lg text-[#6B6B6B] leading-relaxed font-medium">
             Posts, photos, videos, polls, discussions, and trends from students around you.
           </p>
         </div>
@@ -144,16 +144,16 @@ export const PulseSection = () => {
             className="absolute top-0 left-0 w-full ca-card p-5 z-20 shadow-2xl"
           >
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-500 to-cyan-500 p-[2px]">
-                <div className="w-full h-full bg-[#0b0c16] rounded-full" />
+              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#C8922A] to-[#C8922A] p-[2px]">
+                <div className="w-full h-full bg-[#F9F8F5] rounded-full" />
               </div>
               <div>
-                <p className="text-sm font-bold text-white">Rohan Sharma</p>
-                <p className="text-[10px] text-white/40">2 hours ago</p>
+                <p className="text-sm font-bold text-[#1A1A1A]">Rohan Sharma</p>
+                <p className="text-[10px] text-[#6B6B6B]">2 hours ago</p>
               </div>
             </div>
-            <p className="text-sm text-white/80 mb-4">Just finished the hackathon! What an amazing experience building with Next.js and Supabase 🚀</p>
-            <div className="flex items-center gap-4 text-white/40 text-xs font-bold">
+            <p className="text-sm text-[#4A4A4A] mb-4">Just finished the hackathon! What an amazing experience building with Next.js and Supabase 🚀</p>
+            <div className="flex items-center gap-4 text-[#6B6B6B] text-xs font-bold">
               <span className="flex items-center gap-1"><Heart size={14}/> 24</span>
               <span className="flex items-center gap-1"><MessageCircle size={14}/> 5</span>
             </div>
@@ -167,17 +167,17 @@ export const PulseSection = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="absolute top-32 left-8 w-[90%] ca-card p-5 z-10 opacity-60 scale-95"
           >
-            <div className="flex items-center gap-2 text-xs font-bold text-cyan-400 mb-3">
+            <div className="flex items-center gap-2 text-xs font-bold text-[#C8922A] mb-3">
               <TrendingUp size={14}/> Trending Poll
             </div>
-            <p className="text-sm font-bold text-white mb-3">Best spot for late night coding?</p>
+            <p className="text-sm font-bold text-[#1A1A1A] mb-3">Best spot for late night coding?</p>
             <div className="space-y-2">
-              <div className="w-full h-8 bg-white/5 rounded-lg relative overflow-hidden flex items-center px-3 text-xs text-white">
-                <motion.div initial={{width:0}} whileInView={{width:"65%"}} className="absolute left-0 top-0 h-full bg-purple-500/20" />
+              <div className="w-full h-8 bg-[#F3F2EE] rounded-lg relative overflow-hidden flex items-center px-3 text-xs text-[#1A1A1A]">
+                <motion.div initial={{width:0}} whileInView={{width:"65%"}} className="absolute left-0 top-0 h-full bg-[#C8922A]/10" />
                 <span className="relative z-10 flex justify-between w-full"><span>Library</span><span>65%</span></span>
               </div>
-              <div className="w-full h-8 bg-white/5 rounded-lg relative overflow-hidden flex items-center px-3 text-xs text-white">
-                <motion.div initial={{width:0}} whileInView={{width:"35%"}} className="absolute left-0 top-0 h-full bg-cyan-500/20" />
+              <div className="w-full h-8 bg-[#F3F2EE] rounded-lg relative overflow-hidden flex items-center px-3 text-xs text-[#1A1A1A]">
+                <motion.div initial={{width:0}} whileInView={{width:"35%"}} className="absolute left-0 top-0 h-full bg-[#C8922A]/10" />
                 <span className="relative z-10 flex justify-between w-full"><span>Hostel Room</span><span>35%</span></span>
               </div>
             </div>
@@ -193,7 +193,7 @@ export const FindPeopleSection = () => {
   const { opacity, y, scale } = useScrollFade(ref);
 
   return (
-    <section ref={ref} className="min-h-screen flex flex-col justify-center px-6 py-20 relative z-10 bg-white/[0.02]">
+    <section ref={ref} className="min-h-screen flex flex-col justify-center px-6 py-20 relative z-10 bg-[#F3F2EE]">
       <motion.div style={{ opacity, y, scale }} className="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
         
         <div className="order-2 lg:order-1 relative h-[400px] w-full flex items-center justify-center">
@@ -201,9 +201,9 @@ export const FindPeopleSection = () => {
             {/* Center Node */}
             <motion.div 
               initial={{ scale: 0 }} whileInView={{ scale: 1 }} viewport={{ once: false }}
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full border-4 border-[#0b0c16] z-20 flex items-center justify-center shadow-[0_0_30px_rgba(139,92,246,0.5)]"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-gradient-to-br from-[#C8922A] to-[#D4A843] rounded-full border-4 border-white z-20 flex items-center justify-center shadow-[0_0_30px_rgba(200,146,42,0.3)]"
             >
-              <Users size={32} className="text-white" />
+              <Users size={32} className="text-[#1A1A1A]" />
             </motion.div>
 
             {/* Connecting Nodes */}
@@ -229,11 +229,11 @@ export const FindPeopleSection = () => {
                   initial={{ scale: 0, opacity: 0 }}
                   whileInView={{ scale: 1, opacity: 1 }}
                   transition={{ delay: node.delay + 0.5, type: "spring" }}
-                  className="absolute top-1/2 left-1/2 w-14 h-14 rounded-full bg-white/10 border border-white/20 backdrop-blur-md flex items-center justify-center z-10 flex-col"
+                  className="absolute top-1/2 left-1/2 w-14 h-14 rounded-full bg-[#F3F2EE] border border-[#E8E6E0] backdrop-blur-md flex items-center justify-center z-10 flex-col"
                   style={{ transform: `translate(calc(-50% + ${node.x}px), calc(-50% + ${node.y}px))` }}
                 >
                   <span className="w-10 h-10 rounded-full bg-black/50" />
-                  <span className="absolute -bottom-6 text-[10px] font-bold text-white/60 bg-black/80 px-2 py-0.5 rounded-full whitespace-nowrap">
+                  <span className="absolute -bottom-6 text-[10px] font-bold text-[#6B6B6B] bg-black/40 px-2 py-0.5 rounded-full whitespace-nowrap">
                     {node.label}
                   </span>
                 </motion.div>
@@ -243,18 +243,18 @@ export const FindPeopleSection = () => {
         </div>
 
         <div className="order-1 lg:order-2 space-y-6">
-          <div className="w-14 h-14 gradient-bg rounded-2xl flex items-center justify-center text-white shadow-lg shadow-cyan-500/20">
+          <div className="w-14 h-14 gradient-bg rounded-2xl flex items-center justify-center text-[#1A1A1A] shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)]">
             <Users size={28} />
           </div>
-          <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter">
+          <h2 className="text-4xl md:text-5xl font-black text-[#1A1A1A] tracking-tighter">
             Find Your People
           </h2>
-          <p className="text-lg text-white/60 leading-relaxed font-medium">
+          <p className="text-lg text-[#6B6B6B] leading-relaxed font-medium">
             Connect with classmates, seniors, teammates, and future friends. Build your campus network effortlessly.
           </p>
           <div className="flex flex-wrap gap-3 pt-4">
             {["Squad", "Connections", "Direct Messages", "Leaderboard"].map((tag, i) => (
-              <span key={i} className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-xs font-bold text-white/80 uppercase tracking-widest">
+              <span key={i} className="px-4 py-2 rounded-full bg-[#F3F2EE] border border-[#E8E6E0] text-xs font-bold text-[#4A4A4A] uppercase tracking-widest">
                 {tag}
               </span>
             ))}
@@ -275,13 +275,13 @@ export const ExploreSection = () => {
       <motion.div style={{ opacity, y, scale }} className="max-w-6xl mx-auto w-full space-y-16">
         
         <div className="text-center space-y-6 max-w-3xl mx-auto">
-          <div className="w-14 h-14 mx-auto bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-pink-500/20">
+          <div className="w-14 h-14 mx-auto bg-gradient-to-br from-[#C8922A] to-[#D4A843] rounded-2xl flex items-center justify-center text-[#1A1A1A] shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)]">
             <Search size={28} />
           </div>
-          <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter">
+          <h2 className="text-4xl md:text-5xl font-black text-[#1A1A1A] tracking-tighter">
             Discover Students Beyond Your Circle
           </h2>
-          <p className="text-lg text-white/60 leading-relaxed font-medium">
+          <p className="text-lg text-[#6B6B6B] leading-relaxed font-medium">
             Explore colleges, discover new students, and expand your campus network.
           </p>
         </div>
@@ -292,10 +292,10 @@ export const ExploreSection = () => {
             whileHover={{ y: -10 }}
             className="md:col-span-3 lg:col-span-1 lg:order-2 ca-card p-8 flex flex-col items-center text-center relative overflow-hidden border-cyan-500/30 ring-1 ring-cyan-500/20 shadow-[0_0_40px_rgba(6,182,212,0.1)]"
           >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/20 blur-[50px]" />
-            <SparklesIcon className="text-cyan-400 mb-4 w-10 h-10" />
-            <h3 className="text-2xl font-black text-white mb-2">Daily Discovery</h3>
-            <p className="text-sm text-white/60 mb-6">Students handpicked for your campus circle. Fresh recommendations every 12 hours.</p>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[#C8922A]/10 blur-[50px]" />
+            <SparklesIcon className="text-[#C8922A] mb-4 w-10 h-10" />
+            <h3 className="text-2xl font-black text-[#1A1A1A] mb-2">Daily Discovery</h3>
+            <p className="text-sm text-[#6B6B6B] mb-6">Students handpicked for your campus circle. Fresh recommendations every 12 hours.</p>
             
             <div className="w-full relative h-48 mt-auto flex items-center justify-center">
               {[0, 1, 2].map((i) => (
@@ -307,14 +307,14 @@ export const ExploreSection = () => {
                     zIndex: i === 1 ? 10 : 0,
                     opacity: i === 1 ? 1 : 0.4
                   }}
-                  className="absolute w-32 h-40 bg-[#13152b] rounded-2xl border border-white/10 shadow-xl flex flex-col items-center justify-center p-3"
+                  className="absolute w-32 h-40 bg-white rounded-2xl border border-[#E8E6E0] shadow-xl flex flex-col items-center justify-center p-3"
                 >
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-purple-500 to-cyan-500 p-[2px] mb-2">
-                    <div className="w-full h-full bg-[#13152b] rounded-full" />
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#C8922A] to-[#C8922A] p-[2px] mb-2">
+                    <div className="w-full h-full bg-white rounded-full" />
                   </div>
-                  <div className="w-16 h-2 bg-white/20 rounded-full mb-1" />
-                  <div className="w-10 h-2 bg-white/10 rounded-full mb-3" />
-                  {i === 1 && <span className="text-[9px] text-cyan-400 font-bold bg-cyan-500/10 px-2 py-0.5 rounded-full">98% Match</span>}
+                  <div className="w-16 h-2 bg-[#F3F2EE] rounded-full mb-1" />
+                  <div className="w-10 h-2 bg-[#F3F2EE] rounded-full mb-3" />
+                  {i === 1 && <span className="text-[9px] text-[#C8922A] font-bold bg-[#C8922A]/10 px-2 py-0.5 rounded-full">98% Match</span>}
                 </motion.div>
               ))}
             </div>
@@ -322,16 +322,16 @@ export const ExploreSection = () => {
 
           {/* Colleges */}
           <motion.div whileHover={{ y: -5 }} className="lg:order-1 ca-card p-6 flex flex-col">
-            <MapPin className="text-purple-400 mb-4 w-8 h-8" />
-            <h3 className="text-xl font-black text-white mb-2">Explore Colleges</h3>
-            <p className="text-sm text-white/60 mb-6">Discover campuses and see what's trending across the country.</p>
+            <MapPin className="text-[#C8922A] mb-4 w-8 h-8" />
+            <h3 className="text-xl font-black text-[#1A1A1A] mb-2">Explore Colleges</h3>
+            <p className="text-sm text-[#6B6B6B] mb-6">Discover campuses and see what's trending across the country.</p>
             <div className="mt-auto space-y-3">
               {[1, 2].map(i => (
-                <div key={i} className="flex items-center gap-3 bg-white/5 p-3 rounded-xl">
-                  <div className="w-10 h-10 bg-white/10 rounded-lg" />
+                <div key={i} className="flex items-center gap-3 bg-[#F3F2EE] p-3 rounded-xl">
+                  <div className="w-10 h-10 bg-[#F3F2EE] rounded-lg" />
                   <div>
-                    <div className="w-24 h-3 bg-white/20 rounded-full mb-1" />
-                    <div className="w-16 h-2 bg-white/10 rounded-full" />
+                    <div className="w-24 h-3 bg-[#F3F2EE] rounded-full mb-1" />
+                    <div className="w-16 h-2 bg-[#F3F2EE] rounded-full" />
                   </div>
                 </div>
               ))}
@@ -341,11 +341,11 @@ export const ExploreSection = () => {
           {/* Arena */}
           <motion.div whileHover={{ y: -5 }} className="lg:order-3 ca-card p-6 flex flex-col">
             <Trophy className="text-yellow-400 mb-4 w-8 h-8" />
-            <h3 className="text-xl font-black text-white mb-2">Campus Arena</h3>
-            <p className="text-sm text-white/60 mb-6">Sports and esports competitions across campuses. Register and compete.</p>
+            <h3 className="text-xl font-black text-[#1A1A1A] mb-2">Campus Arena</h3>
+            <p className="text-sm text-[#6B6B6B] mb-6">Sports and esports competitions across campuses. Register and compete.</p>
             <div className="mt-auto grid grid-cols-2 gap-3">
               {['BGMI', 'Valorant', 'Football', 'Cricket'].map(sport => (
-                <div key={sport} className="bg-white/5 py-2 px-3 rounded-xl text-[10px] font-bold text-center text-white/80 uppercase tracking-widest border border-white/5">
+                <div key={sport} className="bg-[#F3F2EE] py-2 px-3 rounded-xl text-[10px] font-bold text-center text-[#4A4A4A] uppercase tracking-widest border border-[#E8E6E0]">
                   {sport}
                 </div>
               ))}
@@ -363,17 +363,17 @@ export const HustleHubSection = () => {
   const { opacity, y, scale } = useScrollFade(ref);
 
   return (
-    <section ref={ref} className="min-h-screen flex flex-col justify-center px-6 py-20 relative z-10 bg-white/[0.02]">
+    <section ref={ref} className="min-h-screen flex flex-col justify-center px-6 py-20 relative z-10 bg-[#F3F2EE]">
       <motion.div style={{ opacity, y, scale }} className="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
         
         <div className="space-y-6">
           <div className="w-14 h-14 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center border border-emerald-500/30">
             <ShoppingBag size={28} />
           </div>
-          <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter">
+          <h2 className="text-4xl md:text-5xl font-black text-[#1A1A1A] tracking-tighter">
             Buy. Sell. Earn.
           </h2>
-          <p className="text-lg text-white/60 leading-relaxed font-medium">
+          <p className="text-lg text-[#6B6B6B] leading-relaxed font-medium">
             The student marketplace built for campus life. Find used books, hostel items, student gigs, and freelance opportunities.
           </p>
         </div>
@@ -384,8 +384,8 @@ export const HustleHubSection = () => {
             initial={{ opacity: 0, x: 50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: false }}
             className="absolute top-10 right-10 w-64 ca-card p-4 z-20"
           >
-            <div className="w-full h-32 bg-white/5 rounded-xl mb-3 flex items-center justify-center"><Briefcase className="text-white/20" size={32}/></div>
-            <h4 className="font-bold text-white text-sm">Frontend Developer Gig</h4>
+            <div className="w-full h-32 bg-[#F3F2EE] rounded-xl mb-3 flex items-center justify-center"><Briefcase className="text-[#888888]" size={32}/></div>
+            <h4 className="font-bold text-[#1A1A1A] text-sm">Frontend Developer Gig</h4>
             <p className="text-emerald-400 font-black text-lg mt-1">₹5000</p>
             <div className="mt-3 ca-btn-primary py-2 text-[10px] text-center rounded-lg">Apply Now</div>
           </motion.div>
@@ -395,14 +395,14 @@ export const HustleHubSection = () => {
             initial={{ opacity: 0, x: -50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: false }} transition={{ delay: 0.2 }}
             className="absolute bottom-10 left-10 w-64 ca-card p-4 z-10"
           >
-            <div className="w-full h-32 bg-white/5 rounded-xl mb-3 relative overflow-hidden flex items-center justify-center">
+            <div className="w-full h-32 bg-[#F3F2EE] rounded-xl mb-3 relative overflow-hidden flex items-center justify-center">
               <span className="text-4xl">📚</span>
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm">
-                <span className="text-white font-black uppercase tracking-widest text-lg rotate-12 border-2 border-white px-3 py-1 rounded-lg">SOLD</span>
+                <span className="text-[#1A1A1A] font-black uppercase tracking-widest text-lg rotate-12 border-2 border-white px-3 py-1 rounded-lg">SOLD</span>
               </div>
             </div>
-            <h4 className="font-bold text-white text-sm text-white/50">Engineering Mathematics</h4>
-            <p className="text-white/50 font-black text-lg mt-1 line-through">₹300</p>
+            <h4 className="font-bold text-[#1A1A1A] text-sm text-[#6B6B6B]">Engineering Mathematics</h4>
+            <p className="text-[#6B6B6B] font-black text-lg mt-1 line-through">₹300</p>
           </motion.div>
         </div>
 
@@ -420,13 +420,13 @@ export const CollabSection = () => {
       <motion.div style={{ opacity, y, scale }} className="max-w-4xl mx-auto w-full text-center space-y-16">
         
         <div className="space-y-6">
-          <div className="w-14 h-14 mx-auto bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
+          <div className="w-14 h-14 mx-auto bg-gradient-to-br from-[#C8922A] to-[#D4A843] rounded-2xl flex items-center justify-center text-[#1A1A1A] shadow-lg">
             <Zap size={28} />
           </div>
-          <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter">
+          <h2 className="text-4xl md:text-5xl font-black text-[#1A1A1A] tracking-tighter">
             Build Together
           </h2>
-          <p className="text-lg text-white/60 leading-relaxed font-medium max-w-2xl mx-auto">
+          <p className="text-lg text-[#6B6B6B] leading-relaxed font-medium max-w-2xl mx-auto">
             Find teammates for hackathons, startups, clubs, and projects. Turn ideas into reality.
           </p>
         </div>
@@ -438,30 +438,30 @@ export const CollabSection = () => {
               <motion.div 
                 key={i}
                 initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.2 }}
-                className="w-16 h-16 rounded-full border-4 border-[#0b0c16] bg-gradient-to-br from-purple-500 to-cyan-500 p-[2px] z-10"
+                className="w-16 h-16 rounded-full border-4 border-white bg-gradient-to-br from-[#C8922A] to-[#C8922A] p-[2px] z-10"
               >
-                <div className="w-full h-full bg-[#0b0c16] rounded-full flex items-center justify-center text-white font-bold text-xs">P{i}</div>
+                <div className="w-full h-full bg-[#F9F8F5] rounded-full flex items-center justify-center text-[#1A1A1A] font-bold text-xs">P{i}</div>
               </motion.div>
             ))}
           </div>
           
           <motion.div 
             initial={{ scale: 0 }} whileInView={{ scale: 1 }} transition={{ delay: 0.8 }}
-            className="hidden md:flex text-white/40"
+            className="hidden md:flex text-[#6B6B6B]"
           >
             <Plus size={24} />
           </motion.div>
 
           <motion.div 
             initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} transition={{ delay: 1 }}
-            className="ca-card p-6 border-purple-500/30 text-left w-full md:w-80"
+            className="ca-card p-6 border-[#C8922A]/30 text-left w-full md:w-80"
           >
-            <span className="text-[10px] font-black uppercase tracking-widest text-cyan-400 bg-cyan-500/10 px-2 py-1 rounded border border-cyan-500/20 mb-3 inline-block">Hackathon</span>
-            <h3 className="text-lg font-black text-white mb-2">AI Study Assistant</h3>
+            <span className="text-[10px] font-black uppercase tracking-widest text-[#C8922A] bg-[#C8922A]/10 px-2 py-1 rounded border border-[#E8E6E0] mb-3 inline-block">Hackathon</span>
+            <h3 className="text-lg font-black text-[#1A1A1A] mb-2">AI Study Assistant</h3>
             <div className="flex flex-wrap gap-2 mb-4">
-              <span className="text-[9px] font-bold bg-white/10 px-2 py-1 rounded-full text-white/70">Frontend</span>
-              <span className="text-[9px] font-bold bg-white/10 px-2 py-1 rounded-full text-white/70">Backend</span>
-              <span className="text-[9px] font-bold bg-white/10 px-2 py-1 rounded-full text-white/70">Design</span>
+              <span className="text-[9px] font-bold bg-[#F3F2EE] px-2 py-1 rounded-full text-[#4A4A4A]">Frontend</span>
+              <span className="text-[9px] font-bold bg-[#F3F2EE] px-2 py-1 rounded-full text-[#4A4A4A]">Backend</span>
+              <span className="text-[9px] font-bold bg-[#F3F2EE] px-2 py-1 rounded-full text-[#4A4A4A]">Design</span>
             </div>
             <div className="w-full ca-btn-primary py-2 text-xs text-center rounded-xl font-bold uppercase">Team Formed 🎉</div>
           </motion.div>
@@ -477,21 +477,21 @@ export const PrideSection = () => {
   const { opacity, y, scale } = useScrollFade(ref);
 
   return (
-    <section ref={ref} className="min-h-screen flex flex-col justify-center px-6 py-20 relative z-10 bg-white/[0.02]">
+    <section ref={ref} className="min-h-screen flex flex-col justify-center px-6 py-20 relative z-10 bg-[#F3F2EE]">
       <motion.div style={{ opacity, y, scale }} className="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
         
         <div className="order-2 lg:order-1 relative h-[400px] flex items-center justify-center">
           <div className="relative z-10 ca-card p-8 text-center border-amber-500/30 shadow-[0_0_50px_rgba(245,158,11,0.1)]">
             <motion.div 
               initial={{ scale: 0, rotate: -180 }} whileInView={{ scale: 1, rotate: 0 }} transition={{ type: "spring", duration: 1.5 }}
-              className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-amber-400 to-orange-600 rounded-full flex items-center justify-center text-white shadow-xl shadow-amber-500/30 border-4 border-[#0b0c16]"
+              className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-[#C8922A] to-[#D4A843] rounded-full flex items-center justify-center text-[#1A1A1A] shadow-xl shadow-[0_4px_14px_rgba(200,146,42,0.15)] border-4 border-white"
             >
               <ShieldCheck size={40} />
             </motion.div>
-            <h3 className="text-2xl font-black text-white mb-2">Verified Student</h3>
-            <p className="text-white/60 text-sm mb-6">Rishihood University</p>
-            <div className="bg-white/5 rounded-xl p-4 flex items-center justify-between border border-white/10">
-              <span className="text-xs font-bold text-white/50 uppercase tracking-widest">Campus Rank</span>
+            <h3 className="text-2xl font-black text-[#1A1A1A] mb-2">Verified Student</h3>
+            <p className="text-[#6B6B6B] text-sm mb-6">Rishihood University</p>
+            <div className="bg-[#F3F2EE] rounded-xl p-4 flex items-center justify-between border border-[#E8E6E0]">
+              <span className="text-xs font-bold text-[#6B6B6B] uppercase tracking-widest">Campus Rank</span>
               <motion.span 
                 initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
                 className="text-2xl font-black text-amber-400"
@@ -506,10 +506,10 @@ export const PrideSection = () => {
           <div className="w-14 h-14 bg-amber-500/20 text-amber-500 rounded-2xl flex items-center justify-center border border-amber-500/30">
             <Trophy size={28} />
           </div>
-          <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter">
+          <h2 className="text-4xl md:text-5xl font-black text-[#1A1A1A] tracking-tighter">
             Represent Your College
           </h2>
-          <p className="text-lg text-white/60 leading-relaxed font-medium">
+          <p className="text-lg text-[#6B6B6B] leading-relaxed font-medium">
             Every verified student helps strengthen their campus community. Climb the leaderboard and earn achievement badges.
           </p>
         </div>
@@ -522,14 +522,14 @@ export const PrideSection = () => {
 export const FinalCTASection = ({ onComplete }) => {
   return (
     <section className="min-h-screen flex flex-col items-center justify-center px-6 relative z-10">
-      <div className="absolute inset-0 z-0 bg-gradient-to-b from-transparent to-[#0b0c16]" />
+      <div className="absolute inset-0 z-0 bg-gradient-to-b from-transparent to-[#FAFAF8]" />
       
       <div className="relative z-10 max-w-xl mx-auto w-full text-center space-y-12">
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false }}>
-          <h2 className="text-5xl md:text-6xl font-black text-white tracking-tighter mb-6">
+          <h2 className="text-5xl md:text-6xl font-black text-[#1A1A1A] tracking-tighter mb-6">
             Welcome To Your <br/> Campus Online
           </h2>
-          <p className="text-lg text-white/60 font-medium">
+          <p className="text-lg text-[#6B6B6B] font-medium">
             CampusAdda brings together everything students need in one place.
           </p>
         </motion.div>
@@ -548,9 +548,9 @@ export const FinalCTASection = ({ onComplete }) => {
               {item.done ? (
                 <CheckCircle className="text-emerald-400" size={20} />
               ) : (
-                <div className="w-5 h-5 rounded-full border-2 border-white/20" />
+                <div className="w-5 h-5 rounded-full border-2 border-[#E8E6E0]" />
               )}
-              <span className={clsx("font-bold text-sm", item.done ? "text-white" : "text-white/40")}>{item.text}</span>
+              <span className={clsx("font-bold text-sm", item.done ? "text-[#1A1A1A]" : "text-[#6B6B6B]")}>{item.text}</span>
             </div>
           ))}
         </motion.div>
@@ -559,10 +559,10 @@ export const FinalCTASection = ({ onComplete }) => {
           initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false }} transition={{ delay: 0.4 }}
           className="flex flex-col gap-4 max-w-xs mx-auto"
         >
-          <button onClick={onComplete} className="ca-btn-primary w-full py-4 rounded-2xl text-sm font-black uppercase tracking-widest shadow-xl shadow-purple-500/20 hover:scale-105 transition-transform">
+          <button onClick={onComplete} className="ca-btn-primary w-full py-4 rounded-2xl text-sm font-black uppercase tracking-widest shadow-xl shadow-[0_4px_14px_rgba(200,146,42,0.15)] hover:scale-105 transition-transform">
             Enter CampusAdda
           </button>
-          <button onClick={onComplete} className="text-white/40 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors py-2">
+          <button onClick={onComplete} className="text-[#6B6B6B] hover:text-[#1A1A1A] text-xs font-bold uppercase tracking-widest transition-colors py-2">
             View Tour Later
           </button>
         </motion.div>
