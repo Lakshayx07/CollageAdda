@@ -149,6 +149,30 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Forward an already-saved message to a room (used when messages are created via HTTP API)
+  socket.on('forward_message', async (data) => {
+    try {
+      console.log(`[WS] Forwarding message from ${data.senderName} in room ${data.room}`);
+      
+      // Emit to the room (for people actively viewing the chat)
+      io.to(data.room).emit('receive_message', data);
+
+      // Also emit to each participant's private room (for notifications/unread updates)
+      const room = await ChatRoom.findById(data.room);
+      if (room) {
+        room.participants.forEach(pId => {
+          const participantId = pId.toString();
+          if (participantId !== data.senderId.toString()) {
+            console.log(`[WS] Delivering forwarded message to participant room: ${participantId}`);
+            io.to(participantId).emit('receive_message', data);
+          }
+        });
+      }
+    } catch (err) {
+      console.error('[WS] Error forwarding message:', err);
+    }
+  });
+
   // Seen status
   socket.on('message_seen', async ({ roomId, userId, messageId }) => {
     try {

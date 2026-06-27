@@ -86,13 +86,15 @@ function MessagesContent() {
       if (res.ok) {
         const savedMsg = await res.json();
         if (socketRef.current) {
-          socketRef.current.emit("send_message", {
+          socketRef.current.emit("forward_message", {
             room: roomId,
             senderId: u._id || u.id,
             senderName: u.name,
             text: textMsg,
             mediaUrl: "",
-            mediaType: "none"
+            mediaType: "none",
+            _id: savedMsg._id,
+            createdAt: savedMsg.createdAt || new Date().toISOString()
           });
         }
         setMessages(prev => {
@@ -357,7 +359,7 @@ function MessagesContent() {
     reader.readAsDataURL(file);
   };
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if ((!input.trim() && !selectedMedia) || !activeChat || isSending) return;
 
     setIsSending(true);
@@ -404,7 +406,40 @@ function MessagesContent() {
       return c;
     }));
     
-    socketRef.current.emit('send_message', data);
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+      
+      const res = await fetch(`${apiUrl}/api/chat/rooms/${activeChat.id}/messages`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          text: data.text,
+          mediaUrl: data.mediaUrl,
+          mediaType: data.mediaType
+        })
+      });
+      
+      if (res.ok) {
+        const savedMsg = await res.json();
+        if (socketRef.current) {
+          // Forward the saved message to other users via socket
+          socketRef.current.emit('forward_message', {
+            ...data,
+            _id: savedMsg._id,
+            createdAt: savedMsg.createdAt || new Date().toISOString()
+          });
+        }
+      } else {
+        console.error("Failed to send message via API");
+      }
+    } catch (err) {
+      console.error("Error sending message:", err);
+    }
+
     setInput("");
     setSelectedMedia(null);
     setMediaType('none');
