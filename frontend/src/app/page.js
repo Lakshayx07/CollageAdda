@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check, Plus, Flame, TrendingUp, Search, Zap, BarChart2, Compass, Trophy, ShieldCheck, Flag, Globe, GraduationCap, ChevronLeft, ChevronRight } from "lucide-react";
+import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check, Plus, Flame, TrendingUp, Search, Zap, BarChart2, Compass, ShieldCheck, Flag, Globe, GraduationCap, ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import NotificationBell from "../components/NotificationBell";
 import ThemeToggle from "../components/ThemeToggle";
 import VerifiedBadge from "../components/VerifiedBadge";
+import CampusLeaderboard from "../components/CampusLeaderboard";
 import clsx from "clsx";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -60,8 +61,6 @@ export default function Home() {
     return prompts[Math.floor(Math.random() * prompts.length)];
   });
   const [selectedGradient, setSelectedGradient] = useState("from-orange-500 via-rose-500 to-purple-600");
-  const [collegeLeaderboard, setCollegeLeaderboard] = useState([]);
-
   const filteredPosts = posts.filter(post => {
     if (!selectedTopic) return true;
     return post.content.toLowerCase().includes(selectedTopic.toLowerCase());
@@ -130,7 +129,6 @@ export default function Home() {
       fetchPosts();
       fetchFriends();
       fetchStories();
-      fetchLeaderboard();
       fetchConfessions();
     }
   }, [router]);
@@ -234,28 +232,6 @@ export default function Home() {
       console.error("Error fetching stories:", err);
     }
   };
-
-  const fetchLeaderboard = async () => {
-    try {
-      const token = localStorage.getItem("collegeadda_token");
-      if (!token) return;
-      const res = await fetch(`${apiUrl}/api/users/leaderboard`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setCollegeLeaderboard(data.map(item => ({
-          college: item._id || "Unknown University",
-          score: item.score || 0,
-          verifiedCount: item.verifiedCount || 0,
-          totalHeat: item.totalHeat || 0,
-        })));
-      }
-    } catch (err) {
-      console.error("Error fetching leaderboard:", err);
-    }
-  };
-
 
   const fetchConfessions = async (scope = 'local') => {
     try {
@@ -784,300 +760,9 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="grid min-w-0 gap-6 grid-cols-1 items-stretch">
 
 
-          <div className="app-panel h-full flex flex-col min-w-0 rounded-[1.6rem] p-4 sm:rounded-[2rem] sm:p-5 lg:order-1">
-            <div className="mb-4 flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-300">Anonymous Adda</p>
-                  <h2 className="mt-1 text-lg font-black tracking-tight text-white">Campus confessions</h2>
-                </div>
-                <ShieldCheck size={20} className="text-orange-300" />
-              </div>
-              {/* Scope Toggle */}
-              <div className="flex items-center gap-3 self-start mb-2">
-                <button
-                  onClick={() => { setConfessionScope('local'); fetchConfessions('local'); }}
-                  className={clsx(
-                    "flex items-center gap-2 rounded-full px-4 py-2 text-[11px] font-black uppercase tracking-wider transition-all duration-300",
-                    confessionScope === 'local' 
-                      ? "bg-gradient-to-r from-purple-500 to-cyan-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]" 
-                      : "border border-white/10 bg-white/[0.02] text-white/50 hover:text-white hover:bg-white/[0.06]"
-                  )}
-                >
-                  🏫 My Campus
-                </button>
-                <button
-                  onClick={() => { setConfessionScope('global'); fetchConfessions('global'); }}
-                  className={clsx(
-                    "flex items-center gap-2 rounded-full px-4 py-2 text-[11px] font-black uppercase tracking-wider transition-all duration-300",
-                    confessionScope === 'global' 
-                      ? "bg-gradient-to-r from-purple-500 to-cyan-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]" 
-                      : "border border-white/10 bg-white/[0.02] text-white/50 hover:text-white hover:bg-white/[0.06]"
-                  )}
-                >
-                  🌐 Global Pulse
-                </button>
-              </div>
-            </div>
-            <div className="space-y-6">
-              <div className="rounded-[1.25rem] border border-transparent bg-white/[0.03] p-4 transition-all focus-within:border-purple-500 focus-within:shadow-[0_0_0_1px_#7c3aed] focus-within:bg-white/[0.05]">
-                <textarea
-                  value={confessionText}
-                  onChange={(e) => setConfessionText(e.target.value)}
-                  maxLength={280}
-                  placeholder={placeholderText}
-                  className="min-h-[100px] w-full resize-none bg-transparent text-base text-white outline-none placeholder:text-white/30 leading-relaxed"
-                />
-                
-                {/* Gradient Picker */}
-                <div className="mt-3 flex items-center justify-between border-t border-white/5 pt-4">
-                  <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-white/40">Theme:</span>
-                    <div className="flex gap-2">
-                      {[
-                        { name: "Sunset", value: "from-orange-500 via-rose-500 to-purple-600" },
-                        { name: "Cyber", value: "from-blue-600 via-indigo-500 to-purple-600" },
-                        { name: "Ocean", value: "from-cyan-500 to-blue-600" },
-                        { name: "Forest", value: "from-emerald-500 via-teal-600 to-cyan-600" },
-                        { name: "Cosmic", value: "from-purple-600 via-fuchsia-500 to-pink-500" }
-                      ].map((g) => (
-                        <button
-                          key={g.name}
-                          onClick={() => setSelectedGradient(g.value)}
-                          className={clsx(
-                            "w-7 h-7 rounded-full bg-gradient-to-br cursor-pointer border border-white/10 transition-all duration-300",
-                            g.value,
-                            selectedGradient === g.value ? "ring-2 ring-white scale-110 shadow-lg" : "opacity-70 hover:opacity-100 hover:scale-110"
-                          )}
-                          title={g.name}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-4">
-                    <span className={clsx("text-xs font-bold", confessionText.length > 260 ? "text-red-400" : "text-white/40")}>
-                      {confessionText.length} / 280
-                    </span>
-                    <div className="flex items-center gap-3">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-white/30 hidden sm:inline-block">🔒 Moderated before public</span>
-                      <button
-                        onClick={handleCreateConfession}
-                        disabled={confessionText.trim().length === 0}
-                        style={{ background: 'linear-gradient(135deg, #f59e0b, #ef4444)' }}
-                        className="rounded-full px-5 py-2.5 text-xs font-black uppercase tracking-widest text-white shadow-[0_0_15px_rgba(239,68,68,0.4)] hover:shadow-[0_0_20px_rgba(239,68,68,0.6)] transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
-                      >
-                        🔥 Drop
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {confessions.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 py-8 text-center flex-1">
-                  <p className="text-xs font-bold text-white/30">No confessions yet.</p>
-                  <p className="mt-1 text-[10px] text-white/20">Be the first to drop one! 🤫</p>
-                </div>
-              ) : (
-                <div className="flex flex-col flex-1 h-[480px] overflow-y-auto snap-y snap-mandatory no-scrollbar gap-4 pb-10">
-                  <AnimatePresence initial={false}>
-                  {confessions.map((confession) => {
-                    const userId = currentUser?._id || currentUser?.id;
-                    const isLiked = confession.likes?.some(l => l.toString() === userId?.toString());
-                    const likesCount = confession.likes?.length || 0;
-                    const commentsCount = confession.comments?.length || 0;
-
-                    // Time formatting
-                    const getTimeAgo = (date) => {
-                      if (!date) return 'Just now';
-                      const diff = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
-                      if (diff < 60) return 'Just now';
-                      if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-                      if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-                      return new Date(date).toLocaleDateString();
-                    };
-
-                    return (
-                    <motion.div
-                      key={confession._id}
-                      initial={{ opacity: 0, y: 20, scale: 0.97 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ duration: 0.35, ease: "easeOut" }}
-                      className="snap-start snap-always shrink-0"
-                    >
-                      <div
-                        className={clsx(
-                          "relative overflow-hidden rounded-2xl shadow-xl transition-all duration-300 hover:shadow-2xl",
-                          confession.gradient ? `bg-gradient-to-br ${confession.gradient}` : "border border-white/8 bg-white/[0.04]"
-                        )}
-                      >
-                        {/* Subtle overlay for text legibility */}
-                        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/20 to-black/50 pointer-events-none" />
-
-                        {/* Header Row */}
-                        <div className="relative z-10 flex items-center justify-between px-5 pt-4 pb-3 border-b border-white/10">
-                          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/50">
-                            CAMPUS ADDA ✦ CONFESSION ✦ {confession.createdAt ? new Date(confession.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Just now'}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[9px] text-white/40 font-bold">{getTimeAgo(confession.createdAt)}</span>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); reportConfession(confession._id); }}
-                              title="Report this confession"
-                              className="text-white/30 hover:text-red-400 transition-colors cursor-pointer p-1"
-                            >
-                              <Flag size={10} />
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Confession Text */}
-                        <div className="relative z-10 px-6 py-6">
-                          <p className="text-[18px] font-bold italic leading-relaxed text-white drop-shadow-md">
-                            "{confession.text}"
-                          </p>
-                        </div>
-
-                        {/* Footer info row */}
-                        <div className="relative z-10 flex items-center justify-between px-5 pb-3">
-                          <span className="text-[10px] font-black uppercase text-white/70 truncate max-w-[60%]">
-                            🏫 {confession.college}
-                          </span>
-                          <span className="flex items-center gap-1 bg-black/25 backdrop-blur-sm px-2.5 py-1 rounded-full text-white/90 text-[10px] font-black">
-                            <Flame size={11} className="fill-orange-400 text-orange-400" /> {confession.heat} Heat
-                          </span>
-                        </div>
-
-                        {/* Action Bar */}
-                        <div className="relative z-10 flex items-center gap-2 px-4 py-3 border-t border-white/10 bg-black/20 backdrop-blur-sm">
-                          {/* Like Button */}
-                          <button
-                            onClick={() => toggleLikeConfession(confession._id)}
-                            className={clsx(
-                              "flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full transition-all cursor-pointer",
-                              isLiked
-                                ? "bg-red-500/25 text-red-400 border border-red-500/30"
-                                : "bg-white/10 hover:bg-white/20 text-white/70 hover:text-white border border-white/10"
-                            )}
-                          >
-                            <Heart size={13} className={isLiked ? "fill-red-400 text-red-400" : ""} />
-                            <span>{likesCount}</span>
-                          </button>
-
-                          {/* Comment Count Badge */}
-                          <span className="flex items-center gap-1 text-[10px] font-bold text-white/50 bg-white/5 px-2.5 py-1.5 rounded-full border border-white/10 shrink-0">
-                            💬 {commentsCount}
-                          </span>
-
-                          {/* Comment Input */}
-                          <div className="flex-1 flex items-center bg-black/25 rounded-full px-3 py-1.5 border border-white/10 min-w-0">
-                            <input
-                              type="text"
-                              placeholder="Add a comment..."
-                              value={confessionCommentInputs[confession._id] || ""}
-                              onChange={(e) => setConfessionCommentInputs(prev => ({ ...prev, [confession._id]: e.target.value }))}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") handleCommentConfession(confession._id);
-                              }}
-                              className="w-full bg-transparent text-xs text-white placeholder:text-white/35 focus:outline-none min-w-0"
-                            />
-                            <button
-                              onClick={() => handleCommentConfession(confession._id)}
-                              className="ml-2 text-white/50 hover:text-white transition-colors cursor-pointer shrink-0"
-                            >
-                              <Send size={12} />
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Comments List */}
-                        {commentsCount > 0 && (
-                          <div className="relative z-10 px-5 pb-5 space-y-2 border-t border-white/5 pt-4 bg-black/20">
-                            {confession.comments.slice(0, 2).map((comment, i) => (
-                              <div key={i} className="text-sm text-white/80 flex items-start gap-2">
-                                <span className="font-black text-white/40 text-[10px] uppercase shrink-0 mt-1 bg-white/10 px-2 py-0.5 rounded-md">Anon</span>
-                                <span className="leading-snug">{comment.text}</span>
-                              </div>
-                            ))}
-                            {commentsCount > 2 && (
-                              <button className="text-[11px] font-bold text-white/40 hover:text-white mt-1 uppercase tracking-wider transition-colors">
-                                View all {commentsCount} comments
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </motion.div>
-                  );
-                  })}
-                  </AnimatePresence>
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
-
-        <section className="grid min-w-0 gap-3 lg:grid-cols-1">
-          <div className="app-panel rounded-[1.6rem] p-4 sm:rounded-[2rem] sm:p-5">
-            <div className="mb-3 flex items-center justify-between">
-              <div className="flex items-center gap-2 text-white">
-                <Trophy size={18} className="text-yellow-300" />
-                <h2 className="text-sm font-black uppercase tracking-[0.16em]">College leaderboard</h2>
-              </div>
-            </div>
-            <div className="space-y-2">
-              {collegeLeaderboard.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 py-8 text-center">
-                  <p className="text-xs font-bold text-white/30">No colleges ranked yet.</p>
-                  <p className="mt-1 text-[10px] text-white/20">Rankings appear as more verified students join.</p>
-                </div>
-              ) : collegeLeaderboard.map((item, idx) => {
-                const medals = ["🥇", "🥈", "🥉"];
-                const gradients = [
-                  "from-yellow-500/20 via-orange-500/10 to-transparent border-yellow-500/30",
-                  "from-slate-400/15 via-slate-500/10 to-transparent border-slate-400/25",
-                  "from-orange-700/15 via-orange-800/10 to-transparent border-orange-700/25",
-                ];
-                const isTop3 = idx < 3;
-                return (
-                  <div
-                    key={item.college}
-                    className={clsx(
-                      "flex items-center gap-3 rounded-2xl border p-3 transition-all",
-                      isTop3
-                        ? `bg-gradient-to-r ${gradients[idx]}`
-                        : "border-white/8 bg-white/[0.03]"
-                    )}
-                  >
-                    <div className={clsx(
-                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl text-sm font-black",
-                      isTop3 ? "text-lg" : "bg-white/[0.06] text-xs text-white"
-                    )}>
-                      {isTop3 ? medals[idx] : `#${idx + 1}`}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className={clsx("truncate text-sm font-bold", isTop3 ? "text-white" : "text-white/80")}>{item.college}</p>
-                      <p className="text-[10px] font-medium text-white/40">
-                        <span className="text-green-400">{item.verifiedCount} verified students</span>
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className={clsx("text-sm font-black", isTop3 ? "text-yellow-300" : "text-white/70")}>{item.score} pts</p>
-                      {isTop3 && idx === 0 && (
-                        <span className="text-[9px] font-black uppercase tracking-wider text-yellow-400">Top Campus 🏆</span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
+        <CampusLeaderboard apiUrl={apiUrl} />
 
         <section className="space-y-2">
           <div className="flex items-center justify-between px-1">

@@ -72,6 +72,11 @@ export default function ExplorePage() {
   const [dragX, setDragX] = useState(0);
   const [viewMode, setViewMode] = useState("cards"); // 'cards' or 'list'
 
+  // ── Filter bar state ────────────────────────────────────────────────────────
+  const [filterCity, setFilterCity] = useState("All");
+  const [filterCategory, setFilterCategory] = useState("All");
+  const [filterStream, setFilterStream] = useState("All");
+
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
 
   const [myFollowing, setMyFollowing] = useState([]);
@@ -379,9 +384,62 @@ export default function ExplorePage() {
     }, 300);
   };
 
+  // ── Category → Stream mapping ────────────────────────────────────────────
+  const STREAM_MAP = {
+    IIT: "Engineering",
+    NIT: "Engineering",
+    Engineering: "Engineering",
+    General: "Engineering",
+    Medical: "Medicine",
+    Law: "Law",
+    Design: "Design & Architecture",
+  };
+  const STREAM_OPTIONS = ["All", "Engineering", "Medicine", "Law", "Design & Architecture"];
+  const CATEGORY_OPTIONS = ["All", "IIT", "NIT", "Engineering", "Medical", "Law", "Design", "General"];
+
+  // ── Dynamic city list derived from all colleges ──────────────────────────
+  // Excludes placeholder / TBD values so they never pollute the dropdown
+  const cityOptions = useMemo(() => {
+    const cities = [
+      ...new Set(
+        colleges
+          .map(c => c.location)
+          .filter(loc => loc && loc !== "Location TBD" && !loc.toLowerCase().startsWith("tbd"))
+      )
+    ].sort((a, b) => a.localeCompare(b));
+    return ["All", ...cities];
+  }, [colleges]);
+
+  // ── Filtered + sorted colleges ───────────────────────────────────────────
   const filteredColleges = useMemo(() => {
-    return colleges.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
-  }, [search, colleges]);
+    let result = colleges.filter(c => {
+      // Search bar
+      if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false;
+      // City filter
+      if (filterCity !== "All" && c.location !== filterCity) return false;
+      // Category filter
+      if (filterCategory !== "All" && (c.category || "General") !== filterCategory) return false;
+      // Stream filter (derived from category)
+      if (filterStream !== "All") {
+        const collegeStream = STREAM_MAP[c.category || "General"] || "Engineering";
+        if (collegeStream !== filterStream) return false;
+      }
+      return true;
+    });
+    // Always sort A→Z, case-insensitive
+    result = [...result].sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
+    );
+    return result;
+  }, [search, colleges, filterCity, filterCategory, filterStream]);
+
+  const hasActiveFilters = filterCity !== "All" || filterCategory !== "All" || filterStream !== "All";
+
+  const clearFilters = () => {
+    setFilterCity("All");
+    setFilterCategory("All");
+    setFilterStream("All");
+  };
 
   const toggleFollow = (id) => {
     setFollowed(prev => {
@@ -637,6 +695,103 @@ export default function ExplorePage() {
                   </div>
                 </section>
 
+                {/* ── Filter Bar ────────────────────────────────────────────── */}
+                <section className="mx-auto w-full max-w-6xl px-4 pt-3 pb-1 sm:px-5">
+                  <div className="app-panel rounded-[1.4rem] px-4 py-4 sm:px-5">
+                    <div className="flex flex-wrap items-center gap-3">
+                      {/* City filter */}
+                      <div className="flex-1 min-w-[140px]">
+                        <label className="block text-[9px] font-black uppercase tracking-[0.18em] text-white/40 mb-1.5 pl-1">🌍 City</label>
+                        <select
+                          value={filterCity}
+                          onChange={e => setFilterCity(e.target.value)}
+                          aria-label="Filter by city"
+                          className="ca-input w-full py-2.5 px-3 text-xs appearance-none cursor-pointer"
+                          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
+                        >
+                          {cityOptions.map(city => (
+                            <option key={city} value={city}>{city === "All" ? "All Cities" : city}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Category filter */}
+                      <div className="flex-1 min-w-[130px]">
+                        <label className="block text-[9px] font-black uppercase tracking-[0.18em] text-white/40 mb-1.5 pl-1">🏛️ Category</label>
+                        <select
+                          value={filterCategory}
+                          onChange={e => setFilterCategory(e.target.value)}
+                          aria-label="Filter by category"
+                          className="ca-input w-full py-2.5 px-3 text-xs appearance-none cursor-pointer"
+                          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
+                        >
+                          {CATEGORY_OPTIONS.map(cat => (
+                            <option key={cat} value={cat}>{cat === "All" ? "All Categories" : cat}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Stream filter */}
+                      <div className="flex-1 min-w-[150px]">
+                        <label className="block text-[9px] font-black uppercase tracking-[0.18em] text-white/40 mb-1.5 pl-1">📚 Stream</label>
+                        <select
+                          value={filterStream}
+                          onChange={e => setFilterStream(e.target.value)}
+                          aria-label="Filter by stream"
+                          className="ca-input w-full py-2.5 px-3 text-xs appearance-none cursor-pointer"
+                          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
+                        >
+                          {STREAM_OPTIONS.map(s => (
+                            <option key={s} value={s}>{s === "All" ? "All Courses" : s}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Clear filters */}
+                      {hasActiveFilters && (
+                        <button
+                          onClick={clearFilters}
+                          className="shrink-0 self-end mb-0.5 flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-white/60 transition-all hover:bg-white/10 hover:text-white/90 hover:border-white/40 active:scale-95"
+                          aria-label="Clear all filters"
+                        >
+                          ✕ Clear
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Active filter summary + college count */}
+                    <div className="mt-3 flex items-center justify-between">
+                      <p className="text-[10px] text-white/35 font-medium">
+                        {!loading && (
+                          <>
+                            Showing <span className="text-white/60 font-black">{filteredColleges.length}</span> college{filteredColleges.length !== 1 ? "s" : ""}
+                            {hasActiveFilters && <span className="text-white/35"> (filtered)</span>}
+                          </>
+                        )}
+                      </p>
+                      {hasActiveFilters && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {filterCategory !== "All" && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 px-2.5 py-1 text-[9px] font-black text-purple-300 uppercase tracking-wider">
+                              {filterCategory}
+                            </span>
+                          )}
+                          {filterStream !== "All" && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 px-2.5 py-1 text-[9px] font-black text-cyan-300 uppercase tracking-wider">
+                              {filterStream}
+                            </span>
+                          )}
+                          {filterCity !== "All" && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 px-2.5 py-1 text-[9px] font-black text-emerald-300 uppercase tracking-wider">
+                              📍 {filterCity}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </section>
+
                 <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-4 p-4 sm:grid-cols-2 sm:gap-5 sm:p-5 xl:grid-cols-3">
               {loading && (
                 <div className="col-span-2 flex justify-center py-20">
@@ -699,9 +854,30 @@ export default function ExplorePage() {
             </div>
 
             {!loading && filteredColleges.length === 0 && (
-              <div className="flex-1 flex flex-col items-center justify-center py-20 text-muted">
-                <Search size={48} className="mb-4 opacity-20" />
-                <p>No colleges found matching "{search}"</p>
+              <div className="flex-1 flex flex-col items-center justify-center py-16 px-6 text-center">
+                <div className="app-panel mx-auto max-w-sm rounded-[1.6rem] p-8 flex flex-col items-center gap-4">
+                  <span className="text-4xl">🔍</span>
+                  <div>
+                    <p className="text-sm font-black text-white/80 mb-1">
+                      {hasActiveFilters
+                        ? "No colleges match these filters"
+                        : `No colleges found matching "${search}"`}
+                    </p>
+                    <p className="text-xs text-white/40">
+                      {hasActiveFilters
+                        ? "Try adjusting or clearing your filters."
+                        : "Try a different search term."}
+                    </p>
+                  </div>
+                  {hasActiveFilters && (
+                    <button
+                      onClick={clearFilters}
+                      className="mt-1 rounded-xl bg-gradient-to-r from-purple-500 to-cyan-500 px-5 py-2.5 text-[11px] font-black uppercase tracking-widest text-white shadow-lg shadow-purple-500/20 hover:opacity-90 active:scale-95 transition-all"
+                    >
+                      Reset Filters
+                    </button>
+                  )}
+                </div>
               </div>
             )}
               </>

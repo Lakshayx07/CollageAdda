@@ -1,41 +1,84 @@
 import express from 'express';
 import User from '../models/User.js';
+import College from '../models/College.js';
 import Notification from '../models/Notification.js';
-import Confession from '../models/Confession.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { ensureUniversityGroup, normalizeUniversityName } from '../utils/universityUtils.js';
 import { publicUserPayload, syncVerificationStatus } from '../utils/verificationUtils.js';
 
 const router = express.Router();
+const POINTS_PER_VERIFIED_STUDENT = Number(process.env.POINTS_PER_VERIFIED_STUDENT || 10);
+const KNOWN_COLLEGE_LOGOS = [
+  { pattern: /rishihood/i, logo: '' },
+  { pattern: /school of planning|architecture.*spa|\bspa\b/i, logo: '/college-logos/spa-delhi.png' },
+  { pattern: /jawaharlal nehru|jnu/i, logo: '/college-logos/jnu.png' },
+  { pattern: /amity/i, logo: '/college-logos/amity-university.png' },
+  { pattern: /delhi university|university of delhi/i, logo: '/college-logos/delhi-university.png' },
+  { pattern: /symbiosis/i, logo: '/college-logos/symbiosis.png' },
+  { pattern: /christ/i, logo: '/college-logos/christ-university.png' }
+];
+
+const logoForCollege = (name) => KNOWN_COLLEGE_LOGOS.find(item => item.pattern.test(name))?.logo || '';
 
 // @route   GET /api/users/leaderboard
-// @desc    Get university leaderboard (ranked by verified users + confession heat)
+// @desc    Get campus leaderboard ranked by verified students
 router.get('/leaderboard', protect, async (req, res) => {
   try {
-    // Aggregate verified user counts per university
-    const userCounts = await User.aggregate([
-      { $match: { isVerified: true } },
-      { $group: { _id: '$university', verifiedCount: { $sum: 1 } } }
+    const verifiedCounts = await User.aggregate([
+      {
+        $match: {
+          university: { $type: 'string', $ne: '' },
+          $or: [
+            { verificationStatus: 'verified' },
+            { isVerified: true }
+          ]
+        }
+      },
+      {
+        $group: {
+          _id: { $trim: { input: '$university' } },
+          verifiedStudents: { $sum: 1 }
+        }
+      },
+      { $match: { _id: { $ne: '' }, verifiedStudents: { $gte: 1 } } },
+      {
+        $addFields: {
+          points: { $multiply: ['$verifiedStudents', POINTS_PER_VERIFIED_STUDENT] }
+        }
+      },
+      { $sort: { points: -1, verifiedStudents: -1, _id: 1 } }
     ]);
 
-    // Aggregate total confession heat per university
-    const heatAgg = await Confession.aggregate([
-      { $group: { _id: '$college', totalHeat: { $sum: '$heat' } } }
-    ]);
+    const collegeNames = verifiedCounts.map(item => item._id);
+    const collegeDocs = await College.find({ name: { $in: collegeNames } })
+      .select('name emoji logo accent banner location category');
+    const collegeByName = new Map(collegeDocs.map(college => [college.name, college]));
 
-    // Merge the two datasets
-    const heatMap = {};
-    heatAgg.forEach(h => { heatMap[h._id] = h.totalHeat; });
+    const leaderboard = verifiedCounts.map((item, index) => {
+      const college = collegeByName.get(item._id);
+      return {
+        rank: index + 1,
+        _id: item._id,
+        college: item._id,
+        name: item._id,
+        verifiedStudents: item.verifiedStudents,
+        verifiedCount: item.verifiedStudents,
+        points: item.points,
+        score: item.points,
+        logo: college?.logo || logoForCollege(item._id),
+        fallbackLogo: college?.emoji || '',
+        accent: college?.accent || '#8b5cf6',
+        banner: college?.banner || '',
+        location: college?.location || '',
+        category: college?.category || 'General'
+      };
+    });
 
-    const leaderboard = userCounts.map(u => ({
-      _id: u._id,
-      verifiedCount: u.verifiedCount,
-      totalHeat: heatMap[u._id] || 0,
-      // Composite score: 10 pts per verified student + 1 pt per heat
-      score: (u.verifiedCount * 10) + (heatMap[u._id] || 0)
-    })).sort((a, b) => b.score - a.score).slice(0, 10);
-
-    res.json(leaderboard);
+    res.json({
+      pointsPerVerifiedStudent: POINTS_PER_VERIFIED_STUDENT,
+      lastUpdated: new Date().toISOString(),
+      leaderboard
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
