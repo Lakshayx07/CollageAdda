@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Home, Compass, User, Users, MessageSquare, Search, Zap } from "lucide-react";
+import { Home, Compass, User, Users, Users2, MessageSquare, Search, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
@@ -15,7 +15,7 @@ export default function BottomNav() {
     { name: "Squad", path: "/friends", icon: Users },
     { name: "Messages", path: "/messages", icon: MessageSquare },
     { name: "Hustle", path: "/hustle", icon: Compass },
-    { name: "Explore", path: "/explore", icon: Search },
+    { name: "Community", path: "/community", icon: Users2 },
   ];
 
   useEffect(() => {

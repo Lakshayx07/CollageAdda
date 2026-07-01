@@ -15,6 +15,57 @@ const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 };
 
+const mongoObjectIdToUuid = (id) => {
+  const hex = `${id.toString()}00000000`;
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+};
+
+// @route   GET /api/auth/supabase-token
+// @desc    Exchange the app JWT for a short-lived JWT Supabase can use in RLS auth.uid()
+router.get('/supabase-token', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
+
+    if (!token) {
+      return res.status(401).json({ message: 'Not authorized, no token' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select('email name');
+    if (!user) {
+      return res.status(401).json({ message: 'User not found' });
+    }
+
+    if (!process.env.SUPABASE_JWT_SECRET) {
+      return res.status(500).json({ message: 'SUPABASE_JWT_SECRET is not configured on the backend' });
+    }
+
+    const supabaseUserId = mongoObjectIdToUuid(user._id);
+    const accessToken = jwt.sign(
+      {
+        aud: 'authenticated',
+        exp: Math.floor(Date.now() / 1000) + 60 * 60,
+        sub: supabaseUserId,
+        email: user.email,
+        role: 'authenticated',
+      },
+      process.env.SUPABASE_JWT_SECRET
+    );
+
+    res.json({
+      accessToken,
+      user: {
+        id: supabaseUserId,
+        email: user.email,
+        name: user.name,
+      },
+    });
+  } catch (error) {
+    res.status(401).json({ message: error.message || 'Could not create Supabase session' });
+  }
+});
+
 // @route   POST /api/auth/register
 // @desc    Register a new user OR sync an existing OAuth user
 router.post('/register', async (req, res) => {

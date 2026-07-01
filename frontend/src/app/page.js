@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check, Plus, Flame, TrendingUp, Search, Zap, BarChart2, Compass, ShieldCheck, Flag, Globe, GraduationCap, ChevronLeft, ChevronRight, Users, Trophy } from "lucide-react";
+import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check, Plus, Flame, TrendingUp, Search, Zap, BarChart2, Compass, ShieldCheck, Flag, Globe, GraduationCap, ChevronLeft, ChevronRight, Users, Trophy, Sun, Sunset, Moon } from "lucide-react";
 import Image from "next/image";
 import NotificationBell from "../components/NotificationBell";
 import ThemeToggle from "../components/ThemeToggle";
@@ -704,17 +704,77 @@ export default function Home() {
     show: { opacity: 1, y: 0 }
   };
 
+  const getGreeting = () => {
+    const hr = new Date().getHours();
+    if (hr < 12) return { text: "Good Morning", icon: Sun, color: "text-amber-500" };
+    if (hr < 17) return { text: "Good Afternoon", icon: Sun, color: "text-orange-500" };
+    if (hr < 21) return { text: "Good Evening", icon: Sunset, color: "text-rose-500" };
+    return { text: "Good Night", icon: Moon, color: "text-indigo-400" };
+  };
+
   return (
     <div className="relative flex min-h-screen flex-col overflow-x-hidden bg-transparent pb-[90px] lg:pb-0">
-      <header className="sticky top-0 z-40 border-b border-[#E8E6E0] bg-white/90 px-4 py-4 backdrop-blur-xl sm:px-6">
+      <style>{`
+        @keyframes shimmer-bg {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        .header-shimmer {
+          background: linear-gradient(270deg, rgba(255,255,255,0.9), rgba(252,245,229,0.5), rgba(255,255,255,0.9));
+          background-size: 200% 200%;
+          animation: shimmer-bg 6s ease infinite;
+        }
+      `}</style>
+      <header className="sticky top-0 z-40 border-b border-[#E8E6E0] header-shimmer px-4 py-4 backdrop-blur-xl sm:px-6">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#C8922A]">
-              Campus pulse
-            </p>
-            <h1 className="mt-1 text-2xl font-black tracking-tight text-[#1A1A1A]">
-              Campus Adda
-            </h1>
+          <div className="relative overflow-hidden py-1">
+            {(() => {
+              if (!currentUser) {
+                return (
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#C8922A]">
+                      Campus pulse
+                    </p>
+                    <h1 className="mt-1 text-2xl font-black tracking-tight text-[#1A1A1A]">
+                      Campus Adda
+                    </h1>
+                  </div>
+                );
+              }
+              const greeting = getGreeting();
+              const Icon = greeting.icon;
+              const firstName = currentUser?.name ? currentUser.name.split(' ')[0] : 'Champ';
+              return (
+                <div className="flex items-center gap-3">
+                  <motion.div 
+                    animate={{ rotate: [0, 15, 0] }}
+                    transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+                    className={clsx("p-2 rounded-xl bg-amber-50/80 border border-amber-100 shadow-sm shrink-0", greeting.color)}
+                  >
+                    <Icon size={20} />
+                  </motion.div>
+                  <div>
+                    <motion.p 
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 }}
+                      className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#C8922A] leading-none"
+                    >
+                      {greeting.text}
+                    </motion.p>
+                    <motion.h1 
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.25, type: "spring", stiffness: 100 }}
+                      className="mt-0.5 text-xl font-black tracking-tight text-[#1A1A1A] leading-tight flex items-center gap-1"
+                    >
+                      Hey, {firstName} <span className="inline-block hover:animate-bounce cursor-default">👋</span>
+                    </motion.h1>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         <div className="flex items-center space-x-4">
           <ThemeToggle />
@@ -915,11 +975,11 @@ export default function Home() {
         </motion.div>
 
         {/* Posts List */}
-        <div className="space-y-6">
+        <div className="overflow-hidden rounded-[1.25rem] border border-[#E8E6E0] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
           {loadingPosts && (
-            <div className="space-y-6">
+            <div className="divide-y divide-[#E8E6E0]">
               {[1, 2, 3].map((n) => (
-                <div key={n} className="rounded-[2rem] p-6 space-y-4 animate-pulse border border-[#E8E6E0] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+                <div key={n} className="p-6 space-y-4 animate-pulse bg-white">
                   <div className="flex items-center space-x-4">
                     <div className="w-12 h-12 rounded-full bg-[#F3F2EE]" />
                     <div className="flex-1 space-y-2">
@@ -943,7 +1003,7 @@ export default function Home() {
           )}
 
           {!loadingPosts && posts.length === 0 && (
-            <div className="bg-white rounded-[2rem] p-8 text-center border border-dashed border-[#E8E6E0] flex flex-col items-center justify-center space-y-4">
+            <div className="bg-white p-8 text-center flex flex-col items-center justify-center space-y-4">
               <div className="w-16 h-16 rounded-full bg-[#FFF8EC] flex items-center justify-center text-[#C8922A]">
                 <Compass size={32} />
               </div>
@@ -961,7 +1021,7 @@ export default function Home() {
           )}
 
           {!loadingPosts && posts.length > 0 && filteredPosts.length === 0 && (
-            <div className="bg-white rounded-[2rem] p-8 text-center border border-dashed border-[#E8E6E0] flex flex-col items-center justify-center space-y-4">
+            <div className="bg-white p-8 text-center flex flex-col items-center justify-center space-y-4">
               <div className="w-16 h-16 rounded-full bg-[#FFF8EC] flex items-center justify-center text-[#C8922A]">
                 <Flame size={32} />
               </div>
@@ -982,7 +1042,7 @@ export default function Home() {
             <motion.article
               key={post.id} 
               variants={itemVariants}
-              className="ca-card relative min-w-0 p-4 group sm:p-6"
+              className="relative min-w-0 border-b border-[#E8E6E0] bg-white p-4 group last:border-b-0 sm:p-6"
             >
               {/* Post Header */}
               <div className="flex items-center justify-between mb-5">
