@@ -173,9 +173,19 @@ router.put('/profile', protect, async (req, res) => {
 // @desc    Search users by name or university
 router.get('/search/query', protect, async (req, res) => {
   try {
-    const { q } = req.query;
+    const { q, filter } = req.query;
     let query = { _id: { $ne: req.user._id } };
     
+    if (filter === 'same_interest') {
+      query.university = req.user.university;
+      query.interests = { $in: req.user.interests || [] };
+    } else if (filter === 'other_campus') {
+      query.university = { $ne: req.user.university };
+      query.interests = { $in: req.user.interests || [] };
+    } else if (filter === 'same_campus') {
+      query.university = req.user.university;
+    }
+
     if (q) {
       const cleanQuery = q.replace(/^#/, '');
       const escapedQuery = cleanQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

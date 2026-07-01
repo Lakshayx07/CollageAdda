@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from "react";
-import { UserPlus, Search, Users, MessageCircle, Loader2, Heart, X, Sparkles, MapPin, Zap, Trophy, Star } from "lucide-react";
+import { UserPlus, Search, Users, MessageCircle, Loader2, Heart, X, Sparkles, MapPin, Zap, Trophy, Star, Globe, Plus, CheckCircle2, Users2, ChevronRight, AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import VerifiedBadge from "../../components/VerifiedBadge";
 import clsx from "clsx";
+import { supabase } from "../../utils/supabase";
+import { getAuthenticatedSupabaseClient } from "../../utils/supabaseAuthUser";
 
 const LAST_SEEN_KEY = "collegeadda_followers_last_seen";
 
@@ -14,6 +16,7 @@ const ConfettiSparkles = ({ active }) => {
 
   useEffect(() => {
     if (!active) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPieces([]);
       return;
     }
@@ -114,12 +117,205 @@ export default function FriendsPage() {
   const [selectedProfileData, setSelectedProfileData] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [connectStatus, setConnectStatus] = useState("idle");
+  const [filter, setFilter] = useState("same_campus");
+  const [showFiltersDropdown, setShowFiltersDropdown] = useState(false);
+
+  // Community States
+  const [showCreateCommunityModal, setShowCreateCommunityModal] = useState(false);
+  const [communityName, setCommunityName] = useState("");
+  const [communityDescription, setCommunityDescription] = useState("");
+  const [communityTags, setCommunityTags] = useState([]);
+  const [customTag, setCustomTag] = useState("");
+  const [communityPrivacy, setCommunityPrivacy] = useState("public");
+  const [creatingCommunity, setCreatingCommunity] = useState(false);
+  const [communities, setCommunities] = useState([]);
+  const [membershipSet, setMembershipSet] = useState(new Set());
+  const [joiningCommunityId, setJoiningCommunityId] = useState(null);
+  const [communityToast, setCommunityToast] = useState(null); // { type: 'success'|'error', msg }
+
+  const popularTags = ["Cultural", "Sports", "Hackathons", "Design", "Academics", "Gaming", "Music", "Startups"];
+
+  // Gradient palette for community avatars based on id hash
+  const communityGradients = [
+    "from-amber-400 to-orange-500",
+    "from-violet-500 to-purple-600",
+    "from-teal-400 to-cyan-500",
+    "from-rose-400 to-pink-500",
+    "from-emerald-400 to-green-500",
+    "from-blue-400 to-indigo-500",
+  ];
+  const getCommunityGradient = (id) => {
+    if (!id) return communityGradients[0];
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) & 0xffffffff;
+    return communityGradients[Math.abs(hash) % communityGradients.length];
+  };
+
+  const showCommunityToast = (type, msg) => {
+    setCommunityToast({ type, msg });
+    setTimeout(() => setCommunityToast(null), 3500);
+  };
+
+  const handleTagToggle = (tag) => {
+    if (communityTags.includes(tag)) {
+      setCommunityTags(communityTags.filter(t => t !== tag));
+    } else {
+      if (communityTags.length < 3) {
+        setCommunityTags([...communityTags, tag]);
+      }
+    }
+  };
+
+  const handleAddCustomTag = (e) => {
+    e.preventDefault();
+    const cleanTag = customTag.trim().replace(/^#/, '');
+    if (!cleanTag) return;
+    if (communityTags.includes(cleanTag)) { setCustomTag(""); return; }
+    if (communityTags.length >= 3) {
+      showCommunityToast('error', 'You can select up to 3 tags only!');
+      return;
+    }
+    setCommunityTags([...communityTags, cleanTag]);
+    setCustomTag("");
+  };
+
+  const fetchCommunities = async () => {
+    if (!supabase) return;
+    try {
+      const { client: authSupabase } = await getAuthenticatedSupabaseClient();
+      const { data, error } = await authSupabase
+        .from("communities")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (!error && data) setCommunities(data);
+    } catch (err) {
+      console.error("Error fetching communities:", err);
+    }
+  };
+
+  const fetchMemberships = async () => {
+    if (!supabase) return;
+    try {
+      const { client: authSupabase, user: authUser } = await getAuthenticatedSupabaseClient();
+      const { data, error } = await authSupabase
+        .from("community_members")
+        .select("community_id")
+        .eq("user_id", authUser.id);
+      if (!error && data) {
+        setMembershipSet(new Set(data.map(m => m.community_id)));
+      }
+    } catch (err) {
+      console.error("Error fetching memberships:", err);
+    }
+  };
+
+  const handleJoinCommunity = async (community) => {
+    if (!supabase) { showCommunityToast('error', 'Supabase not configured.'); return; }
+    const { client: authSupabase, user: authUser } = await getAuthenticatedSupabaseClient();
+    const currentUserId = authUser.id;
+    if (!currentUserId) return;
+    if (membershipSet.has(community.id)) return;
+    setJoiningCommunityId(community.id);
+    try {
+      // Insert member
+      const { error: memberError } = await authSupabase
+        .from("community_members")
+        .insert([{ community_id: community.id, user_id: currentUserId, role: 'member' }]);
+      if (memberError && memberError.code !== '23505') { // ignore duplicate
+        throw memberError;
+      }
+      // Increment member_count
+      await authSupabase
+        .from("communities")
+        .update({ member_count: (community.member_count || 1) + 1 })
+        .eq("id", community.id);
+      // Optimistic update
+      setMembershipSet(prev => new Set([...prev, community.id]));
+      setCommunities(prev => prev.map(c =>
+        c.id === community.id ? { ...c, member_count: (c.member_count || 1) + 1 } : c
+      ));
+      if (community.privacy === 'invite_only') {
+        showCommunityToast('success', 'Request sent! 🎉');
+      } else {
+        showCommunityToast('success', `Joined ${community.name}! 🎉`);
+      }
+    } catch (err) {
+      console.error("Error joining community:", err);
+      showCommunityToast('error', err.message || 'Failed to join community.');
+    } finally {
+      setJoiningCommunityId(null);
+    }
+  };
+
+  const handleCreateCommunitySubmit = async (e) => {
+    e.preventDefault();
+    if (!communityName.trim()) return;
+    if (!supabase) {
+      showCommunityToast('error', 'Supabase is not configured. Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local');
+      return;
+    }
+    setCreatingCommunity(true);
+    try {
+      const { client: authSupabase, user: authUser } = await getAuthenticatedSupabaseClient();
+      const communityPayload = {
+        name: communityName.trim(),
+        description: communityDescription.trim(),
+        tags: communityTags,
+        privacy: communityPrivacy,
+        created_by: authUser.id,
+        member_count: 1
+      };
+
+      if (!communityPayload.created_by) {
+        throw new Error("Community creation payload is missing created_by");
+      }
+
+      const { data: inserted, error } = await authSupabase
+        .from("communities")
+        .insert(communityPayload)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Community creation failed:", error);
+        showCommunityToast('error', error.message || 'Failed to create community.');
+        return;
+      }
+
+      // Insert creator as owner in community_members
+      if (inserted?.id) {
+        await authSupabase.from("community_members").insert([{
+          community_id: inserted.id,
+          user_id: authUser.id,
+          role: 'owner'
+        }]);
+        // Optimistic: add new community to list + membership
+        setCommunities(prev => [inserted, ...prev].slice(0, 5));
+        setMembershipSet(prev => new Set([...prev, inserted.id]));
+      }
+
+      setCommunityName("");
+      setCommunityDescription("");
+      setCommunityTags([]);
+      setCommunityPrivacy("public");
+      setShowCreateCommunityModal(false);
+      showCommunityToast('success', 'Community created! 🎉');
+    } catch (error) {
+      console.error("Community creation failed:", error);
+      showCommunityToast('error', error.message || 'Network error — please try again.');
+    } finally {
+      setCreatingCommunity(false);
+    }
+  };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (selectedProfileId) setConnectStatus("idle");
   }, [selectedProfileId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMounted(true);
   }, []);
 
@@ -243,10 +439,14 @@ export default function FriendsPage() {
     if (!u) { router.push("/login"); return; }
     setUser(u);
 
+    // Load communities and memberships
+    fetchCommunities();
+    fetchMemberships();
+
     try {
       const [profileRes, suggestedRes] = await Promise.all([
         fetch(`${apiUrl}/api/users/profile`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${apiUrl}/api/users/search/query?q=${encodeURIComponent(u.university || "")}`, {
+        fetch(`${apiUrl}/api/users/search/query?filter=${filter}`, {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
@@ -271,9 +471,10 @@ export default function FriendsPage() {
     } finally {
       setLoading(false);
     }
-  }, [apiUrl, router]);
+  }, [apiUrl, router, filter]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadData();
     fetchFollowerNotifications();
     const interval = setInterval(fetchFollowerNotifications, 30000);
@@ -303,8 +504,9 @@ export default function FriendsPage() {
     if (!u) return;
 
     if (!search.trim()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSearching(true);
-      fetch(`${apiUrl}/api/users/search/query?q=${encodeURIComponent(u.university || "")}`, {
+      fetch(`${apiUrl}/api/users/search/query?filter=${filter}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
         .then(r => r.ok ? r.json() : [])
@@ -321,7 +523,7 @@ export default function FriendsPage() {
     const timeout = setTimeout(async () => {
       setSearching(true);
       try {
-        const res = await fetch(`${apiUrl}/api/users/search/query?q=${encodeURIComponent(search)}`, {
+        const res = await fetch(`${apiUrl}/api/users/search/query?filter=${filter}&q=${encodeURIComponent(search)}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {
@@ -336,7 +538,7 @@ export default function FriendsPage() {
     }, 300);
 
     return () => clearTimeout(timeout);
-  }, [search, apiUrl]);
+  }, [search, filter, apiUrl]);
 
   const handleHeartClick = () => {
     setShowNotifPanel(prev => !prev);
@@ -759,10 +961,80 @@ export default function FriendsPage() {
                       className="w-full bg-[#F9F8F5] border border-[#E8E6E0] rounded-xl py-4 pl-13 pr-12 text-[15px] font-medium text-[#1A1A1A] placeholder:text-[#888888] focus:outline-none focus:border-[#C8922A] transition-colors"
                     />
                   </div>
-                  <button className="flex items-center gap-2 px-4 py-3 bg-[#F9F8F5] border border-[#E8E6E0] rounded-xl text-[12px] font-bold text-[#6B6B6B] hover:bg-[#F3F2EE] transition-colors shrink-0">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-                    Filters
-                  </button>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowFiltersDropdown(!showFiltersDropdown)}
+                      className={clsx(
+                        "flex items-center gap-2 px-4 py-3 border rounded-xl text-[12px] font-bold transition-all shrink-0 cursor-pointer h-full",
+                        filter !== "same_campus"
+                          ? "bg-[#C8922A]/10 border-[#C8922A] text-[#C8922A]"
+                          : "bg-[#F9F8F5] border-[#E8E6E0] text-[#6B6B6B] hover:bg-[#F3F2EE]"
+                      )}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                      {filter === "same_campus" && "Filters"}
+                      {filter === "same_interest" && "Same Interest"}
+                      {filter === "other_campus" && "Other Campus"}
+                      {filter !== "same_campus" && (
+                        <span
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFilter("same_campus");
+                            setShowFiltersDropdown(false);
+                          }}
+                          className="ml-1 p-0.5 hover:bg-[#C8922A]/20 rounded-full transition-colors flex items-center justify-center"
+                        >
+                          <X size={12} />
+                        </span>
+                      )}
+                    </button>
+
+                    <AnimatePresence>
+                      {showFiltersDropdown && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setShowFiltersDropdown(false)} />
+                          <motion.div
+                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                            transition={{ duration: 0.15, ease: "easeOut" }}
+                            className="absolute right-0 mt-2 w-52 bg-white border border-[#E8E6E0] rounded-xl shadow-xl z-20 py-1.5 overflow-hidden"
+                          >
+                            <button
+                              onClick={() => {
+                                setFilter(filter === "same_interest" ? "same_campus" : "same_interest");
+                                setShowFiltersDropdown(false);
+                              }}
+                              className={clsx(
+                                "w-full text-left px-4 py-2.5 text-xs font-bold transition-colors flex items-center gap-2 cursor-pointer",
+                                filter === "same_interest"
+                                  ? "bg-[#C8922A]/10 text-[#C8922A]"
+                                  : "text-[#6B6B6B] hover:bg-[#F9F8F5] hover:text-[#1A1A1A]"
+                              )}
+                            >
+                              <Sparkles size={14} />
+                              Same Interest
+                            </button>
+                            <button
+                              onClick={() => {
+                                setFilter(filter === "other_campus" ? "same_campus" : "other_campus");
+                                setShowFiltersDropdown(false);
+                              }}
+                              className={clsx(
+                                "w-full text-left px-4 py-2.5 text-xs font-bold transition-colors flex items-center gap-2 cursor-pointer",
+                                filter === "other_campus"
+                                  ? "bg-[#C8922A]/10 text-[#C8922A]"
+                                  : "text-[#6B6B6B] hover:bg-[#F9F8F5] hover:text-[#1A1A1A]"
+                              )}
+                            >
+                              <Users size={14} />
+                              Other Campus
+                            </button>
+                          </motion.div>
+                        </>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
               )}
             </motion.div>
@@ -967,7 +1239,11 @@ export default function FriendsPage() {
                 <div className="flex items-center justify-between">
                   <h3 className="text-[11px] font-black text-[#6B6B6B] uppercase tracking-[0.2em] flex items-center">
                     <Sparkles size={12} className="mr-2 text-yellow-500" />
-                    {search.trim() ? "Search Results" : "Verified Campus Peers"}
+                    {search.trim() ? "Search Results" : (
+                      filter === "same_interest" ? "Same Interest Peers" :
+                      filter === "other_campus" ? "Other Campus Peers" :
+                      "Verified Campus Peers"
+                    )}
                   </h3>
                   <span className="text-[10px] bg-[#F9F8F5] border border-[#E8E6E0] px-3 py-1 rounded-full text-[#C8922A] font-bold border border-[#C8922A]/30">
                     {suggestedUsers.length} peers
@@ -977,7 +1253,9 @@ export default function FriendsPage() {
                 {loading ? (
                   <div className="flex flex-col items-center justify-center py-20 space-y-4">
                     <div className="w-12 h-12 border-4 border-[#E8E6E0] border-t-purple-500 rounded-full animate-spin" />
-                    <p className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest">Scanning Campus...</p>
+                    <p className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest">
+                      {filter === "other_campus" ? "Scanning Other Campuses..." : "Scanning Campus..."}
+                    </p>
                   </div>
                 ) : (
                   <motion.div
@@ -990,8 +1268,16 @@ export default function FriendsPage() {
                   >
                     {suggestedUsers.length === 0 ? (
                       <div className="text-center py-20 app-panel rounded-[1.75rem] border-[#E8E6E0] border-dashed col-span-full">
-                        <p className="text-2xl font-black text-[#888888] mb-2">Squad Not Found 🛸</p>
-                        <p className="text-sm text-[#888888] font-medium">Try searching for #Tech, #Design or a name</p>
+                        <p className="text-2xl font-black text-[#888888] mb-2">
+                          {filter === "same_interest" ? "No shared interest peers 🛸" :
+                           filter === "other_campus" ? "No other campus peers 🛸" :
+                           "Squad Not Found 🛸"}
+                        </p>
+                        <p className="text-sm text-[#888888] font-medium">
+                          {filter === "same_interest" ? "Add more interests to your profile, or try another filter" :
+                           filter === "other_campus" ? "Add more interests to match with peers from other campuses" :
+                           "Try searching for #Tech, #Design or a name"}
+                        </p>
                       </div>
                     ) : (
                       suggestedUsers.map(person => {
@@ -1013,28 +1299,28 @@ export default function FriendsPage() {
                                 transition: { duration: 0.25, ease: "easeOut" }
                               }}
                               style={{ transformStyle: "preserve-3d", perspective: 1000 }}
-                              className="bg-white px-[18px] py-2.5 rounded-[1.75rem] border border-[#E8E6E0] hover:border-purple-500/40 hover:shadow-[0_15px_30px_rgba(124,58,237,0.12)] transition-all group flex flex-col justify-between cursor-pointer relative overflow-hidden"
+                              className="rounded-[2rem] border border-white/70 bg-white/62 p-4 shadow-[0_18px_48px_rgba(26,26,26,0.12),inset_0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-xl hover:border-white hover:shadow-[0_24px_58px_rgba(124,58,237,0.16),inset_0_1px_0_rgba(255,255,255,0.8)] transition-all group cursor-pointer relative overflow-hidden"
                             >
-                              {/* Glossy shine sweep effect */}
-                              <div className="absolute inset-0 w-[200%] h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-[850ms] ease-out pointer-events-none" />
+                              <div className="relative h-[220px] overflow-hidden rounded-[1.5rem] border border-white/55 shadow-[0_12px_28px_rgba(0,0,0,0.12)]">
+                                <img
+                                  src={avatar}
+                                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105 group-hover:rotate-[0.35deg]"
+                                  alt={person.name}
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/18 via-transparent to-white/8 pointer-events-none" />
+                                {/* Glossy shine sweep effect */}
+                                <div className="absolute inset-0 w-[200%] h-full bg-gradient-to-r from-transparent via-white/35 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-[850ms] ease-out pointer-events-none" />
+                              </div>
 
                               {/* Top section: Profile pic and Details */}
-                              <div className="space-y-2">
-                                {/* Profile Pic - aspect square and fits container */}
-                                <div className="relative aspect-[10/9] w-full rounded-[1.25rem] overflow-hidden bg-[#F9F8F5] shadow-sm">
-                                  <img
-                                    src={avatar}
-                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-108 group-hover:rotate-[0.5deg]"
-                                  />
-                                </div>
-
+                              <div className="mt-4 rounded-[1.45rem] border border-white/70 bg-white/82 p-4 shadow-[0_12px_35px_rgba(0,0,0,0.12)] backdrop-blur-xl space-y-2.5">
                                 {/* Name and Verified Badge */}
                                 <div className="space-y-0.5">
                                   <div className="flex items-center space-x-1.5">
-                                    <h4 className="font-black text-[17px] text-[#1A1A1A] truncate tracking-tight leading-snug">{person.name}</h4>
+                                    <h4 className="font-black text-[18px] text-[#1A1A1A] truncate tracking-tight leading-tight">{person.name}</h4>
                                     <VerifiedBadge user={person} size={15} />
                                   </div>
-                                  <p className="text-[9.5px] text-[#C8922A] font-bold uppercase tracking-widest flex items-center">
+                                  <p className="text-[9.5px] text-[#1A1A1A]/80 font-black uppercase tracking-widest flex items-center">
                                     <MapPin size={8.5} className="mr-0.5" />
                                     {person.university} {person.year && `• ${person.year}`}
                                   </p>
@@ -1042,11 +1328,11 @@ export default function FriendsPage() {
 
                                 {/* Bio */}
                                 {person.bio ? (
-                                  <p className="text-[10px] leading-tight text-[#6B6B6B] line-clamp-2 font-medium">
+                                  <p className="text-[12px] leading-snug text-[#1A1A1A]/82 line-clamp-2 font-semibold">
                                     {person.bio}
                                   </p>
                                 ) : (
-                                  <p className="text-[10px] leading-tight text-[#888888] italic font-medium">
+                                  <p className="text-[12px] leading-snug text-[#4A4A4A] italic font-medium">
                                     No bio added yet.
                                   </p>
                                 )}
@@ -1054,43 +1340,42 @@ export default function FriendsPage() {
                                 {/* Interests */}
                                 <div className="flex flex-wrap gap-1.5">
                                   {(person.interests || []).slice(0, 3).map(interest => (
-                                    <span key={interest} className="text-[9px] bg-[#F9F8F5] border border-[#E8E6E0] px-2.5 py-0.5 rounded-full text-[#6B6B6B] font-bold hover:border-[#C8922A]/30 hover:text-[#C8922A] transition-all">
+                                    <span key={interest} className="text-[9px] bg-white/75 border border-[#E8E6E0] px-2.5 py-0.5 rounded-full text-[#1A1A1A] font-bold shadow-sm hover:border-[#C8922A]/30 hover:text-[#C8922A] transition-all">
                                       #{interest}
                                     </span>
                                   ))}
                                 </div>
-                              </div>
 
-                              {/* Stats Section (divided in 3) */}
-                              <div className="mt-2.5 pt-2.5 border-t border-[#F3F2EE] grid grid-cols-3 gap-2 text-center items-center">
+                                {/* Stats Section (divided in 3) */}
+                              <div className="grid grid-cols-3 gap-2 rounded-2xl border border-[#E8E6E0] bg-white/72 px-2 py-2.5 text-center items-center">
                                 <div>
-                                  <p className="text-sm font-black text-[#1A1A1A] flex items-center justify-center gap-0.5">
+                                  <p className="text-base font-black text-[#1A1A1A] flex items-center justify-center gap-0.5">
                                     {person.streak || 1} <span className="text-[12px]">🔥</span>
                                   </p>
-                                  <p className="text-[9px] font-bold uppercase tracking-wider text-[#888888] mt-0.5">Streak</p>
+                                  <p className="text-[9px] font-bold uppercase tracking-wider text-[#4A4A4A] mt-0.5">Streak</p>
                                 </div>
-                                <div className="border-l border-r border-[#F3F2EE]">
-                                  <p className="text-sm font-black text-[#1A1A1A]">
+                                <div className="border-l border-r border-[#D8D5CE]">
+                                  <p className="text-base font-black text-[#1A1A1A]">
                                     {getSocialCount(person.followers) + getSocialCount(person.following)}
                                   </p>
-                                  <p className="text-[9px] font-bold uppercase tracking-wider text-[#888888] mt-0.5">Squad</p>
+                                  <p className="text-[9px] font-bold uppercase tracking-wider text-[#4A4A4A] mt-0.5">Squad</p>
                                 </div>
                                 <div>
-                                  <p className="text-sm font-black text-[#1A1A1A]">
+                                  <p className="text-base font-black text-[#1A1A1A]">
                                     {person.postsCount || 0}
                                   </p>
-                                  <p className="text-[9px] font-bold uppercase tracking-wider text-[#888888] mt-0.5">Post</p>
+                                  <p className="text-[9px] font-bold uppercase tracking-wider text-[#4A4A4A] mt-0.5">Post</p>
                                 </div>
                               </div>
 
                               {/* Action Button */}
-                              <div className="mt-2.5">
+                              <div>
                                 {status === "connected" ? (
                                   <motion.button
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
                                     onClick={(e) => { e.stopPropagation(); handleDirectMessage(person._id); }}
-                                    className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                                    className="w-full bg-white hover:bg-[#FFF8EC] text-[#C8922A] border border-[#D4A843]/45 py-3 rounded-full text-[12px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-[0_10px_24px_rgba(200,146,42,0.14)]"
                                   >
                                     <MessageCircle size={13} />
                                     Chat Now
@@ -1100,12 +1385,13 @@ export default function FriendsPage() {
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
                                     onClick={(e) => { e.stopPropagation(); toggleFollow(person._id); }}
-                                    className="w-full bg-[#C8922A] hover:bg-[#b58120] text-white py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                                    className="w-full bg-white hover:bg-[#FFF8EC] text-[#C8922A] border border-[#D4A843]/45 py-3 rounded-full text-[12px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-[0_10px_24px_rgba(200,146,42,0.14)]"
                                   >
                                     <UserPlus size={13} />
                                     Connect +
                                   </motion.button>
                                 )}
+                              </div>
                               </div>
                             </motion.div>
                         );
@@ -1143,43 +1429,109 @@ export default function FriendsPage() {
               </button>
             </div>
 
-            {/* Your Squads Section */}
+            {/* Community Section */}
             <div className="px-1">
-              <h4 className="text-[11px] font-black text-[#1A1A1A] mb-3 uppercase tracking-wider">Your Squads</h4>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between p-3 app-panel rounded-2xl hover:bg-[#F3F2EE] transition-colors cursor-pointer group">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#1A1A1A] flex items-center justify-center text-white text-sm font-bold shrink-0">D</div>
-                    <div>
-                      <p className="text-sm font-bold text-[#1A1A1A]">Design Squad</p>
-                      <p className="text-[10px] text-[#6B6B6B]">9 members</p>
-                    </div>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-[11px] font-black text-[#6B6B6B] uppercase tracking-wider">COMMUNITY</h4>
+                <button onClick={() => router.push('/community')} className="text-[10px] font-bold text-[#C8922A] hover:underline flex items-center gap-0.5 cursor-pointer">View All <ChevronRight size={10} /></button>
+              </div>
+              <div className="bg-white rounded-2xl shadow-sm p-5 border border-amber-100 flex flex-col gap-4">
+                {/* Header row with 3D tilt globe icon */}
+                <div className="flex gap-3 items-start">
+                  <motion.div
+                    whileHover={{ rotateY: 8, rotateX: -4, scale: 1.05 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                    style={{ transformStyle: "preserve-3d" }}
+                    className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white shrink-0 shadow-md shadow-amber-500/20 cursor-default"
+                  >
+                    <Globe size={22} />
+                  </motion.div>
+                  <div className="min-w-0">
+                    <h5 className="font-bold text-base text-[#1A1A1A] leading-tight">Join the Community</h5>
+                    <p className="text-xs text-[#6B6B6B] mt-0.5 leading-snug">Connect with students across all campuses.</p>
                   </div>
-                  <div className="text-[#888888] group-hover:text-[#1A1A1A] transition-colors text-lg">›</div>
                 </div>
-                <div className="flex items-center justify-between p-3 app-panel rounded-2xl hover:bg-[#F3F2EE] transition-colors cursor-pointer group">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold shrink-0">T</div>
-                    <div>
-                      <p className="text-sm font-bold text-[#1A1A1A]">Tech Innovators</p>
-                      <p className="text-[10px] text-[#6B6B6B]">12 members</p>
-                    </div>
+
+                {/* Create Community Button */}
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => setShowCreateCommunityModal(true)}
+                  className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white py-3 rounded-xl text-sm font-bold uppercase tracking-wider shadow-md shadow-amber-500/30 flex items-center justify-center gap-2 cursor-pointer transition-all duration-200"
+                >
+                  <Plus size={16} />
+                  Create Community
+                </motion.button>
+
+                {/* Live community list */}
+                {communities.length > 0 && (
+                  <div className="flex flex-col gap-2 pt-1 border-t border-[#F3F2EE]">
+                    <AnimatePresence>
+                      {communities.map((comm, idx) => {
+                        const isMember = membershipSet.has(comm.id);
+                        const isJoining = joiningCommunityId === comm.id;
+                        const grad = getCommunityGradient(comm.id);
+                        return (
+                          <motion.div
+                            key={comm.id}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.06 }}
+                            className="flex items-center gap-2.5 group"
+                          >
+                            {/* Avatar */}
+                            <button
+                              onClick={() => router.push(`/community/${comm.id}`)}
+                              className={`w-9 h-9 rounded-xl bg-gradient-to-br ${grad} flex items-center justify-center text-white font-black text-sm shrink-0 shadow-sm hover:scale-105 transition-transform cursor-pointer`}
+                            >
+                              {comm.name.charAt(0).toUpperCase()}
+                            </button>
+                            {/* Info */}
+                            <button onClick={() => router.push(`/community/${comm.id}`)} className="flex-1 min-w-0 text-left cursor-pointer">
+                              <p className="text-[13px] font-bold text-[#1A1A1A] truncate leading-tight">{comm.name}</p>
+                              <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                                <span className="text-[10px] text-[#888888]">{comm.member_count} member{comm.member_count !== 1 ? 's' : ''}</span>
+                                {(comm.tags || []).slice(0, 2).map(tag => (
+                                  <span key={tag} className="text-[9px] bg-amber-50 border border-amber-200 text-amber-700 px-1.5 py-0.5 rounded-full font-semibold">#{tag}</span>
+                                ))}
+                              </div>
+                            </button>
+                            {/* Join / Joined */}
+                            {isMember ? (
+                              <motion.div
+                                initial={{ scale: 0.8 }}
+                                animate={{ scale: 1 }}
+                                className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg shrink-0"
+                              >
+                                <CheckCircle2 size={11} />
+                                Joined
+                              </motion.div>
+                            ) : (
+                              <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => handleJoinCommunity(comm)}
+                                disabled={isJoining}
+                                className="text-[10px] font-bold text-[#C8922A] border border-[#C8922A] hover:bg-amber-50 px-2.5 py-1 rounded-lg shrink-0 cursor-pointer transition-all disabled:opacity-50"
+                              >
+                                {isJoining ? <Loader2 size={10} className="animate-spin" /> : (comm.privacy === 'invite_only' ? 'Request' : 'Join')}
+                              </motion.button>
+                            )}
+                          </motion.div>
+                        );
+                      })}
+                    </AnimatePresence>
                   </div>
-                  <div className="text-[#888888] group-hover:text-[#1A1A1A] transition-colors text-lg">›</div>
-                </div>
-                <div className="flex items-center justify-between p-3 app-panel rounded-2xl hover:bg-[#F3F2EE] transition-colors cursor-pointer group">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white text-sm font-bold shrink-0">S</div>
-                    <div>
-                      <p className="text-sm font-bold text-[#1A1A1A]">Snipe Fest Team</p>
-                      <p className="text-[10px] text-[#6B6B6B]">6 members</p>
-                    </div>
-                  </div>
-                  <div className="text-[#888888] group-hover:text-[#1A1A1A] transition-colors text-lg">›</div>
-                </div>
+                )}
+
+                {/* Empty state if no communities yet */}
+                {communities.length === 0 && (
+                  <p className="text-[11px] text-[#888888] text-center py-2">No communities yet — be the first!</p>
+                )}
               </div>
             </div>
           </div>
+
 
         </div> {/* End main flex row */}
 
@@ -1258,7 +1610,7 @@ export default function FriendsPage() {
                           {[selectedProfileData.course, selectedProfileData.studyYear || selectedProfileData.year, selectedProfileData.passOutBatch ? `Batch of ${selectedProfileData.passOutBatch}` : ""].filter(Boolean).join(" • ")}
                         </motion.p>
                         {selectedProfileData.bio && (
-                          <motion.p variants={modalVars.fade2} className="text-sm text-[#6B6B6B] italic font-medium mt-4">"{selectedProfileData.bio}"</motion.p>
+                          <motion.p variants={modalVars.fade2} className="text-sm text-[#6B6B6B] italic font-medium mt-4">&ldquo;{selectedProfileData.bio}&rdquo;</motion.p>
                         )}
                       </div>
 
@@ -1327,7 +1679,7 @@ export default function FriendsPage() {
                           </>
                         ) : followStatus[selectedProfileData._id] === "connected" ? (
                           <>
-                            <motion.button variants={modalVars.primaryButton} onClick={() => { handleDirectMessage(selectedProfileData._id); setSelectedProfileId(null); }} className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-2xl text-xs font-black text-[#1A1A1A] uppercase tracking-widest shadow-lg shadow-emerald-500/20 hover:scale-[1.02] transition-transform">
+                            <motion.button variants={modalVars.primaryButton} onClick={() => { handleDirectMessage(selectedProfileData._id); setSelectedProfileId(null); }} className="w-full py-4 bg-white border border-[#D4A843]/45 rounded-2xl text-xs font-black text-[#C8922A] uppercase tracking-widest shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)] hover:bg-[#FFF8EC] hover:scale-[1.02] transition-all">
                               💬 Chat Now
                             </motion.button>
                             <motion.button variants={modalVars.buttonItem} onClick={() => { router.push(`/profile/${selectedProfileData._id}`); setSelectedProfileId(null); }} className="w-full py-4 bg-[#F9F8F5] border border-[#E8E6E0] rounded-2xl text-xs font-black text-[#1A1A1A] uppercase tracking-widest shadow-xl border border-[#E8E6E0] hover:bg-[#F3F2EE] transition-colors hover:scale-[1.02]">
@@ -1349,9 +1701,9 @@ export default function FriendsPage() {
                               variants={modalVars.primaryButton}
                               onClick={() => handleConnectAction(selectedProfileData._id)}
                               disabled={connectStatus !== "idle"}
-                              className="relative w-full py-4 gradient-bg rounded-2xl text-xs font-black text-[#1A1A1A] uppercase tracking-widest shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)] hover:scale-[1.02] transition-transform overflow-hidden group"
+                              className="relative w-full py-4 bg-white border border-[#D4A843]/45 rounded-2xl text-xs font-black text-[#C8922A] uppercase tracking-widest shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)] hover:scale-[1.02] transition-transform overflow-hidden group"
                             >
-                              <div className="absolute inset-0 bg-[#F3F2EE] opacity-0 group-hover:opacity-100 transition-opacity" />
+                              <div className="absolute inset-0 bg-[#FFF8EC] opacity-0 group-hover:opacity-100 transition-opacity" />
                               {connectStatus === "idle" && <span className="relative z-10">⚡ Connect</span>}
                               {connectStatus === "connecting" && <span className="relative z-10 flex items-center justify-center gap-2"><Loader2 size={14} className="animate-spin" /> Connecting...</span>}
                               {connectStatus === "connected" && <span className="relative z-10">✓ Connected!</span>}
@@ -1370,9 +1722,186 @@ export default function FriendsPage() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Create Community Modal */}
+        <AnimatePresence>
+          {showCreateCommunityModal && (
+            <motion.div
+              variants={modalVars.backdrop}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              onClick={() => setShowCreateCommunityModal(false)}
+              className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4"
+            >
+              <motion.div
+                variants={modalVars.modal}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full sm:max-w-md bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] overflow-hidden shadow-[0_0_50px_rgba(200,146,42,0.15)] border border-[#E8E6E0] relative flex flex-col max-h-[90vh] p-6"
+              >
+                {/* Close button */}
+                <button
+                  onClick={() => setShowCreateCommunityModal(false)}
+                  className="absolute top-4 right-4 z-20 p-2 bg-[#F9F8F5] border border-[#E8E6E0] rounded-full text-[#6B6B6B] hover:text-[#1A1A1A] hover:rotate-90 transition-all duration-300 shadow-md cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+
+                <h3 className="text-xl font-black text-[#1A1A1A] mb-1">Create a Community</h3>
+                <p className="text-xs text-[#888888] mb-6">Build a space for students to connect, collaborate, and share.</p>
+
+                <form onSubmit={handleCreateCommunitySubmit} className="space-y-4 overflow-y-auto pr-1">
+                  {/* Community Name */}
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-[#6B6B6B] mb-1.5">Community Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={communityName}
+                      onChange={e => setCommunityName(e.target.value)}
+                      placeholder="e.g. Web Dev Club, Chess Masters"
+                      className="w-full bg-[#F9F8F5] border border-[#E8E6E0] rounded-xl px-4 py-3 text-sm font-medium text-[#1A1A1A] placeholder:text-[#888888] focus:outline-none focus:border-[#C8922A] transition-colors"
+                    />
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-[#6B6B6B] mb-1.5">Short Description</label>
+                    <textarea
+                      required
+                      rows={3}
+                      value={communityDescription}
+                      onChange={e => setCommunityDescription(e.target.value)}
+                      placeholder="What is this community about? Keep it short & sweet."
+                      className="w-full bg-[#F9F8F5] border border-[#E8E6E0] rounded-xl px-4 py-3 text-sm font-medium text-[#1A1A1A] placeholder:text-[#888888] focus:outline-none focus:border-[#C8922A] transition-colors resize-none"
+                    />
+                  </div>
+
+                  {/* Tags Selector */}
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-[#6B6B6B] mb-1.5">
+                      Category Tags (Select up to 3)
+                    </label>
+                    <div className="flex flex-wrap gap-1.5 mb-2.5">
+                      {popularTags.map(tag => {
+                        const isSelected = communityTags.includes(tag);
+                        return (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() => handleTagToggle(tag)}
+                            className={clsx(
+                              "text-[10px] px-3 py-1 rounded-full font-bold border transition-all cursor-pointer",
+                              isSelected
+                                ? "bg-[#C8922A]/10 border-[#C8922A] text-[#C8922A]"
+                                : "bg-[#F9F8F5] border-[#E8E6E0] text-[#6B6B6B] hover:bg-[#F3F2EE]"
+                            )}
+                          >
+                            #{tag}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {/* Add Custom Tag */}
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={customTag}
+                        onChange={e => setCustomTag(e.target.value)}
+                        placeholder="Add custom tag..."
+                        className="flex-1 bg-[#F9F8F5] border border-[#E8E6E0] rounded-xl px-3 py-2 text-xs font-medium text-[#1A1A1A] placeholder:text-[#888888] focus:outline-none focus:border-[#C8922A] transition-colors"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddCustomTag}
+                        className="px-3 bg-[#F9F8F5] border border-[#E8E6E0] rounded-xl text-xs font-bold text-[#6B6B6B] hover:bg-[#F3F2EE] transition-colors cursor-pointer"
+                      >
+                        Add
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {communityTags.filter(t => !popularTags.includes(t)).map(tag => (
+                        <span
+                          key={tag}
+                          onClick={() => handleTagToggle(tag)}
+                          className="text-[10px] bg-[#C8922A]/10 border border-[#C8922A] px-3 py-1 rounded-full text-[#C8922A] font-bold cursor-pointer flex items-center gap-1"
+                        >
+                          #{tag}
+                          <X size={10} />
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Privacy Toggle */}
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-[#6B6B6B] mb-2">Privacy</label>
+                    <div className="grid grid-cols-2 gap-2 bg-[#F9F8F5] p-1.5 rounded-xl border border-[#E8E6E0]">
+                      <button
+                        type="button"
+                        onClick={() => setCommunityPrivacy("public")}
+                        className={clsx(
+                          "py-2 rounded-lg text-xs font-bold transition-all cursor-pointer text-center",
+                          communityPrivacy === "public"
+                            ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-sm"
+                            : "text-[#6B6B6B] hover:text-[#1A1A1A]"
+                        )}
+                      >
+                        Public
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCommunityPrivacy("invite_only")}
+                        className={clsx(
+                          "py-2 rounded-lg text-xs font-bold transition-all cursor-pointer text-center",
+                          communityPrivacy === "invite_only"
+                            ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-sm"
+                            : "text-[#6B6B6B] hover:text-[#1A1A1A]"
+                        )}
+                      >
+                        Invite Only
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Submit Button */}
+                  <div className="pt-2">
+                    <motion.button
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.98 }}
+                      type="submit"
+                      disabled={creatingCommunity}
+                      className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white py-3.5 rounded-xl text-sm font-bold uppercase tracking-wider shadow-md shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                    >
+                      {creatingCommunity ? (
+                        <>
+                          <Loader2 className="animate-spin" size={16} />
+                          Creating...
+                        </>
+                      ) : "Create Community"}
+                    </motion.button>
+                  </div>
+                </form>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        {/* Community Toast Notification */}
+        <AnimatePresence>
+          {communityToast && (
+            <motion.div
+              initial={{ opacity: 0, y: 60, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 60, scale: 0.95 }}
+              className={`fixed bottom-24 left-1/2 -translate-x-1/2 z-[200] flex items-center gap-2 px-5 py-3 rounded-2xl shadow-xl text-sm font-bold ${communityToast.type === 'success' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'}`}
+            >
+              {communityToast.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+              {communityToast.msg}
+            </motion.div>
+          )}
+        </AnimatePresence>
         <ConfettiSparkles active={showConfetti} />
       </div>
     </Suspense>
   );
 }
-

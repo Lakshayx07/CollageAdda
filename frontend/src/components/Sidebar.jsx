@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Home, Compass, User, LogOut, Users, MessageSquare, Zap, Search } from "lucide-react";
+import { Home, Compass, User, LogOut, Users, MessageSquare, Zap, Search, Users2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,6 +17,7 @@ export default function Sidebar() {
     { name: "Explore", path: "/explore", icon: Search },
     { name: "Messages", path: "/messages", icon: MessageSquare },
     { name: "Squad", path: "/friends", icon: Users },
+    { name: "Community", path: "/community", icon: Users2 },
     { name: "Hustle", path: "/hustle", icon: Compass },
     { name: "Collab", path: "/collab", icon: Zap },
     { name: "Profile", path: "/profile", icon: User },
@@ -65,6 +66,7 @@ export default function Sidebar() {
     // Always persist
     localStorage.setItem("ca_streak", String(currentStreak));
     localStorage.setItem("ca_last_login", todayStr);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setStreak(currentStreak);
 
     window.addEventListener("storage", checkRequests);

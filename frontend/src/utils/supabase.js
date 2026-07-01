@@ -12,3 +12,20 @@ if (typeof window !== 'undefined') {
 export const supabase = (supabaseUrl && supabaseAnonKey) 
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
+
+export const createSupabaseClientWithAccessToken = (accessToken) => (
+  (supabaseUrl && supabaseAnonKey && accessToken)
+    ? createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          autoRefreshToken: false,
+          detectSessionInUrl: false,
+          persistSession: false,
+        },
+        global: {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      })
+    : null
+);
