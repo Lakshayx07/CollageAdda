@@ -74,7 +74,9 @@ router.post('/register', async (req, res) => {
       university: normalizeUniversityName(university), 
       referralCode: genCode,
       referredBy,
-      points: 50
+      points: 50,
+      streak: 1,
+      lastLoginDate: new Date()
     });
     syncVerificationStatus(user);
     await user.save();
@@ -99,6 +101,21 @@ router.post('/login', async (req, res) => {
 
     const user = await User.findOne({ email: normalizedEmail });
     if (user && (await user.matchPassword(password))) {
+      // Update login streak
+      const now = new Date();
+      if (!user.lastLoginDate) {
+        user.streak = 1;
+        user.lastLoginDate = now;
+      } else {
+        const lastLogin = new Date(user.lastLoginDate);
+        const isSameDay = lastLogin.getFullYear() === now.getFullYear() &&
+                          lastLogin.getMonth() === now.getMonth() &&
+                          lastLogin.getDate() === now.getDate();
+        if (!isSameDay) {
+          user.streak = (user.streak || 0) + 1;
+          user.lastLoginDate = now;
+        }
+      }
       syncVerificationStatus(user);
       await user.save();
       await ensureUniversityGroup(user);
@@ -135,6 +152,21 @@ router.post('/google', async (req, res) => {
       if (university && university !== 'Other' && (!user.university || user.university === 'Other')) {
         user.university = university.trim();
       }
+      // Update login streak
+      const now = new Date();
+      if (!user.lastLoginDate) {
+        user.streak = 1;
+        user.lastLoginDate = now;
+      } else {
+        const lastLogin = new Date(user.lastLoginDate);
+        const isSameDay = lastLogin.getFullYear() === now.getFullYear() &&
+                          lastLogin.getMonth() === now.getMonth() &&
+                          lastLogin.getDate() === now.getDate();
+        if (!isSameDay) {
+          user.streak = (user.streak || 0) + 1;
+          user.lastLoginDate = now;
+        }
+      }
       syncVerificationStatus(user);
       await user.save();
       await ensureUniversityGroup(user);
@@ -165,7 +197,9 @@ router.post('/google', async (req, res) => {
         referralCode: genCode,
         referredBy,
         points: 50,
-        profilePic: picture
+        profilePic: picture,
+        streak: 1,
+        lastLoginDate: new Date()
       });
       isNewUser = true;
       syncVerificationStatus(user);

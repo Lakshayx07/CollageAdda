@@ -55,7 +55,11 @@ const userSchema = mongoose.Schema({
   referralCode: { type: String, unique: true, sparse: true },
   referredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   points: { type: Number, default: 0 },
-  inviteCount: { type: Number, default: 0 }
+  inviteCount: { type: Number, default: 0 },
+
+  // Streak & Login Fields
+  streak: { type: Number, default: 0 },
+  lastLoginDate: { type: Date }
 }, { timestamps: true });
 
 // Hash password before saving

@@ -46,6 +46,8 @@ export const publicUserPayload = (user, token) => {
     onboardingStep: user.onboardingStep || 1,
     referralCode: user.referralCode,
     points: user.points,
+    streak: user.streak || 0,
+    lastLoginDate: user.lastLoginDate,
   };
 
   if (token) payload.token = token;
