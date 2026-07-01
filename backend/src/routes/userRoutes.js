@@ -2,6 +2,7 @@ import express from 'express';
 import User from '../models/User.js';
 import College from '../models/College.js';
 import Notification from '../models/Notification.js';
+import Post from '../models/Post.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { ensureUniversityGroup, normalizeUniversityName } from '../utils/universityUtils.js';
 import { publicUserPayload, syncVerificationStatus } from '../utils/verificationUtils.js';
@@ -186,10 +187,18 @@ router.get('/search/query', protect, async (req, res) => {
     }
     
     const users = await User.find(query)
-      .select('name university profilePic bio interests year studyYear passOutBatch course branch followers following isVerified createdAt')
+      .select('name university profilePic bio interests year studyYear passOutBatch course branch followers following isVerified streak createdAt')
       .sort({ createdAt: -1 })
       .limit(100);
-    res.json(users);
+
+    const usersWithPostsCount = await Promise.all(users.map(async (u) => {
+      const postsCount = await Post.countDocuments({ author: u._id });
+      const userObj = u.toObject();
+      userObj.postsCount = postsCount;
+      return userObj;
+    }));
+
+    res.json(usersWithPostsCount);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -200,7 +209,7 @@ router.get('/search/query', protect, async (req, res) => {
 router.get('/daily-drop', protect, async (req, res) => {
   try {
     const me = await User.findById(req.user._id)
-      .populate('dailyDropUsers', 'name university profilePic bio interests year studyYear passOutBatch course branch followers following isVerified createdAt');
+      .populate('dailyDropUsers', 'name university profilePic bio interests year studyYear passOutBatch course branch followers following isVerified streak createdAt');
 
     if (!me) return res.status(404).json({ message: 'User not found' });
 
@@ -217,14 +226,20 @@ router.get('/daily-drop', protect, async (req, res) => {
       me.dailyDropUsers.length === 5
     ) {
       console.log('[DailyDrop] Returning cached users for today');
-      return res.json(me.dailyDropUsers);
+      const cachedWithPostsCount = await Promise.all(me.dailyDropUsers.map(async (u) => {
+        const uObj = u.toObject ? u.toObject() : u;
+        const postsCount = await Post.countDocuments({ author: uObj._id });
+        uObj.postsCount = postsCount;
+        return uObj;
+      }));
+      return res.json(cachedWithPostsCount);
     }
 
     // ── Build exclusion list (self + already following) ───────────────────
     const followingIds = (me.following || []).map(id => id.toString());
     const excludeIds = [me._id.toString(), ...followingIds];
 
-    const fields = 'name university profilePic bio interests year studyYear passOutBatch course branch followers following isVerified createdAt';
+    const fields = 'name university profilePic bio interests year studyYear passOutBatch course branch followers following isVerified streak createdAt';
     let suggested = [];
 
     const notAlreadyPicked = () => [...excludeIds, ...suggested.map(u => u._id.toString())];
@@ -260,12 +275,12 @@ router.get('/daily-drop', protect, async (req, res) => {
     if (suggested.length < 5) {
       const popular = await User.aggregate([
         { $match: { _id: { $nin: notAlreadyPicked().map(id => {
-          try { return new (require('mongoose').Types.ObjectId)(id); } catch { return null; }
+          try { return new mongoose.Types.ObjectId(id); } catch { return null; }
         }).filter(Boolean) } } },
         { $addFields: { score: { $add: [{ $size: { $ifNull: ['$followers', []] } }, { $size: { $ifNull: ['$following', []] } }] } } },
         { $sort: { score: -1 } },
         { $limit: 5 - suggested.length },
-        { $project: { name: 1, university: 1, profilePic: 1, bio: 1, interests: 1, year: 1, studyYear: 1, passOutBatch: 1, course: 1, branch: 1, followers: 1, following: 1, isVerified: 1, createdAt: 1 } }
+        { $project: { name: 1, university: 1, profilePic: 1, bio: 1, interests: 1, year: 1, studyYear: 1, passOutBatch: 1, course: 1, branch: 1, followers: 1, following: 1, isVerified: 1, streak: 1, createdAt: 1 } }
       ]);
       console.log(`[DailyDrop] P3 popular found: ${popular.length}`);
       suggested = [...suggested, ...popular];
@@ -306,7 +321,14 @@ router.get('/daily-drop', protect, async (req, res) => {
       await me.save();
     }
 
-    res.json(suggested);
+    const suggestedWithPostsCount = await Promise.all(suggested.map(async (u) => {
+      const uObj = u.toObject ? u.toObject() : u;
+      const postsCount = await Post.countDocuments({ author: uObj._id });
+      uObj.postsCount = postsCount;
+      return uObj;
+    }));
+
+    res.json(suggestedWithPostsCount);
   } catch (error) {
     console.error('[DailyDrop] Error:', error);
     res.status(500).json({ message: error.message });
