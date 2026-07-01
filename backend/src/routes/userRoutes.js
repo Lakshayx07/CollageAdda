@@ -181,7 +181,6 @@ router.get('/search/query', protect, async (req, res) => {
       query.interests = { $in: req.user.interests || [] };
     } else if (filter === 'other_campus') {
       query.university = { $ne: req.user.university };
-      query.interests = { $in: req.user.interests || [] };
     } else if (filter === 'same_campus') {
       query.university = req.user.university;
     }

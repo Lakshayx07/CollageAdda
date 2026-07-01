@@ -5,12 +5,15 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
+import { getAuthenticatedSupabaseClient } from "@/utils/supabaseAuthUser";
+import { syncLoginStreakForUser } from "@/utils/loginStreak";
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [hasRequest, setHasRequest] = useState(false);
   const [streak, setStreak] = useState(0);
+  const [authUser, setAuthUser] = useState(null);
 
   const navItems = [
     { name: "Home", path: "/", icon: Home },
@@ -69,6 +72,18 @@ export default function Sidebar() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setStreak(currentStreak);
 
+    const token = localStorage.getItem("collegeadda_token");
+    if (token) {
+      getAuthenticatedSupabaseClient()
+        .then(({ user }) => setAuthUser(user))
+        .catch((error) => {
+          console.error("Could not confirm Supabase session for streak:", error);
+          setAuthUser(null);
+        });
+    } else {
+      setAuthUser(null);
+    }
+
     window.addEventListener("storage", checkRequests);
     const interval = setInterval(checkRequests, 2000);
     return () => {
@@ -76,6 +91,14 @@ export default function Sidebar() {
       clearInterval(interval);
     };
   }, [pathname]);
+
+  useEffect(() => {
+    if (!authUser?.id) return;
+
+    syncLoginStreakForUser(authUser.id).then((streakCount) => {
+      if (streakCount) setStreak(streakCount);
+    });
+  }, [authUser?.id]);
 
 
 

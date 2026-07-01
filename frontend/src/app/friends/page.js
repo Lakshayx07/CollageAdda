@@ -8,6 +8,7 @@ import VerifiedBadge from "../../components/VerifiedBadge";
 import clsx from "clsx";
 import { supabase } from "../../utils/supabase";
 import { getAuthenticatedSupabaseClient } from "../../utils/supabaseAuthUser";
+import { LOGIN_STREAK_UPDATED_EVENT, getDisplayStreak } from "../../utils/loginStreak";
 
 const LAST_SEEN_KEY = "collegeadda_followers_last_seen";
 
@@ -117,7 +118,7 @@ export default function FriendsPage() {
   const [selectedProfileData, setSelectedProfileData] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [connectStatus, setConnectStatus] = useState("idle");
-  const [filter, setFilter] = useState("same_campus");
+  const [filter, setFilter] = useState("all");
   const [showFiltersDropdown, setShowFiltersDropdown] = useState(false);
 
   // Community States
@@ -319,6 +320,19 @@ export default function FriendsPage() {
     setIsMounted(true);
   }, []);
 
+  useEffect(() => {
+    const handleStreakUpdate = (event) => {
+      const streakCount = event.detail?.streak_count;
+      if (!streakCount) return;
+      setUser((currentUser) => (
+        currentUser ? { ...currentUser, streak_count: streakCount } : currentUser
+      ));
+    };
+
+    window.addEventListener(LOGIN_STREAK_UPDATED_EVENT, handleStreakUpdate);
+    return () => window.removeEventListener(LOGIN_STREAK_UPDATED_EVENT, handleStreakUpdate);
+  }, []);
+
   // Notification state
   const [allFollowers, setAllFollowers] = useState([]);
   const [newFollowersCount, setNewFollowersCount] = useState(0);
@@ -328,6 +342,13 @@ export default function FriendsPage() {
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
   const getToken = () => localStorage.getItem("collegeadda_token");
+  const buildSearchUrl = useCallback((query = "") => {
+    const params = new URLSearchParams();
+    if (filter !== "all") params.set("filter", filter);
+    if (query.trim()) params.set("q", query.trim());
+    const qs = params.toString();
+    return `${apiUrl}/api/users/search/query${qs ? `?${qs}` : ""}`;
+  }, [apiUrl, filter]);
 
   const fetchGlobalUsers = useCallback(async () => {
     if (globalUsers.length > 0) return;
@@ -446,7 +467,7 @@ export default function FriendsPage() {
     try {
       const [profileRes, suggestedRes] = await Promise.all([
         fetch(`${apiUrl}/api/users/profile`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${apiUrl}/api/users/search/query?filter=${filter}`, {
+        fetch(buildSearchUrl(), {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
@@ -471,7 +492,7 @@ export default function FriendsPage() {
     } finally {
       setLoading(false);
     }
-  }, [apiUrl, router, filter]);
+  }, [apiUrl, router, buildSearchUrl]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -506,7 +527,7 @@ export default function FriendsPage() {
     if (!search.trim()) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setSearching(true);
-      fetch(`${apiUrl}/api/users/search/query?filter=${filter}`, {
+      fetch(buildSearchUrl(), {
         headers: { Authorization: `Bearer ${token}` }
       })
         .then(r => r.ok ? r.json() : [])
@@ -523,7 +544,7 @@ export default function FriendsPage() {
     const timeout = setTimeout(async () => {
       setSearching(true);
       try {
-        const res = await fetch(`${apiUrl}/api/users/search/query?filter=${filter}&q=${encodeURIComponent(search)}`, {
+        const res = await fetch(buildSearchUrl(search), {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {
@@ -538,7 +559,7 @@ export default function FriendsPage() {
     }, 300);
 
     return () => clearTimeout(timeout);
-  }, [search, filter, apiUrl]);
+  }, [search, buildSearchUrl]);
 
   const handleHeartClick = () => {
     setShowNotifPanel(prev => !prev);
@@ -966,20 +987,21 @@ export default function FriendsPage() {
                       onClick={() => setShowFiltersDropdown(!showFiltersDropdown)}
                       className={clsx(
                         "flex items-center gap-2 px-4 py-3 border rounded-xl text-[12px] font-bold transition-all shrink-0 cursor-pointer h-full",
-                        filter !== "same_campus"
+                        filter !== "all"
                           ? "bg-[#C8922A]/10 border-[#C8922A] text-[#C8922A]"
                           : "bg-[#F9F8F5] border-[#E8E6E0] text-[#6B6B6B] hover:bg-[#F3F2EE]"
                       )}
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-                      {filter === "same_campus" && "Filters"}
+                      {filter === "all" && "All Campuses"}
+                      {filter === "same_campus" && "Same Campus"}
                       {filter === "same_interest" && "Same Interest"}
                       {filter === "other_campus" && "Other Campus"}
-                      {filter !== "same_campus" && (
+                      {filter !== "all" && (
                         <span
                           onClick={(e) => {
                             e.stopPropagation();
-                            setFilter("same_campus");
+                            setFilter("all");
                             setShowFiltersDropdown(false);
                           }}
                           className="ml-1 p-0.5 hover:bg-[#C8922A]/20 rounded-full transition-colors flex items-center justify-center"
@@ -1002,7 +1024,37 @@ export default function FriendsPage() {
                           >
                             <button
                               onClick={() => {
-                                setFilter(filter === "same_interest" ? "same_campus" : "same_interest");
+                                setFilter("all");
+                                setShowFiltersDropdown(false);
+                              }}
+                              className={clsx(
+                                "w-full text-left px-4 py-2.5 text-xs font-bold transition-colors flex items-center gap-2 cursor-pointer",
+                                filter === "all"
+                                  ? "bg-[#C8922A]/10 text-[#C8922A]"
+                                  : "text-[#6B6B6B] hover:bg-[#F9F8F5] hover:text-[#1A1A1A]"
+                              )}
+                            >
+                              <Globe size={14} />
+                              All Campuses
+                            </button>
+                            <button
+                              onClick={() => {
+                                setFilter(filter === "same_campus" ? "all" : "same_campus");
+                                setShowFiltersDropdown(false);
+                              }}
+                              className={clsx(
+                                "w-full text-left px-4 py-2.5 text-xs font-bold transition-colors flex items-center gap-2 cursor-pointer",
+                                filter === "same_campus"
+                                  ? "bg-[#C8922A]/10 text-[#C8922A]"
+                                  : "text-[#6B6B6B] hover:bg-[#F9F8F5] hover:text-[#1A1A1A]"
+                              )}
+                            >
+                              <MapPin size={14} />
+                              Same Campus
+                            </button>
+                            <button
+                              onClick={() => {
+                                setFilter(filter === "same_interest" ? "all" : "same_interest");
                                 setShowFiltersDropdown(false);
                               }}
                               className={clsx(
@@ -1017,7 +1069,7 @@ export default function FriendsPage() {
                             </button>
                             <button
                               onClick={() => {
-                                setFilter(filter === "other_campus" ? "same_campus" : "other_campus");
+                                setFilter(filter === "other_campus" ? "all" : "other_campus");
                                 setShowFiltersDropdown(false);
                               }}
                               className={clsx(
@@ -1242,7 +1294,8 @@ export default function FriendsPage() {
                     {search.trim() ? "Search Results" : (
                       filter === "same_interest" ? "Same Interest Peers" :
                       filter === "other_campus" ? "Other Campus Peers" :
-                      "Verified Campus Peers"
+                      filter === "same_campus" ? "Verified Campus Peers" :
+                      "All Campus Peers"
                     )}
                   </h3>
                   <span className="text-[10px] bg-[#F9F8F5] border border-[#E8E6E0] px-3 py-1 rounded-full text-[#C8922A] font-bold border border-[#C8922A]/30">
@@ -1254,7 +1307,7 @@ export default function FriendsPage() {
                   <div className="flex flex-col items-center justify-center py-20 space-y-4">
                     <div className="w-12 h-12 border-4 border-[#E8E6E0] border-t-purple-500 rounded-full animate-spin" />
                     <p className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest">
-                      {filter === "other_campus" ? "Scanning Other Campuses..." : "Scanning Campus..."}
+                      {filter === "other_campus" ? "Scanning Other Campuses..." : filter === "same_campus" ? "Scanning Campus..." : "Scanning All Campuses..."}
                     </p>
                   </div>
                 ) : (
@@ -1275,7 +1328,7 @@ export default function FriendsPage() {
                         </p>
                         <p className="text-sm text-[#888888] font-medium">
                           {filter === "same_interest" ? "Add more interests to your profile, or try another filter" :
-                           filter === "other_campus" ? "Add more interests to match with peers from other campuses" :
+                           filter === "other_campus" ? "Try another name, university, or switch to all campuses" :
                            "Try searching for #Tech, #Design or a name"}
                         </p>
                       </div>
@@ -1350,7 +1403,7 @@ export default function FriendsPage() {
                               <div className="grid grid-cols-3 gap-2 rounded-2xl border border-[#E8E6E0] bg-white/72 px-2 py-2.5 text-center items-center">
                                 <div>
                                   <p className="text-base font-black text-[#1A1A1A] flex items-center justify-center gap-0.5">
-                                    {person.streak || 1} <span className="text-[12px]">🔥</span>
+                                    {getDisplayStreak(person)} <span className="text-[12px]">🔥</span>
                                   </p>
                                   <p className="text-[9px] font-bold uppercase tracking-wider text-[#4A4A4A] mt-0.5">Streak</p>
                                 </div>

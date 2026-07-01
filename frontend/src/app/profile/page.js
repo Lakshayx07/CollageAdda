@@ -26,6 +26,7 @@ import UniversityBadges from "@/components/UniversityBadges";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import clsx from "clsx";
 import { extractInstagramUsername } from "@/utils/socials";
+import { LOGIN_STREAK_UPDATED_EVENT, getDisplayStreak } from "@/utils/loginStreak";
 import { saveProfileAvatarUrl, uploadAvatar } from "@/utils/supabaseUploads";
 
 const INTEREST_OPTIONS = [
@@ -98,6 +99,19 @@ export default function ProfilePage() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
   useEffect(() => {
+    const handleStreakUpdate = (event) => {
+      const streakCount = event.detail?.streak_count;
+      if (!streakCount) return;
+      setUser((currentUser) => (
+        currentUser ? { ...currentUser, streak_count: streakCount } : currentUser
+      ));
+    };
+
+    window.addEventListener(LOGIN_STREAK_UPDATED_EVENT, handleStreakUpdate);
+    return () => window.removeEventListener(LOGIN_STREAK_UPDATED_EVENT, handleStreakUpdate);
+  }, []);
+
+  useEffect(() => {
     const fetchProfileAndPosts = async () => {
       const stored = localStorage.getItem("collegeadda_user");
       const token = localStorage.getItem("collegeadda_token");
@@ -112,8 +126,13 @@ export default function ProfilePage() {
         });
         if (profileRes.ok) {
           const profileData = await profileRes.json();
-          setUser(profileData);
-          localStorage.setItem("collegeadda_user", JSON.stringify(profileData));
+          const cachedStreakCount = u.streak_count;
+          const mergedProfileData = {
+            ...profileData,
+            streak_count: cachedStreakCount ?? profileData.streak_count,
+          };
+          setUser(mergedProfileData);
+          localStorage.setItem("collegeadda_user", JSON.stringify(mergedProfileData));
           setEditData({ 
             name: profileData.name || "",
             bio: profileData.bio || "",
@@ -545,6 +564,9 @@ export default function ProfilePage() {
                 <h4 className="text-[11px] font-black text-[#888888] uppercase tracking-wider">Badges</h4>
                 <div className="flex items-center gap-2">
                   <UniversityBadges userId={user.id || user.email} />
+                  <span className="ca-badge bg-[#FFF8EC] text-[#C8922A] border border-[#C8922A]/20">
+                    🔥 {getDisplayStreak(user)}
+                  </span>
                   {user.isVerified && (
                     <span className="ca-badge bg-[#FFF8EC] text-[#C8922A] border border-[#C8922A]/20">Verified User</span>
                   )}
