@@ -3,6 +3,9 @@ import "./globals.css";
 import BottomNav from "../components/BottomNav";
 import Sidebar from "../components/Sidebar";
 import { ThemeProvider } from "../context/ThemeContext";
+import QueryProvider from "../context/QueryProvider";
+import { SocketProvider } from "../context/SocketProvider";
+import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,7 +35,9 @@ export default function RootLayout({ children }) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
-        <script
+        <Script
+          id="theme-script"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
@@ -47,11 +52,15 @@ export default function RootLayout({ children }) {
       </head>
       <body className="app-shell h-full bg-background text-foreground transition-colors duration-300">
         <ThemeProvider>
-          <Sidebar />
-          <main className="app-surface flex min-h-screen flex-col overflow-x-hidden overflow-y-auto pb-[calc(8.5rem+env(safe-area-inset-bottom))] lg:pb-0 [&:has([data-page=welcome-tour])]:ml-0 [&:has([data-page=welcome-tour])]:pb-0 lg:ml-72">
-            {children}
-          </main>
-          <BottomNav />
+          <QueryProvider>
+            <SocketProvider>
+              <Sidebar />
+              <main className="app-surface flex min-h-screen flex-col overflow-x-hidden overflow-y-auto pb-[calc(8.5rem+env(safe-area-inset-bottom))] lg:pb-0 [&:has([data-page=welcome-tour])]:ml-0 [&:has([data-page=welcome-tour])]:pb-0 lg:ml-72">
+                {children}
+              </main>
+              <BottomNav />
+            </SocketProvider>
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>

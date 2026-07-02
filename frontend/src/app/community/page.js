@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Users2, Globe, Plus, CheckCircle2, Loader2, X, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import clsx from "clsx";
 import { supabase } from "../../utils/supabase";
 import { getAuthenticatedSupabaseClient } from "../../utils/supabaseAuthUser";
@@ -12,14 +13,10 @@ export default function CommunityPage() {
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
   const [user, setUser] = useState(null);
-  
-  // Data States
-  const [communities, setCommunities] = useState([]);
-  const [membershipSet, setMembershipSet] = useState(new Set());
-  const [loading, setLoading] = useState(true);
-  const [joiningCommunityId, setJoiningCommunityId] = useState(null);
+  const queryClient = useQueryClient();
   
   // UI States
+  const [joiningCommunityId, setJoiningCommunityId] = useState(null);
   const [activeTab, setActiveTab] = useState("all"); // all | my | public | invite
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [communityToast, setCommunityToast] = useState(null);
@@ -33,6 +30,40 @@ export default function CommunityPage() {
   const [creatingCommunity, setCreatingCommunity] = useState(false);
 
   const popularTags = ["Cultural", "Sports", "Hackathons", "Design", "Academics", "Gaming", "Music", "Startups"];
+
+  // -- TanStack Query: Communities --
+  const { data: communities = [], isLoading: communitiesLoading } = useQuery({
+    queryKey: ['community-list'],
+    queryFn: async () => {
+      const { client: authSupabase } = await getAuthenticatedSupabaseClient();
+      const { data, error } = await authSupabase
+        .from("communities")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!supabase && isMounted,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // -- TanStack Query: Memberships --
+  const { data: membershipSet = new Set() } = useQuery({
+    queryKey: ['community-memberships'],
+    queryFn: async () => {
+      const { client: authSupabase, user: authUser } = await getAuthenticatedSupabaseClient();
+      const { data, error } = await authSupabase
+        .from("community_members")
+        .select("community_id")
+        .eq("user_id", authUser.id);
+      if (error) throw error;
+      return new Set(data?.map(m => m.community_id) || []);
+    },
+    enabled: !!supabase && isMounted,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const loading = !isMounted || communitiesLoading;
 
   const communityGradients = [
     "from-amber-400 to-orange-500",
@@ -55,27 +86,6 @@ export default function CommunityPage() {
     setTimeout(() => setCommunityToast(null), 3500);
   };
 
-  const fetchData = async () => {
-    if (!supabase) {
-      setLoading(false);
-      return;
-    }
-    try {
-      const { client: authSupabase, user: authUser } = await getAuthenticatedSupabaseClient();
-      const [commRes, memRes] = await Promise.all([
-        authSupabase.from("communities").select("*").order("created_at", { ascending: false }),
-        authSupabase.from("community_members").select("community_id").eq("user_id", authUser.id)
-      ]);
-      
-      if (commRes.data) setCommunities(commRes.data);
-      if (memRes.data) setMembershipSet(new Set(memRes.data.map(m => m.community_id)));
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMounted(true);
@@ -91,11 +101,10 @@ export default function CommunityPage() {
       const parsed = JSON.parse(storedUser);
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setUser(parsed);
-      fetchData();
     } catch (e) {
       router.push("/login");
     }
-  }, []);
+  }, [router]);
 
 
   const handleJoinCommunity = async (community) => {
@@ -117,8 +126,8 @@ export default function CommunityPage() {
         .update({ member_count: (community.member_count || 1) + 1 })
         .eq("id", community.id);
 
-      setMembershipSet(prev => new Set([...prev, community.id]));
-      setCommunities(prev => prev.map(c => 
+      queryClient.setQueryData(['community-memberships'], (prev) => new Set([...(prev || []), community.id]));
+      queryClient.setQueryData(['community-list'], (prev) => (prev || []).map(c => 
         c.id === community.id ? { ...c, member_count: (c.member_count || 1) + 1 } : c
       ));
       
@@ -167,8 +176,8 @@ export default function CommunityPage() {
           user_id: authUser.id,
           role: 'owner'
         }]);
-        setCommunities(prev => [inserted, ...prev]);
-        setMembershipSet(prev => new Set([...prev, inserted.id]));
+        queryClient.setQueryData(['community-list'], (prev) => [inserted, ...(prev || [])]);
+        queryClient.setQueryData(['community-memberships'], (prev) => new Set([...(prev || []), inserted.id]));
       }
 
       setCommunityName("");

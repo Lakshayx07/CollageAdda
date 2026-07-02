@@ -9,6 +9,7 @@ import clsx from "clsx";
 import { supabase } from "../../utils/supabase";
 import { getAuthenticatedSupabaseClient } from "../../utils/supabaseAuthUser";
 import { LOGIN_STREAK_UPDATED_EVENT, getDisplayStreak } from "../../utils/loginStreak";
+import { useApiQuery } from "@/utils/useApiQuery";
 
 const LAST_SEEN_KEY = "collegeadda_followers_last_seen";
 
@@ -132,7 +133,8 @@ export default function FriendsPage() {
   const [communities, setCommunities] = useState([]);
   const [membershipSet, setMembershipSet] = useState(new Set());
   const [joiningCommunityId, setJoiningCommunityId] = useState(null);
-  const [communityToast, setCommunityToast] = useState(null); // { type: 'success'|'error', msg }
+  const [communityToast, setCommunityToast] = useState(null);
+ // { type: 'success'|'error', msg }
 
   const popularTags = ["Cultural", "Sports", "Hackathons", "Design", "Academics", "Gaming", "Music", "Startups"];
 
@@ -350,6 +352,46 @@ export default function FriendsPage() {
     return `${apiUrl}/api/users/search/query${qs ? `?${qs}` : ""}`;
   }, [apiUrl, filter]);
 
+  const { data: profileData } = useApiQuery(
+    "squad-profile",
+    "/api/users/profile",
+    {
+      enabled: !!user,
+      staleTime: 5 * 60 * 1000 // 5 minutes
+    }
+  );
+
+  const { data: suggestedData } = useApiQuery(
+    ["squad-suggested", search, activeSquadTab],
+    buildSearchUrl().replace(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001', ''),
+    {
+      enabled: !!user,
+      staleTime: 5 * 60 * 1000
+    }
+  );
+
+  useEffect(() => {
+    if (profileData) {
+      const statusMap = {};
+      (profileData.following || []).forEach(id => {
+        statusMap[id.toString ? id.toString() : id] = "connected";
+      });
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFollowStatus(statusMap);
+    }
+  }, [profileData]);
+
+  useEffect(() => {
+    if (suggestedData) {
+      const users = Array.isArray(suggestedData) ? suggestedData : [];
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSuggestedUsers(users);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCampusUsers(users);
+    }
+  }, [suggestedData]);
+
+
   const fetchGlobalUsers = useCallback(async () => {
     if (globalUsers.length > 0) return;
     const token = getToken();
@@ -463,42 +505,15 @@ export default function FriendsPage() {
     // Load communities and memberships
     fetchCommunities();
     fetchMemberships();
-
-    try {
-      const [profileRes, suggestedRes] = await Promise.all([
-        fetch(`${apiUrl}/api/users/profile`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(buildSearchUrl(), {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-      ]);
-
-      if (profileRes.ok) {
-        const profileData = await profileRes.json();
-        const statusMap = {};
-        (profileData.following || []).forEach(id => {
-          statusMap[id.toString ? id.toString() : id] = "connected";
-        });
-        setFollowStatus(statusMap);
-      }
-
-      if (suggestedRes.ok) {
-        const data = await suggestedRes.json();
-        const users = Array.isArray(data) ? data : [];
-        setSuggestedUsers(users);
-        setCampusUsers(users);
-      }
-    } catch (err) {
-      console.error("Error loading friends data:", err);
-    } finally {
-      setLoading(false);
-    }
+    
+    setLoading(false);
   }, [apiUrl, router, buildSearchUrl]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadData();
     fetchFollowerNotifications();
-    const interval = setInterval(fetchFollowerNotifications, 30000);
+    const interval = setInterval(fetchFollowerNotifications, 120000);
     return () => clearInterval(interval);
   }, [loadData, fetchFollowerNotifications]);
 

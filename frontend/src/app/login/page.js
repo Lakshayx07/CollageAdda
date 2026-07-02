@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   Check,
@@ -151,6 +153,7 @@ function CampusNetwork() {
 }
 
 export default function LoginPage() {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
@@ -183,7 +186,7 @@ export default function LoginPage() {
   const finishLogin = (data) => {
     localStorage.setItem("collegeadda_token", data.token);
     localStorage.setItem("collegeadda_user", JSON.stringify(data));
-    window.location.href = data.onboardingComplete ? "/welcome-tour" : "/onboarding";
+    router.push(data.onboardingComplete ? "/welcome-tour" : "/onboarding");
   };
 
   const handleAuth = async (event) => {
@@ -431,7 +434,7 @@ export default function LoginPage() {
               <p className={styles.terms}>
                 By continuing, you agree to our
                 <br />
-                <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>
+                <Link href="/terms">Terms of Service</Link> and <Link href="/privacy">Privacy Policy</Link>
               </p>
             </div>
 

@@ -54,6 +54,18 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Cache-Control Middleware
+app.use((req, res, next) => {
+  if (req.path === '/api/colleges' || req.path.startsWith('/api/colleges/public')) {
+    res.setHeader('Cache-Control', 'public, max-age=300');
+  } else if (req.path === '/api/users/leaderboard') {
+    res.setHeader('Cache-Control', 'public, max-age=60');
+  } else {
+    res.setHeader('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+  }
+  next();
+});
+
 // API Routes
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'CollegeAdda Backend is running 🚀' });

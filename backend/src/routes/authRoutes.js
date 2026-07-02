@@ -38,7 +38,7 @@ router.get('/supabase-token', async (req, res) => {
     }
 
     if (!process.env.SUPABASE_JWT_SECRET) {
-      return res.status(500).json({ message: 'SUPABASE_JWT_SECRET is not configured on the backend' });
+      return res.status(500).json({ message: 'SUPABASE_JWT_SECRET is not configured — add it to your backend .env from your Supabase project dashboard under Settings > API > JWT Secret' });
     }
 
     const supabaseUserId = mongoObjectIdToUuid(user._id);

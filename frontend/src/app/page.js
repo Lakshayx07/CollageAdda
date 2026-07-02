@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check, Plus, Flame, TrendingUp, Search, Zap, BarChart2, Compass, ShieldCheck, Flag, Globe, GraduationCap, ChevronLeft, ChevronRight, Users, Trophy, Sun, Sunset, Moon } from "lucide-react";
 import Image from "next/image";
@@ -15,11 +15,13 @@ import {
   savePostImageRecord,
   uploadPostImage
 } from "@/utils/supabaseUploads";
+import { useApiQuery } from "@/utils/useApiQuery";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function Home() {
   const router = useRouter();
 
-  const [friendsList, setFriendsList] = useState([]);
+  const queryClient = useQueryClient();
   const [connectStatus, setConnectStatus] = useState({});
   const [activeCommentPost, setActiveCommentPost] = useState(null);
   const [commentInputs, setCommentInputs] = useState({});
@@ -28,18 +30,12 @@ export default function Home() {
   const [postMenu, setPostMenu] = useState(null);
   const [shareSearchTerm, setShareSearchTerm] = useState("");
   const [toastMsg, setToastMsg] = useState("");
-  const [posts, setPosts] = useState([]);
-  const [leaderboard, setLeaderboard] = useState([]);
-  const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
-  const [suggestedUsers, setSuggestedUsers] = useState([]);
-  const [loadingSuggested, setLoadingSuggested] = useState(true);
-  const [stories, setStories] = useState([]);
   const [newPostContent, setNewPostContent] = useState("");
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [selectedMediaFile, setSelectedMediaFile] = useState(null);
   const [mediaType, setMediaType] = useState('none');
   const [currentUser, setCurrentUser] = useState(null);
-  const [loadingPosts, setLoadingPosts] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeStory, setActiveStory] = useState(null);
   const [hoveredPost, setHoveredPost] = useState(null);
   const [isPosting, setIsPosting] = useState(false);
@@ -49,7 +45,7 @@ export default function Home() {
   const [pollAllowMultiple, setPollAllowMultiple] = useState(false);
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [confessionText, setConfessionText] = useState("");
-  const [confessions, setConfessions] = useState([]);
+  // setConfessions is defined below as a custom updater for optimistic updates on cached queries
   const [confessionCommentInputs, setConfessionCommentInputs] = useState({});
   const [confessionScope, setConfessionScope] = useState('local'); // 'local' | 'global'
   const [placeholderText, setPlaceholderText] = useState(() => {
@@ -65,14 +61,150 @@ export default function Home() {
     return prompts[Math.floor(Math.random() * prompts.length)];
   });
   const [selectedGradient, setSelectedGradient] = useState("from-orange-500 via-rose-500 to-[#D4A843]");
+  const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001').trim();
+
+  // ── TanStack Query hooks for cached data fetching ────────────────────────
+  const formatPosts = useCallback((data) => {
+    const user = currentUser || {};
+    return (data || []).map(p => {
+      // If the post is already formatted (from optimistic UI updates in the cache), return it as is
+      if (p.id && !p._id) return p;
+
+      return {
+        id: p._id,
+        author: p.author?.name || 'Unknown',
+        authorId: p.author?._id,
+        university: p.university,
+        avatar: p.author?.profilePic
+          ? p.author.profilePic
+          : `https://ui-avatars.com/api/?name=${encodeURIComponent(p.author?.name || 'U')}&background=7C3AED&color=fff`,
+        time: new Date(p.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+        content: p.content,
+        likes: p.likes?.length || 0,
+        isLiked: p.likes?.includes(user._id || user.id),
+        comments: p.comments?.length || 0,
+        commentsList: p.comments?.map(c => ({
+          id: c._id || Math.random().toString(),
+          author: c.user?.name || 'Student',
+          text: c.text
+        })) || [],
+        mediaUrl: p.mediaUrl,
+        mediaType: p.mediaType,
+        poll: p.poll,
+        authorFollowers: p.author?.followers || [],
+        authorFollowing: p.author?.following || [],
+        authorUser: p.author || { isVerified: false }
+      };
+    });
+  }, [currentUser]);
+
+  const { data: posts = [], isLoading: loadingPosts, refetch: refetchPosts } = useApiQuery(
+    ["posts", currentUser?._id],
+    "/api/posts",
+    {
+      enabled: isAuthenticated && !!currentUser,
+      select: formatPosts,
+      staleTime: 60 * 1000, // 1 min for posts — they change frequently
+    }
+  );
+
+  const { data: friendsList = [] } = useApiQuery(
+    "friends",
+    "/api/users/me/following",
+    {
+      enabled: isAuthenticated,
+      select: (data) => (data || []).map(u => ({
+        id: u._id,
+        name: u.name,
+        avatar: u.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=7C3AED&color=fff`
+      })),
+    }
+  );
+
+  const { data: stories = [] } = useApiQuery(
+    "stories",
+    "/api/stories",
+    {
+      enabled: isAuthenticated,
+      select: (data) => {
+        const grouped = (data || []).reduce((acc, story) => {
+          const authorId = story.author._id || story.author.id;
+          if (!acc[authorId]) {
+            acc[authorId] = { author: story.author, stories: [] };
+          }
+          acc[authorId].stories.push(story);
+          return acc;
+        }, {});
+        return Object.values(grouped);
+      },
+    }
+  );
+
+  const { data: confessions = [], refetch: refetchConfessions } = useApiQuery(
+    ["confessions", confessionScope],
+    `/api/confessions?scope=${confessionScope}`,
+    {
+      enabled: isAuthenticated,
+      staleTime: 30 * 1000,
+    }
+  );
+  // Local state for optimistic updates on confessions
+  const [localConfessions, setLocalConfessions] = useState(null);
+  const displayConfessions = localConfessions !== null ? localConfessions : confessions;
+  // Sync localConfessions when query data changes
+  useEffect(() => {
+    setLocalConfessions(null);
+  }, [confessions]);
+
+  const setConfessions = useCallback((updater) => {
+    setLocalConfessions(prev => {
+      const current = prev !== null ? prev : confessions;
+      return typeof updater === 'function' ? updater(current) : updater;
+    });
+  }, [confessions]);
+
+  const { data: leaderboard = [], isLoading: loadingLeaderboard } = useApiQuery(
+    "leaderboard",
+    "/api/colleges/leaderboard",
+    {
+      enabled: isAuthenticated,
+      select: (data) => {
+        const rows = Array.isArray(data) ? data : data?.leaderboard || [];
+        return rows.slice(0, 5);
+      },
+      staleTime: 5 * 60 * 1000, // 5 min — leaderboard changes slowly
+    }
+  );
+
+  const { data: suggestedUsers = [], isLoading: loadingSuggested } = useApiQuery(
+    "suggested",
+    "/api/users/daily-drop",
+    {
+      enabled: isAuthenticated,
+      select: (data) => Array.isArray(data) ? data : [],
+      staleTime: 5 * 60 * 1000,
+    }
+  );
+
+  // ── Local state for UI interactions ──────────────────────────────────────
+  // We use setPosts wrapper functions for optimistic updates on the cached data
+  const setPosts = useCallback((updater) => {
+    queryClient.setQueryData(["posts", currentUser?._id], (oldRawData) => {
+      if (!oldRawData) return oldRawData;
+      const currentFormatted = formatPosts(oldRawData);
+      const updated = typeof updater === 'function' ? updater(currentFormatted) : updater;
+      // We need to mark the raw data so the select picks up changes
+      // Store formatted data directly as raw and skip select on next read
+      return updated;
+    });
+  }, [queryClient, currentUser?._id, formatPosts]);
+
   const filteredPosts = posts.filter(post => {
     if (!selectedTopic) return true;
     return post.content.toLowerCase().includes(selectedTopic.toLowerCase());
   });
 
   const isTextTooShort = newPostContent.trim().length > 0 && newPostContent.trim().length < 10 && !selectedMedia;
-  
-  const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001').trim();
   
   const photoInputRef = useRef(null);
   const videoInputRef = useRef(null);
@@ -106,6 +238,7 @@ export default function Home() {
         return;
       }
       setCurrentUser(u);
+      setIsAuthenticated(true);
 
       // Sync user profile from backend
       const fetchLatestProfile = async () => {
@@ -129,164 +262,12 @@ export default function Home() {
         }
       };
       fetchLatestProfile();
-
-      fetchPosts();
-      fetchFriends();
-      fetchStories();
-      fetchConfessions();
-      fetchLeaderboard();
-      fetchSuggested();
+      // Data fetching is now handled by useApiQuery hooks above
     }
   }, [router]);
 
-  const fetchPosts = async () => {
-    try {
-      const token = localStorage.getItem("collegeadda_token");
-      if (!token) return;
-      const res = await fetch(`${apiUrl}/api/posts`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.status === 401) {
-        clearSessionAndLogin();
-        return;
-      }
-      if (res.ok) {
-        const data = await res.json();
-        let user = {};
-        try {
-          user = JSON.parse(localStorage.getItem('collegeadda_user') || '{}');
-        } catch {
-          user = {};
-        }
-        const formatted = data.map(p => ({
-          id: p._id,
-          author: p.author?.name || 'Unknown',
-          authorId: p.author?._id,
-          university: p.university,
-          avatar: p.author?.profilePic
-            ? p.author.profilePic
-            : `https://ui-avatars.com/api/?name=${encodeURIComponent(p.author?.name || 'U')}&background=7C3AED&color=fff`,
-          time: new Date(p.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-          content: p.content,
-          likes: p.likes?.length || 0,
-          isLiked: p.likes?.includes(user._id || user.id),
-          comments: p.comments?.length || 0,
-          commentsList: p.comments?.map(c => ({
-            id: c._id || Math.random().toString(),
-            author: c.user?.name || 'Student',
-            text: c.text
-          })) || [],
-          mediaUrl: p.mediaUrl,
-          mediaType: p.mediaType,
-          poll: p.poll,
-          authorFollowers: p.author?.followers || [],
-          authorFollowing: p.author?.following || [],
-          authorUser: p.author || { isVerified: false }
-        }));
-        setPosts(formatted);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoadingPosts(false);
-    }
-  };
-
-  const fetchFriends = async () => {
-    try {
-      const token = localStorage.getItem("collegeadda_token");
-      if (!token) return;
-      const res = await fetch(`${apiUrl}/api/users/me/following`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setFriendsList(data.map(u => ({
-          id: u._id,
-          name: u.name,
-          avatar: u.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=7C3AED&color=fff`
-        })));
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const fetchStories = async () => {
-    try {
-      const token = localStorage.getItem("collegeadda_token");
-      if (!token) return;
-      const res = await fetch(`${apiUrl}/api/stories`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const grouped = data.reduce((acc, story) => {
-          const authorId = story.author._id || story.author.id;
-          if (!acc[authorId]) {
-            acc[authorId] = {
-              author: story.author,
-              stories: []
-            };
-          }
-          acc[authorId].stories.push(story);
-          return acc;
-        }, {});
-        setStories(Object.values(grouped));
-      }
-    } catch (err) {
-      console.error("Error fetching stories:", err);
-    }
-  };
-
-  const fetchConfessions = async (scope = 'local') => {
-    try {
-      const token = localStorage.getItem("collegeadda_token");
-      if (!token) return;
-      const res = await fetch(`${apiUrl}/api/confessions?scope=${scope}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setConfessions(data);
-      }
-    } catch (err) {
-      console.error("Error fetching confessions:", err);
-    }
-  };
-
-  const fetchLeaderboard = async () => {
-    try {
-      const res = await fetch(`${apiUrl}/api/colleges/leaderboard`);
-      if (res.ok) {
-        const data = await res.json();
-        const rows = Array.isArray(data) ? data : data.leaderboard || [];
-        setLeaderboard(rows.slice(0, 5));
-      }
-    } catch (err) {
-      console.error("Leaderboard fetch error:", err);
-    } finally {
-      setLoadingLeaderboard(false);
-    }
-  };
-
-  const fetchSuggested = async () => {
-    try {
-      const token = localStorage.getItem("collegeadda_token");
-      if (!token) return;
-      const res = await fetch(`${apiUrl}/api/users/daily-drop`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setSuggestedUsers(Array.isArray(data) ? data : []);
-      }
-    } catch (err) {
-      console.error("Error fetching suggested users:", err);
-    } finally {
-      setLoadingSuggested(false);
-    }
-  };
+  // fetchPosts / fetchFriends / fetchStories / fetchConfessions / fetchLeaderboard / fetchSuggested
+  // are now handled by useApiQuery hooks at the top of this component.
 
   const handleConnectUser = async (userId) => {
     setConnectStatus(prev => ({ ...prev, [userId]: 'pending' }));
@@ -317,7 +298,7 @@ export default function Home() {
       if (res.ok) {
         setToastMsg("Reported. Thanks for keeping campus safe 🛡️");
         setTimeout(() => setToastMsg(""), 3000);
-        fetchConfessions(confessionScope);
+        refetchConfessions();
       }
     } catch (err) {
       console.error(err);
@@ -358,7 +339,7 @@ export default function Home() {
 
     // --- OPTIMISTIC UI UPDATE --- 
     // Toggle like locally first — no re-fetch, card never disappears
-    setConfessions(prev => prev.map(c => {
+    setLocalConfessions(prev => (prev || confessions).map(c => {
       if (c._id !== id) return c;
       const alreadyLiked = c.likes?.some(l => l.toString() === userId.toString());
       const newLikes = alreadyLiked
@@ -377,7 +358,7 @@ export default function Home() {
     } catch (err) {
       console.error(err);
       // Rollback on error by re-fetching
-      fetchConfessions(confessionScope);
+      refetchConfessions();
     }
   };
 
@@ -387,7 +368,7 @@ export default function Home() {
 
     // --- OPTIMISTIC UI UPDATE ---
     const tempComment = { text: text.trim(), createdAt: new Date().toISOString(), _temp: true };
-    setConfessions(prev => prev.map(c => {
+    setLocalConfessions(prev => (prev || confessions).map(c => {
       if (c._id !== id) return c;
       return { ...c, comments: [...(c.comments || []), tempComment] };
     }));
@@ -406,7 +387,7 @@ export default function Home() {
       if (res.ok) {
         const updated = await res.json();
         // Replace with real server data to remove _temp flag
-        setConfessions(prev => prev.map(c => c._id === id ? updated : c));
+        setLocalConfessions(prev => (prev || confessions).map(c => c._id === id ? updated : c));
       }
     } catch (err) {
       console.error(err);
@@ -440,15 +421,46 @@ export default function Home() {
   const handleCreatePost = async () => {
     if ((!newPostContent.trim() && !selectedMedia) || isPosting || isTextTooShort) return;
     setIsPosting(true);
-    let uploadedPostImage = null;
-    let createdPostId = null;
-    try {
-      const token = localStorage.getItem("collegeadda_token");
-      const userId = currentUser?._id || currentUser?.id;
-      let mediaUrl = selectedMedia || "";
 
-      if (mediaType === "image" && selectedMediaFile) {
-        uploadedPostImage = await uploadPostImage(selectedMediaFile, userId);
+    const token = localStorage.getItem("collegeadda_token");
+    const userId = currentUser?._id || currentUser?.id;
+    const tempId = `temp-${Date.now()}`;
+    
+    const savedContent = newPostContent;
+    const savedMedia = selectedMedia;
+    const savedMediaFile = selectedMediaFile;
+    const savedMediaType = mediaType;
+    
+    // 1. Optimistic UI Update
+    const optimisticRawPost = {
+      _id: tempId,
+      author: currentUser,
+      university: currentUser?.university,
+      createdAt: new Date().toISOString(),
+      content: savedContent,
+      likes: [],
+      comments: [],
+      mediaUrl: savedMedia || "",
+      mediaType: savedMediaType,
+      poll: null
+    };
+    
+    queryClient.setQueryData(["posts", currentUser?._id], (old) => {
+      return [optimisticRawPost, ...(old || [])];
+    });
+    
+    // 2. Instantly reset inputs
+    setNewPostContent("");
+    setSelectedMedia(null);
+    setSelectedMediaFile(null);
+    setMediaType('none');
+    
+    try {
+      let mediaUrl = savedMedia || "";
+      let uploadedPostImage = null;
+
+      if (savedMediaType === "image" && savedMediaFile) {
+        uploadedPostImage = await uploadPostImage(savedMediaFile, userId);
         mediaUrl = uploadedPostImage.publicUrl;
       }
 
@@ -459,52 +471,49 @@ export default function Home() {
           'Authorization': `Bearer ${token}` 
         },
         body: JSON.stringify({ 
-          content: newPostContent,
+          content: savedContent,
           mediaUrl,
-          mediaType: mediaType
+          mediaType: savedMediaType
         })
       });
+      
       if (res.ok) {
         const createdPost = await res.json();
-        createdPostId = createdPost._id || createdPost.id;
-
-        if (mediaType === "image" && uploadedPostImage) {
+        
+        if (savedMediaType === "image" && uploadedPostImage) {
           await savePostImageRecord({
-            postId: createdPostId,
+            postId: createdPost._id || createdPost.id,
             userId,
-            caption: newPostContent,
+            caption: savedContent,
             imageUrl: uploadedPostImage.publicUrl,
             university: createdPost.university || currentUser?.university,
             createdAt: createdPost.createdAt
           });
         }
-
-        fetchPosts();
-        setNewPostContent("");
-        if (selectedMedia?.startsWith("blob:")) URL.revokeObjectURL(selectedMedia);
-        setSelectedMedia(null);
-        setSelectedMediaFile(null);
-        setMediaType('none');
+        
+        refetchPosts();
+        
         setToastMsg("Post created!");
         setTimeout(() => setToastMsg(""), 2000);
       } else {
-        const errorData = await res.json().catch(() => ({}));
-        if (uploadedPostImage) await removeUploadedImage("posts", uploadedPostImage.path);
-        alert(errorData.message || "Failed to create post. Please try again.");
+        throw new Error("Failed to create post on server");
       }
     } catch (err) {
       console.error("Error creating post:", err);
-      if (createdPostId) {
-        const token = localStorage.getItem("collegeadda_token");
-        await fetch(`${apiUrl}/api/posts/${createdPostId}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` }
-        }).catch(() => {});
-      }
-      if (uploadedPostImage) await removeUploadedImage("posts", uploadedPostImage.path);
-      alert(err.message || "Could not upload and create the post.");
+      // Rollback optimistic update
+      queryClient.setQueryData(["posts", currentUser?._id], (old) => {
+        return (old || []).filter(p => p._id !== tempId);
+      });
+      setNewPostContent(savedContent);
+      setSelectedMedia(savedMedia);
+      setSelectedMediaFile(savedMediaFile);
+      setMediaType(savedMediaType);
+      alert(err.message || "Could not create post. Please try again.");
     } finally {
       setIsPosting(false);
+      if (savedMedia?.startsWith("blob:")) {
+        setTimeout(() => URL.revokeObjectURL(savedMedia), 5000);
+      }
     }
   };
 

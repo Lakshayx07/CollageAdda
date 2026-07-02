@@ -4,9 +4,11 @@ import { useState, useEffect, useRef } from "react";
 import { Search, Send, Users, ChevronLeft, Info, MessageSquare, Plus, Image as ImageIcon, Smile, MoreVertical, X, Zap, Flame, TrendingUp, LogOut, UserPlus } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import clsx from "clsx";
-import { io } from "socket.io-client";
+import { useSocket } from "@/context/SocketProvider";
 import { motion, AnimatePresence } from "framer-motion";
-import { Suspense } from "react";
+import { Suspense, useCallback, useMemo } from "react";
+import { useApiQuery } from "@/utils/useApiQuery";
+import { useQueryClient } from "@tanstack/react-query";
 import VerifiedBadge from "@/components/VerifiedBadge";
 
 function MessagesContent() {
@@ -24,7 +26,74 @@ function MessagesContent() {
     };
   }, []);
   const [activeChat, setActiveChat] = useState(null);
-  const [chats, setChats] = useState([]);
+
+  const { data: activeChatMessages, isLoading: loadingMessages } = useApiQuery(
+    activeChat ? ["chat-messages", activeChat.id] : null,
+    activeChat ? `/api/chat/rooms/${activeChat.id}/messages` : null,
+    {
+      enabled: !!activeChat && !!user,
+      staleTime: 60 * 1000 // 1 minute
+    }
+  );
+
+  useEffect(() => {
+    if (activeChat && activeChatMessages) {
+      const u = user || JSON.parse(localStorage.getItem('collegeadda_user') || '{}');
+      const formattedMsgs = activeChatMessages.map(m => ({
+        id: m._id,
+        text: m.text,
+        sender: String(m.sender?._id || m.sender?.id) === String(u._id || u.id) ? "me" : "them",
+        senderName: m.sender?.name || "Student",
+        senderAvatar: m.sender?.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.sender?.name || "U")}&background=7C3AED&color=fff`,
+        mediaUrl: m.mediaUrl,
+        mediaType: m.mediaType,
+        time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isSystem: m.isSystem
+      }));
+      setMessages(prev => ({ ...prev, [activeChat.id]: formattedMsgs }));
+    }
+  }, [activeChat, activeChatMessages, user]);
+
+  const queryClient = useQueryClient();
+  
+  const formatRooms = useCallback((data) => {
+    if (!Array.isArray(data) || !user) return [];
+    return data.map(room => ({
+      id: room._id,
+      name: room.isGroup ? (room.groupName || `${room.university} Hub`) : (room.participants.find(p => p._id !== user._id)?.name || "Chat"),
+      type: room.isGroup ? "group" : "private",
+      avatar: room.isGroup ? <Users size={20} className="text-[#C8922A]" /> : (room.participants.find(p => p._id !== user._id)?.profilePic || `https://ui-avatars.com/api/?name=User&background=7C3AED&color=fff`),
+      lastMsg: room.lastMessage?.text || "No messages yet",
+      time: room.lastMessage ? new Date(room.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "",
+      timestamp: room.lastMessage?.createdAt ? new Date(room.lastMessage.createdAt).getTime() : new Date(room.updatedAt || room.createdAt || 0).getTime(),
+      unreadCount: room.unreadCounts?.[user._id] || 0,
+      participants: room.participants?.map(p => p._id || p.id) || [],
+      partner: room.isGroup ? null : room.participants.find(p => p._id !== user._id)
+    }));
+  }, [user]);
+
+  const { data: rawRooms = [], isLoading: loadingChats } = useApiQuery(
+    "chat-rooms",
+    "/api/chat/rooms",
+    {
+      enabled: !!user,
+      staleTime: 5 * 60 * 1000 // 5 minutes
+    }
+  );
+
+  const chats = useMemo(() => {
+    // If rawRooms is already formatted (due to optimistic updates), use it directly
+    if (rawRooms.length > 0 && rawRooms[0].id) return rawRooms;
+    return formatRooms(rawRooms);
+  }, [rawRooms, formatRooms]);
+
+  const setChats = useCallback((updater) => {
+    queryClient.setQueryData("chat-rooms", (oldRawData) => {
+      if (!oldRawData) return oldRawData;
+      const currentFormatted = (oldRawData.length > 0 && oldRawData[0].id) ? oldRawData : formatRooms(oldRawData);
+      return typeof updater === 'function' ? updater(currentFormatted) : updater;
+    });
+  }, [queryClient, formatRooms]);
   const [messages, setMessages] = useState({});
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -44,7 +113,7 @@ function MessagesContent() {
   
   const emojis = ["❤️", "🔥", "😂", "😍", "🙌", "👏", "✨", "💯", "🎉", "😎", "🚀", "💡", "☕", "📚", "🎓", "🍕", "🎸", "🎮", "🏀", "🧪"];
   
-  const socketRef = useRef(null);
+  const { socket, setActiveRoom, resetUnread } = useSocket();
   const fileInputRef = useRef(null);
   const scrollRef = useRef(null);
 
@@ -85,8 +154,8 @@ function MessagesContent() {
       });
       if (res.ok) {
         const savedMsg = await res.json();
-        if (socketRef.current) {
-          socketRef.current.emit("forward_message", {
+        if (socket) {
+          socket.emit("forward_message", {
             room: roomId,
             senderId: u._id || u.id,
             senderName: u.name,
@@ -147,10 +216,78 @@ function MessagesContent() {
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
-    socketRef.current = io(apiUrl, { transports: ['websocket'] });
-    socketRef.current.emit('user_online', { userId: u.id || u._id, name: u.name, university: u.university });
+    
+    if (chats.length > 0) {
+      // Handle ?chat=roomId (direct room link)
+      const chatParam = searchParams.get("chat");
+      if (chatParam && !activeChat) {
+        const found = chats.find(c => c.id === chatParam);
+        if (found) { setActiveChat(found); }
+      }
 
-    socketRef.current.on('receive_message', (msg) => {
+      // Handle ?userId=X (open/create DM from Squad page)
+      const userIdParam = searchParams.get("userId");
+      if (userIdParam && !activeChat) {
+        // Check if a private room with this user already exists
+        const existingRoom = chats.find(r => r.type === "private" && r.participants.includes(userIdParam));
+        if (existingRoom) {
+          setActiveChat(existingRoom);
+          const interestParam = searchParams.get("interestProduct");
+          if (interestParam) {
+            sendAutoInterestMessage(existingRoom.id, interestParam);
+          }
+        } else {
+          // Create a new private DM room
+          const createDM = async () => {
+            try {
+              const token = localStorage.getItem("collegeadda_token");
+              const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+              const createRes = await fetch(`${apiUrl}/api/chat/rooms`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+                body: JSON.stringify({ participantId: userIdParam })
+              });
+              if (createRes.ok) {
+                const newRoom = await createRes.json();
+                const formatted = {
+                  id: newRoom._id,
+                  name: newRoom.participants?.find(p => p._id !== u._id)?.name || "Chat",
+                  type: "private",
+                  avatar: newRoom.participants?.find(p => p._id !== u._id)?.profilePic || `https://ui-avatars.com/api/?name=User&background=7C3AED&color=fff`,
+                  lastMsg: "No messages yet",
+                  time: "",
+                  timestamp: Date.now(),
+                  unreadCount: 0,
+                  partner: newRoom.participants?.find(p => p._id !== u._id)
+                };
+                setChats(prev => {
+                  const exists = prev.find(c => c.id === formatted.id);
+                  return exists ? prev : [formatted, ...prev];
+                });
+                setActiveChat(formatted);
+                const interestParam = searchParams.get("interestProduct");
+                if (interestParam) {
+                  sendAutoInterestMessage(formatted.id, interestParam);
+                }
+              }
+            } catch (err) {
+              console.error("Error creating DM room:", err);
+            }
+          };
+          createDM();
+        }
+      }
+    }
+
+    resetUnread(); // Clear unread notifications when entering messages page
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Separate useEffect to handle global socket message reception locally
+  useEffect(() => {
+    if (!socket || !user) return;
+
+    const handleReceiveMessage = (msg) => {
       setMessages(prev => {
         const roomMessages = prev[msg.room] || [];
         
@@ -176,7 +313,7 @@ function MessagesContent() {
             text: msg.text, 
             mediaUrl: msg.mediaUrl,
             mediaType: msg.mediaType,
-            sender: String(msg.senderId) === String(u._id || u.id) ? "me" : "them",
+            sender: String(msg.senderId) === String(user._id || user.id) ? "me" : "them",
             senderName: msg.senderName,
             senderAvatar: msg.senderAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.senderName || "U")}&background=7C3AED&color=fff`,
             time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -198,106 +335,18 @@ function MessagesContent() {
         }
         return c;
       }));
-    });
-
-    const fetchRooms = async () => {
-      try {
-        const token = localStorage.getItem("collegeadda_token");
-        const res = await fetch(`${apiUrl}/api/chat/rooms`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (!Array.isArray(data)) {
-            setChats([]);
-            return;
-          }
-          const formattedRooms = data.map(room => ({
-            id: room._id,
-            name: room.isGroup ? (room.groupName || `${room.university} Hub`) : (room.participants.find(p => p._id !== u._id)?.name || "Chat"),
-            type: room.isGroup ? "group" : "private",
-            avatar: room.isGroup ? <Users size={20} className="text-[#C8922A]" /> : (room.participants.find(p => p._id !== u._id)?.profilePic || `https://ui-avatars.com/api/?name=User&background=7C3AED&color=fff`),
-            lastMsg: room.lastMessage?.text || "No messages yet",
-            time: room.lastMessage ? new Date(room.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "",
-            timestamp: room.lastMessage?.createdAt ? new Date(room.lastMessage.createdAt).getTime() : new Date(room.updatedAt || room.createdAt || 0).getTime(),
-            unreadCount: room.unreadCounts?.[u._id] || 0,
-            participants: room.participants?.map(p => p._id || p.id) || [],
-            partner: room.isGroup ? null : room.participants.find(p => p._id !== u._id)
-          }));
-          
-          setChats(formattedRooms);
-
-          // Handle ?chat=roomId (direct room link)
-          const chatParam = searchParams.get("chat");
-          if (chatParam) {
-            const found = formattedRooms.find(c => c.id === chatParam);
-            if (found) { setActiveChat(found); return; }
-          }
-
-          // Handle ?userId=X (open/create DM from Squad page)
-          const userIdParam = searchParams.get("userId");
-          if (userIdParam) {
-            // Check if a private room with this user already exists
-            const existingRoom = formattedRooms.find(r => r.type === "private" && r.participants.includes(userIdParam));
-            if (existingRoom) {
-              setActiveChat(existingRoom);
-              const interestParam = searchParams.get("interestProduct");
-              if (interestParam) {
-                sendAutoInterestMessage(existingRoom.id, interestParam);
-              }
-            } else {
-              // Create a new private DM room
-              try {
-                const createRes = await fetch(`${apiUrl}/api/chat/rooms`, {
-                  method: "POST",
-                  headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
-                  body: JSON.stringify({ participantId: userIdParam })
-                });
-                if (createRes.ok) {
-                  const newRoom = await createRes.json();
-                  const formatted = {
-                    id: newRoom._id,
-                    name: newRoom.participants?.find(p => p._id !== u._id)?.name || "Chat",
-                    type: "private",
-                    avatar: newRoom.participants?.find(p => p._id !== u._id)?.profilePic || `https://ui-avatars.com/api/?name=User&background=7C3AED&color=fff`,
-                    lastMsg: "No messages yet",
-                    time: "",
-                    timestamp: Date.now(),
-                    unreadCount: 0,
-                    partner: newRoom.participants?.find(p => p._id !== u._id)
-                  };
-                  setChats(prev => {
-                    const exists = prev.find(c => c.id === formatted.id);
-                    return exists ? prev : [formatted, ...prev];
-                  });
-                  setActiveChat(formatted);
-                  const interestParam = searchParams.get("interestProduct");
-                  if (interestParam) {
-                    sendAutoInterestMessage(formatted.id, interestParam);
-                  }
-                }
-              } catch (err) {
-                console.error("Error creating DM room:", err);
-              }
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching rooms:", err);
-      }
     };
 
-    fetchRooms();
-
+    socket.on('receive_message', handleReceiveMessage);
     return () => {
-      if (socketRef.current) socketRef.current.disconnect();
+      socket.off('receive_message', handleReceiveMessage);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [socket, user, activeChat]);
 
   useEffect(() => {
-    if (activeChat && socketRef.current) {
-      socketRef.current.emit('join_room', activeChat.id);
+    if (activeChat && socket) {
+      socket.emit('join_room', activeChat.id);
+      setActiveRoom(activeChat.id);
       
       const markSeen = async () => {
         const token = localStorage.getItem("collegeadda_token");
@@ -312,36 +361,12 @@ function MessagesContent() {
       };
       markSeen();
 
-      const fetchHistory = async () => {
-        const token = localStorage.getItem("collegeadda_token");
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
-        try {
-          const res = await fetch(`${apiUrl}/api/chat/rooms/${activeChat.id}/messages`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          if (res.ok) {
-             const data = await res.json();
-             const u = JSON.parse(localStorage.getItem('collegeadda_user'));
-             const formattedMsgs = data.map(m => ({
-               id: m._id,
-               text: m.text,
-               sender: String(m.sender?._id || m.sender?.id) === String(u._id || u.id) ? "me" : "them",
-               senderName: m.sender?.name || "Student",
-               senderAvatar: m.sender?.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.sender?.name || "U")}&background=7C3AED&color=fff`,
-               mediaUrl: m.mediaUrl,
-               mediaType: m.mediaType,
-               time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-               isSystem: m.isSystem
-             }));
-             setMessages(prev => ({ ...prev, [activeChat.id]: formattedMsgs }));
-          }
-        } catch (e) {
-          console.error(e);
-        }
-      }
-      fetchHistory();
+
     }
-  }, [activeChat]);
+    return () => {
+      setActiveRoom(null);
+    };
+  }, [activeChat, socket, setActiveRoom]);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -426,9 +451,9 @@ function MessagesContent() {
       
       if (res.ok) {
         const savedMsg = await res.json();
-        if (socketRef.current) {
+        if (socket) {
           // Forward the saved message to other users via socket
-          socketRef.current.emit('forward_message', {
+          socket.emit('forward_message', {
             ...data,
             _id: savedMsg._id,
             createdAt: savedMsg.createdAt || new Date().toISOString()
@@ -561,7 +586,7 @@ function MessagesContent() {
       
       if (res.ok) {
         // Emit leave message via socket
-        socketRef.current?.emit('send_message', {
+        socket?.emit('send_message', {
           room: activeChat.id,
           senderId: user._id || user.id,
           senderName: 'System',
@@ -600,7 +625,7 @@ function MessagesContent() {
         setChats(prev => prev.map(c => c.id === activeChat.id ? { ...c, participants: [...c.participants, memberId] } : c));
         
         // Emit system message via socket
-        socketRef.current?.emit('send_message', {
+        socket?.emit('send_message', {
           room: activeChat.id,
           senderId: user._id || user.id,
           senderName: 'System',
@@ -671,68 +696,87 @@ function MessagesContent() {
           </div>
         </header>
 
-        <div className="inbox-conversation-list custom-scrollbar px-2 space-y-1">
-          {filteredChats.map(chat => (
-            <motion.button
-              key={chat.id}
-              whileHover={{ x: 4 }}
-              type="button"
-              onClick={() => openChat(chat)}
-              aria-label={`Open chat with ${chat.name}`}
-              className={clsx(
-                "group relative flex w-full items-center space-x-3 rounded-[1.35rem] p-3 transition-all sm:space-x-4 sm:rounded-[1.5rem] sm:p-4",
-                activeChat?.id === chat.id 
-                  ? "bg-purple-900/30 border-l-2 border-[#C8922A] shadow-xl rounded-l-none" 
-                  : "hover:bg-[#F3F2EE] border border-transparent"
-              )}
-            >
-              <div className="relative">
-                <div className="h-12 w-12 rounded-full p-[2px] gradient-bg shadow-lg sm:h-14 sm:w-14">
-                  <div className="w-full h-full rounded-full bg-[#FAFAF8] flex items-center justify-center overflow-hidden">
-                    {chat.type === "group" ? (
-                      <div className="text-[#C8922A]">{chat.avatar}</div>
-                    ) : (
-                      <img 
-                        src={chat.avatar} 
-                        className="w-full h-full object-cover" 
-                        onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(chat.name)}&background=7C3AED&color=fff`; }}
-                      />
+        <div className="inbox-conversation-list custom-scrollbar px-2 space-y-1 flex-1 overflow-y-auto min-h-0">
+          {loadingChats ? (
+            Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center space-x-3 p-3 sm:space-x-4 sm:p-4 opacity-50 animate-pulse">
+                <div className="h-12 w-12 rounded-full bg-[#E8E6E0] sm:h-14 sm:w-14 flex-shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-[#E8E6E0] rounded w-1/2" />
+                  <div className="h-3 bg-[#E8E6E0] rounded w-3/4" />
+                </div>
+              </div>
+            ))
+          ) : filteredChats.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center p-6 text-[#888888]">
+              <MessageSquare size={48} className="mb-4 text-[#E8E6E0]" />
+              <p className="font-medium text-[#1A1A1A]">Your Inbox is Waiting</p>
+              <p className="text-sm mt-1">Start a conversation with a squad member.</p>
+            </div>
+          ) : (
+            filteredChats.map(chat => (
+              <motion.button
+                key={chat.id}
+                whileHover={{ x: 4 }}
+                type="button"
+                onClick={() => openChat(chat)}
+                aria-label={`Open chat with ${chat.name}`}
+                className={clsx(
+                  "group relative flex w-full items-center space-x-3 rounded-[1.35rem] p-3 transition-all sm:space-x-4 sm:rounded-[1.5rem] sm:p-4",
+                  activeChat?.id === chat.id 
+                    ? "bg-purple-900/30 border-l-2 border-[#C8922A] shadow-xl rounded-l-none" 
+                    : "hover:bg-[#F3F2EE] border border-transparent"
+                )}
+              >
+                <div className="relative flex-shrink-0">
+                  <div className="h-12 w-12 rounded-full p-[2px] gradient-bg shadow-lg sm:h-14 sm:w-14">
+                    <div className="w-full h-full rounded-full bg-[#FAFAF8] flex items-center justify-center overflow-hidden">
+                      {chat.type === "group" ? (
+                        <div className="text-[#C8922A]">{chat.avatar}</div>
+                      ) : (
+                        <img 
+                          src={chat.avatar} 
+                          alt=""
+                          className="w-full h-full object-cover" 
+                          onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(chat.name)}&background=7C3AED&color=fff`; }}
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex-1 text-left min-w-0">
+                  <div className="flex justify-between items-center mb-1">
+                    <div className="flex min-w-0 items-center">
+                      <p className="font-bold text-[15px] text-[#1A1A1A] truncate leading-tight">{chat.name}</p>
+                      {chat.partner && <VerifiedBadge user={chat.partner} size={12} />}
+                    </div>
+                    <span className="text-[10px] text-[#6B6B6B] font-medium flex-shrink-0 ml-2">{chat.time}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <p className={clsx(
+                      "text-xs truncate flex-1 leading-normal",
+                      chat.unreadCount > 0 ? "text-[#1A1A1A] font-bold" : "text-[#6B6B6B]"
+                    )}>
+                      {chat.lastMsg}
+                    </p>
+                    {chat.unreadCount > 0 && (
+                      <span className="ml-3 px-2 py-0.5 min-w-[20px] bg-[#EC4899] text-[#1A1A1A] text-[10px] font-black rounded-full shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)] flex-shrink-0 text-center">
+                        {chat.unreadCount}
+                      </span>
                     )}
                   </div>
                 </div>
-              </div>
-
-              <div className="flex-1 text-left min-w-0">
-                <div className="flex justify-between items-center mb-1">
-                  <div className="flex min-w-0 items-center">
-                    <p className="font-bold text-[15px] text-[#1A1A1A] truncate leading-tight">{chat.name}</p>
-                    {chat.partner && <VerifiedBadge user={chat.partner} size={12} />}
-                  </div>
-                  <span className="text-[10px] text-[#6B6B6B] font-medium">{chat.time}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <p className={clsx(
-                    "text-xs truncate flex-1 leading-normal",
-                    chat.unreadCount > 0 ? "text-[#1A1A1A] font-bold" : "text-[#6B6B6B]"
-                  )}>
-                    {chat.lastMsg}
-                  </p>
-                  {chat.unreadCount > 0 && (
-                    <span className="ml-3 px-2 py-0.5 min-w-[20px] bg-[#EC4899] text-[#1A1A1A] text-[10px] font-black rounded-full shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)]">
-                      {chat.unreadCount}
-                    </span>
-                  )}
-                </div>
-              </div>
-              
-              {activeChat?.id === chat.id && (
-                <motion.div 
-                  layoutId="active-chat-indicator"
-                  className="absolute left-0 w-1 h-8 gradient-bg rounded-r-full"
-                />
-              )}
-            </motion.button>
-          ))}
+                
+                {activeChat?.id === chat.id && (
+                  <motion.div 
+                    layoutId="active-chat-indicator"
+                    className="absolute left-0 w-1 h-8 gradient-bg rounded-r-full"
+                  />
+                )}
+              </motion.button>
+            ))
+          )}
         </div>
       </motion.div>
 

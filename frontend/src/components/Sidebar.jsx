@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { Home, Compass, User, LogOut, Users, MessageSquare, Zap, Search, Users2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
 import { getAuthenticatedSupabaseClient } from "@/utils/supabaseAuthUser";
 import { syncLoginStreakForUser } from "@/utils/loginStreak";
+import { useSocket } from "@/context/SocketProvider";
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -14,8 +15,9 @@ export default function Sidebar() {
   const [hasRequest, setHasRequest] = useState(false);
   const [streak, setStreak] = useState(0);
   const [authUser, setAuthUser] = useState(null);
+  const { unreadCount } = useSocket();
 
-  const navItems = [
+  const navItems = useMemo(() => [
     { name: "Home", path: "/", icon: Home },
     { name: "Explore", path: "/explore", icon: Search },
     { name: "Messages", path: "/messages", icon: MessageSquare },
@@ -24,7 +26,14 @@ export default function Sidebar() {
     { name: "Hustle", path: "/hustle", icon: Compass },
     { name: "Collab", path: "/collab", icon: Zap },
     { name: "Profile", path: "/profile", icon: User },
-  ];
+  ], []);
+
+  const handleNavClick = useCallback((isFriends) => {
+    if (isFriends) {
+      localStorage.setItem("collegeadda_friends_viewed", "true");
+      setHasRequest(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (pathname === "/login" || pathname === "/onboarding" || pathname === "/welcome-tour") return;
@@ -133,7 +142,7 @@ export default function Sidebar() {
             <Link
               key={item.name}
               href={item.path}
-              onClick={() => { if (isFriends) localStorage.setItem("collegeadda_friends_viewed", "true"); }}
+              onClick={() => handleNavClick(isFriends)}
               className="relative group"
             >
               <div
@@ -148,6 +157,11 @@ export default function Sidebar() {
                   <Icon size={20} strokeWidth={isActive ? 2.5 : 2} className={isActive ? "text-[#9A6A10]" : "text-[#6B6B6B] group-hover:text-[#1A1A1A]"} />
                   {isFriends && hasRequest && (
                     <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-white bg-orange-400 shadow-[0_0_14px_rgba(251,146,60,0.65)]" />
+                  )}
+                  {item.name === "Messages" && unreadCount > 0 && (
+                    <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-bold text-white shadow-sm border border-white">
+                      {unreadCount}
+                    </span>
                   )}
                 </div>
 

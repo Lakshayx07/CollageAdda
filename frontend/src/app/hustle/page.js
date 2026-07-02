@@ -3,15 +3,16 @@ import React, { useState, useEffect } from "react";
 import { Compass, ShoppingBag, Briefcase, Plus, Filter, MessageSquare, ChevronRight, X, Image as ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { useApiQuery } from "../../utils/useApiQuery";
+import { useQueryClient } from "@tanstack/react-query";
 import clsx from "clsx";
 import VerifiedBadge from "@/components/VerifiedBadge";
 
 export default function HustleHubPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [currentUser, setCurrentUser] = useState(null);
   const [activeTab, setActiveTab] = useState("thrift"); // 'thrift' or 'gigs'
-  const [thriftItems, setThriftItems] = useState([]);
-  const [gigItems, setGigItems] = useState([]);
   const [showPostModal, setShowPostModal] = useState(false);
 
   // Form Fields
@@ -37,29 +38,19 @@ export default function HustleHubPage() {
         console.error(e);
       }
     }
-
-    // Fetch postings from backend
-    const fetchListings = async () => {
-      const token = localStorage.getItem("collegeadda_token");
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
-      try {
-        const res = await fetch(`${apiUrl}/api/hustle`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setThriftItems(data.filter(item => item.type === 'thrift'));
-          setGigItems(data.filter(item => item.type === 'gig'));
-        }
-      } catch (err) {
-        console.error("Error fetching listings:", err);
-      }
-    };
-
-    fetchListings();
   }, []);
+
+  // -- TanStack Query: Hustle listings --
+  const { data: allListings = [] } = useApiQuery(
+    "hustle-listings",
+    "/api/hustle",
+    {
+      staleTime: 2 * 60 * 1000,
+    }
+  );
+
+  const thriftItems = allListings.filter(item => item.type === 'thrift');
+  const gigItems = allListings.filter(item => item.type === 'gig');
 
   const handlePost = async (e) => {
     e.preventDefault();
@@ -91,7 +82,7 @@ export default function HustleHubPage() {
         });
         if (res.ok) {
           const newListing = await res.json();
-          setThriftItems(prev => [newListing, ...prev]);
+          queryClient.setQueryData(["hustle-listings"], (prev) => [newListing, ...(prev || [])]);
           setActiveTab("thrift");
         } else {
           alert("Failed to save listing to server.");
@@ -126,7 +117,7 @@ export default function HustleHubPage() {
         });
         if (res.ok) {
           const newListing = await res.json();
-          setGigItems(prev => [newListing, ...prev]);
+          queryClient.setQueryData(["hustle-listings"], (prev) => [newListing, ...(prev || [])]);
           setActiveTab("gigs");
         } else {
           alert("Failed to save gig to server.");

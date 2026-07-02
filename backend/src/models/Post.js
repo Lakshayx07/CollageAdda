@@ -23,5 +23,8 @@ const postSchema = mongoose.Schema({
   }
 }, { timestamps: true });
 
+// Compound index to optimize the university feed query (GET /api/posts)
+postSchema.index({ university: 1, createdAt: -1 });
+
 const Post = mongoose.model('Post', postSchema);
 export default Post;

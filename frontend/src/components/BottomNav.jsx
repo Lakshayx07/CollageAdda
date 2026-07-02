@@ -6,9 +6,12 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import clsx from "clsx";
 
+import { useSocket } from "@/context/SocketProvider";
+
 export default function BottomNav() {
   const pathname = usePathname();
   const [hasRequest, setHasRequest] = useState(false);
+  const { unreadCount } = useSocket();
 
   const navItems = [
     { name: "Home", path: "/", icon: Home },
@@ -55,6 +58,11 @@ export default function BottomNav() {
               <Icon className="icon" color={isActive ? "#C8922A" : "#888888"} />
               {isFriends && hasRequest && (
                 <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border border-white bg-orange-400"></span>
+              )}
+              {item.name === "Messages" && unreadCount > 0 && (
+                <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-bold text-white shadow-sm">
+                  {unreadCount}
+                </span>
               )}
             </div>
             <span>{item.name}</span>

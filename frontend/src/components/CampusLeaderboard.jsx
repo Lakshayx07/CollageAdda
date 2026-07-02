@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Image from "next/image";
 import { Clock3, Sparkles, Star, Trophy, UsersRound } from "lucide-react";
 import clsx from "clsx";
+import { useApiQuery } from "@/utils/useApiQuery";
 
 const POLL_INTERVAL_MS = 15000;
 
@@ -169,42 +170,21 @@ function PodiumCard({ college, variant }) {
 }
 
 export default function CampusLeaderboard({ apiUrl }) {
-  const [leaders, setLeaders] = useState([]);
-  const [lastUpdated, setLastUpdated] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading } = useApiQuery(
+    "users-leaderboard",
+    "/api/users/leaderboard",
+    {
+      refetchInterval: POLL_INTERVAL_MS,
+      staleTime: POLL_INTERVAL_MS,
+    }
+  );
 
-  useEffect(() => {
-    let alive = true;
-    let timerId;
+  const leaders = useMemo(() => {
+    if (!data) return [];
+    return normalizeLeaderboard(data);
+  }, [data]);
 
-    const fetchLeaderboard = async () => {
-      try {
-        const token = localStorage.getItem("collegeadda_token");
-        if (!token) return;
-        const response = await fetch(`${apiUrl}/api/users/leaderboard`, {
-          headers: { Authorization: `Bearer ${token}` },
-          cache: "no-store"
-        });
-        if (!response.ok) return;
-        const payload = await response.json();
-        if (!alive) return;
-        setLeaders(normalizeLeaderboard(payload));
-        setLastUpdated(payload?.lastUpdated || new Date().toISOString());
-      } catch (error) {
-        console.error("Error fetching campus leaderboard:", error);
-      } finally {
-        if (alive) setLoading(false);
-      }
-    };
-
-    fetchLeaderboard();
-    timerId = window.setInterval(fetchLeaderboard, POLL_INTERVAL_MS);
-
-    return () => {
-      alive = false;
-      window.clearInterval(timerId);
-    };
-  }, [apiUrl]);
+  const lastUpdated = data?.lastUpdated || null;
 
   const podium = useMemo(() => {
     const first = leaders.find(item => item.rank === 1);
