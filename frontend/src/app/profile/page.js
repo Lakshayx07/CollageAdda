@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { LogOut, Edit3, X, Check, Plus, Grid, Heart, MessageCircle, Send, ChevronLeft, ChevronRight, Share2, Ghost, MapPin, Zap, Star, Camera, Clock, Image as ImageIcon, Music, Code, Palette, Plane, Gamepad2, Book, Dumbbell, Film, Utensils, Trophy, Briefcase } from "lucide-react";
 
 const InstagramIcon = ({ size = 20 }) => (
@@ -28,6 +28,8 @@ import clsx from "clsx";
 import { extractInstagramUsername } from "@/utils/socials";
 import { LOGIN_STREAK_UPDATED_EVENT, getDisplayStreak } from "@/utils/loginStreak";
 import { saveProfileAvatarUrl, uploadAvatar } from "@/utils/supabaseUploads";
+import { useApiQuery } from "../../utils/useApiQuery";
+import { useQueryClient } from "@tanstack/react-query";
 
 const INTEREST_OPTIONS = [
   { name: "Hackathons", icon: <Trophy size={12} /> },
@@ -58,12 +60,10 @@ const SPORT_OPTIONS = [
 
 export default function ProfilePage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
-  const [followers, setFollowers] = useState([]);
-  const [following, setFollowing] = useState([]);
   const [modal, setModal] = useState(null); 
   const [activePostIndex, setActivePostIndex] = useState(null);
-  const [userPosts, setUserPosts] = useState([]);
   const [commentInput, setCommentInput] = useState("");
   const [toastMsg, setToastMsg] = useState("");
   const [userStories, setUserStories] = useState([]);
@@ -94,9 +94,109 @@ export default function ProfilePage() {
   const [unfollowingId, setUnfollowingId] = useState(null);
   const [activeTab, setActiveTab] = useState("about");
 
-  const squadsCount = followers.filter(f => following.some(fol => fol._id === f._id || fol.id === f._id)).length;
-
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+
+  // Token helper
+  const getToken = () => typeof window !== "undefined" ? localStorage.getItem("collegeadda_token") : null;
+
+  // Set user from localStorage initially
+  useEffect(() => {
+    const stored = localStorage.getItem("collegeadda_user");
+    if (stored) {
+      setUser(JSON.parse(stored));
+    } else {
+      router.push("/login");
+    }
+  }, [router]);
+
+  // -- TanStack Query: Profile Data --
+  const { data: profileData } = useApiQuery(
+    "user-profile",
+    "/api/users/profile",
+    {
+      enabled: !!getToken(),
+      staleTime: 5 * 60 * 1000,
+    }
+  );
+
+  useEffect(() => {
+    if (profileData && user) {
+      const mergedProfileData = {
+        ...profileData,
+        streak_count: user.streak_count ?? profileData.streak_count,
+      };
+      // Only update if something changed to prevent infinite loops, or just rely on Query
+      setUser(mergedProfileData);
+      localStorage.setItem("collegeadda_user", JSON.stringify(mergedProfileData));
+      setEditData({ 
+        name: profileData.name || "",
+        bio: profileData.bio || "",
+        profilePic: profileData.profilePic || "",
+        passOutBatch: profileData.passOutBatch || "",
+        course: profileData.course || "",
+        branch: profileData.branch || "",
+        studyYear: profileData.studyYear || profileData.year || "",
+        phone: profileData.phone || "",
+        linkedin: profileData.linkedin || "",
+        github: profileData.github || "",
+        instaId: profileData.instagram || "", 
+        snapId: profileData.snapchat || "", 
+        interests: profileData.interests || [], 
+        sports: profileData.sports || [] 
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileData]);
+
+  // -- TanStack Query: My Posts --
+  const { data: myPostsRaw = [] } = useApiQuery(
+    "user-posts",
+    "/api/posts",
+    {
+      enabled: !!getToken(),
+      staleTime: 2 * 60 * 1000,
+    }
+  );
+
+  const userPosts = useMemo(() => {
+    if (!user) return [];
+    const filtered = myPostsRaw.filter(p => p.author?._id === user._id || p.author?._id === user.id);
+    return filtered.map(p => ({
+      id: p._id,
+      img: p.mediaUrl || "https://picsum.photos/seed/fallback/300/300",
+      content: p.content,
+      likes: p.likes?.length || 0,
+      isLiked: p.likes?.includes(user._id || user.id),
+      comments: p.comments?.length || 0,
+      commentsList: p.comments?.map(c => ({
+        id: c._id || Math.random().toString(),
+        author: c.user?.name || "Student",
+        text: c.text
+      })) || []
+    }));
+  }, [myPostsRaw, user]);
+
+  // -- TanStack Query: Followers --
+  const { data: followers = [] } = useApiQuery(
+    "user-followers",
+    "/api/users/me/followers",
+    {
+      enabled: !!getToken(),
+      staleTime: 2 * 60 * 1000,
+    }
+  );
+
+  // -- TanStack Query: Following --
+  const { data: following = [] } = useApiQuery(
+    "user-following",
+    "/api/users/me/following",
+    {
+      enabled: !!getToken(),
+      staleTime: 2 * 60 * 1000,
+    }
+  );
+
+  const squadsCount = followers.filter(f => following.some(fol => fol._id === f._id || fol.id === f._id)).length;
 
   useEffect(() => {
     const handleStreakUpdate = (event) => {
@@ -112,104 +212,20 @@ export default function ProfilePage() {
   }, []);
 
   useEffect(() => {
-    const fetchProfileAndPosts = async () => {
-      const stored = localStorage.getItem("collegeadda_user");
-      const token = localStorage.getItem("collegeadda_token");
-      if (!stored || !token) { router.push("/login"); return; }
-      
-      const u = JSON.parse(stored);
-      setUser(u);
-      
-      try {
-        const profileRes = await fetch(`${apiUrl}/api/users/profile`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (profileRes.ok) {
-          const profileData = await profileRes.json();
-          const cachedStreakCount = u.streak_count;
-          const mergedProfileData = {
-            ...profileData,
-            streak_count: cachedStreakCount ?? profileData.streak_count,
-          };
-          setUser(mergedProfileData);
-          localStorage.setItem("collegeadda_user", JSON.stringify(mergedProfileData));
-          setEditData({ 
-            name: profileData.name || "",
-            bio: profileData.bio || "",
-            profilePic: profileData.profilePic || "",
-            passOutBatch: profileData.passOutBatch || "",
-            course: profileData.course || "",
-            branch: profileData.branch || "",
-            studyYear: profileData.studyYear || profileData.year || "",
-            phone: profileData.phone || "",
-            linkedin: profileData.linkedin || "",
-            github: profileData.github || "",
-            instaId: profileData.instagram || "", 
-            snapId: profileData.snapchat || "", 
-            interests: profileData.interests || [], 
-            sports: profileData.sports || [] 
-          });
-        }
-
-        const postsRes = await fetch(`${apiUrl}/api/posts`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (postsRes.ok) {
-          const postsData = await postsRes.json();
-          const myPosts = postsData.filter(p => p.author?._id === u._id || p.author?._id === u.id);
-          
-          if (myPosts.length > 0) {
-            setUserPosts(myPosts.map(p => ({
-              id: p._id,
-              img: p.mediaUrl || "https://picsum.photos/seed/fallback/300/300",
-              content: p.content,
-              likes: p.likes?.length || 0,
-              isLiked: p.likes?.includes(u._id || u.id),
-              comments: p.comments?.length || 0,
-              commentsList: p.comments?.map(c => ({
-                id: c._id || Math.random().toString(),
-                author: c.user?.name || "Student",
-                text: c.text
-              })) || []
-            })));
-          }
-        }
-
-        // Load stories from localStorage (24-hour expiry)
-        try {
-          const storedStories = JSON.parse(localStorage.getItem("collegeadda_stories") || "[]");
-          const now = Date.now();
-          const validStories = storedStories.filter(s => now - s.createdAt < 24 * 60 * 60 * 1000);
-          if (validStories.length !== storedStories.length) {
-            localStorage.setItem("collegeadda_stories", JSON.stringify(validStories));
-          }
-          setActiveStories(validStories);
-          setUserStories(validStories);
-        } catch (e) {
-          setActiveStories([]);
-        }
-      } catch (err) {
-        console.error(err);
+    // Load stories from localStorage (24-hour expiry)
+    try {
+      const storedStories = JSON.parse(localStorage.getItem("collegeadda_stories") || "[]");
+      const now = Date.now();
+      const validStories = storedStories.filter(s => now - s.createdAt < 24 * 60 * 60 * 1000);
+      if (validStories.length !== storedStories.length) {
+        localStorage.setItem("collegeadda_stories", JSON.stringify(validStories));
       }
-    };
-    
-    fetchProfileAndPosts();
-
-    const fetchSocial = async () => {
-      try {
-        const token = localStorage.getItem("collegeadda_token");
-        const [followersRes, followingRes] = await Promise.all([
-          fetch(`${apiUrl}/api/users/me/followers`, { headers: { Authorization: `Bearer ${token}` } }),
-          fetch(`${apiUrl}/api/users/me/following`, { headers: { Authorization: `Bearer ${token}` } })
-        ]);
-        if (followersRes.ok) setFollowers(await followersRes.json());
-        if (followingRes.ok) setFollowing(await followingRes.json());
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchSocial();
-  }, [router]);
+      setActiveStories(validStories);
+      setUserStories(validStories);
+    } catch (e) {
+      setActiveStories([]);
+    }
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("collegeadda_token");
@@ -227,7 +243,8 @@ export default function ProfilePage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
-        setFollowing(prev => prev.filter(f => f._id !== targetUserId));
+        queryClient.setQueryData(["user-following"], (prev) => (prev || []).filter(f => f._id !== targetUserId));
+        queryClient.setQueryData(["user-followers"], (prev) => (prev || []).filter(f => f._id !== targetUserId));
         setToastMsg("Unfollowed successfully");
         setTimeout(() => setToastMsg(""), 2000);
       }

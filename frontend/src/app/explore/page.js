@@ -1,6 +1,6 @@
 "use client";
-import { useState, useMemo, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useMemo, useEffect, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Search,
   MapPin,
@@ -37,6 +37,8 @@ import {
   Loader2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useApiQuery } from "../../utils/useApiQuery";
+import { useQueryClient } from "@tanstack/react-query";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import PlayerCard from "@/components/PlayerCard";
 import PlayerCardForm from "@/components/PlayerCardForm";
@@ -44,13 +46,21 @@ import clsx from "clsx";
 
 
 export default function ExplorePage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+      <ExploreContent />
+    </Suspense>
+  );
+}
+
+function ExploreContent() {
   const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
-  const [colleges, setColleges] = useState([]);
   const [search, setSearch] = useState("");
   const [selectedCollege, setSelectedCollege] = useState(null);
   const [activeTab, setActiveTab] = useState("posts");
@@ -64,7 +74,6 @@ export default function ExplorePage() {
   const [likes, setLikes] = useState({});
   const [chatWithStudent, setChatWithStudent] = useState(null);
   const [chatMessages, setChatMessages] = useState({});
-  const [loading, setLoading] = useState(true);
   const [loadingCollegeId, setLoadingCollegeId] = useState(null);
 
   const [currentStudentIndices, setCurrentStudentIndices] = useState({});
@@ -80,161 +89,108 @@ export default function ExplorePage() {
   const [filterStream, setFilterStream] = useState("All");
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+  const queryClient = useQueryClient();
+  const getToken = useCallback(() => typeof window !== "undefined" ? localStorage.getItem("collegeadda_token") : null, []);
 
-  const [myFollowing, setMyFollowing] = useState([]);
   const [commentInputs, setCommentInputs] = useState({});
   const [activeCommentPost, setActiveCommentPost] = useState(null);
-
-  const [dailyDiscovery, setDailyDiscovery] = useState([]);
-  const [dailyDiscoveryLoading, setDailyDiscoveryLoading] = useState(true);
-  const [discoveryTimestamp, setDiscoveryTimestamp] = useState(null);
-  const [refreshCountdown, setRefreshCountdown] = useState("");
+  const [refreshCountdown, setRefreshCountdown] = useState("Auto-refreshes daily");
   const [discoveryConnectStatus, setDiscoveryConnectStatus] = useState({});
 
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        const token = localStorage.getItem("collegeadda_token");
-        const me = JSON.parse(localStorage.getItem('collegeadda_user') || '{}');
-        const myId = me._id || me.id;
+  // ── TanStack Query: Colleges ──────────────────────────────────────────────
+  const { data: colleges = [], isLoading: collegesLoading } = useApiQuery(
+    "explore-colleges",
+    "/api/colleges",
+    {
+      enabled: isMounted && !!getToken(),
+      staleTime: 5 * 60 * 1000,
+    }
+  );
 
-        // Fetch colleges with real counts
-        const res = await fetch(`${apiUrl}/api/colleges`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setColleges(data);
-          // Pre-populate followed state from each college's followers array
-          const followedMap = {};
-          data.forEach(c => {
-            if (Array.isArray(c.followers)) {
-              followedMap[c._id] = c.followers.some(f =>
-                (f._id || f) === myId
-              );
-            }
-          });
-          setFollowed(followedMap);
-        }
+  // ── TanStack Query: Following list ────────────────────────────────────────
+  const { data: myFollowingRaw = [] } = useApiQuery(
+    "explore-following",
+    "/api/users/me/following",
+    {
+      enabled: isMounted && !!getToken(),
+      staleTime: 2 * 60 * 1000,
+    }
+  );
 
-        // Fetch my following list to check connections
-        const followingRes = await fetch(`${apiUrl}/api/users/me/following`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (followingRes.ok) {
-          const followingData = await followingRes.json();
-          setMyFollowing(followingData.map(u => u._id));
-        }
+  const [localFollowingIds, setLocalFollowingIds] = useState([]);
+  const myFollowing = useMemo(() => {
+    const apiIds = Array.isArray(myFollowingRaw) ? myFollowingRaw.map(u => u._id || u.id || u) : [];
+    return [...new Set([...apiIds, ...localFollowingIds])];
+  }, [myFollowingRaw, localFollowingIds]);
 
-      } catch (err) {
-        console.error("Error fetching initial data:", err);
-      } finally {
-        setLoading(false);
+  const setMyFollowing = useCallback((updater) => {
+    setLocalFollowingIds(prev => typeof updater === 'function' ? updater(prev) : updater);
+  }, []);
+
+  // ── TanStack Query: Daily Discovery ───────────────────────────────────────
+  const TWELVE_HOURS = 12 * 60 * 60 * 1000;
+  const { data: dailyDiscoveryRaw = [], isLoading: dailyDiscoveryLoading } = useApiQuery(
+    "explore-daily-discovery",
+    "/api/users/daily-drop",
+    {
+      enabled: isMounted && !!getToken(),
+      staleTime: TWELVE_HOURS,
+      gcTime: TWELVE_HOURS,
+    }
+  );
+
+  const dailyDiscovery = useMemo(() => {
+    const currentUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem("collegeadda_user") || "{}") : {};
+    const students = Array.isArray(dailyDiscoveryRaw) ? dailyDiscoveryRaw.slice(0, 3) : [];
+    return students.map(u => {
+      let tag = "Explore 🌐";
+      if (u.university && currentUser.university && u.university === currentUser.university) {
+        tag = "Same Campus 🏫";
+      } else if (Array.isArray(u.interests) && Array.isArray(currentUser.interests)) {
+        const shared = u.interests.filter(i => currentUser.interests.includes(i)).length;
+        if (shared > 0) tag = `${shared} shared interests ✨`;
       }
-    };
-    fetchInitialData();
-  }, [apiUrl]);
+      return { ...u, tag };
+    });
+  }, [dailyDiscoveryRaw]);
 
-  // ── Daily Discovery: real students, 12-hour cache ──────────────────────────
+  const loading = !isMounted || collegesLoading;
+
+  // Derive followed map from colleges data
   useEffect(() => {
-    const TWELVE_HOURS = 12 * 60 * 60 * 1000;
-
-    const fetchPickedStudents = async () => {
-      setDailyDiscoveryLoading(true);
-      try {
-        const token = localStorage.getItem("collegeadda_token");
-        const currentUser = JSON.parse(localStorage.getItem("collegeadda_user") || "{}");
-
-        console.log('[DailyDiscovery] Current user:', currentUser);
-        console.log('[DailyDiscovery] Current user ID:', currentUser?._id || currentUser?.id);
-
-        if (!token) {
-          console.log('[DailyDiscovery] No auth token found');
-          setDailyDiscoveryLoading(false);
-          return;
-        }
-
-        // Check cache
-        const cached = JSON.parse(localStorage.getItem("explore_picked_students") || "null");
-        const isExpired = !cached || (Date.now() - cached.timestamp > TWELVE_HOURS);
-
-        let students = [];
-
-        if (!isExpired && Array.isArray(cached.students) && cached.students.length > 0) {
-          console.log('[DailyDiscovery] Using cached students:', cached.students.length);
-          students = cached.students;
-          setDiscoveryTimestamp(cached.timestamp);
-        } else {
-          // Call the correct endpoint — /api/users/daily-drop has a 5-priority fallback
-          // that includes getting absolutely anyone in the DB
-          console.log('[DailyDiscovery] Fetching from /api/users/daily-drop...');
-          const res = await fetch(
-            `${apiUrl}/api/users/daily-drop`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-
-          console.log('[DailyDiscovery] Response status:', res.status);
-
-          if (res.ok) {
-            const data = await res.json();
-            console.log('[DailyDiscovery] Fetched students:', data);
-            students = Array.isArray(data) ? data.slice(0, 3) : [];
-          } else {
-            const errText = await res.text();
-            console.log('[DailyDiscovery] Fetch error response:', errText);
-          }
-
-          const ts = Date.now();
-          localStorage.setItem("explore_picked_students", JSON.stringify({ timestamp: ts, students }));
-          setDiscoveryTimestamp(ts);
-        }
-
-        // Build tag for each student relative to current user
-        const tagged = students.map(u => {
-          let tag = "Explore 🌐";
-          if (u.university && currentUser.university && u.university === currentUser.university) {
-            tag = "Same Campus 🏫";
-          } else if (Array.isArray(u.interests) && Array.isArray(currentUser.interests)) {
-            const shared = u.interests.filter(i => currentUser.interests.includes(i)).length;
-            if (shared > 0) tag = `${shared} shared interests ✨`;
-          }
-          return { ...u, tag };
-        });
-
-        setDailyDiscovery(tagged);
-
-        // Initialise connect status from following list
-        const initStatus = {};
-        tagged.forEach(u => {
-          const uid = u._id || u.id;
-          initStatus[uid] = myFollowing.includes(uid) ? 'connected' : 'idle';
-        });
-        setDiscoveryConnectStatus(initStatus);
-      } catch (err) {
-        console.error("Error fetching daily discovery:", err);
-      } finally {
-        setDailyDiscoveryLoading(false);
+    if (!colleges || colleges.length === 0) return;
+    const me = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('collegeadda_user') || '{}') : {};
+    const myId = me._id || me.id;
+    const followedMap = {};
+    colleges.forEach(c => {
+      if (Array.isArray(c.followers)) {
+        followedMap[c._id] = c.followers.some(f => (f._id || f) === myId);
       }
-    };
+    });
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFollowed(prev => ({ ...prev, ...followedMap }));
+  }, [colleges]);
 
-    fetchPickedStudents();
-  }, [apiUrl, myFollowing]);
-
-  // Countdown timer
+  // Derive discovery connect status from following + discovery data
   useEffect(() => {
-    if (!discoveryTimestamp) return;
-    const TWELVE_HOURS = 12 * 60 * 60 * 1000;
-    const tick = () => {
-      const remaining = TWELVE_HOURS - (Date.now() - discoveryTimestamp);
-      if (remaining <= 0) { setRefreshCountdown("Refreshing..."); return; }
-      const h = Math.floor(remaining / 3600000);
-      const m = Math.floor((remaining % 3600000) / 60000);
-      setRefreshCountdown(`Refreshes in ${h}h ${m}m`);
-    };
-    tick();
-    const interval = setInterval(tick, 60000);
-    return () => clearInterval(interval);
-  }, [discoveryTimestamp]);
+    if (!dailyDiscovery.length) return;
+    const initStatus = {};
+    dailyDiscovery.forEach(u => {
+      const uid = u._id || u.id;
+      initStatus[uid] = myFollowing.includes(uid) ? 'connected' : 'idle';
+    });
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDiscoveryConnectStatus(prev => {
+      let isDifferent = false;
+      for (const uid in initStatus) {
+        if (prev[uid] !== initStatus[uid]) {
+          isDifferent = true;
+          break;
+        }
+      }
+      return isDifferent ? { ...initStatus, ...prev } : prev;
+    });
+  }, [dailyDiscovery, myFollowing]);
 
   const handleDiscoveryConnect = async (student) => {
     const uid = student._id || student.id;
@@ -326,11 +282,12 @@ export default function ExplorePage() {
     }
   };
 
-  const fetchCollegeDetails = async (college) => {
-    setLoadingCollegeId(college._id || college.id);
+  const fetchCollegeDetails = async (id) => {
+    if (!id) return;
+    setLoadingCollegeId(id);
     try {
       const token = localStorage.getItem("collegeadda_token");
-      const res = await fetch(`${apiUrl}/api/colleges/${college._id || college.id}`, {
+      const res = await fetch(`${apiUrl}/api/colleges/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -357,6 +314,16 @@ export default function ExplorePage() {
       setLoadingCollegeId(null);
     }
   };
+
+  useEffect(() => {
+    const collegeId = searchParams.get('collegeId');
+    if (collegeId) {
+      fetchCollegeDetails(collegeId);
+    } else {
+      setSelectedCollege(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, myFollowing, apiUrl]);
 
   const handleSwipe = async (collegeId, direction, student) => {
     setSwipeDirection(direction);
@@ -785,7 +752,10 @@ export default function ExplorePage() {
 
                     {/* Explore Now button */}
                     <button 
-                      onClick={(e) => { e.stopPropagation(); fetchCollegeDetails(college); }}
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        router.push(`/explore?collegeId=${college._id || college.id}`);
+                      }}
                       disabled={loadingCollegeId === (college._id || college.id)}
                       className="w-full bg-white rounded-2xl py-3 flex items-center justify-center text-sm font-bold text-[#1A1A1A] shadow-lg group-hover:bg-[#FFF8EC] transition-colors disabled:opacity-80"
                     >
@@ -1000,10 +970,10 @@ export default function ExplorePage() {
 
                 {/* Back Button */}
                 <button
-                  onClick={() => setSelectedCollege(null)}
+                  onClick={() => router.push('/explore')}
                   className="absolute top-4 left-4 p-2 bg-black/40 backdrop-blur-md rounded-full text-[#1A1A1A] hover:bg-black/60 transition-colors z-20"
                 >
-                  <ChevronLeft size={20} />
+                  <ChevronLeft size={20} className="text-white" />
                 </button>
 
                 {/* College Info on Banner */}

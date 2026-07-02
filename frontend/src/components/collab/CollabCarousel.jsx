@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader, Briefcase, Plus } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/utils/supabase";
 import CollabCard from "./CollabCard";
 import ContributeModal from "./ContributeModal";
@@ -8,71 +9,57 @@ import ApplicationsPanel from "./ApplicationsPanel";
 import ShareCollabModal from "./ShareCollabModal";
 
 export default function CollabCarousel({ currentUser, onPostCard }) {
-  const [cards, setCards] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [shareCard, setShareCard] = useState(null);
-  // { [cardId]: true/false }
   const [appliedCards, setAppliedCards] = useState({});
-  // { [cardId]: 'pending' | 'impressive' | 'rejected' }
   const [appStatusByCard, setAppStatusByCard] = useState({});
   const [toastMsg, setToastMsg] = useState("");
 
   const userId = currentUser ? (currentUser?.id || currentUser?._id || "").toString() : null;
 
-  console.log("=== CURRENT USER ===", currentUser);
-  console.log("=== USER ID being used ===", currentUser?.id, currentUser?._id, "→ resolved:", userId);
+  const { data: cards = [], isLoading: loading } = useQuery({
+    queryKey: ['collab-cards'],
+    queryFn: async () => {
+      const { data: rawCards, error } = await supabase
+        .from("collab_cards")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return rawCards || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
   useEffect(() => {
-    let isMounted = true;
-
-    const fetchCards = async () => {
-      setLoading(true);
-      try {
-        const { data: rawCards, error } = await supabase
-          .from("collab_cards")
-          .select("*")
-          .order("created_at", { ascending: false });
-
-        console.log("collab cards:", rawCards, error);
-        if (error) throw error;
-
-          setCards(rawCards || []);
-
-          // Check URL param for deep-link to a card
-          if (typeof window !== "undefined") {
-            const cardIdParam = new URL(window.location.href).searchParams.get("cardId");
-            if (cardIdParam) {
-              const idx = (rawCards || []).findIndex((c) => c.id === cardIdParam);
-              if (idx !== -1) setCurrentIndex(idx);
-            }
-          }
-      } catch (err) {
-        console.error("Error fetching collab cards:", err);
-      } finally {
-        if (isMounted) setLoading(false);
+    if (!cards || cards.length === 0) return;
+    if (typeof window !== "undefined") {
+      const cardIdParam = new URL(window.location.href).searchParams.get("cardId");
+      if (cardIdParam) {
+        const idx = cards.findIndex((c) => c.id === cardIdParam);
+        if (idx !== -1) setCurrentIndex(idx);
       }
-    };
+    }
+  }, [cards]);
 
-    fetchCards();
-
+  useEffect(() => {
     // Subscribe to new cards
     const subscription = supabase
       .channel("collab_cards_changes")
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "collab_cards" },
-        (payload) => setCards((prev) => [payload.new, ...prev])
+        (payload) => queryClient.setQueryData(['collab-cards'], (prev) => [payload.new, ...(prev || [])])
       )
       .subscribe();
 
     return () => {
-      isMounted = false;
       supabase.removeChannel(subscription);
     };
-  }, []);
+  }, [queryClient]);
 
   // When current card changes, check DB to see if user already applied + get status
   useEffect(() => {
@@ -153,7 +140,7 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
     try {
       const { error } = await supabase.from("collab_cards").delete().eq("id", cardId);
       if (error) throw error;
-      setCards((prev) => prev.filter((c) => c.id !== cardId));
+      queryClient.setQueryData(['collab-cards'], (prev) => (prev || []).filter((c) => c.id !== cardId));
       if (currentIndex >= cards.length - 1) {
         setCurrentIndex(Math.max(0, cards.length - 2));
       }
