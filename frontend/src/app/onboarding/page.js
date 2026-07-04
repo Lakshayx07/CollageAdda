@@ -136,7 +136,7 @@ export default function OnboardingPage() {
         if (res.ok) {
           const profile = await res.json();
           if (profile.onboardingComplete) {
-            router.push("/");
+            router.push("/home");
             return;
           }
           setUser(profile);
@@ -230,7 +230,7 @@ export default function OnboardingPage() {
       setError("Complete steps 1 to 6 to enter Campus Adda.");
       return;
     }
-    if (await saveProgress(9, true)) router.push("/welcome-tour");
+    if (await saveProgress(9, true)) router.push("/home");
   };
 
   const handlePhoto = async (e) => {

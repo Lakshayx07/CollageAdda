@@ -5,6 +5,8 @@ import Sidebar from "../components/Sidebar";
 import { ThemeProvider } from "../context/ThemeContext";
 import QueryProvider from "../context/QueryProvider";
 import { SocketProvider } from "../context/SocketProvider";
+import { SidebarProvider } from "../context/SidebarContext";
+import MainLayoutWrapper from "../components/MainLayoutWrapper";
 import Script from "next/script";
 
 const geistSans = Geist({
@@ -35,6 +37,8 @@ export default function RootLayout({ children }) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
+      </head>
+      <body className="app-shell h-full bg-background text-foreground transition-colors duration-300">
         <Script
           id="theme-script"
           strategy="beforeInteractive"
@@ -49,16 +53,16 @@ export default function RootLayout({ children }) {
             `,
           }}
         />
-      </head>
-      <body className="app-shell h-full bg-background text-foreground transition-colors duration-300">
         <ThemeProvider>
           <QueryProvider>
             <SocketProvider>
-              <Sidebar />
-              <main className="app-surface flex min-h-screen flex-col overflow-x-hidden overflow-y-auto pb-[calc(8.5rem+env(safe-area-inset-bottom))] lg:pb-0 [&:has([data-page=welcome-tour])]:ml-0 [&:has([data-page=welcome-tour])]:pb-0 lg:ml-72">
-                {children}
-              </main>
-              <BottomNav />
+              <SidebarProvider>
+                <Sidebar />
+                <MainLayoutWrapper>
+                  {children}
+                </MainLayoutWrapper>
+                <BottomNav />
+              </SidebarProvider>
             </SocketProvider>
           </QueryProvider>
         </ThemeProvider>

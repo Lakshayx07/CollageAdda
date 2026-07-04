@@ -230,7 +230,7 @@ export default function ProfilePage() {
   const handleLogout = () => {
     localStorage.removeItem("collegeadda_token");
     localStorage.removeItem("collegeadda_user");
-    router.push("/login");
+    router.push("/");
   };
 
   const handleUnfollow = async (targetUserId) => {
@@ -499,6 +499,12 @@ export default function ProfilePage() {
               className="p-2.5 bg-white border border-[#E8E6E0] rounded-xl text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#F9F8F5] transition-all"
             >
               <Share2 size={16} />
+            </button>
+            <button 
+              onClick={handleLogout}
+              className="p-2.5 bg-white border border-red-200 rounded-xl text-red-500 hover:bg-red-50 hover:border-red-300 transition-all"
+            >
+              <LogOut size={16} />
             </button>
           </div>
         </div>

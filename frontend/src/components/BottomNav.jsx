@@ -14,7 +14,7 @@ export default function BottomNav() {
   const { unreadCount } = useSocket();
 
   const navItems = [
-    { name: "Home", path: "/", icon: Home },
+    { name: "Home", path: "/home", icon: Home },
     { name: "Squad", path: "/friends", icon: Users },
     { name: "Messages", path: "/messages", icon: MessageSquare },
     { name: "Hustle", path: "/hustle", icon: Compass },
@@ -22,7 +22,7 @@ export default function BottomNav() {
   ];
 
   useEffect(() => {
-    if (pathname === "/login" || pathname === "/onboarding") return;
+    if (pathname === "/login" || pathname === "/onboarding" || pathname === "/") return;
     const checkRequests = () => {
       const incoming = JSON.parse(localStorage.getItem("collegeadda_incoming") || "[]");
       const viewed = localStorage.getItem("collegeadda_friends_viewed") === "true";
@@ -37,7 +37,7 @@ export default function BottomNav() {
     };
   }, [pathname]);
 
-  if (pathname === "/login" || pathname === "/onboarding" || pathname === "/welcome-tour") return null;
+  if (pathname === "/login" || pathname === "/onboarding" || pathname === "/") return null;
 
   return (
     <nav className="mobile-bottom-nav bg-white border-t border-[#E8E6E0]">
