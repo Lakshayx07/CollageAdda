@@ -158,6 +158,13 @@ export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
   const [colleges, setColleges] = useState(fallbackColleges);
+
+  useEffect(() => {
+    const token = localStorage.getItem("collegeadda_token");
+    if (token) {
+      router.push("/home");
+    }
+  }, [router]);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
