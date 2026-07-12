@@ -25,12 +25,14 @@ export default function NotificationBell() {
       if (res.ok) {
         const data = await res.json();
         const newUnread = data.filter(n => !n.isRead).length;
-        if (newUnread > unreadCount) {
-          setVibrate(true);
-          setTimeout(() => setVibrate(false), 1000);
-        }
+        setUnreadCount(prevCount => {
+          if (newUnread > prevCount) {
+            setVibrate(true);
+            setTimeout(() => setVibrate(false), 1000);
+          }
+          return newUnread;
+        });
         setNotifications(data);
-        setUnreadCount(newUnread);
       }
     } catch (err) {
       console.error("Error fetching notifications:", err);
@@ -41,7 +43,7 @@ export default function NotificationBell() {
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 10000);
     return () => clearInterval(interval);
-  }, [unreadCount]);
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event) {

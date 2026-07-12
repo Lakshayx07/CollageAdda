@@ -4,84 +4,121 @@ import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { Playfair_Display } from 'next/font/google'
+const playfair = Playfair_Display({ subsets: ['latin'], weight: ['400', '500', '600', '700', '800', '900'] })
 
 const features = [
   {
     number: '01',
     tag: 'HOME FEED',
-    headline: 'Your Campus. Live & Unfiltered.',
+    headlineParts: ['Your Campus.', 'Live &', 'Unfiltered.'],
     subheadline: 'Everything happening on your campus — right now.',
-    description: 'Stay updated with posts, photos, videos, polls, and campus trends. Follow your classmates, seniors and college clubs. React, comment, share — be part of every moment on campus before you miss it.',
-    bullets: ['📸 Share photos, videos & polls', "🔥 See what's trending on your campus", '💬 Comment, react & connect instantly', '🌐 Campus-wide & global feed toggle'],
+    description: 'Stay updated with posts, photos, videos, polls, and campus trends. Follow your classmates, seniors and college clubs. React, comment, and share. Be part of every moment on campus before you miss it.',
+    bullets: [
+      { icon: '📸', title: 'Share photos, videos & polls', desc: 'Capture moments and share with your campus.' },
+      { icon: '🔥', title: 'See what\'s trending on your campus', desc: 'Discover what everyone is talking about.' },
+      { icon: '💬', title: 'Comment, react & connect instantly', desc: 'Engage in real-time with your campus community.' },
+      { icon: '🌐', title: 'Campus-wide & global feed toggle', desc: 'Switch between campus feed and global updates.' }
+    ],
     tags: ['Feed', 'Trending', 'Polls', 'Campus Pulse'],
     image: '/landing/feature-feed.png',
-    color: '#C8922A',
+    color: '#F97316',
   },
   {
     number: '02',
     tag: 'COLLEGE PRIDE',
-    headline: 'Represent. Verify. Dominate.',
+    headlineParts: ['Represent.', 'Verify.', 'Dominate.'],
     subheadline: 'Climb the leaderboard. Put your college on the map.',
-    description: "Verify your student identity with your college email or ID. Earn XP points by engaging, posting and connecting. Watch your college climb India's campus leaderboard and carry the pride of your institution.",
-    bullets: ['✅ Verified student badge — zero fakes', '🏆 College leaderboard — campus vs campus', '⭐ Earn XP for every action you take', '🎓 Only real verified students allowed'],
+    description: 'Verify your student identity with your college email or ID. Earn XP points by engaging, posting and connecting. Watch your college climb India\'s campus leaderboard and carry the pride of your institution.',
+    bullets: [
+      { icon: '✅', title: 'Verified student badge — zero fakes', desc: 'Join a trusted community of real students.' },
+      { icon: '🏆', title: 'College leaderboard — campus vs campus', desc: 'Compete to make your college number one.' },
+      { icon: '⭐', title: 'Earn XP for every action you take', desc: 'Get rewarded for your campus engagement.' },
+      { icon: '🎓', title: 'Only real verified students allowed', desc: 'A safe and exclusive space for college students.' }
+    ],
     tags: ['Verified', 'Leaderboard', 'XP Points', 'College Pride'],
     image: '/landing/feature-pride.png',
-    color: '#d97706',
+    color: '#F97316',
   },
   {
     number: '03',
     tag: 'EXPLORE',
-    headline: 'Beyond Your Campus Walls.',
+    headlineParts: ['Beyond Your', 'Campus', 'Walls.'],
     subheadline: 'Discover colleges, people and opportunities across India.',
-    description: 'Explore colleges pan-India, discover students from other universities through Daily Discovery, and compete in cross-campus Arena battles. Your world just got a lot bigger than your hostel corridor.',
-    bullets: ['🏛️ Browse colleges across India', '⭐ Daily Discovery — handpicked student profiles', '🎮 Arena — cross-campus sports & esports', '🗺️ Map-based campus exploration'],
+    description: 'Explore colleges pan-India. Discover students from other universities through Daily Discovery. Compete in cross-campus Arena battles. Your world just got a lot bigger than your hostel corridor.',
+    bullets: [
+      { icon: '🏛️', title: 'Browse colleges across India', desc: 'Explore campuses and communities nationwide.' },
+      { icon: '⭐', title: 'Daily Discovery — handpicked profiles', desc: 'Meet interesting students from other colleges.' },
+      { icon: '🎮', title: 'Arena — cross-campus esports', desc: 'Compete in inter-college gaming tournaments.' },
+      { icon: '🗺️', title: 'Map-based campus exploration', desc: 'Navigate and find events near you.' }
+    ],
     tags: ['Explore', 'Daily Discovery', 'Arena', 'Pan-India'],
     image: '/landing/feature-explore.png',
-    color: '#0891b2',
+    color: '#F97316',
   },
   {
     number: '04',
     tag: 'SQUAD',
-    headline: 'Find Your People. Build Your Circle.',
+    headlineParts: ['Find Your People.', 'Build Your', 'Circle.'],
     subheadline: 'Connect with classmates, seniors, juniors and future teammates.',
-    description: 'Squad is your campus social graph. Send connection requests, build your network, message directly and discover people you actually want to know — from your batch, your department, or your dream team.',
-    bullets: ['👥 Connect with students campus-wide', '💌 Direct messages & group chats', '🤝 Smart suggestions based on your interests', '🔗 Build your campus network from day one'],
+    description: 'Squad is your campus social graph. Send connection requests and build your network. Message directly and discover people you actually want to know. Form your dream team right from day one.',
+    bullets: [
+      { icon: '👥', title: 'Connect with students campus-wide', desc: 'Grow your network within your college.' },
+      { icon: '💌', title: 'Direct messages & group chats', desc: 'Stay in touch with your friends and clubs.' },
+      { icon: '🤝', title: 'Smart suggestions based on interests', desc: 'Find people who share your passions.' },
+      { icon: '🔗', title: 'Build your campus network', desc: 'Create lasting connections for your future.' }
+    ],
     tags: ['Connect', 'Messages', 'Network', 'Friends'],
     image: '/landing/feature-squad.png',
-    color: '#2563eb',
+    color: '#F97316',
   },
   {
     number: '05',
     tag: 'HUSTLE HUB',
-    headline: 'Buy. Sell. Earn. As a Student.',
+    headlineParts: ['Buy. Sell.', 'Earn.', 'As a Student.'],
     subheadline: 'A marketplace made for campus life — trusted, verified, local.',
-    description: 'Sell your old books, buy hostel essentials, offer your skills as a service or pick up gigs. Every buyer and seller is a verified student — no scams, no strangers, just your campus community doing business.',
-    bullets: ['📚 Books, notes & study material', '🛏️ Hostel items & room essentials', '💼 Student gigs & freelance services', '💰 Earn from your skills & unused stuff'],
+    description: 'Sell your old books and buy hostel essentials. Offer your skills as a service or pick up gigs. Every buyer and seller is a verified student. No scams, no strangers, just your campus community doing business.',
+    bullets: [
+      { icon: '📚', title: 'Books, notes & study material', desc: 'Buy and sell academic resources easily.' },
+      { icon: '🛏️', title: 'Hostel items & room essentials', desc: 'Find everything you need for your dorm.' },
+      { icon: '💼', title: 'Student gigs & freelance services', desc: 'Offer your skills and earn on campus.' },
+      { icon: '💰', title: 'Earn from your unused stuff', desc: 'Turn your clutter into extra cash.' }
+    ],
     tags: ['Marketplace', 'Books', 'Gigs', 'Student Economy'],
     image: '/landing/feature-hustle.png',
-    color: '#16a34a',
+    color: '#F97316',
   },
   {
     number: '06',
     tag: 'COLLAB',
-    headline: 'Build Together. Win Together.',
+    headlineParts: ['Build Together.', 'Win', 'Together.'],
     subheadline: 'Find teammates for hackathons, startups and college projects.',
-    description: "Post your project idea, define what skills you need, and watch the right people find you. Whether it's a 24-hour hackathon or a year-long startup, Collab helps you assemble the perfect team fast.",
-    bullets: ['⚡ Post ideas & find teammates fast', '🧑‍💻 Filter by skill — Dev, Design, Marketing', '🏅 Hackathon team finder', '🚀 Startup co-founder matching'],
+    description: 'Post your project idea and define what skills you need. Watch the right people find you instantly. Whether it\'s a 24-hour hackathon or a year-long startup, Collab helps you assemble the perfect team fast.',
+    bullets: [
+      { icon: '⚡', title: 'Post ideas & find teammates fast', desc: 'Recruit the right talent for your projects.' },
+      { icon: '🧑‍💻', title: 'Filter by skill — Dev, Design, Marketing', desc: 'Find exactly what your team is missing.' },
+      { icon: '🏅', title: 'Hackathon team finder', desc: 'Form winning teams for upcoming events.' },
+      { icon: '🚀', title: 'Startup co-founder matching', desc: 'Meet your future business partner.' }
+    ],
     tags: ['Hackathon', 'Startup', 'Teammates', 'Projects'],
     image: '/landing/feature-collab.png',
-    color: '#db2777',
+    color: '#F97316',
   },
   {
     number: '07',
     tag: "YOU'RE ALL SET",
-    headline: 'Your Campus Journey Starts Now.',
+    headlineParts: ['Your Campus', 'Journey', 'Starts Now.'],
     subheadline: 'Connect. Engage. Grow. Make your college life unforgettable.',
-    description: "You've seen everything CampusAdda has to offer. Now it's time to dive in, find your people, explore your campus and make memories that last beyond graduation. Your story starts here.",
-    bullets: ['🎓 Verified student community', '🚀 Everything in one platform', '💜 Built for Indian college students', '🌟 Your college life, elevated'],
+    description: 'You\'ve seen everything CampusAdda has to offer. Now it\'s time to dive in. Find your people, explore your campus, and make memories that last beyond graduation. Your story starts right here.',
+    bullets: [
+      { icon: '🎓', title: 'Verified student community', desc: 'Join thousands of real college students.' },
+      { icon: '🚀', title: 'Everything in one platform', desc: 'All your campus needs in a single app.' },
+      { icon: '💜', title: 'Built for Indian college students', desc: 'Tailored for the local campus experience.' },
+      { icon: '🌟', title: 'Your college life, elevated', desc: 'Make the most out of your university years.' }
+    ],
     tags: ['Get Started', 'Campus Life', 'Community', 'India'],
     image: '/landing/feature-final.png',
-    color: '#C8922A',
+    color: '#F97316',
     isFinal: true,
   },
 ]
@@ -171,11 +208,11 @@ export default function WelcomeTourPage() {
       height: '100vh',
       overflow: 'auto',
       zIndex: 50,
-      background: '#FAFAF8',
+      background: '#FFFDF8',
     }}>
       <div
         style={{
-          background: '#FAFAF8',
+          background: '#FFFDF8',
           minHeight: '100vh',
           fontFamily: 'Inter, -apple-system, sans-serif',
           position: 'relative',
@@ -192,7 +229,7 @@ export default function WelcomeTourPage() {
             style={{
               position: 'absolute', top: '-10%', left: '-10%',
               width: '700px', height: '700px', borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(200,146,42,0.15) 0%, transparent 65%)',
+              background: 'radial-gradient(circle, rgba(249,115,22,0.15) 0%, transparent 65%)',
               filter: 'blur(40px)',
             }}
           />
@@ -221,13 +258,13 @@ export default function WelcomeTourPage() {
           {/* Grid pattern */}
           <div style={{
             position: 'absolute', inset: 0,
-            backgroundImage: `linear-gradient(rgba(200,146,42,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(200,146,42,0.04) 1px, transparent 1px)`,
+            backgroundImage: `linear-gradient(rgba(249,115,22,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(249,115,22,0.04) 1px, transparent 1px)`,
             backgroundSize: '64px 64px',
           }} />
           {/* Top fade */}
           <div style={{
             position: 'absolute', top: 0, left: 0, right: 0, height: '350px',
-            background: 'linear-gradient(180deg, rgba(200,146,42,0.07) 0%, transparent 100%)',
+            background: 'linear-gradient(180deg, rgba(249,115,22,0.07) 0%, transparent 100%)',
           }} />
         </div>
 
@@ -249,8 +286,8 @@ export default function WelcomeTourPage() {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
-                background: 'rgba(200,146,42,0.12)',
-                border: '1px solid rgba(200,146,42,0.35)',
+                background: 'rgba(249,115,22,0.12)',
+                border: '1px solid rgba(249,115,22,0.35)',
                 borderRadius: '100px',
                 padding: '8px 22px',
                 fontSize: '11px',
@@ -280,7 +317,7 @@ export default function WelcomeTourPage() {
               <span style={{ color: '#1A1A1A' }}>One </span>
               <span className="bg-clip-text text-transparent"
               style={{
-                backgroundImage: 'linear-gradient(135deg, #D4A843 0%, #C8922A 55%, #B07D20 100%)',
+                backgroundImage: 'linear-gradient(135deg, #D4A843 0%, #F97316 55%, #FB923C 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
               }}>Campus.</span>
@@ -288,7 +325,7 @@ export default function WelcomeTourPage() {
               <span style={{ color: '#1A1A1A' }}>Infinite </span>
               <span className="bg-clip-text text-transparent"
               style={{
-                backgroundImage: 'linear-gradient(135deg, #D4A843 0%, #C8922A 55%, #B07D20 100%)',
+                backgroundImage: 'linear-gradient(135deg, #D4A843 0%, #F97316 55%, #FB923C 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
               }}>Possibilities.</span>
@@ -311,7 +348,7 @@ export default function WelcomeTourPage() {
               <span style={{ color: '#6B6B6B' }}>No more juggling 5 apps. Just </span>
               <span className="bg-clip-text text-transparent"
               style={{
-                backgroundImage: 'linear-gradient(90deg, #D4A843, #C8922A)',
+                backgroundImage: 'linear-gradient(90deg, #D4A843, #F97316)',
                 fontWeight: '600',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
@@ -331,17 +368,17 @@ export default function WelcomeTourPage() {
                 marginTop: '8px',
               }}
             >
-              <div style={{ height: '1px', width: '80px', background: 'linear-gradient(90deg, transparent, rgba(200,146,42,0.4))' }} />
+              <div style={{ height: '1px', width: '80px', background: 'linear-gradient(90deg, transparent, rgba(249,115,22,0.4))' }} />
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 {features.map((f, i) => (
                   <div key={i} style={{
                     width: '6px', height: '6px', borderRadius: '50%',
-                    background: i === activeIndex ? features[activeIndex].color : 'rgba(200,146,42,0.25)',
+                    background: i === activeIndex ? features[activeIndex].color : 'rgba(249,115,22,0.25)',
                     transition: 'background 0.3s ease',
                   }} />
                 ))}
               </div>
-              <div style={{ height: '1px', width: '80px', background: 'linear-gradient(90deg, rgba(200,146,42,0.4), transparent)' }} />
+              <div style={{ height: '1px', width: '80px', background: 'linear-gradient(90deg, rgba(249,115,22,0.4), transparent)' }} />
             </motion.div>
 
           </div>
@@ -399,16 +436,16 @@ export default function WelcomeTourPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '22px' }}>
                       <div style={{
                         width: '46px', height: '46px', borderRadius: '50%',
-                        background: feature.color,
+                        background: '#F97316',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: '14px', fontWeight: '800', color: 'white', flexShrink: 0,
-                        boxShadow: `0 0 20px ${feature.color}50`,
+                        boxShadow: `0 0 20px rgba(249, 115, 22, 0.3)`,
                       }}>
                         {feature.number}
                       </div>
                       <span style={{
                         fontSize: '12px', fontWeight: '700',
-                        letterSpacing: '0.16em', color: feature.color,
+                        letterSpacing: '0.16em', color: '#F97316',
                         textTransform: 'uppercase',
                       }}>
                         {feature.tag}
@@ -416,28 +453,30 @@ export default function WelcomeTourPage() {
                     </div>
 
                     {/* Headline */}
-                    <h2 style={{
-                      fontSize: 'clamp(32px, 3.5vw, 50px)',
-                      fontWeight: '800', color: '#1A1A1A',
-                      lineHeight: '1.15', margin: '0 0 14px',
-                      letterSpacing: '-0.02em',
+                    <h2 className={playfair.className} style={{
+                      fontSize: 'clamp(32px, 3.5vw, 48px)',
+                      fontWeight: '800', color: '#18181B',
+                      lineHeight: '0.95', margin: '0 0 24px',
+                      letterSpacing: '-0.03em',
                     }}>
-                      {feature.headline}
+                      {feature.headlineParts[0]}{' '}
+                      <span style={{ color: '#F97316' }}>{feature.headlineParts[1]}</span>{' '}
+                      {feature.headlineParts[2]}
                     </h2>
 
                     {/* Subheadline */}
                     <p style={{
-                      fontSize: '17px', fontWeight: '500',
-                      color: feature.color, margin: '0 0 16px', lineHeight: '1.6',
+                      fontSize: '15px', fontWeight: '600',
+                      color: '#F97316', margin: '0 0 16px', lineHeight: '1.4',
                     }}>
                       {feature.subheadline}
                     </p>
 
                     {/* Divider */}
                     <div style={{
-                      width: '44px', height: '3px',
-                      background: feature.color, borderRadius: '2px',
-                      marginBottom: '20px',
+                      width: '80px', height: '4px',
+                      background: '#FB923C', borderRadius: '4px',
+                      marginBottom: '28px',
                     }} />
 
                     {/* Mobile mockup image */}
@@ -448,7 +487,7 @@ export default function WelcomeTourPage() {
                         borderRadius: '12px',
                         border: '2px solid #d1d1d6',
                         padding: '12px 12px 8px 12px',
-                        boxShadow: `0 20px 50px rgba(0,0,0,0.15), 0 0 40px ${feature.color}15`,
+                        boxShadow: `0 20px 50px rgba(0,0,0,0.15), 0 0 40px rgba(249, 115, 22, 0.15)`,
                       }}>
                         <div style={{
                           borderRadius: '6px',
@@ -472,36 +511,58 @@ export default function WelcomeTourPage() {
 
                     {/* Description */}
                     <p style={{
-                      fontSize: '16px', color: '#6B6B6B',
-                      lineHeight: '1.85', margin: '0 0 24px', maxWidth: '480px',
+                      fontSize: '14px', color: '#52525B', fontWeight: '500',
+                      lineHeight: '1.8', margin: '0 0 40px', maxWidth: '520px',
                     }}>
                       {feature.description}
                     </p>
 
                     {/* Bullets */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '11px', marginBottom: '26px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '40px' }}>
                       {feature.bullets.map((bullet, i) => (
-                        <div key={i} style={{
-                          fontSize: '15px', color: '#4A4A4A',
-                          display: 'flex', alignItems: 'center', gap: '8px',
-                        }}>
-                          {bullet}
+                        <div key={i} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                          <div style={{
+                            width: '44px', height: '44px', flexShrink: 0,
+                            borderRadius: '12px', background: '#FFF7ED',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '20px'
+                          }}>
+                            {bullet.icon}
+                          </div>
+                          <div style={{ paddingTop: '2px' }}>
+                            <div style={{ fontSize: '15px', fontWeight: '700', color: '#18181B', marginBottom: '4px', lineHeight: '1.3' }}>
+                              {bullet.title}
+                            </div>
+                            <div style={{ fontSize: '13px', color: '#52525B', lineHeight: '1.5' }}>
+                              {bullet.desc}
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
 
                     {/* Tags */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '28px' }}>
-                      {feature.tags.map((tag) => (
-                        <span key={tag} style={{
-                          padding: '6px 16px', borderRadius: '100px',
-                          fontSize: '13px', fontWeight: '500',
-                          background: `${feature.color}15`,
-                          border: `1px solid ${feature.color}40`,
-                          color: feature.color,
-                        }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '48px' }}>
+                      {feature.tags.map((tag, i) => (
+                        <motion.button key={tag}
+                          whileHover={{ scale: 1.05, y: -2 }}
+                          whileTap={{ scale: 0.95 }}
+                          style={{
+                            height: '38px', padding: '0 16px', borderRadius: '999px',
+                            fontSize: '13px', fontWeight: '600',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: 'pointer', transition: 'box-shadow 0.2s',
+                            ...(i === 0 ? {
+                                background: '#F97316', color: 'white', border: 'none',
+                                boxShadow: '0 8px 16px rgba(249, 115, 22, 0.2)'
+                            } : {
+                                background: 'white', color: '#18181B', border: '2px solid #FB923C',
+                                boxShadow: '0 4px 6px rgba(0,0,0,0.02)'
+                            })
+                          }}
+                        >
                           {tag}
-                        </span>
+                        </motion.button>
                       ))}
                     </div>
 
@@ -517,13 +578,13 @@ export default function WelcomeTourPage() {
                           whileTap={{ scale: 0.98 }}
                           style={{
                             display: 'inline-block',
-                            padding: '16px 44px',
+                            padding: '12px 32px',
                             borderRadius: '100px',
-                            background: 'linear-gradient(135deg, #C8922A, #B07D20)',
+                            background: 'linear-gradient(135deg, #F97316, #FB923C)',
                             color: 'white',
-                            fontSize: '17px', fontWeight: '700',
+                            fontSize: '15px', fontWeight: '700',
                             textDecoration: 'none',
-                            boxShadow: '0 0 40px rgba(200,146,42,0.45)',
+                            boxShadow: '0 0 40px rgba(249,115,22,0.45)',
                             cursor: 'pointer',
                           }}
                         >

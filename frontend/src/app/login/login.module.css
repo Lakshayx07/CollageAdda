@@ -4,10 +4,11 @@
   position: fixed;
   inset: 0;
   z-index: 60;
-  width: 100vw;
+  width: 100%;
   height: 100dvh;
   min-height: 100dvh;
-  overflow: auto;
+  overflow: hidden;
+  overscroll-behavior: none;
   background: #FAFAF8;
   color: #1A1A1A;
   isolation: isolate;
@@ -48,7 +49,7 @@
   grid-template-columns: minmax(0, 1.55fr) minmax(380px, .8fr);
   gap: clamp(44px, 6vw, 92px);
   align-items: center;
-  padding: 48px 0 72px;
+  padding: 32px 0 8px;
 }
 
 .storyPanel {
@@ -83,7 +84,7 @@
   color: #1A1A1A !important;
 }
 
-.brandName > span {
+.brandName>span {
   color: #C8922A !important;
 }
 
@@ -150,7 +151,7 @@
   -webkit-background-clip: text;
 }
 
-.heroCopy > p {
+.heroCopy>p {
   max-width: 470px;
   margin: 0;
   color: #6B6B6B !important;
@@ -365,7 +366,7 @@
   z-index: 1;
 }
 
-.authBody > label {
+.authBody>label {
   display: block;
   margin-bottom: 10px;
   color: #1A1A1A !important;
@@ -379,7 +380,7 @@
   margin-bottom: 34px;
 }
 
-.selectWrap > svg {
+.selectWrap>svg {
   position: absolute;
   z-index: 2;
   left: 16px;
@@ -388,7 +389,7 @@
   pointer-events: none;
 }
 
-.selectWrap > svg:last-child {
+.selectWrap>svg:last-child {
   right: 15px;
   left: auto;
   width: 17px;
@@ -474,7 +475,7 @@
   opacity: .001;
 }
 
-.googleAuthControl > div,
+.googleAuthControl>div,
 .googleAuthControl iframe {
   width: 100% !important;
   height: 60px !important;
@@ -709,30 +710,56 @@
 }
 
 @keyframes travel {
-  to { stroke-dashoffset: 0; }
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 
 @keyframes pulseDot {
-  0%, 100% { opacity: .45; transform: scale(.78); }
-  50% { opacity: 1; transform: scale(1.35); }
+
+  0%,
+  100% {
+    opacity: .45;
+    transform: scale(.78);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.35);
+  }
 }
 
 @keyframes waveShift {
-  from { transform: translateX(-2%) rotate(-3deg) scaleY(.8); }
-  to { transform: translateX(5%) rotate(2deg) scaleY(1.25); }
+  from {
+    transform: translateX(-2%) rotate(-3deg) scaleY(.8);
+  }
+
+  to {
+    transform: translateX(5%) rotate(2deg) scaleY(1.25);
+  }
 }
 
 @keyframes featureFloat {
-  0%, 100% { translate: 0 0; }
-  50% { translate: 0 -7px; }
+
+  0%,
+  100% {
+    translate: 0 0;
+  }
+
+  50% {
+    translate: 0 -7px;
+  }
 }
 
 @keyframes googlePulse {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow:
       0 15px 35px rgba(0, 0, 0, .1),
       0 0 16px rgba(200, 146, 42, .3);
   }
+
   50% {
     box-shadow:
       0 15px 35px rgba(0, 0, 0, .15),
@@ -777,7 +804,8 @@
 
 @media (max-width: 840px) {
   .page {
-    overflow: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   .content {
@@ -786,7 +814,7 @@
     padding: 28px 0 55px;
   }
 
-  .storyPanel > .brand,
+  .storyPanel>.brand,
   .heroCopy,
   .features,
   .networkScene,
@@ -828,6 +856,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .travelGroup path,
   .networkDot,
   .feature,
