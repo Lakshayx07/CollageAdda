@@ -279,6 +279,13 @@ export default function Home() {
       });
       if (res.ok) {
         setConnectStatus(prev => ({ ...prev, [userId]: 'connected' }));
+        queryClient.invalidateQueries({ queryKey: ["squad-profile"] });
+        queryClient.invalidateQueries({ queryKey: ["user-profile"] });
+        queryClient.invalidateQueries({ queryKey: ["explore-following"] });
+        queryClient.invalidateQueries({ queryKey: ["user-following"] });
+        queryClient.invalidateQueries({ queryKey: ["friends"] });
+        queryClient.invalidateQueries({ queryKey: ["squad-suggested"] });
+        queryClient.invalidateQueries({ queryKey: ["suggested"] });
       } else {
         setConnectStatus(prev => ({ ...prev, [userId]: null }));
       }

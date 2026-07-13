@@ -13,6 +13,7 @@ import VerifiedBadge from "@/components/VerifiedBadge";
 import UniversityBadges from "@/components/UniversityBadges";
 import { extractInstagramUsername, extractGenericUsername } from "@/utils/socials";
 import clsx from "clsx";
+import { useQueryClient } from "@tanstack/react-query";
 
 const InstagramIcon = ({ size = 20 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -38,6 +39,8 @@ export default function UserProfilePage({ params }) {
   const resolvedParams = use(params);
   const targetUserId = resolvedParams.userId;
 
+  const [connectStatus, setConnectStatus] = useState("idle");
+  const queryClient = useQueryClient();
   const [currentUser, setCurrentUser] = useState(null);
   const [profileUser, setProfileUser] = useState(null);
   const [userPosts, setUserPosts] = useState([]);
@@ -45,7 +48,6 @@ export default function UserProfilePage({ params }) {
   const [following, setFollowing] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [connectStatus, setConnectStatus] = useState("idle");
 
   // modal: null | "followers" | "following" | "post"
   const [modal, setModal] = useState(null);
@@ -160,6 +162,14 @@ export default function UserProfilePage({ params }) {
       if (res.ok) {
         setConnectStatus("connected");
         setFollowers(prev => [...prev, currentUser._id || currentUser.id]);
+        
+        queryClient.invalidateQueries({ queryKey: ["squad-profile"] });
+        queryClient.invalidateQueries({ queryKey: ["user-profile"] });
+        queryClient.invalidateQueries({ queryKey: ["explore-following"] });
+        queryClient.invalidateQueries({ queryKey: ["user-following"] });
+        queryClient.invalidateQueries({ queryKey: ["friends"] });
+        queryClient.invalidateQueries({ queryKey: ["squad-suggested"] });
+        queryClient.invalidateQueries({ queryKey: ["suggested"] });
       } else {
         setConnectStatus("idle");
       }

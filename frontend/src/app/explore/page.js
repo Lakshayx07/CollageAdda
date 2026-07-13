@@ -203,6 +203,14 @@ function ExploreContent() {
       });
       setDiscoveryConnectStatus(prev => ({ ...prev, [uid]: 'connected' }));
       setMyFollowing(prev => [...prev, uid]);
+      
+      queryClient.invalidateQueries({ queryKey: ["squad-profile"] });
+      queryClient.invalidateQueries({ queryKey: ["user-profile"] });
+      queryClient.invalidateQueries({ queryKey: ["explore-following"] });
+      queryClient.invalidateQueries({ queryKey: ["user-following"] });
+      queryClient.invalidateQueries({ queryKey: ["friends"] });
+      queryClient.invalidateQueries({ queryKey: ["squad-suggested"] });
+      queryClient.invalidateQueries({ queryKey: ["suggested"] });
     } catch (err) {
       console.error("Connect error:", err);
       setDiscoveryConnectStatus(prev => ({ ...prev, [uid]: 'idle' }));
@@ -349,6 +357,14 @@ function ExploreContent() {
 
         // Optimistically update following list
         setMyFollowing(prev => [...prev, student._id || student.id]);
+        
+        queryClient.invalidateQueries({ queryKey: ["squad-profile"] });
+        queryClient.invalidateQueries({ queryKey: ["user-profile"] });
+        queryClient.invalidateQueries({ queryKey: ["explore-following"] });
+        queryClient.invalidateQueries({ queryKey: ["user-following"] });
+        queryClient.invalidateQueries({ queryKey: ["friends"] });
+        queryClient.invalidateQueries({ queryKey: ["squad-suggested"] });
+        queryClient.invalidateQueries({ queryKey: ["suggested"] });
       } catch (err) {
         console.error("Error connecting with user:", err);
       }
@@ -465,6 +481,15 @@ function ExploreContent() {
         });
         setMyFollowing(prev => [...prev, userId]);
         setToastMessage("Connected! You can now chat.");
+        
+        queryClient.invalidateQueries({ queryKey: ["squad-profile"] });
+        queryClient.invalidateQueries({ queryKey: ["user-profile"] });
+        queryClient.invalidateQueries({ queryKey: ["explore-following"] });
+        queryClient.invalidateQueries({ queryKey: ["user-following"] });
+        queryClient.invalidateQueries({ queryKey: ["friends"] });
+        queryClient.invalidateQueries({ queryKey: ["squad-suggested"] });
+        queryClient.invalidateQueries({ queryKey: ["suggested"] });
+        
         setTimeout(() => setToastMessage(null), 2000);
       }
     } catch (err) {

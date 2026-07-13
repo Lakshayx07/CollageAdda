@@ -344,7 +344,7 @@ export default function ApplicationsPanel({ cardId, currentUser }) {
   const pendingCount = (applications || []).filter((a) => !a.status || a.status === "pending").length;
 
   return (
-    <div className="w-full mt-8 flex flex-col items-center relative">
+    <div className="w-full mt-8 flex flex-col items-end pl-16 relative">
       {/* Toast */}
       <AnimatePresence>
         {toastMsg && (

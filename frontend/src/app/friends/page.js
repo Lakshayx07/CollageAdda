@@ -10,6 +10,7 @@ import { supabase } from "../../utils/supabase";
 import { getAuthenticatedSupabaseClient } from "../../utils/supabaseAuthUser";
 import { LOGIN_STREAK_UPDATED_EVENT, getDisplayStreak } from "../../utils/loginStreak";
 import { useApiQuery } from "@/utils/useApiQuery";
+import { useQueryClient } from "@tanstack/react-query";
 
 const LAST_SEEN_KEY = "collegeadda_followers_last_seen";
 
@@ -109,8 +110,9 @@ export default function FriendsPage() {
   const [campusUsers, setCampusUsers] = useState([]);
   const [followStatus, setFollowStatus] = useState({});
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  const [searching, setSearching] = useState(false);
+  const queryClient = useQueryClient();
   const [activeSquadTab, setActiveSquadTab] = useState("find");
   const [leaderboardTab, setLeaderboardTab] = useState("my_campus");
   const [globalUsers, setGlobalUsers] = useState([]);
@@ -361,14 +363,16 @@ export default function FriendsPage() {
     }
   );
 
-  const { data: suggestedData } = useApiQuery(
-    ["squad-suggested", search, activeSquadTab],
-    buildSearchUrl().replace(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001', ''),
+  const { data: suggestedData, isFetching: suggestedFetching } = useApiQuery(
+    ["squad-suggested", debouncedSearch, activeSquadTab, filter],
+    buildSearchUrl(debouncedSearch).replace(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001', ''),
     {
       enabled: !!user,
       staleTime: 5 * 60 * 1000
     }
   );
+
+  const searching = search !== debouncedSearch || suggestedFetching;
 
   useEffect(() => {
     if (profileData) {
@@ -528,53 +532,11 @@ export default function FriendsPage() {
   }, []);
 
   useEffect(() => {
-    const stored = localStorage.getItem("collegeadda_user");
-    const token = getToken();
-    if (!token || !stored) return;
-
-    let u;
-    try {
-      u = JSON.parse(stored);
-    } catch (e) { return; }
-
-    if (!u) return;
-
-    if (!search.trim()) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSearching(true);
-      fetch(buildSearchUrl(), {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-        .then(r => r.ok ? r.json() : [])
-        .then(data => {
-          const users = Array.isArray(data) ? data : [];
-          setSuggestedUsers(users);
-          setCampusUsers(users);
-        })
-        .catch(console.error)
-        .finally(() => setSearching(false));
-      return;
-    }
-
-    const timeout = setTimeout(async () => {
-      setSearching(true);
-      try {
-        const res = await fetch(buildSearchUrl(search), {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setSuggestedUsers(Array.isArray(data) ? data : []);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setSearching(false);
-      }
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
     }, 300);
-
-    return () => clearTimeout(timeout);
-  }, [search, buildSearchUrl]);
+    return () => clearTimeout(handler);
+  }, [search]);
 
   const handleHeartClick = () => {
     setShowNotifPanel(prev => !prev);
@@ -596,6 +558,15 @@ export default function FriendsPage() {
           headers: { Authorization: `Bearer ${token}` }
         });
         setFollowStatus(prev => ({ ...prev, [targetId]: "connected" }));
+        
+        // Invalidate queries so subsequent visits get fresh following states
+        queryClient.invalidateQueries({ queryKey: ["squad-profile"] });
+        queryClient.invalidateQueries({ queryKey: ["user-profile"] });
+        queryClient.invalidateQueries({ queryKey: ["explore-following"] });
+        queryClient.invalidateQueries({ queryKey: ["user-following"] });
+        queryClient.invalidateQueries({ queryKey: ["friends"] });
+        queryClient.invalidateQueries({ queryKey: ["squad-suggested"] });
+        queryClient.invalidateQueries({ queryKey: ["suggested"] });
       }
 
       // 2. Get or Create Room
@@ -647,6 +618,14 @@ export default function FriendsPage() {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` }
       });
+      
+      queryClient.invalidateQueries({ queryKey: ["squad-profile"] });
+      queryClient.invalidateQueries({ queryKey: ["user-profile"] });
+      queryClient.invalidateQueries({ queryKey: ["explore-following"] });
+      queryClient.invalidateQueries({ queryKey: ["user-following"] });
+      queryClient.invalidateQueries({ queryKey: ["friends"] });
+      queryClient.invalidateQueries({ queryKey: ["squad-suggested"] });
+      queryClient.invalidateQueries({ queryKey: ["suggested"] });
     } catch (err) {
       console.error(err);
       setFollowStatus(prev => ({ ...prev, [targetId]: currentStatus }));
@@ -809,7 +788,7 @@ export default function FriendsPage() {
             style={{
               position: 'absolute', top: '-10%', left: '-10%',
               width: '700px', height: '700px', borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(124,58,237,0.15) 0%, transparent 65%)',
+              background: 'radial-gradient(circle, rgba(249,115,22,0.12) 0%, transparent 65%)',
               filter: 'blur(40px)',
             }}
           />
@@ -820,7 +799,7 @@ export default function FriendsPage() {
             style={{
               position: 'absolute', top: '5%', right: '-10%',
               width: '500px', height: '500px', borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(109,40,217,0.12) 0%, transparent 65%)',
+              background: 'radial-gradient(circle, rgba(212,168,67,0.10) 0%, transparent 65%)',
               filter: 'blur(60px)',
             }}
           />
@@ -831,20 +810,20 @@ export default function FriendsPage() {
             style={{
               position: 'absolute', bottom: '0%', left: '25%',
               width: '600px', height: '400px', borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 65%)',
+              background: 'radial-gradient(circle, rgba(251,146,60,0.08) 0%, transparent 65%)',
               filter: 'blur(70px)',
             }}
           />
           {/* Grid pattern */}
           <div style={{
             position: 'absolute', inset: 0,
-            backgroundImage: `linear-gradient(rgba(124,58,237,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(124,58,237,0.04) 1px, transparent 1px)`,
+            backgroundImage: `linear-gradient(rgba(249,115,22,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(249,115,22,0.04) 1px, transparent 1px)`,
             backgroundSize: '64px 64px',
           }} />
           {/* Top fade */}
           <div style={{
             position: 'absolute', top: 0, left: 0, right: 0, height: '350px',
-            background: 'linear-gradient(180deg, rgba(124,58,237,0.07) 0%, transparent 100%)',
+            background: 'linear-gradient(180deg, rgba(249,115,22,0.06) 0%, transparent 100%)',
           }} />
         </div>
 
@@ -947,9 +926,9 @@ export default function FriendsPage() {
           </div>
         </header>
 
-        <div className="max-w-6xl mx-auto px-4 py-6 relative z-10 sm:px-6 sm:py-8 flex flex-col md:flex-row gap-8 items-start">
+        <div className="max-w-7xl mx-auto px-4 py-6 relative z-10 sm:px-6 sm:py-8 flex flex-col md:flex-row md:justify-between gap-10 items-start">
           {/* Left Column (Search & Lists) */}
-          <div className="flex-1 w-full space-y-6 sm:space-y-8 max-w-2xl">
+          <div className="w-full space-y-6 sm:space-y-8 max-w-2xl md:ml-16">
             {/* Search Section */}
             <motion.div
               initial={{ y: 20, opacity: 0 }}
@@ -1471,8 +1450,8 @@ export default function FriendsPage() {
             )}
           </div> {/* End Left Column */}
 
-          {/* Right Column (Build Your Squad) - inside flex row */}
-          <div className="w-full md:w-[340px] xl:w-[400px] shrink-0 sticky top-24 space-y-6 hidden md:block">
+          {/* Right Column (Build Your Squad + Community) */}
+          <div className="w-full md:w-[320px] xl:w-[360px] shrink-0 sticky top-24 space-y-6 hidden md:flex md:flex-col">
             {/* Build Your Squad Card */}
             <div className="app-panel rounded-[1.6rem] p-6 text-center shadow-sm">
               <div className="flex justify-center -space-x-4 mb-5">
