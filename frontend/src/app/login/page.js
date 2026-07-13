@@ -23,19 +23,19 @@ import { motion } from "framer-motion";
 import styles from "./login.module.css";
 
 const fallbackColleges = [
+  { name: "Delhi Technological University (DTU)" },
+  { name: "Guru Gobind Singh Indraprastha University (IPU)" },
+  { name: "IIIT Delhi" },
+  { name: "IIT Delhi" },
+  { name: "Jamia Millia Islamia" },
+  { name: "Jawaharlal Nehru University (JNU)" },
+  { name: "Kurukshetra University" },
+  { name: "Netaji Subhas University of Technology (NSUT)" },
   { name: "Rishihood University" },
   { name: "School of Planning and Architecture (SPA)" },
-  { name: "IIT Delhi" },
-  { name: "Delhi Technological University (DTU)" },
-  { name: "Netaji Subhas University of Technology (NSUT)" },
-  { name: "IIIT Delhi" },
   { name: "University of Delhi (DU)" },
-  { name: "Jawaharlal Nehru University (JNU)" },
-  { name: "Jamia Millia Islamia" },
-  { name: "Guru Gobind Singh Indraprastha University (IPU)" },
-  { name: "Kurukshetra University" },
   { name: "YMCA Faridabad" }
-];
+].sort((a, b) => a.name.localeCompare(b.name));
 
 const featureCards = [
   {
@@ -85,9 +85,9 @@ function CampusNetwork() {
       <svg className={styles.networkLines} viewBox="0 0 560 500" aria-hidden="true">
         <defs>
           <linearGradient id="network-stroke" x1="0" x2="1">
-            <stop offset="0" stopColor="#6d3df5" stopOpacity=".2" />
-            <stop offset=".52" stopColor="#8b5cf6" stopOpacity=".95" />
-            <stop offset="1" stopColor="#315ee8" stopOpacity=".2" />
+            <stop offset="0" stopColor="#D4A843" stopOpacity=".2" />
+            <stop offset=".52" stopColor="#F97316" stopOpacity=".95" />
+            <stop offset="1" stopColor="#FB923C" stopOpacity=".2" />
           </linearGradient>
           <filter id="line-glow">
             <feGaussianBlur stdDeviation="2.8" result="blur" />
@@ -106,7 +106,7 @@ function CampusNetwork() {
           <path pathLength="1" d="M322 370 L372 476 L498 400" />
           <path pathLength="1" d="M58 82 L150 180" />
         </g>
-        <g className={styles.travelGroup} stroke="#9b72ff" strokeWidth="2" fill="none" filter="url(#line-glow)">
+        <g className={styles.travelGroup} stroke="#F97316" strokeWidth="2" fill="none" filter="url(#line-glow)">
           <path pathLength="1" d="M58 82 L220 28 L390 70 L486 130" />
           <path pathLength="1" d="M220 28 L260 170 L188 286 L322 370 L372 476" />
           <path pathLength="1" d="M260 170 L470 216" />
@@ -129,7 +129,7 @@ function CampusNetwork() {
             cx={cx}
             cy={cy}
             r={r}
-            fill="#7247ff"
+            fill="#F97316"
           />
         ))}
       </svg>
@@ -158,6 +158,8 @@ export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
   const [colleges, setColleges] = useState(fallbackColleges);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const token = localStorage.getItem("collegeadda_token");
@@ -181,7 +183,10 @@ export default function LoginPage() {
           : await fetch(`${API_URL}/api/colleges`);
         if (response.ok) {
           const data = await response.json();
-          if (Array.isArray(data) && data.length) setColleges(data);
+          if (Array.isArray(data) && data.length) {
+            data.sort((a, b) => a.name.localeCompare(b.name));
+            setColleges(data);
+          }
         }
       } catch {
         // The curated list keeps the public login usable while the API is waking up.
@@ -326,19 +331,41 @@ export default function LoginPage() {
               <label htmlFor="university">Select Your College / University</label>
               <div className={styles.selectWrap}>
                 <GraduationCap aria-hidden="true" />
-                <select
+                <input
                   id="university"
-                  value={university}
-                  onChange={(event) => setUniversity(event.target.value)}
-                  aria-label="Select your college or university"
-                >
-                  <option value="">Search your college...</option>
-                  {colleges.map((college, index) => (
-                    <option key={college._id || college.id || index} value={college.name}>
-                      {college.name}
-                    </option>
-                  ))}
-                </select>
+                  value={searchQuery}
+                  onChange={(event) => {
+                    setSearchQuery(event.target.value);
+                    setUniversity("");
+                    setIsDropdownOpen(true);
+                  }}
+                  onFocus={() => setIsDropdownOpen(true)}
+                  onBlur={() => setTimeout(() => setIsDropdownOpen(false), 200)}
+                  placeholder="Search your college..."
+                  aria-label="Search your college or university"
+                  autoComplete="off"
+                />
+                {isDropdownOpen && (
+                  <ul className={styles.customDropdown}>
+                    {colleges
+                      .filter((c) => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                      .map((college, index) => (
+                        <li
+                          key={college._id || college.id || index}
+                          onClick={() => {
+                            setUniversity(college.name);
+                            setSearchQuery(college.name);
+                            setIsDropdownOpen(false);
+                          }}
+                        >
+                          {college.name}
+                        </li>
+                      ))}
+                    {colleges.filter((c) => c.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+                      <li className={styles.noResult}>No college found</li>
+                    )}
+                  </ul>
+                )}
                 <ChevronDown aria-hidden="true" />
               </div>
 

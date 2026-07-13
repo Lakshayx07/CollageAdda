@@ -152,7 +152,7 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
 
   if (loading) {
     return (
-      <section className="flex w-full flex-col items-center">
+    <section className="flex w-full flex-col items-end pl-16">
         <div className="relative w-full max-w-sm" style={{ minHeight: 480 }}>
           <div className="absolute inset-0 flex flex-col items-center justify-center rounded-[1.75rem] app-panel border border-[#E8E6E0] bg-[#F3F2EE]">
             <Loader size={32} className="animate-spin text-primary mb-4" />
@@ -165,7 +165,7 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
 
   if (!cards || cards.length === 0) {
     return (
-      <section className="flex w-full flex-col items-center">
+    <section className="flex w-full flex-col items-end pl-16">
         <div className="relative w-full max-w-sm" style={{ minHeight: 480 }}>
           <div className="app-panel absolute inset-0 flex flex-col items-center justify-center rounded-[1.75rem] p-7 text-center border border-[#E8E6E0] bg-[#F3F2EE]">
             <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-primary/10 text-primary">
@@ -199,7 +199,7 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
   };
 
   return (
-    <section className="flex w-full flex-col items-center">
+    <section className="flex w-full flex-col items-end pl-16">
       {/* Applicant status toast */}
       <AnimatePresence>
         {toastMsg && (

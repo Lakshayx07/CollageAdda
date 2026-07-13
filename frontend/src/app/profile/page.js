@@ -245,6 +245,15 @@ export default function ProfilePage() {
       if (res.ok) {
         queryClient.setQueryData(["user-following"], (prev) => (prev || []).filter(f => f._id !== targetUserId));
         queryClient.setQueryData(["user-followers"], (prev) => (prev || []).filter(f => f._id !== targetUserId));
+        
+        queryClient.invalidateQueries({ queryKey: ["squad-profile"] });
+        queryClient.invalidateQueries({ queryKey: ["user-profile"] });
+        queryClient.invalidateQueries({ queryKey: ["explore-following"] });
+        queryClient.invalidateQueries({ queryKey: ["user-following"] });
+        queryClient.invalidateQueries({ queryKey: ["friends"] });
+        queryClient.invalidateQueries({ queryKey: ["squad-suggested"] });
+        queryClient.invalidateQueries({ queryKey: ["suggested"] });
+
         setToastMsg("Unfollowed successfully");
         setTimeout(() => setToastMsg(""), 2000);
       }
@@ -379,10 +388,20 @@ export default function ProfilePage() {
 
   return (
     <div className="page-shell profile-page relative overflow-x-hidden">
-      {/* Background Decorative Glows */}
-      <div className="fixed top-[-10%] right-[-10%] w-[60%] h-[60%] bg-[#C8922A]/10 blur-[150px] rounded-full z-0" />
-      <div className="fixed bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-pink-600/10 blur-[150px] rounded-full z-0" />
-      <div className="fixed inset-0 opacity-[0.03] pointer-events-none z-0" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' }} />
+      {/* ============ ANIMATED BACKGROUND ============ */}
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+        {/* Grid pattern */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: `linear-gradient(rgba(200,146,42,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(200,146,42,0.04) 1px, transparent 1px)`,
+          backgroundSize: '64px 64px',
+        }} />
+        {/* Top fade */}
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, height: '350px',
+          background: 'linear-gradient(180deg, rgba(200,146,42,0.05) 0%, transparent 100%)',
+        }} />
+      </div>
 
       {/* Header - only show on mobile, sidebar handles desktop nav */}
       <header className="lg:hidden page-header sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
@@ -415,7 +434,7 @@ export default function ProfilePage() {
       <div className="max-w-4xl mx-auto px-6 pt-10 relative z-10 space-y-8">
         {/* Top Profile Header */}
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 pb-6 border-b border-[#E8E6E0]">
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 flex-1">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-10 flex-1">
             {/* Avatar Area */}
             <div className="relative shrink-0">
               {hasActiveStory && (
@@ -425,7 +444,7 @@ export default function ProfilePage() {
                   <div className="w-full h-full rounded-full bg-[#FAFAF8]" />
                 </div>
               )}
-              <div className="relative w-28 h-28 rounded-full p-[3px] gradient-bg shadow-lg z-20">
+              <div className="relative w-[200px] h-[200px] rounded-full p-[3px] gradient-bg shadow-xl z-20">
                 <div 
                   onClick={() => hasActiveStory ? setModal("viewStory") : null}
                   className={`w-full h-full rounded-full bg-[#FAFAF8] flex items-center justify-center overflow-hidden ${hasActiveStory ? 'cursor-pointer active:scale-95 transition-transform' : ''}`}
@@ -438,7 +457,7 @@ export default function ProfilePage() {
                       alt={user.name}
                     />
                   ) : (
-                    <span className="text-3xl font-black text-[#1A1A1A]">{user.name?.charAt(0)}</span>
+                    <span className="text-6xl font-black text-[#1A1A1A]">{user.name?.charAt(0)}</span>
                   )}
                 </div>
                 <motion.button 
@@ -455,8 +474,8 @@ export default function ProfilePage() {
             {/* Profile Info Details */}
             <div className="text-center sm:text-left space-y-2.5">
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                <h2 className="text-2xl font-bold text-[#1A1A1A] tracking-tight">{user.name}</h2>
-                <VerifiedBadge user={user} size={18} />
+                <h2 className="text-3xl font-black text-[#1A1A1A] tracking-tight">{user.name}</h2>
+                <VerifiedBadge user={user} size={20} />
               </div>
               
               <p className="text-xs text-[#6B6B6B] font-semibold">
