@@ -39,5 +39,8 @@ const storySchema = mongoose.Schema({
 // Add TTL index to automatically delete stories after they expire
 storySchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
+// Add index to speed up the GET /api/stories university query
+storySchema.index({ university: 1, expiresAt: 1 });
+
 const Story = mongoose.model('Story', storySchema);
 export default Story;

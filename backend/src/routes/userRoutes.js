@@ -7,7 +7,19 @@ import { protect } from '../middleware/authMiddleware.js';
 import { ensureUniversityGroup, normalizeUniversityName } from '../utils/universityUtils.js';
 import { publicUserPayload, syncVerificationStatus } from '../utils/verificationUtils.js';
 
+// Convert base64 profilePic to avatar API URL to drastically reduce payload size
+export const transformUser = (u) => {
+  if (!u) return u;
+  // Use relative path - the Next.js rewrite proxies /api/users/:id/avatar → backend
+  u.profilePic = `/api/users/${u._id}/avatar`;
+  return u;
+};
+
+import NodeCache from 'node-cache';
+
 const router = express.Router();
+const leaderboardCache = new NodeCache({ stdTTL: 300 }); // 5 minutes
+
 const POINTS_PER_VERIFIED_STUDENT = Number(process.env.POINTS_PER_VERIFIED_STUDENT || 10);
 const KNOWN_COLLEGE_LOGOS = [
   { pattern: /rishihood/i, logo: '' },
@@ -25,6 +37,9 @@ const logoForCollege = (name) => KNOWN_COLLEGE_LOGOS.find(item => item.pattern.t
 // @desc    Get campus leaderboard ranked by verified students
 router.get('/leaderboard', protect, async (req, res) => {
   try {
+    const cached = leaderboardCache.get("leaderboard_data");
+    if (cached) return res.json(cached);
+
     const verifiedCounts = await User.aggregate([
       {
         $match: {
@@ -75,11 +90,14 @@ router.get('/leaderboard', protect, async (req, res) => {
       };
     });
 
-    res.json({
+    const payload = {
       pointsPerVerifiedStudent: POINTS_PER_VERIFIED_STUDENT,
       lastUpdated: new Date().toISOString(),
       leaderboard
-    });
+    };
+    
+    leaderboardCache.set("leaderboard_data", payload);
+    res.json(payload);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -94,11 +112,68 @@ router.get('/profile', protect, async (req, res) => {
     const wasVerified = user.isVerified;
     syncVerificationStatus(user);
     if (wasVerified !== user.isVerified) await user.save();
-    res.json(user);
+    
+    // Transform profile to avoid sending huge base64 string
+    const userObj = user.toObject();
+    res.json(transformUser(userObj));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
+
+// @route   GET /api/users/:id/avatar
+// @desc    Get user's profile picture optimally (cached)
+// In-memory avatar cache to avoid re-querying MongoDB for every image request
+export const avatarCache = new Map(); // userId -> { mime, buffer, expiry }
+const AVATAR_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+// Track in-flight DB fetches to avoid duplicate requests for the same user
+const avatarFetching = new Set();
+
+router.get('/:id/avatar', async (req, res) => {
+  const id = req.params.id;
+  const now = Date.now();
+
+  // Serve from cache if available and fresh — instant response
+  const cached = avatarCache.get(id);
+  if (cached && cached.expiry > now) {
+    if (cached.redirect) return res.redirect(cached.redirect);
+    res.setHeader('Content-Type', cached.mime);
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.setHeader('ETag', `"${id}"`);
+    return res.send(cached.buffer);
+  }
+
+  // If not cached, trigger a background fetch (non-blocking)
+  // Immediately respond with initials so the UI doesn't stall
+  if (!avatarFetching.has(id)) {
+    avatarFetching.add(id);
+    // Background fetch — no await, runs after response is sent
+    User.findById(id).select('profilePic name').lean()
+      .then(user => {
+        const ttl = 24 * 60 * 60 * 1000;
+        const expiry = Date.now() + ttl;
+        if (!user || !user.profilePic) {
+          const redirect = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'U')}&background=7C3AED&color=fff`;
+          avatarCache.set(id, { redirect, expiry });
+        } else if (user.profilePic.startsWith('http')) {
+          avatarCache.set(id, { redirect: user.profilePic, expiry });
+        } else if (user.profilePic.startsWith('data:image')) {
+          const parts = user.profilePic.split(';');
+          const mime = parts[0].split(':')[1];
+          const data = parts[1].split(',')[1];
+          const buffer = Buffer.from(data, 'base64');
+          avatarCache.set(id, { mime, buffer, expiry });
+        }
+      })
+      .catch(() => {})
+      .finally(() => avatarFetching.delete(id));
+  }
+
+  // On first request, show initials instantly (next request will serve from cache)
+  return res.redirect(`https://ui-avatars.com/api/?name=U&background=7C3AED&color=fff`);
+});
+
 
 // @route   PUT /api/users/profile
 // @desc    Update logged-in user's profile (name, bio, profilePic, instagram, snapchat, university)
@@ -196,23 +271,38 @@ router.get('/search/query', protect, async (req, res) => {
     }
     
     const users = await User.find(query)
-      .select('name university profilePic bio interests year studyYear passOutBatch course branch followers following isVerified streak createdAt')
+      .select('name university bio interests year studyYear passOutBatch course branch isVerified streak createdAt')
       .sort({ createdAt: -1 })
-      .limit(50)
+      .limit(30)
       .lean();
 
-    // Single aggregation instead of N separate countDocuments calls
     const userIds = users.map(u => u._id);
-    const postCounts = await Post.aggregate([
-      { $match: { author: { $in: userIds } } },
-      { $group: { _id: '$author', count: { $sum: 1 } } }
-    ]);
-    const postCountMap = Object.fromEntries(postCounts.map(p => [p._id.toString(), p.count]));
 
-    const usersWithPostsCount = users.map(u => ({
-      ...u,
-      postsCount: postCountMap[u._id.toString()] || 0
-    }));
+    // Batch post counts in a single aggregation instead of N queries
+    const [postCounts, followCounts] = await Promise.all([
+      Post.aggregate([
+        { $match: { author: { $in: userIds } } },
+        { $group: { _id: '$author', count: { $sum: 1 } } }
+      ]),
+      User.aggregate([
+        { $match: { _id: { $in: userIds } } },
+        { $project: { followersCount: { $size: { $ifNull: ['$followers', []] } }, followingCount: { $size: { $ifNull: ['$following', []] } } } }
+      ])
+    ]);
+    
+    const countMap = new Map(postCounts.map(pc => [pc._id.toString(), pc.count]));
+    const followMap = new Map(followCounts.map(fc => [fc._id.toString(), { followersCount: fc.followersCount, followingCount: fc.followingCount }]));
+
+    const usersWithPostsCount = users.map(u => {
+      const fc = followMap.get(u._id.toString()) || {};
+      const transformed = transformUser(u);
+      return {
+        ...transformed,
+        postsCount: countMap.get(u._id.toString()) || 0,
+        followersCount: fc.followersCount || 0,
+        followingCount: fc.followingCount || 0,
+      };
+    });
 
     res.json(usersWithPostsCount);
   } catch (error) {
@@ -225,7 +315,8 @@ router.get('/search/query', protect, async (req, res) => {
 router.get('/daily-drop', protect, async (req, res) => {
   try {
     const me = await User.findById(req.user._id)
-      .populate('dailyDropUsers', 'name university profilePic bio interests year studyYear passOutBatch course branch followers following isVerified streak createdAt');
+      .select('university interests following dailyDropUsers dailyDropDate')
+      .populate('dailyDropUsers', 'name university bio interests year studyYear passOutBatch course branch isVerified streak createdAt');
 
     if (!me) return res.status(404).json({ message: 'User not found' });
 
@@ -242,15 +333,32 @@ router.get('/daily-drop', protect, async (req, res) => {
       me.dailyDropUsers.length === 5
     ) {
       console.log('[DailyDrop] Returning cached users for today');
-      const cachedIds = me.dailyDropUsers.map(u => (u.toObject ? u.toObject() : u)._id);
-      const cachedPostCounts = await Post.aggregate([
-        { $match: { author: { $in: cachedIds } } },
-        { $group: { _id: '$author', count: { $sum: 1 } } }
+      const userIds = me.dailyDropUsers.map(u => u._id || u);
+      const [postCounts, followCounts] = await Promise.all([
+        Post.aggregate([
+          { $match: { author: { $in: userIds } } },
+          { $group: { _id: '$author', count: { $sum: 1 } } }
+        ]),
+        User.aggregate([
+          { $match: { _id: { $in: userIds } } },
+          { $project: { followersCount: { $size: { $ifNull: ['$followers', []] } }, followingCount: { $size: { $ifNull: ['$following', []] } } } }
+        ])
       ]);
-      const cachedCountMap = Object.fromEntries(cachedPostCounts.map(p => [p._id.toString(), p.count]));
+      const countMap = new Map(postCounts.map(pc => [pc._id.toString(), pc.count]));
+      const followMap = new Map(followCounts.map(fc => [fc._id.toString(), { followersCount: fc.followersCount, followingCount: fc.followingCount }]));
+      
       const cachedWithPostsCount = me.dailyDropUsers.map(u => {
-        const uObj = u.toObject ? u.toObject() : u;
-        return { ...uObj, postsCount: cachedCountMap[uObj._id.toString()] || 0 };
+        const uObj = u.toObject ? u.toObject() : { ...u };
+        delete uObj.followers;
+        delete uObj.following;
+        const fc = followMap.get(uObj._id.toString()) || {};
+        const transformed = transformUser(uObj);
+        return {
+          ...transformed,
+          postsCount: countMap.get(uObj._id.toString()) || 0,
+          followersCount: fc.followersCount || 0,
+          followingCount: fc.followingCount || 0,
+        };
       });
       return res.json(cachedWithPostsCount);
     }
@@ -259,7 +367,7 @@ router.get('/daily-drop', protect, async (req, res) => {
     const followingIds = (me.following || []).map(id => id.toString());
     const excludeIds = [me._id.toString(), ...followingIds];
 
-    const fields = 'name university profilePic bio interests year studyYear passOutBatch course branch followers following isVerified streak createdAt';
+    const fields = 'name university profilePic bio interests year studyYear passOutBatch course branch isVerified streak createdAt';
     let suggested = [];
 
     const notAlreadyPicked = () => [...excludeIds, ...suggested.map(u => u._id.toString())];
@@ -297,10 +405,11 @@ router.get('/daily-drop', protect, async (req, res) => {
         { $match: { _id: { $nin: notAlreadyPicked().map(id => {
           try { return new mongoose.Types.ObjectId(id); } catch { return null; }
         }).filter(Boolean) } } },
+        { $sample: { size: 200 } },
         { $addFields: { score: { $add: [{ $size: { $ifNull: ['$followers', []] } }, { $size: { $ifNull: ['$following', []] } }] } } },
         { $sort: { score: -1 } },
         { $limit: 5 - suggested.length },
-        { $project: { name: 1, university: 1, profilePic: 1, bio: 1, interests: 1, year: 1, studyYear: 1, passOutBatch: 1, course: 1, branch: 1, followers: 1, following: 1, isVerified: 1, streak: 1, createdAt: 1 } }
+        { $project: { name: 1, university: 1, bio: 1, interests: 1, year: 1, studyYear: 1, passOutBatch: 1, course: 1, branch: 1, followers: 1, following: 1, isVerified: 1, streak: 1, createdAt: 1 } }
       ]);
       console.log(`[DailyDrop] P3 popular found: ${popular.length}`);
       suggested = [...suggested, ...popular];
@@ -341,18 +450,33 @@ router.get('/daily-drop', protect, async (req, res) => {
       await me.save();
     }
 
-    // Single aggregation for all post counts at once
-    const suggestedIds = suggested.map(u => u._id);
-    const postCounts = await Post.aggregate([
-      { $match: { author: { $in: suggestedIds } } },
-      { $group: { _id: '$author', count: { $sum: 1 } } }
+    const userIds = suggested.map(u => u._id);
+    const [postCounts, followCounts] = await Promise.all([
+      Post.aggregate([
+        { $match: { author: { $in: userIds } } },
+        { $group: { _id: '$author', count: { $sum: 1 } } }
+      ]),
+      User.aggregate([
+        { $match: { _id: { $in: userIds } } },
+        { $project: { followersCount: { $size: { $ifNull: ['$followers', []] } }, followingCount: { $size: { $ifNull: ['$following', []] } } } }
+      ])
     ]);
-    const postCountMap = Object.fromEntries(postCounts.map(p => [p._id.toString(), p.count]));
+    const countMap = new Map(postCounts.map(pc => [pc._id.toString(), pc.count]));
+    const followMap = new Map(followCounts.map(fc => [fc._id.toString(), { followersCount: fc.followersCount, followingCount: fc.followingCount }]));
 
-    const suggestedWithPostsCount = suggested.map(u => ({
-      ...(u.toObject ? u.toObject() : u),
-      postsCount: postCountMap[u._id.toString()] || 0
-    }));
+    const suggestedWithPostsCount = suggested.map(u => {
+      const uObj = u.toObject ? u.toObject() : { ...u };
+      delete uObj.followers;
+      delete uObj.following;
+      const fc = followMap.get(uObj._id.toString()) || {};
+      const transformed = transformUser(uObj);
+      return {
+        ...transformed,
+        postsCount: countMap.get(uObj._id.toString()) || 0,
+        followersCount: fc.followersCount || 0,
+        followingCount: fc.followingCount || 0,
+      };
+    });
 
     res.json(suggestedWithPostsCount);
   } catch (error) {

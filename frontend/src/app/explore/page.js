@@ -502,23 +502,8 @@ function ExploreContent() {
       const token = localStorage.getItem("collegeadda_token");
       const userId = student._id || student.id;
 
-      // 2. Get or Create Room
-      const res = await fetch(`${apiUrl}/api/chat/rooms`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ targetUserId: userId })
-      });
-
-      if (res.ok) {
-        const room = await res.json();
-        setToastMessage("Opening chat...");
-        router.push(`/messages?chat=${room._id}`);
-      } else {
-        setToastMessage("Failed to start chat.");
-      }
+      setToastMessage("Opening chat...");
+      router.push(`/messages?userId=${userId}`);
       setTimeout(() => setToastMessage(null), 2000);
     } catch (err) {
       console.error("Error starting direct message:", err);
