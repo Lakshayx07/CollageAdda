@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import connectDB from './config/db.js';
@@ -19,7 +20,8 @@ import hustleRoutes from './routes/hustleRoutes.js';
 import confessionRoutes from './routes/confessionRoutes.js';
 import collabRoutes from './routes/collabRoutes.js';
 
-// Database connection moved to the bottom before server start
+// Connect to database
+connectDB();
 
 const app = express();
 const httpServer = createServer(app);
@@ -50,6 +52,7 @@ const io = new Server(httpServer, { cors: corsOptions });
 
 // Middleware
 app.use(cors(corsOptions));
+app.use(compression());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -60,8 +63,7 @@ app.use((req, res, next) => {
   } else if (req.path === '/api/users/leaderboard') {
     res.setHeader('Cache-Control', 'public, max-age=60');
   } else {
-    // Allow browsers to cache private API responses for 1 minute to speed up navigation
-    res.setHeader('Cache-Control', 'private, max-age=60');
+    res.setHeader('Cache-Control', 'private, no-cache, no-store, must-revalidate');
   }
   next();
 });
@@ -217,9 +219,11 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 5001;
-connectDB().then(() => {
-  httpServer.listen(PORT, () => {
-    console.log(`\n🚀 CollegeAdda server running on http://localhost:${PORT}`);
-    console.log(`   Mode: ${process.env.NODE_ENV || 'development'}\n`);
-  });
+const server = httpServer.listen(PORT, () => {
+  console.log(`\n🚀 CollegeAdda server running on http://localhost:${PORT}`);
+  console.log(`   Mode: ${process.env.NODE_ENV || 'development'}\n`);
 });
+
+// Fix Next.js fetch Keep-Alive bug without dropping connections
+server.keepAliveTimeout = 61000;
+server.headersTimeout = 65000;

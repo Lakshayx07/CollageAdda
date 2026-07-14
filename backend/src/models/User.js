@@ -75,5 +75,11 @@ userSchema.methods.matchPassword = async function(enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
+// Indexes for performance
+userSchema.index({ university: 1, points: -1 });
+userSchema.index({ university: 1, createdAt: -1 });
+userSchema.index({ createdAt: -1 }); // Fast generic sorting
+
 const User = mongoose.model('User', userSchema);
+
 export default User;

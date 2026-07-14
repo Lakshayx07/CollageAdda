@@ -171,7 +171,7 @@ export default function Home() {
 
   const { data: leaderboard = [], isLoading: loadingLeaderboard } = useApiQuery(
     "leaderboard",
-    "/api/colleges/leaderboard",
+    "/api/users/leaderboard",
     {
       enabled: isAuthenticated,
       select: (data) => {
@@ -218,7 +218,6 @@ export default function Home() {
   const clearSessionAndLogin = () => {
     localStorage.removeItem("collegeadda_token");
     localStorage.removeItem("collegeadda_user");
-    setLoadingPosts(false);
     router.push("/");
   };
 

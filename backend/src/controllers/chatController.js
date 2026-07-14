@@ -2,6 +2,7 @@ import ChatRoom from '../models/ChatRoom.js';
 import Message from '../models/Message.js';
 import Notification from '../models/Notification.js';
 import User from '../models/User.js';
+import { transformUser } from '../routes/userRoutes.js';
 
 /**
  * @desc    Get user's chat rooms
@@ -11,9 +12,18 @@ import User from '../models/User.js';
 export const getRooms = async (req, res) => {
   try {
     const rooms = await ChatRoom.find({ participants: req.user._id })
-      .populate('participants', 'name profilePic university isVerified')
-      .populate('lastMessage')
-      .sort({ updatedAt: -1 });
+      .populate('participants', 'name university isVerified')
+      .populate('lastMessage', 'text mediaType createdAt sender')
+      .sort({ updatedAt: -1 })
+      .limit(50)
+      .lean();
+      
+    // Transform all profilePics to URLs to stop massive base64 payloads
+    rooms.forEach(r => {
+      if (r.participants) r.participants.forEach(p => transformUser(p));
+      if (r.lastMessage && r.lastMessage.sender) transformUser(r.lastMessage.sender);
+    });
+
     res.json(rooms);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -29,10 +39,16 @@ export const getMessages = async (req, res) => {
   const { page = 1, limit = 50 } = req.query;
   try {
     const messages = await Message.find({ room: req.params.id })
-      .populate('sender', 'name profilePic isVerified')
+      .populate('sender', 'name isVerified')
       .sort({ createdAt: -1 })
       .limit(limit)
-      .skip((page - 1) * limit);
+      .skip((page - 1) * limit)
+      .lean();
+      
+    // Transform all profilePics to URLs to stop massive base64 payloads
+    messages.forEach(m => {
+      if (m.sender) transformUser(m.sender);
+    });
     
     res.json(messages.reverse());
   } catch (error) {

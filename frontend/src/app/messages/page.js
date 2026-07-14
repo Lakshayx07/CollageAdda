@@ -62,7 +62,7 @@ function MessagesContent() {
       id: room._id,
       name: room.isGroup ? (room.groupName || `${room.university} Hub`) : (room.participants.find(p => p._id !== user._id)?.name || "Chat"),
       type: room.isGroup ? "group" : "private",
-      avatar: room.isGroup ? <Users size={20} className="text-[#C8922A]" /> : (room.participants.find(p => p._id !== user._id)?.profilePic || `https://ui-avatars.com/api/?name=User&background=7C3AED&color=fff`),
+      avatar: room.isGroup ? <Users size={24} className="text-white" /> : (room.participants.find(p => p._id !== user._id)?.profilePic || `https://ui-avatars.com/api/?name=User&background=7C3AED&color=fff`),
       lastMsg: room.lastMessage?.text || "No messages yet",
       time: room.lastMessage ? new Date(room.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "",
       timestamp: room.lastMessage?.createdAt ? new Date(room.lastMessage.createdAt).getTime() : new Date(room.updatedAt || room.createdAt || 0).getTime(),
@@ -88,7 +88,7 @@ function MessagesContent() {
   }, [rawRooms, formatRooms]);
 
   const setChats = useCallback((updater) => {
-    queryClient.setQueryData("chat-rooms", (oldRawData) => {
+    queryClient.setQueryData(["chat-rooms"], (oldRawData) => {
       if (!oldRawData) return oldRawData;
       const currentFormatted = (oldRawData.length > 0 && oldRawData[0].id) ? oldRawData : formatRooms(oldRawData);
       return typeof updater === 'function' ? updater(currentFormatted) : updater;
@@ -217,7 +217,7 @@ function MessagesContent() {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
     
-    if (chats.length > 0) {
+    if (!loadingChats) {
       // Handle ?chat=roomId (direct room link)
       const chatParam = searchParams.get("chat");
       if (chatParam && !activeChat) {
@@ -516,7 +516,7 @@ function MessagesContent() {
           id: newRoom._id,
           name: newRoom.groupName,
           type: "group",
-          avatar: <Users size={20} className="text-[#C8922A]" />,
+          avatar: <Users size={24} className="text-white" />,
           lastMsg: "Group created",
           time: "",
           timestamp: Date.now(),
@@ -732,7 +732,9 @@ function MessagesContent() {
                   <div className="h-12 w-12 rounded-full p-[2px] gradient-bg shadow-lg sm:h-14 sm:w-14">
                     <div className="w-full h-full rounded-full bg-[#FAFAF8] flex items-center justify-center overflow-hidden">
                       {chat.type === "group" ? (
-                        <div className="text-[#C8922A]">{chat.avatar}</div>
+                        <div className="w-full h-full bg-[#7C3AED] flex items-center justify-center">
+                          {chat.avatar}
+                        </div>
                       ) : (
                         <img 
                           src={chat.avatar} 

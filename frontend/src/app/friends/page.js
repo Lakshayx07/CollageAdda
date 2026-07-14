@@ -569,20 +569,8 @@ export default function FriendsPage() {
         queryClient.invalidateQueries({ queryKey: ["suggested"] });
       }
 
-      // 2. Get or Create Room
-      const res = await fetch(`${apiUrl}/api/chat/rooms`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ targetUserId: targetId })
-      });
-
-      if (res.ok) {
-        const room = await res.json();
-        router.push(`/messages?chat=${room._id}`);
-      }
+      // 2. Redirect to messages page to handle chat creation/selection
+      router.push(`/messages?userId=${targetId}`);
     } catch (err) {
       console.error("Error starting direct message:", err);
     }
@@ -599,12 +587,8 @@ export default function FriendsPage() {
 
     const updateUsersList = (users) => users.map(u => {
       if (u._id === targetId || u.id === targetId) {
-        let currentFollowers = Array.isArray(u.followers) ? u.followers : Array.from({ length: Number(u.followers || 0) });
-        if (isConnecting) {
-          return { ...u, followers: [...currentFollowers, user._id || user.id] };
-        } else {
-          return { ...u, followers: currentFollowers.filter(id => id !== (user._id || user.id)).slice(0, Math.max(0, currentFollowers.length - 1)) };
-        }
+        const currentCount = u.followersCount ?? (Array.isArray(u.followers) ? u.followers.length : Number(u.followers || 0));
+        return { ...u, followersCount: isConnecting ? currentCount + 1 : Math.max(0, currentCount - 1) };
       }
       return u;
     });
@@ -633,12 +617,8 @@ export default function FriendsPage() {
       // Revert if error
       const revertUsersList = (users) => users.map(u => {
         if (u._id === targetId || u.id === targetId) {
-          let currentFollowers = Array.isArray(u.followers) ? u.followers : Array.from({ length: Number(u.followers || 0) });
-          if (!isConnecting) {
-            return { ...u, followers: [...currentFollowers, user._id || user.id] };
-          } else {
-            return { ...u, followers: currentFollowers.filter(id => id !== (user._id || user.id)).slice(0, Math.max(0, currentFollowers.length - 1)) };
-          }
+          const currentCount = u.followersCount ?? (Array.isArray(u.followers) ? u.followers.length : Number(u.followers || 0));
+          return { ...u, followersCount: !isConnecting ? currentCount + 1 : Math.max(0, currentCount - 1) };
         }
         return u;
       });
@@ -647,7 +627,11 @@ export default function FriendsPage() {
     }
   };
 
-  const getSocialCount = (value) => Array.isArray(value) ? value.length : Number(value || 0);
+  const getSocialCount = (value) => {
+    if (typeof value === 'number') return value;
+    if (Array.isArray(value)) return value.length;
+    return Number(value || 0);
+  };
 
   const leaderboardStudents = useMemo(() => {
     const source = activeSquadTab === "leaderboard" && leaderboardTab === "global_pulse"
@@ -660,8 +644,8 @@ export default function FriendsPage() {
       const id = user._id || user.id || user.email || user.name;
       unique.set(id, {
         ...user,
-        followerCount: getSocialCount(user.followers),
-        followingCount: getSocialCount(user.following),
+        followerCount: user.followersCount ?? getSocialCount(user.followers),
+        followingCount: user.followingCount ?? getSocialCount(user.following),
       });
     }
 
@@ -670,8 +654,8 @@ export default function FriendsPage() {
       if (!id || unique.has(id)) return;
       unique.set(id, {
         ...person,
-        followerCount: getSocialCount(person.followers),
-        followingCount: getSocialCount(person.following),
+        followerCount: person.followersCount ?? getSocialCount(person.followers),
+        followingCount: person.followingCount ?? getSocialCount(person.following),
       });
     });
 
@@ -1358,7 +1342,7 @@ export default function FriendsPage() {
                                 </div>
                                 <div className="border-l border-r border-[#D8D5CE]">
                                   <p className="text-base font-black text-[#1A1A1A]">
-                                    {getSocialCount(person.followers) + getSocialCount(person.following)}
+                                    {(person.followersCount ?? getSocialCount(person.followers)) + (person.followingCount ?? getSocialCount(person.following))}
                                   </p>
                                   <p className="text-[9px] font-bold uppercase tracking-wider text-[#4A4A4A] mt-0.5">Squad</p>
                                 </div>
@@ -1619,16 +1603,16 @@ export default function FriendsPage() {
                       {/* Stats Row */}
                       <motion.div variants={modalVars.statsContainer} className="grid grid-cols-4 gap-2 mt-6">
                         <motion.div variants={modalVars.statCard} whileHover={{ y: -3, backgroundColor: 'rgba(255,255,255,0.08)' }} className="bg-[#F9F8F5] border border-[#E8E6E0] p-3 rounded-2xl text-center border border-[#E8E6E0] flex flex-col justify-center transition-colors cursor-default">
-                          <p className="text-lg font-black text-[#1A1A1A]">{selectedProfileData.followers !== undefined ? getSocialCount(selectedProfileData.followers) : "—"}</p>
+                          <p className="text-lg font-black text-[#1A1A1A]">{(selectedProfileData.followersCount ?? (selectedProfileData.followers !== undefined ? getSocialCount(selectedProfileData.followers) : undefined)) !== undefined ? (selectedProfileData.followersCount ?? getSocialCount(selectedProfileData.followers)) : "—"}</p>
                           <p className="text-[9px] uppercase tracking-wider text-[#6B6B6B] font-bold mt-1">Followers</p>
                         </motion.div>
                         <motion.div variants={modalVars.statCard} whileHover={{ y: -3, backgroundColor: 'rgba(255,255,255,0.08)' }} className="bg-[#F9F8F5] border border-[#E8E6E0] p-3 rounded-2xl text-center border border-[#E8E6E0] flex flex-col justify-center transition-colors cursor-default">
-                          <p className="text-lg font-black text-[#1A1A1A]">{selectedProfileData.following !== undefined ? getSocialCount(selectedProfileData.following) : "—"}</p>
+                          <p className="text-lg font-black text-[#1A1A1A]">{(selectedProfileData.followingCount ?? (selectedProfileData.following !== undefined ? getSocialCount(selectedProfileData.following) : undefined)) !== undefined ? (selectedProfileData.followingCount ?? getSocialCount(selectedProfileData.following)) : "—"}</p>
                           <p className="text-[9px] uppercase tracking-wider text-[#6B6B6B] font-bold mt-1">Following</p>
                         </motion.div>
                         <motion.div variants={modalVars.statCard} whileHover={{ y: -3, scale: 1.02 }} className="bg-[#F9F8F5] border border-[#E8E6E0] p-3 rounded-2xl text-center border border-[#E8E6E0] bg-gradient-to-br from-yellow-500/10 to-[#D4A843]/10 border-yellow-500/20 flex flex-col justify-center transition-transform cursor-default">
                           <p className="text-lg font-black text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]">
-                            {(selectedProfileData.followers !== undefined && selectedProfileData.following !== undefined) ? getSocialCount(selectedProfileData.followers) + getSocialCount(selectedProfileData.following) : "—"}
+                            {(selectedProfileData.followersCount ?? selectedProfileData.followers) !== undefined && (selectedProfileData.followingCount ?? selectedProfileData.following) !== undefined ? (selectedProfileData.followersCount ?? getSocialCount(selectedProfileData.followers)) + (selectedProfileData.followingCount ?? getSocialCount(selectedProfileData.following)) : "—"}
                           </p>
                           <p className="text-[9px] uppercase tracking-wider text-yellow-500/60 font-bold mt-1">Score</p>
                         </motion.div>

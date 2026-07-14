@@ -34,9 +34,7 @@ export const getConfessions = async (req, res) => {
       { $expr: { $lt: [{ $size: '$reports' }, 5] } }
     ];
 
-    const confessions = await Confession.find(filter)
-      .sort({ heat: -1, createdAt: -1 })
-      .limit(30);
+    const confessions = await Confession.find(filter).sort({ heat: -1, createdAt: -1 });
     res.json(confessions);
   } catch (error) {
     console.error('Error in getConfessions:', error);

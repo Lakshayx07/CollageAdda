@@ -6,14 +6,21 @@ import { protect, verified } from '../middleware/authMiddleware.js';
 const router = express.Router();
 
 // @route   GET /api/posts
-// @desc    Get all posts (university feed)
+// @desc    Get all posts (university feed) with pagination
 router.get('/', protect, async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 30;
+    const skip = (page - 1) * limit;
+
     const posts = await Post.find({ university: req.user.university })
       .populate('author', 'name profilePic university isVerified')
       .sort({ createdAt: -1 })
-      .limit(30);
+      .skip(skip)
+      .limit(limit);
     
+    // Optional: Return total count for infinite scroll if needed, 
+    // but for now returning just array is backwards compatible.
     res.json(posts);
   } catch (error) {
     res.status(500).json({ message: error.message });
