@@ -1,8 +1,50 @@
 import express from 'express';
 import Story from '../models/Story.js';
+import Notification from '../models/Notification.js';
 import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
+
+// @route   PUT /api/stories/:id/like
+// @desc    Like or unlike a story
+router.put('/:id/like', protect, async (req, res) => {
+  try {
+    const story = await Story.findById(req.params.id);
+    if (!story) return res.status(404).json({ message: 'Story not found' });
+
+    // Check if the story is already liked by the user
+    if (story.likes.includes(req.user._id)) {
+      // Unlike
+      story.likes = story.likes.filter(id => id.toString() !== req.user._id.toString());
+      // Remove notification if unliked
+      await Notification.findOneAndDelete({
+        sender: req.user._id,
+        recipient: story.author,
+        story: story._id,
+        type: 'story_like'
+      });
+    } else {
+      // Like
+      story.likes.push(req.user._id);
+      
+      // Create notification
+      if (story.author.toString() !== req.user._id.toString()) {
+        await Notification.create({
+          recipient: story.author,
+          sender: req.user._id,
+          type: 'story_like',
+          story: story._id,
+          text: 'liked your story'
+        });
+      }
+    }
+
+    await story.save();
+    res.json(story.likes);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 
 // @route   POST /api/stories
 // @desc    Create a new story
@@ -38,9 +80,18 @@ router.get('/', protect, async (req, res) => {
       expiresAt: { $gt: new Date() }
     })
     .populate('author', 'name profilePic')
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .lean();
 
-    res.json(stories);
+    // Convert ObjectId arrays to strings for easy frontend comparison
+    const normalized = stories.map(s => ({
+      ...s,
+      _id: s._id.toString(),
+      author: { ...s.author, _id: s.author._id.toString() },
+      likes: (s.likes || []).map(id => id.toString()),
+    }));
+
+    res.json(normalized);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

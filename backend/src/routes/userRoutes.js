@@ -198,13 +198,20 @@ router.get('/search/query', protect, async (req, res) => {
     const users = await User.find(query)
       .select('name university profilePic bio interests year studyYear passOutBatch course branch followers following isVerified streak createdAt')
       .sort({ createdAt: -1 })
-      .limit(100);
+      .limit(50)
+      .lean();
 
-    const usersWithPostsCount = await Promise.all(users.map(async (u) => {
-      const postsCount = await Post.countDocuments({ author: u._id });
-      const userObj = u.toObject();
-      userObj.postsCount = postsCount;
-      return userObj;
+    // Single aggregation instead of N separate countDocuments calls
+    const userIds = users.map(u => u._id);
+    const postCounts = await Post.aggregate([
+      { $match: { author: { $in: userIds } } },
+      { $group: { _id: '$author', count: { $sum: 1 } } }
+    ]);
+    const postCountMap = Object.fromEntries(postCounts.map(p => [p._id.toString(), p.count]));
+
+    const usersWithPostsCount = users.map(u => ({
+      ...u,
+      postsCount: postCountMap[u._id.toString()] || 0
     }));
 
     res.json(usersWithPostsCount);
@@ -235,12 +242,16 @@ router.get('/daily-drop', protect, async (req, res) => {
       me.dailyDropUsers.length === 5
     ) {
       console.log('[DailyDrop] Returning cached users for today');
-      const cachedWithPostsCount = await Promise.all(me.dailyDropUsers.map(async (u) => {
+      const cachedIds = me.dailyDropUsers.map(u => (u.toObject ? u.toObject() : u)._id);
+      const cachedPostCounts = await Post.aggregate([
+        { $match: { author: { $in: cachedIds } } },
+        { $group: { _id: '$author', count: { $sum: 1 } } }
+      ]);
+      const cachedCountMap = Object.fromEntries(cachedPostCounts.map(p => [p._id.toString(), p.count]));
+      const cachedWithPostsCount = me.dailyDropUsers.map(u => {
         const uObj = u.toObject ? u.toObject() : u;
-        const postsCount = await Post.countDocuments({ author: uObj._id });
-        uObj.postsCount = postsCount;
-        return uObj;
-      }));
+        return { ...uObj, postsCount: cachedCountMap[uObj._id.toString()] || 0 };
+      });
       return res.json(cachedWithPostsCount);
     }
 
@@ -330,11 +341,17 @@ router.get('/daily-drop', protect, async (req, res) => {
       await me.save();
     }
 
-    const suggestedWithPostsCount = await Promise.all(suggested.map(async (u) => {
-      const uObj = u.toObject ? u.toObject() : u;
-      const postsCount = await Post.countDocuments({ author: uObj._id });
-      uObj.postsCount = postsCount;
-      return uObj;
+    // Single aggregation for all post counts at once
+    const suggestedIds = suggested.map(u => u._id);
+    const postCounts = await Post.aggregate([
+      { $match: { author: { $in: suggestedIds } } },
+      { $group: { _id: '$author', count: { $sum: 1 } } }
+    ]);
+    const postCountMap = Object.fromEntries(postCounts.map(p => [p._id.toString(), p.count]));
+
+    const suggestedWithPostsCount = suggested.map(u => ({
+      ...(u.toObject ? u.toObject() : u),
+      postsCount: postCountMap[u._id.toString()] || 0
     }));
 
     res.json(suggestedWithPostsCount);

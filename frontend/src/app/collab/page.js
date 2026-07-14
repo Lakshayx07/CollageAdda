@@ -101,53 +101,7 @@ export default function CollabPage() {
 
   return (
     <div className="page-shell flex flex-col overflow-hidden relative">
-      {/* ============ ANIMATED BACKGROUND (matches Squad page) ============ */}
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-        {/* Orb top-left */}
-        <motion.div
-          animate={{ x: [0, 50, 0], y: [0, -40, 0], scale: [1, 1.15, 1] }}
-          transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
-          style={{
-            position: 'absolute', top: '-10%', left: '-10%',
-            width: '700px', height: '700px', borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(249,115,22,0.12) 0%, transparent 65%)',
-            filter: 'blur(40px)',
-          }}
-        />
-        {/* Orb top-right */}
-        <motion.div
-          animate={{ x: [0, -60, 0], y: [0, 50, 0], scale: [1, 0.85, 1] }}
-          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
-          style={{
-            position: 'absolute', top: '5%', right: '-10%',
-            width: '500px', height: '500px', borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(212,168,67,0.10) 0%, transparent 65%)',
-            filter: 'blur(60px)',
-          }}
-        />
-        {/* Orb bottom */}
-        <motion.div
-          animate={{ x: [0, 40, -30, 0], y: [0, -50, 0], scale: [1, 1.2, 1] }}
-          transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut', delay: 8 }}
-          style={{
-            position: 'absolute', bottom: '0%', left: '25%',
-            width: '600px', height: '400px', borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(251,146,60,0.08) 0%, transparent 65%)',
-            filter: 'blur(70px)',
-          }}
-        />
-        {/* Grid pattern */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          backgroundImage: `linear-gradient(rgba(249,115,22,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(249,115,22,0.04) 1px, transparent 1px)`,
-          backgroundSize: '64px 64px',
-        }} />
-        {/* Top fade */}
-        <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, height: '350px',
-          background: 'linear-gradient(180deg, rgba(249,115,22,0.06) 0%, transparent 100%)',
-        }} />
-      </div>
+
 
       {/* Toast */}
       <AnimatePresence>
