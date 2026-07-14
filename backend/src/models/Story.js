@@ -23,6 +23,10 @@ const storySchema = mongoose.Schema({
     type: String,
     default: ''
   },
+  likes: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
   expiresAt: {
     type: Date,
     required: true,

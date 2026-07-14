@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check, Plus, Flame, TrendingUp, Search, Zap, BarChart2, Compass, ShieldCheck, Flag, Globe, GraduationCap, ChevronLeft, ChevronRight, Users, Trophy, Sun, Sunset, Moon } from "lucide-react";
+import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check, Plus, Flame, TrendingUp, Search, Zap, BarChart2, Compass, ShieldCheck, Flag, Globe, GraduationCap, ChevronLeft, ChevronRight, Users, Trophy, Sun, Sunset, Moon, Pause, Play } from "lucide-react";
 import Image from "next/image";
 import NotificationBell from "../../components/NotificationBell";
-import ThemeToggle from "../../components/ThemeToggle";
+
 import VerifiedBadge from "../../components/VerifiedBadge";
 import CampusLeaderboard from "../../components/CampusLeaderboard";
 import clsx from "clsx";
@@ -13,7 +13,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   removeUploadedImage,
   savePostImageRecord,
-  uploadPostImage
+  uploadPostImage,
+  uploadAvatar
 } from "@/utils/supabaseUploads";
 import { useApiQuery } from "@/utils/useApiQuery";
 import { useQueryClient } from "@tanstack/react-query";
@@ -37,6 +38,11 @@ export default function Home() {
   const [currentUser, setCurrentUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeStory, setActiveStory] = useState(null);
+  const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
+  const [isStoryPaused, setIsStoryPaused] = useState(false);
+  const storyVideoRef = useRef(null);
+  const storyProgressKey = useRef(0); // increment to reset animation
+  const [storyReplyText, setStoryReplyText] = useState("");
   const [hoveredPost, setHoveredPost] = useState(null);
   const [isPosting, setIsPosting] = useState(false);
   const [showPollModal, setShowPollModal] = useState(false);
@@ -425,6 +431,25 @@ export default function Home() {
     e.target.value = "";
   };
 
+  // Story Video Pause/Play Sync
+  useEffect(() => {
+    if (storyVideoRef.current) {
+      if (isStoryPaused) {
+        storyVideoRef.current.pause();
+      } else {
+        storyVideoRef.current.play().catch(e => console.error("Video play error:", e));
+      }
+    }
+  }, [isStoryPaused]);
+
+  useEffect(() => {
+    if (activeStory) {
+      setIsStoryPaused(false);
+      setCurrentStoryIndex(0);
+      storyProgressKey.current += 1;
+    }
+  }, [activeStory?._id || activeStory?.author?._id]);
+
   const handleCreatePost = async () => {
     if ((!newPostContent.trim() && !selectedMedia) || isPosting || isTextTooShort) return;
     setIsPosting(true);
@@ -725,8 +750,132 @@ export default function Home() {
     if (hr < 12) return { text: "Good Morning", icon: Sun, color: "text-amber-500" };
     if (hr < 17) return { text: "Good Afternoon", icon: Sun, color: "text-orange-500" };
     if (hr < 21) return { text: "Good Evening", icon: Sunset, color: "text-rose-500" };
+    if (hr < 21) return { text: "Good Evening", icon: Sunset, color: "text-rose-500" };
     return { text: "Good Night", icon: Moon, color: "text-indigo-400" };
   };
+
+  const storyInputRef = useRef(null);
+  const [isUploadingStory, setIsUploadingStory] = useState(false);
+
+  const handleStoryUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingStory(true);
+    try {
+      const { publicUrl } = await uploadAvatar(file, currentUser._id || currentUser.id);
+      
+      const token = localStorage.getItem("collegeadda_token");
+      const res = await fetch(`${apiUrl}/api/stories`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ mediaUrl: publicUrl, mediaType: "image" })
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || "Failed to post story to server");
+      }
+      
+      queryClient.invalidateQueries(["stories"]);
+      setToastMsg("Story uploaded successfully!");
+      setTimeout(() => setToastMsg(""), 2000);
+    } catch (err) {
+      console.error(err);
+      alert(`Failed to upload story: ${err.message}`);
+    } finally {
+      setIsUploadingStory(false);
+      if (storyInputRef.current) storyInputRef.current.value = '';
+    }
+  };
+
+  const handleStoryLike = async (storyId) => {
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      
+      // Optimistic update
+      if (activeStory) {
+        setActiveStory(prev => {
+          const newStoryGroup = { ...prev };
+          newStoryGroup.stories = [...prev.stories];
+          const storyIndex = newStoryGroup.stories.findIndex(s => s._id === storyId);
+          if (storyIndex !== -1) {
+            const currentUserId = currentUser._id || currentUser.id;
+            const targetStory = { ...newStoryGroup.stories[storyIndex] };
+            const hasLiked = targetStory.likes?.some(id => id.toString() === currentUserId.toString());
+            const likes = targetStory.likes || [];
+            
+            if (hasLiked) {
+              targetStory.likes = (targetStory.likes || []).filter(id => id.toString() !== currentUserId.toString());
+            } else {
+              targetStory.likes = [...(targetStory.likes || []), currentUserId.toString()];
+            }
+            newStoryGroup.stories[storyIndex] = targetStory;
+          }
+          return newStoryGroup;
+        });
+      }
+
+      await fetch(`${apiUrl}/api/stories/${storyId}/like`, {
+        method: "PUT",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      queryClient.invalidateQueries(["stories"]);
+    } catch (err) {
+      console.error("Failed to like story:", err);
+    }
+  };
+
+  const handleStoryReply = async (e, storyId, targetUserId) => {
+    e.preventDefault();
+    if (!storyReplyText.trim()) return;
+
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      
+      // 1. Get or create private room
+      const roomRes = await fetch(`${apiUrl}/api/chat/rooms`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ target: targetUserId })
+      });
+      
+      if (!roomRes.ok) throw new Error("Failed to access chat room");
+      const room = await roomRes.json();
+      
+      // 2. Send the message
+      const msgRes = await fetch(`${apiUrl}/api/chat/rooms/${room._id}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ 
+          text: `Replying to story: ${storyReplyText}`,
+          mediaType: 'none'
+        })
+      });
+
+      if (!msgRes.ok) throw new Error("Failed to send reply");
+      
+      setToastMsg("Reply sent!");
+      setStoryReplyText("");
+      setTimeout(() => setToastMsg(""), 2000);
+      setActiveStory(null);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to send reply");
+    }
+  };
+
+  const myStoriesGroup = stories.find(s => (s.author?._id || s.author?.id) === (currentUser?._id || currentUser?.id));
+  const hasMyStory = myStoriesGroup && myStoriesGroup.stories && myStoriesGroup.stories.length > 0;
+
+  if (!isAuthenticated) return null;
 
   return (
     <div className="relative flex min-h-screen flex-col overflow-x-hidden bg-transparent pb-[90px] lg:pb-0">
@@ -793,7 +942,7 @@ export default function Home() {
             })()}
           </div>
         <div className="flex items-center space-x-4">
-          <ThemeToggle />
+
           <button 
             onClick={() => router.push('/collab')}
             title="Collab"
@@ -831,27 +980,46 @@ export default function Home() {
             {/* Your Story */}
             <div 
               className="flex flex-col items-center space-y-2 flex-shrink-0 cursor-pointer group"
-              onClick={() => router.push('/profile')}
             >
+              <input type="file" className="hidden" accept="image/*" ref={storyInputRef} onChange={handleStoryUpload} />
               <div className="relative">
-                <div className="w-20 h-20 rounded-full p-[3px] bg-[#F3F2EE] group-hover:bg-[#E8E6E0] transition-all">
-                  <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden border border-[#E8E6E0]">
-                     {currentUser?.profilePic ? (
-                       <img src={currentUser.profilePic} className="w-full h-full object-cover" alt="You" />
-                     ) : (
-                       <span className="text-2xl font-bold text-[#C8922A]">{currentUser?.name?.charAt(0) || "Y"}</span>
-                     )}
+                <div 
+                  className={clsx(
+                    "w-20 h-20 rounded-full p-[3px] transition-all",
+                    hasMyStory 
+                      ? "gradient-bg animate-rotate-gradient" 
+                      : "bg-[#F3F2EE] group-hover:bg-[#E8E6E0]"
+                  )}
+                  onClick={() => hasMyStory ? setActiveStory(myStoriesGroup) : storyInputRef.current?.click()}
+                >
+                  <div className={clsx("w-full h-full rounded-full flex items-center justify-center overflow-hidden border", hasMyStory ? "bg-[#F9F8F5] border-[#E8E6E0] p-[2px]" : "bg-white border-[#E8E6E0]")}>
+                    <div className={clsx("w-full h-full rounded-full flex items-center justify-center overflow-hidden", hasMyStory ? "border border-[#E8E6E0] shadow-inner" : "")}>
+                       {isUploadingStory ? (
+                         <div className="flex flex-col items-center justify-center">
+                           <div className="h-4 w-4 border-2 border-[#C8922A] border-t-transparent rounded-full animate-spin"></div>
+                         </div>
+                       ) : currentUser?.profilePic ? (
+                         <img src={currentUser.profilePic} className="w-full h-full object-cover" alt="You" />
+                       ) : (
+                         <span className="text-2xl font-bold text-[#C8922A]">{currentUser?.name?.charAt(0) || "Y"}</span>
+                       )}
+                    </div>
                   </div>
                 </div>
-                <div className="absolute bottom-1 right-1 w-6 h-6 gradient-bg rounded-full border-2 border-white flex items-center justify-center text-white shadow-lg">
-                  <Plus size={14} strokeWidth={3} />
-                </div>
+                {(!hasMyStory || (myStoriesGroup?.stories?.length || 0) < 3) && (
+                  <div 
+                    onClick={(e) => { e.stopPropagation(); storyInputRef.current?.click(); }}
+                    className="absolute bottom-1 right-1 w-6 h-6 gradient-bg rounded-full border-2 border-white flex items-center justify-center text-white shadow-lg z-10 hover:scale-110 transition-transform"
+                  >
+                    <Plus size={14} strokeWidth={3} />
+                  </div>
+                )}
               </div>
               <span className="text-xs text-[#6B6B6B] font-medium">Your Story</span>
             </div>
 
-            {/* Others' Stories */}
-            {stories.map((group) => (
+            {/* Others' Stories - all uni members except yourself */}
+            {stories.filter(group => (group.author?._id || group.author?.id) !== (currentUser?._id || currentUser?.id)).map((group) => (
               <motion.div 
                 key={group.author._id} 
                 whileHover={{ scale: 1.05 }}
@@ -1557,75 +1725,138 @@ export default function Home() {
         </div>
       )}
 
-      {/* Story Viewer (Keep logic but update UI) */}
-      {activeStory && (
-        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background" onClick={() => setActiveStory(null)}>
-           <div className="relative h-[100dvh] w-full max-w-lg overflow-hidden border-white/10 bg-black shadow-2xl sm:aspect-[9/16] sm:h-auto sm:border md:rounded-3xl">
-              {/* Progress Bars */}
-              <div className="absolute top-6 left-6 right-6 flex space-x-1.5 z-20">
-                  {activeStory.stories.map((s, i) => (
-                    <div key={i} className="h-1 bg-white/20 flex-1 rounded-full overflow-hidden">
-                      <motion.div 
-                        initial={{ width: 0 }} 
-                        animate={{ width: "100%" }} 
-                        transition={{ duration: 5 }} 
-                        onAnimationComplete={() => {
-                          if (i === activeStory.stories.length - 1) setActiveStory(null);
-                        }}
-                        className="h-full bg-white" 
-                      />
-                    </div>
-                  ))}
-              </div>
+      {/* Story Viewer */}
+      {activeStory && (() => {
+        const currentStory = activeStory.stories[currentStoryIndex];
+        const totalStories = activeStory.stories.length;
+        const goNext = (e) => { e?.stopPropagation(); if (currentStoryIndex < totalStories - 1) { storyProgressKey.current++; setCurrentStoryIndex(i => i + 1); setIsStoryPaused(false); } else { setActiveStory(null); } };
+        const goPrev = (e) => { e?.stopPropagation(); if (currentStoryIndex > 0) { storyProgressKey.current++; setCurrentStoryIndex(i => i - 1); setIsStoryPaused(false); } };
+        return (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/90" onClick={() => setActiveStory(null)}>
+          <style>{`
+            @keyframes story-progress-30s { from { width: 0%; } to { width: 100%; } }
+            .story-bar-active { animation: story-progress-30s 30s linear forwards; }
+            .story-bar-active.paused { animation-play-state: paused; }
+            .story-bar-done { width: 100%; background: white; }
+            .story-bar-pending { width: 0%; }
+          `}</style>
+          <div className="relative h-[100dvh] w-full max-w-lg overflow-hidden bg-black shadow-2xl sm:aspect-[9/16] sm:h-auto md:rounded-3xl" onClick={e => e.stopPropagation()}>
 
-              {/* Header */}
-              <div className="absolute top-12 left-6 right-6 flex justify-between items-center z-20">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-full p-[2px] gradient-bg">
-                      <img 
-                        src={activeStory.author.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(activeStory.author.name)}&background=C8922A&color=fff`} 
-                        className="w-full h-full rounded-full border border-black object-cover" 
-                        alt="" 
-                      />
-                    </div>
-                    <div>
-                      <p className="text-white font-bold text-sm leading-tight">{activeStory.author.name}</p>
-                      <p className="text-white/80 text-[10px] uppercase font-bold tracking-widest">{new Date(activeStory.stories[0].createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
-                    </div>
-                  </div>
-                  <button onClick={() => setActiveStory(null)} className="text-white hover:bg-white/20 p-2 bg-white/10 rounded-full transition-all">
-                    <X size={24} />
-                  </button>
-              </div>
+            {/* Progress Bars */}
+            <div className="absolute top-4 left-4 right-4 flex space-x-1 z-30">
+              {activeStory.stories.map((s, i) => (
+                <div key={`${s._id}-${storyProgressKey.current}`} className="h-[3px] bg-white/30 flex-1 rounded-full overflow-hidden">
+                  <div 
+                    onAnimationEnd={() => goNext()}
+                    className={`h-full bg-white rounded-full ${
+                      i < currentStoryIndex ? 'story-bar-done' :
+                      i === currentStoryIndex ? `story-bar-active ${isStoryPaused ? 'paused' : ''}` :
+                      'story-bar-pending'
+                    }`}
+                  />
+                </div>
+              ))}
+            </div>
 
-              {/* Content */}
-              <div className="w-full h-full flex items-center justify-center bg-black">
-                  {activeStory.stories[0].mediaType === 'video' ? (
-                    <video src={activeStory.stories[0].mediaUrl} autoPlay className="w-full h-full object-cover" />
-                  ) : (
-                    <img src={activeStory.stories[0].mediaUrl} className="w-full h-full object-cover" alt="" />
-                  )}
+            {/* Header */}
+            <div className="absolute top-10 left-4 right-4 flex justify-between items-center z-30">
+              <div className="flex items-center space-x-3">
+                <div className="w-9 h-9 rounded-full p-[2px] gradient-bg">
+                  <img 
+                    src={activeStory.author.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(activeStory.author.name)}&background=C8922A&color=fff`} 
+                    className="w-full h-full rounded-full border border-black object-cover" 
+                    alt="" 
+                  />
+                </div>
+                <div>
+                  <p className="!text-white font-bold text-sm leading-tight">{activeStory.author.name}</p>
+                  <p className="!text-white/60 text-[10px] uppercase tracking-wider">
+                    {new Date(currentStory.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} · {currentStoryIndex + 1}/{totalStories}
+                  </p>
+                </div>
               </div>
+              <div className="flex items-center space-x-1">
+                <button onClick={(e) => { e.stopPropagation(); setIsStoryPaused(p => !p); }} className="!text-white p-2 !bg-white/10 hover:!bg-white/20 rounded-full transition-all">
+                  {isStoryPaused ? <Play size={18} /> : <Pause size={18} />}
+                </button>
+                <button onClick={() => setActiveStory(null)} className="!text-white p-2 !bg-white/10 hover:!bg-white/20 rounded-full transition-all">
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
 
-              {/* Story Actions */}
-              <div className="absolute bottom-10 left-6 right-6 flex items-center space-x-4 z-20" onClick={e => e.stopPropagation()}>
-                  <div className="flex-1 rounded-full flex items-center px-5 py-3 border border-white/30 bg-black/40 backdrop-blur-md">
-                    <input 
-                      type="text" 
-                      placeholder={`Reply to ${activeStory.author.name.split(' ')[0]}...`} 
-                      className="bg-transparent text-white text-sm focus:outline-none w-full placeholder:text-white/70"
-                    />
-                  </div>
-                  <button className="p-3 rounded-full text-white hover:text-red-500 bg-black/40 border border-white/30 backdrop-blur-md transition-colors">
-                    <Heart size={24} />
-                  </button>
-                  <button className="p-3 gradient-bg rounded-full text-white shadow-lg">
-                    <Send size={20} />
-                  </button>
-              </div>
-           </div>
+            {/* Content */}
+            <div className="w-full h-full flex items-center justify-center bg-black relative">
+              {currentStory.mediaType === 'video' ? (
+                <video ref={storyVideoRef} src={currentStory.mediaUrl} autoPlay playsInline className="w-full h-full object-cover" />
+              ) : (
+                <img src={currentStory.mediaUrl} className="w-full h-full object-cover" alt="" />
+              )}
+              {/* Top & Bottom Gradients */}
+              <div className="absolute inset-x-0 top-0 h-36 bg-gradient-to-b from-black/70 to-transparent z-10" />
+              <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/80 to-transparent z-10" />
+
+              {/* Tap zones: left = prev, right = next */}
+              <div className="absolute inset-y-0 left-0 w-1/3 z-20 cursor-pointer" onClick={goPrev} />
+              <div className="absolute inset-y-0 right-0 w-1/3 z-20 cursor-pointer" onClick={goNext} />
+            </div>
+
+            {/* Prev / Next Arrow Buttons */}
+            {currentStoryIndex > 0 && (
+              <button
+                onClick={goPrev}
+                className="absolute left-3 top-1/2 -translate-y-1/2 z-30 p-2 !bg-white/15 hover:!bg-white/30 !text-white rounded-full backdrop-blur-sm transition-all"
+              >
+                <ChevronLeft size={24} />
+              </button>
+            )}
+            {currentStoryIndex < totalStories - 1 && (
+              <button
+                onClick={goNext}
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-30 p-2 !bg-white/15 hover:!bg-white/30 !text-white rounded-full backdrop-blur-sm transition-all"
+              >
+                <ChevronRight size={24} />
+              </button>
+            )}
+
+            {/* Story Actions */}
+            <div className="absolute bottom-8 left-4 right-4 flex items-center space-x-3 z-30">
+              <form 
+                onSubmit={(e) => handleStoryReply(e, currentStory._id, activeStory.author._id || activeStory.author.id)}
+                className="flex-1 flex space-x-2"
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="flex-1 rounded-full flex items-center px-4 py-3 border !border-white/30 !bg-black/40 backdrop-blur-md">
+                  <input 
+                    type="text" 
+                    value={storyReplyText}
+                    onChange={(e) => setStoryReplyText(e.target.value)}
+                    placeholder={`Reply to ${activeStory.author.name.split(' ')[0]}...`} 
+                    className="!bg-transparent !text-white text-sm focus:outline-none w-full placeholder:!text-white/60"
+                  />
+                </div>
+                <button 
+                  type="submit"
+                  className="p-3 gradient-bg rounded-full !text-white shadow-lg shrink-0"
+                  disabled={!storyReplyText.trim()}
+                >
+                  <Send size={18} />
+                </button>
+              </form>
+              <button 
+                onClick={(e) => { e.stopPropagation(); handleStoryLike(currentStory._id); }}
+                className="p-3 rounded-full !text-white !bg-black/40 border !border-white/30 backdrop-blur-md shrink-0"
+              >
+                <Heart 
+                  size={22} 
+                  className={(currentStory.likes || []).some(id => id.toString() === (currentUser?._id || currentUser?.id)?.toString()) ? "fill-red-500 text-red-500" : ""}
+                />
+              </button>
+            </div>
+          </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Premium Toast */}
       <AnimatePresence>

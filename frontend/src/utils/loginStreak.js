@@ -13,8 +13,9 @@ export const mergeStreakIntoStoredUser = (streakCount) => {
     const user = JSON.parse(stored);
     const updatedUser = {
       ...user,
+      // Always overwrite both fields with the authoritative value from Supabase
       streak_count: count,
-      streak: user.streak ?? count,
+      streak: count,
     };
     localStorage.setItem("collegeadda_user", JSON.stringify(updatedUser));
     window.dispatchEvent(new CustomEvent(LOGIN_STREAK_UPDATED_EVENT, {
@@ -48,6 +49,10 @@ export const syncLoginStreakForUser = async (userId) => {
 };
 
 export const getDisplayStreak = (profile) => {
-  const count = Number(profile?.streak_count ?? profile?.streak ?? 1);
-  return Number.isFinite(count) && count > 0 ? count : 1;
+  // Prefer streak_count (from Supabase, most authoritative) then fall back to streak (from MongoDB)
+  const raw = profile?.streak_count ?? profile?.streak;
+  const count = Number(raw);
+  // Return 1 as minimum only when we have no data at all (null/undefined)
+  if (raw === null || raw === undefined || !Number.isFinite(count)) return 1;
+  return Math.max(1, count);
 };

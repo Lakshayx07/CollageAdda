@@ -152,17 +152,19 @@ router.post('/login', async (req, res) => {
 
     const user = await User.findOne({ email: normalizedEmail });
     if (user && (await user.matchPassword(password))) {
-      // Update login streak
+      // Update login streak — compare in IST (UTC+5:30) so Indian users get correct day boundaries
+      const toISTDateString = (d) => {
+        const ist = new Date(d.getTime() + 5.5 * 60 * 60 * 1000);
+        return ist.toISOString().slice(0, 10); // "YYYY-MM-DD"
+      };
       const now = new Date();
+      const todayIST = toISTDateString(now);
       if (!user.lastLoginDate) {
         user.streak = 1;
         user.lastLoginDate = now;
       } else {
-        const lastLogin = new Date(user.lastLoginDate);
-        const isSameDay = lastLogin.getFullYear() === now.getFullYear() &&
-                          lastLogin.getMonth() === now.getMonth() &&
-                          lastLogin.getDate() === now.getDate();
-        if (!isSameDay) {
+        const lastIST = toISTDateString(new Date(user.lastLoginDate));
+        if (lastIST !== todayIST) {
           user.streak = (user.streak || 0) + 1;
           user.lastLoginDate = now;
         }
@@ -203,17 +205,19 @@ router.post('/google', async (req, res) => {
       if (university && university !== 'Other' && (!user.university || user.university === 'Other')) {
         user.university = university.trim();
       }
-      // Update login streak
+      // Update login streak — compare in IST (UTC+5:30) so Indian users get correct day boundaries
+      const toISTDateString = (d) => {
+        const ist = new Date(d.getTime() + 5.5 * 60 * 60 * 1000);
+        return ist.toISOString().slice(0, 10);
+      };
       const now = new Date();
+      const todayIST = toISTDateString(now);
       if (!user.lastLoginDate) {
         user.streak = 1;
         user.lastLoginDate = now;
       } else {
-        const lastLogin = new Date(user.lastLoginDate);
-        const isSameDay = lastLogin.getFullYear() === now.getFullYear() &&
-                          lastLogin.getMonth() === now.getMonth() &&
-                          lastLogin.getDate() === now.getDate();
-        if (!isSameDay) {
+        const lastIST = toISTDateString(new Date(user.lastLoginDate));
+        if (lastIST !== todayIST) {
           user.streak = (user.streak || 0) + 1;
           user.lastLoginDate = now;
         }

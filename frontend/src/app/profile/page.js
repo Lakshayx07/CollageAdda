@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { LogOut, Edit3, X, Check, Plus, Grid, Heart, MessageCircle, Send, ChevronLeft, ChevronRight, Share2, Ghost, MapPin, Zap, Star, Camera, Clock, Image as ImageIcon, Music, Code, Palette, Plane, Gamepad2, Book, Dumbbell, Film, Utensils, Trophy, Briefcase } from "lucide-react";
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { LogOut, Edit3, X, Check, Plus, Grid, Heart, MessageCircle, Send, ChevronLeft, ChevronRight, Share2, Ghost, MapPin, Zap, Star, Camera, Clock, Image as ImageIcon, Music, Code, Palette, Plane, Gamepad2, Book, Dumbbell, Film, Utensils, Trophy, Briefcase, Users, Crown, CalendarDays, GraduationCap, Flame, Building2 } from "lucide-react";
+import { getAuthenticatedSupabaseClient } from "@/utils/supabaseAuthUser";
 
 const InstagramIcon = ({ size = 20 }) => (
   <svg 
@@ -93,6 +94,8 @@ export default function ProfilePage() {
   const [isAvatarUploading, setIsAvatarUploading] = useState(false);
   const [unfollowingId, setUnfollowingId] = useState(null);
   const [activeTab, setActiveTab] = useState("about");
+  const [communitiesCount, setCommunitiesCount] = useState(0);
+  const [campusUsers, setCampusUsers] = useState([]);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
@@ -197,6 +200,72 @@ export default function ProfilePage() {
   );
 
   const squadsCount = followers.filter(f => following.some(fol => fol._id === f._id || fol.id === f._id)).length;
+
+  // -- TanStack Query: Colleges (for banner image) --
+  const { data: colleges = [] } = useApiQuery(
+    "profile-colleges",
+    "/api/colleges",
+    { staleTime: 30 * 60 * 1000 }
+  );
+
+  // -- TanStack Query: Campus Users (for rank calc - same university only) --
+  const { data: campusUsersRaw = [] } = useApiQuery(
+    "profile-campus-users",
+    "/api/users/search/query?q=&filter=same_campus",
+    {
+      enabled: !!getToken(),
+      staleTime: 5 * 60 * 1000,
+    }
+  );
+
+  // Fetch communities count from Supabase
+  useEffect(() => {
+    const loadCommunitiesCount = async () => {
+      try {
+        const { client: authSupabase, user: authUser } = await getAuthenticatedSupabaseClient();
+        const { data, error } = await authSupabase
+          .from("community_members")
+          .select("community_id")
+          .eq("user_id", authUser.id);
+        if (!error && data) setCommunitiesCount(data.length);
+      } catch (err) {
+        console.error("Error fetching communities count:", err);
+      }
+    };
+    loadCommunitiesCount();
+  }, []);
+
+  // Derived: college banner from user's university
+  const collegeBanner = useMemo(() => {
+    if (!colleges.length || !user?.university) return null;
+    const match = colleges.find(c =>
+      c.name?.toLowerCase().trim() === user.university?.toLowerCase().trim()
+    );
+    return match?.banner || null;
+  }, [colleges, user?.university]);
+
+  // Derived: college location
+  const collegeLocation = useMemo(() => {
+    if (!colleges.length || !user?.university) return null;
+    const match = colleges.find(c =>
+      c.name?.toLowerCase().trim() === user.university?.toLowerCase().trim()
+    );
+    return match?.location || null;
+  }, [colleges, user?.university]);
+
+  // Derived: campus rank (same formula as Squad leaderboard: followers + following)
+  const campusRank = useMemo(() => {
+    if (!user) return null;
+    const getSocialCount = (val) => Array.isArray(val) ? val.length : Number(val || 0);
+    const myScore = getSocialCount(user.followers) + getSocialCount(user.following);
+
+    const allUsers = campusUsersRaw.length > 0 ? campusUsersRaw : [];
+    const scores = allUsers.map(u => getSocialCount(u.followers) + getSocialCount(u.following));
+    // Count how many have higher score
+    const rank = scores.filter(s => s > myScore).length + 1;
+    return rank;
+  }, [user, campusUsersRaw]);
+
 
   useEffect(() => {
     const handleStreakUpdate = (event) => {
@@ -388,20 +457,7 @@ export default function ProfilePage() {
 
   return (
     <div className="page-shell profile-page relative overflow-x-hidden">
-      {/* ============ ANIMATED BACKGROUND ============ */}
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-        {/* Grid pattern */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          backgroundImage: `linear-gradient(rgba(200,146,42,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(200,146,42,0.04) 1px, transparent 1px)`,
-          backgroundSize: '64px 64px',
-        }} />
-        {/* Top fade */}
-        <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, height: '350px',
-          background: 'linear-gradient(180deg, rgba(200,146,42,0.05) 0%, transparent 100%)',
-        }} />
-      </div>
+
 
       {/* Header - only show on mobile, sidebar handles desktop nav */}
       <header className="lg:hidden page-header sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
@@ -416,13 +472,6 @@ export default function ProfilePage() {
           <motion.button 
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            className="p-2.5 bg-[#F9F8F5] border border-[#E8E6E0] rounded-2xl text-[#6B6B6B] hover:text-[#1A1A1A] border border-[#E8E6E0]"
-          >
-            <Share2 size={20} />
-          </motion.button>
-          <motion.button 
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
             onClick={handleLogout}
             className="p-2.5 bg-[#F9F8F5] border border-[#E8E6E0] rounded-2xl text-red-500/50 hover:text-red-500 border border-[#E8E6E0]"
           >
@@ -431,125 +480,182 @@ export default function ProfilePage() {
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-6 pt-10 relative z-10 space-y-8">
-        {/* Top Profile Header */}
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 pb-6 border-b border-[#E8E6E0]">
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-10 flex-1">
-            {/* Avatar Area */}
-            <div className="relative shrink-0">
-              {hasActiveStory && (
-                <div className="absolute -inset-1.5 rounded-full p-[3px] z-10 pointer-events-none"
-                  style={{ background: "conic-gradient(from 0deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888, #a855f7, #7c3aed, #f09433)" }}
-                >
-                  <div className="w-full h-full rounded-full bg-[#FAFAF8]" />
+      <div className="max-w-5xl mx-auto relative z-10 space-y-0 pb-20 lg:pt-6">
+
+        {/* ===== BANNER + PROFILE HEADER CARD ===== */}
+        <div className="relative rounded-none md:rounded-[1.75rem] overflow-hidden bg-white border border-[#E8E6E0] shadow-sm">
+
+          {/* Banner Image */}
+          <div className="relative w-full h-44 md:h-52 bg-gradient-to-br from-[#D4A843]/20 to-[#F9F8F5] overflow-hidden">
+            {collegeBanner ? (
+              <img
+                src={collegeBanner}
+                alt={user.university}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-[#C8922A]/15 via-[#F3F2EE] to-[#D4A843]/10 flex items-center justify-center">
+                <Building2 size={48} className="text-[#C8922A]/30" />
+              </div>
+            )}
+          </div>
+
+          {/* Profile Pic — overlapping banner */}
+          <div className="px-6 pb-5">
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 -mt-14 sm:-mt-16">
+
+              {/* Avatar */}
+              <div className="relative shrink-0 z-10">
+                {hasActiveStory && (
+                  <div className="absolute -inset-1.5 rounded-full p-[3px] z-10 pointer-events-none"
+                    style={{ background: "conic-gradient(from 0deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888, #a855f7, #7c3aed, #f09433)" }}
+                  >
+                    <div className="w-full h-full rounded-full bg-white" />
+                  </div>
+                )}
+                <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full p-[3px] gradient-bg shadow-xl z-20 border-4 border-white">
+                  <div
+                    onClick={() => hasActiveStory ? setModal("viewStory") : null}
+                    className={`w-full h-full rounded-full bg-[#FAFAF8] flex items-center justify-center overflow-hidden ${hasActiveStory ? 'cursor-pointer active:scale-95 transition-transform' : ''}`}
+                  >
+                    {user.profilePic ? (
+                      <img
+                        src={user.profilePic}
+                        className="w-full h-full object-cover"
+                        onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=C8922A&color=fff`; }}
+                        alt={user.name}
+                      />
+                    ) : (
+                      <span className="text-4xl font-black text-[#1A1A1A]">{user.name?.charAt(0)}</span>
+                    )}
+                  </div>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setModal("uploadChoice")}
+                    className="absolute -bottom-1 -right-1 w-8 h-8 gradient-bg rounded-xl border-2 border-white flex items-center justify-center text-white shadow-md z-30"
+                  >
+                    <Plus size={15} strokeWidth={3} />
+                  </motion.button>
                 </div>
-              )}
-              <div className="relative w-[200px] h-[200px] rounded-full p-[3px] gradient-bg shadow-xl z-20">
-                <div 
-                  onClick={() => hasActiveStory ? setModal("viewStory") : null}
-                  className={`w-full h-full rounded-full bg-[#FAFAF8] flex items-center justify-center overflow-hidden ${hasActiveStory ? 'cursor-pointer active:scale-95 transition-transform' : ''}`}
+              </div>
+
+              {/* Action Buttons (top-right of card) */}
+              <div className="flex items-center gap-2 self-start sm:self-auto pt-1">
+                <button
+                  onClick={() => setModal("edit")}
+                  className="px-5 py-2 bg-white border border-[#E8E6E0] rounded-xl text-xs font-bold text-[#1A1A1A] hover:bg-[#F9F8F5] transition-all shadow-sm"
                 >
-                  {user.profilePic ? (
-                    <img 
-                      src={user.profilePic} 
-                      className="w-full h-full object-cover" 
-                      onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=7C3AED&color=fff`; }}
-                      alt={user.name}
-                    />
-                  ) : (
-                    <span className="text-6xl font-black text-[#1A1A1A]">{user.name?.charAt(0)}</span>
-                  )}
-                </div>
-                <motion.button 
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setModal("uploadChoice")}
-                  className="absolute -bottom-1 -right-1 w-8 h-8 gradient-bg rounded-xl border-2 border-white flex items-center justify-center text-white shadow-md z-30"
+                  Edit Profile
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="p-2 bg-white border border-red-200 rounded-xl text-red-500 hover:bg-red-50 hover:border-red-300 transition-all shadow-sm"
                 >
-                  <Plus size={16} strokeWidth={3} />
-                </motion.button>
+                  <LogOut size={15} />
+                </button>
               </div>
             </div>
 
-            {/* Profile Info Details */}
-            <div className="text-center sm:text-left space-y-2.5">
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                <h2 className="text-3xl font-black text-[#1A1A1A] tracking-tight">{user.name}</h2>
-                <VerifiedBadge user={user} size={20} />
+            {/* Name & Verified */}
+            <div className="mt-3 space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-2xl font-black text-[#1A1A1A] tracking-tight">{user.name}</h2>
+                <VerifiedBadge user={user} size={18} />
               </div>
-              
-              <p className="text-xs text-[#6B6B6B] font-semibold">
-                {[user.university, [user.course, user.branch].filter(Boolean).join(" · ")].filter(Boolean).join("  •  ")}
-              </p>
 
               {user.bio && (
-                <p className="text-sm font-medium text-[#4A4A4A] max-w-lg leading-relaxed">{user.bio}</p>
+                <p className="text-sm text-[#4A4A4A] font-medium leading-relaxed max-w-lg">{user.bio}</p>
               )}
 
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-xs text-[#888888]">
-                <div className="flex items-center gap-1.5">
-                  <MapPin size={14} className="text-[#888888]" />
-                  <span>{user.branch || "India"}</span>
+              {/* University / Course / Class / Location row */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px] text-[#6B6B6B] font-semibold">
+                {user.university && (
+                  <span className="flex items-center gap-1.5">
+                    <Building2 size={13} className="text-[#C8922A] shrink-0" />
+                    {user.university}
+                  </span>
+                )}
+                {(user.course || user.branch) && (
+                  <span className="flex items-center gap-1.5">
+                    <GraduationCap size={13} className="text-[#C8922A] shrink-0" />
+                    {[user.course, user.branch].filter(Boolean).join(' • ')}
+                  </span>
+                )}
+                {user.passOutBatch && (
+                  <span className="flex items-center gap-1.5">
+                    <Users size={13} className="text-[#C8922A] shrink-0" />
+                    Class of {user.passOutBatch}
+                  </span>
+                )}
+                {(collegeLocation || user.studyYear) && (
+                  <span className="flex items-center gap-1.5">
+                    <MapPin size={13} className="text-[#C8922A] shrink-0" />
+                    {collegeLocation || user.studyYear}
+                  </span>
+                )}
+              </div>
+
+              {/* Pills row: Streak + Campus Rank + Joined */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Streak pill */}
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black bg-orange-50 border border-orange-200 text-orange-600">
+                    <Flame size={13} className="text-orange-500" />
+                    {getDisplayStreak(user)} Day Streak
+                  </span>
+
+                  {/* Campus Rank pill */}
+                  {campusRank && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black bg-yellow-50 border border-yellow-200 text-yellow-700">
+                      <Trophy size={13} className="text-yellow-500" />
+                      Campus Rank #{campusRank}
+                    </span>
+                  )}
                 </div>
-                {user.instagram && (
-                  <a 
-                    href={user.instagram.includes('http') ? user.instagram : `https://instagram.com/${user.instagram}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 text-[#C8922A] hover:underline"
-                  >
-                    <span className="text-xs">🔗</span>
-                    <span>{extractInstagramUsername(user.instagram)}</span>
-                  </a>
+
+                {/* Joined date */}
+                {user.createdAt && (
+                  <span className="flex items-center gap-1.5 text-[11px] text-[#888888] font-semibold">
+                    <CalendarDays size={12} className="text-[#888888]" />
+                    Since {new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  </span>
                 )}
               </div>
             </div>
           </div>
-
-          {/* Action Buttons */}
-          <div className="flex items-center justify-center gap-3 shrink-0">
-            <button 
-              onClick={() => setModal("edit")}
-              className="px-6 py-2.5 bg-white border border-[#E8E6E0] rounded-xl text-xs font-bold text-[#1A1A1A] hover:bg-[#F9F8F5] transition-all"
-            >
-              Edit Profile
-            </button>
-            <button 
-              className="p-2.5 bg-white border border-[#E8E6E0] rounded-xl text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#F9F8F5] transition-all"
-            >
-              <Share2 size={16} />
-            </button>
-            <button 
-              onClick={handleLogout}
-              className="p-2.5 bg-white border border-red-200 rounded-xl text-red-500 hover:bg-red-50 hover:border-red-300 transition-all"
-            >
-              <LogOut size={16} />
-            </button>
-          </div>
         </div>
 
-        {/* Stats Row */}
-        <div className="grid grid-cols-4 gap-4 py-4 text-center border-b border-[#F3F2EE]">
+        {/* ===== STATS ROW ===== */}
+        <div className="grid grid-cols-5 gap-0 bg-white border-x border-b border-[#E8E6E0] shadow-sm md:rounded-b-[1.75rem] overflow-hidden">
           {[
-            { label: "Posts", value: userPosts.length },
-            { label: "Followers", value: followers.length, action: () => setModal("followers") },
-            { label: "Following", value: following.length, action: () => setModal("following") },
-            { label: "Squads", value: squadsCount, action: () => setModal("followers") }
-          ].map((stat) => (
+            { icon: <Grid size={18} className="text-emerald-500" />, iconBg: "bg-emerald-50", label: "Posts", value: userPosts.length },
+            { icon: <Users size={18} className="text-blue-500" />, iconBg: "bg-blue-50", label: "Followers", value: followers.length, action: () => setModal("followers") },
+            { icon: <Users size={18} className="text-indigo-500" />, iconBg: "bg-indigo-50", label: "Following", value: following.length, action: () => setModal("following") },
+            { icon: <Crown size={18} className="text-purple-500" />, iconBg: "bg-purple-50", label: "Campus Rank", value: campusRank ? `#${campusRank}` : "—" },
+            { icon: <Users size={18} className="text-pink-500" />, iconBg: "bg-pink-50", label: "Communities", value: communitiesCount },
+          ].map((stat, i, arr) => (
             <button
               key={stat.label}
-              disabled={!stat.action}
               onClick={stat.action}
-              className="flex flex-col items-center group cursor-pointer"
+              disabled={!stat.action}
+              className={`flex flex-col items-center py-5 px-2 gap-1.5 transition-colors group ${
+                stat.action ? 'hover:bg-[#F9F8F5] cursor-pointer' : 'cursor-default'
+              } ${
+                i < arr.length - 1 ? 'border-r border-[#F3F2EE]' : ''
+              }`}
             >
-              <span className="text-lg font-extrabold text-[#1A1A1A] group-hover:scale-105 transition-transform">
-                {stat.value}
-              </span>
-              <span className="text-xs text-[#888888] font-medium mt-0.5">{stat.label}</span>
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${stat.iconBg} group-hover:scale-110 transition-transform`}>
+                {stat.icon}
+              </div>
+              <span className="text-lg font-black text-[#1A1A1A] leading-none">{stat.value}</span>
+              <span className="text-[10px] text-[#888888] font-semibold uppercase tracking-wide">{stat.label}</span>
             </button>
           ))}
         </div>
 
+        {/* Tab Navigation + Content */}
+        <div className="px-4 md:px-0 pt-6 pb-10 space-y-6">
         {/* Tab Navigation */}
         <div className="flex border-b border-[#F3F2EE] gap-6 text-sm font-semibold">
           {["about", "posts", "communities"].map((tab) => (
@@ -737,7 +843,10 @@ export default function ProfilePage() {
             <p className="text-xs text-[#888888] mt-1">Explore and join student-run clubs on CampusAdda.</p>
           </div>
         )}
-      </div>
+        </div>{/* end Tab Navigation + Content */}
+      </div>{/* end max-w-4xl */}
+
+
 
       {/* Toast */}
       <AnimatePresence>

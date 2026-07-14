@@ -19,8 +19,7 @@ import hustleRoutes from './routes/hustleRoutes.js';
 import confessionRoutes from './routes/confessionRoutes.js';
 import collabRoutes from './routes/collabRoutes.js';
 
-// Connect to database
-connectDB();
+// Database connection moved to the bottom before server start
 
 const app = express();
 const httpServer = createServer(app);
@@ -61,7 +60,8 @@ app.use((req, res, next) => {
   } else if (req.path === '/api/users/leaderboard') {
     res.setHeader('Cache-Control', 'public, max-age=60');
   } else {
-    res.setHeader('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+    // Allow browsers to cache private API responses for 1 minute to speed up navigation
+    res.setHeader('Cache-Control', 'private, max-age=60');
   }
   next();
 });
@@ -217,7 +217,9 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 5001;
-httpServer.listen(PORT, () => {
-  console.log(`\n🚀 CollegeAdda server running on http://localhost:${PORT}`);
-  console.log(`   Mode: ${process.env.NODE_ENV || 'development'}\n`);
+connectDB().then(() => {
+  httpServer.listen(PORT, () => {
+    console.log(`\n🚀 CollegeAdda server running on http://localhost:${PORT}`);
+    console.log(`   Mode: ${process.env.NODE_ENV || 'development'}\n`);
+  });
 });
