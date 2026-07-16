@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Users2, Globe, Plus, CheckCircle2, Loader2, X, AlertCircle } from "lucide-react";
+import { Users2, Globe, Plus, CheckCircle2, Loader2, X, AlertCircle, ArrowRight, Flame, Sparkles, MessageCircle, Camera, Gamepad2, Code2, Send, Briefcase, Music, Palette } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import clsx from "clsx";
@@ -13,11 +13,13 @@ export default function CommunityPage() {
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
   const [user, setUser] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState("");
   const queryClient = useQueryClient();
   
   // UI States
   const [joiningCommunityId, setJoiningCommunityId] = useState(null);
   const [activeTab, setActiveTab] = useState("all"); // all | my | public | invite
+  const [categoryFilter, setCategoryFilter] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [communityToast, setCommunityToast] = useState(null);
   
@@ -52,6 +54,7 @@ export default function CommunityPage() {
     queryKey: ['community-memberships'],
     queryFn: async () => {
       const { client: authSupabase, user: authUser } = await getAuthenticatedSupabaseClient();
+      setCurrentUserId(authUser.id);
       const { data, error } = await authSupabase
         .from("community_members")
         .select("community_id")
@@ -63,22 +66,47 @@ export default function CommunityPage() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const { data: unreadCounts = {} } = useQuery({
+    queryKey: ['community-unread-counts', currentUserId, communities.map(c => c.id).join(",")],
+    queryFn: async () => {
+      if (!currentUserId || communities.length === 0) return {};
+      const { client: authSupabase } = await getAuthenticatedSupabaseClient();
+      const { data, error } = await authSupabase
+        .from("community_messages")
+        .select("community_id,sender_id,created_at")
+        .in("community_id", communities.map(c => c.id))
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+
+      return (data || []).reduce((acc, msg) => {
+        if (msg.sender_id === currentUserId) return acc;
+        const seenAt = localStorage.getItem(`community_seen_${msg.community_id}`);
+        if (seenAt && new Date(msg.created_at) <= new Date(seenAt)) return acc;
+        acc[msg.community_id] = (acc[msg.community_id] || 0) + 1;
+        return acc;
+      }, {});
+    },
+    enabled: !!supabase && isMounted && !!currentUserId && communities.length > 0,
+    staleTime: 30 * 1000,
+  });
+
   const loading = !isMounted || communitiesLoading;
 
-  const communityGradients = [
-    "from-amber-400 to-orange-500",
-    "from-violet-500 to-purple-600",
-    "from-teal-400 to-cyan-500",
-    "from-rose-400 to-pink-500",
-    "from-emerald-400 to-green-500",
-    "from-blue-400 to-indigo-500",
+  const communityThemes = [
+    { gradient: "from-orange-400 to-orange-600", soft: "bg-orange-50", text: "text-orange-600", border: "border-orange-400", tint: "bg-orange-500/10", icon: Gamepad2 },
+    { gradient: "from-violet-500 to-purple-600", soft: "bg-violet-50", text: "text-violet-600", border: "border-violet-400", tint: "bg-violet-500/10", icon: Users2 },
+    { gradient: "from-emerald-400 to-green-600", soft: "bg-emerald-50", text: "text-emerald-600", border: "border-emerald-400", tint: "bg-emerald-500/10", icon: Code2 },
+    { gradient: "from-sky-400 to-cyan-600", soft: "bg-sky-50", text: "text-sky-600", border: "border-sky-400", tint: "bg-sky-500/10", icon: Camera },
+    { gradient: "from-rose-400 to-pink-600", soft: "bg-rose-50", text: "text-rose-600", border: "border-rose-400", tint: "bg-rose-500/10", icon: Sparkles },
+    { gradient: "from-amber-400 to-yellow-600", soft: "bg-amber-50", text: "text-amber-700", border: "border-amber-400", tint: "bg-amber-500/10", icon: MessageCircle },
   ];
 
-  const getCommunityGradient = (id) => {
-    if (!id) return communityGradients[0];
+  const getCommunityTheme = (id) => {
+    if (!id) return communityThemes[0];
     let hash = 0;
     for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) & 0xffffffff;
-    return communityGradients[Math.abs(hash) % communityGradients.length];
+    return communityThemes[Math.abs(hash) % communityThemes.length];
   };
 
   const showToast = (type, msg) => {
@@ -215,152 +243,301 @@ export default function CommunityPage() {
     if (activeTab === "my") return membershipSet.has(c.id);
     if (activeTab === "public") return c.privacy === "public";
     if (activeTab === "invite") return c.privacy === "invite_only";
+    if (categoryFilter) {
+      const haystack = [c.name, c.description, ...(c.tags || [])].join(" ").toLowerCase();
+      return haystack.includes(categoryFilter.toLowerCase());
+    }
     return true; // "all"
   });
+
+  const trendingCommunities = [...communities]
+    .sort((a, b) => (b.member_count || 0) - (a.member_count || 0))
+    .slice(0, 3);
+  const categoryItems = [
+    { label: "Sports", icon: Globe },
+    { label: "Gaming", icon: Gamepad2 },
+    { label: "Tech", icon: Code2 },
+    { label: "Business", icon: Briefcase },
+    { label: "Art & Design", icon: Palette },
+    { label: "Music", icon: Music },
+  ];
 
   if (!isMounted) return null;
 
   return (
-    <div className="min-h-screen bg-[#F9F8F5] pb-24 lg:pb-8 pt-[70px] lg:pt-0">
-      <div className="w-full max-w-none p-4 md:p-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-black text-[#1A1A1A] flex items-center gap-3">
-              <Users2 className="text-[#C8922A]" size={32} />
-              Communities
-            </h1>
-            <p className="text-sm text-[#6B6B6B] mt-1 font-medium">
-              Discover and join global student groups across all campuses.
-            </p>
-          </div>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => setShowCreateModal(true)}
-            className="w-auto bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white px-5 py-3 rounded-xl font-bold text-sm shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <Plus size={18} />
-            Create Community
-          </motion.button>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-6 pb-2">
-          {["all", "my", "public", "invite"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={clsx(
-                "px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border cursor-pointer",
-                activeTab === tab
-                  ? "bg-[#FCF5E5] text-[#C8922A] border-[#C8922A] shadow-sm"
-                  : "bg-white text-[#6B6B6B] border-[#E8E6E0] hover:bg-[#F3F2EE]"
-              )}
-            >
-              {tab === "all" && "All Communities"}
-              {tab === "my" && "My Communities"}
-              {tab === "public" && "Public"}
-              {tab === "invite" && "Invite Only"}
-            </button>
-          ))}
-        </div>
-
-        {/* Grid */}
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="animate-spin text-[#C8922A]" size={32} />
-          </div>
-        ) : filteredCommunities.length === 0 ? (
-          <div className="bg-white rounded-3xl p-12 text-center border border-[#E8E6E0] shadow-sm flex flex-col items-center">
-            <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mb-4">
-              <Globe size={32} className="text-[#C8922A]" />
-            </div>
-            <h3 className="text-xl font-black text-[#1A1A1A] mb-2">No communities found</h3>
-            <p className="text-[#6B6B6B] text-sm max-w-sm mb-6 font-medium">
-              {activeTab === "all" ? "Be the first to start a community and bring students together!" : "Try selecting a different filter or explore all communities."}
-            </p>
-            {activeTab === "all" && (
-              <button onClick={() => setShowCreateModal(true)} className="text-[#C8922A] font-bold text-sm hover:underline cursor-pointer">
-                + Create one now
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filteredCommunities.map((comm) => {
-              const isMember = membershipSet.has(comm.id);
-              const isJoining = joiningCommunityId === comm.id;
-              const grad = getCommunityGradient(comm.id);
-              
-              return (
-                <div key={comm.id} className="bg-white rounded-3xl overflow-hidden border border-[#E8E6E0] shadow-sm hover:shadow-md transition-shadow flex flex-col">
-                  {/* Banner */}
-                  <div className={`h-20 w-full bg-gradient-to-r ${grad} relative`} />
-                  
-                  <div className="px-6 pb-6 pt-0 flex-1 flex flex-col relative">
-                    {/* Avatar floating over banner */}
-                    <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${grad} border-4 border-white flex items-center justify-center text-white font-black text-2xl shadow-sm -mt-8 mb-3`}>
-                      {comm.name.charAt(0).toUpperCase()}
+    <div className="min-h-screen bg-[#FAF9F6] pb-24 lg:pb-8 pt-[70px] lg:pt-0">
+      <div className="w-full max-w-[1380px] mx-auto p-4 md:p-6">
+        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_300px] gap-6">
+          <main className="min-w-0">
+            <section className="relative overflow-hidden rounded-[1.5rem] bg-white border border-[#EEE7DD] shadow-sm mb-6">
+              <div className="grid min-h-[210px] md:grid-cols-[0.92fr_1.08fr]">
+                <div className="relative z-10 p-5 md:p-6 flex flex-col justify-between gap-6">
+                  <div>
+                    <div className="w-11 h-11 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center shadow-sm mb-4">
+                      <Users2 size={23} />
                     </div>
-                    
-                    {/* Content */}
-                    <div className="mb-auto">
-                      <div className="flex items-start justify-between gap-2 mb-1">
-                        <h3 onClick={() => router.push(`/community/${comm.id}`)} className="text-lg font-black text-[#1A1A1A] leading-tight cursor-pointer hover:text-[#C8922A] transition-colors line-clamp-1">
-                          {comm.name}
-                        </h3>
-                        {comm.privacy === 'invite_only' && (
-                          <span className="bg-gray-100 text-gray-500 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0">
-                            Private
+                    <h1 className="text-3xl md:text-4xl font-black text-[#151515] tracking-normal flex items-center gap-2">
+                      Communities <Sparkles className="text-orange-400" size={21} />
+                    </h1>
+                    <p className="text-sm md:text-base text-[#585858] mt-3 font-semibold leading-relaxed max-w-xl">
+                      Discover, join and connect with student communities across all campuses.
+                    </p>
+                  </div>
+
+                  <div className="flex overflow-x-auto hide-scrollbar gap-2.5 pb-1">
+                    {["all", "my", "public", "invite"].map((tab) => (
+                      <button
+                        key={tab}
+                        onClick={() => {
+                          setActiveTab(tab);
+                          setCategoryFilter("");
+                        }}
+                        className={clsx(
+                          "px-4 py-2.5 rounded-2xl text-xs font-black whitespace-nowrap transition-all border cursor-pointer",
+                          activeTab === tab
+                            ? "bg-orange-600 text-white border-orange-600 shadow-lg shadow-orange-500/20"
+                            : "bg-white/90 text-[#333333] border-[#ECE6DD] hover:border-orange-200 hover:text-orange-600"
+                        )}
+                      >
+                        {tab === "all" && "All Communities"}
+                        {tab === "my" && "My Communities"}
+                        {tab === "public" && "Public"}
+                        {tab === "invite" && "Invite Only"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="relative hidden md:block overflow-hidden">
+                  <div className="absolute inset-y-6 right-0 left-0 rounded-l-[3rem] bg-gradient-to-br from-orange-50 via-orange-100/70 to-white" />
+                  <div className="absolute right-[-70px] bottom-[-100px] w-[300px] h-[300px] rounded-full border-[24px] border-orange-200/50" />
+                  <div className="absolute right-[-32px] bottom-[-70px] w-[235px] h-[235px] rounded-full border border-orange-300/30" />
+                  <div className="absolute right-12 top-8 w-11 h-11 rotate-12 rounded-2xl bg-white shadow-lg flex items-center justify-center text-orange-500">
+                    <Send size={22} />
+                  </div>
+                  <div className="absolute left-[38%] top-[43%] w-14 h-14 rounded-2xl bg-orange-500 text-white shadow-xl flex items-center justify-center">
+                    <MessageCircle size={26} />
+                  </div>
+                  <div className="absolute left-[52%] top-[62%] w-10 h-10 rounded-2xl bg-white shadow-lg flex items-center justify-center text-orange-500">
+                    <Users2 size={19} />
+                  </div>
+                  {[
+                    ["D", "left-[22%] top-[24%]", "bg-orange-100"],
+                    ["A", "left-[18%] top-[58%]", "bg-emerald-100"],
+                    ["R", "left-[62%] top-[30%]", "bg-white"],
+                  ].map(([initial, pos, bg]) => (
+                    <div key={initial} className={`absolute ${pos} w-12 h-12 rounded-full ${bg} border-4 border-white shadow-lg flex items-center justify-center font-black text-[#1A1A1A]`}>
+                      {initial}
+                    </div>
+                  ))}
+                  <div className="absolute left-[25%] top-[31%] w-[54%] h-px border-t border-dashed border-orange-300/60 rotate-12" />
+                  <div className="absolute left-[27%] top-[58%] w-[35%] h-px border-t border-dashed border-orange-300/60 -rotate-12" />
+                </div>
+              </div>
+            </section>
+
+            <div className="flex items-center gap-3 mb-5">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center">
+                  <Flame size={19} />
+                </div>
+                <h2 className="text-xl font-black text-[#1A1A1A]">Top Communities</h2>
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="animate-spin text-orange-500" size={32} />
+              </div>
+            ) : filteredCommunities.length === 0 ? (
+              <div className="bg-white rounded-3xl p-12 text-center border border-[#E8E6E0] shadow-sm flex flex-col items-center">
+                <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mb-4">
+                  <Globe size={32} className="text-orange-500" />
+                </div>
+                <h3 className="text-xl font-black text-[#1A1A1A] mb-2">No communities found</h3>
+                <p className="text-[#6B6B6B] text-sm max-w-sm mb-6 font-medium">
+                  {activeTab === "all" ? "Be the first to start a community and bring students together!" : "Try selecting a different filter or explore all communities."}
+                </p>
+                {activeTab === "all" && (
+                  <button onClick={() => setShowCreateModal(true)} className="text-orange-600 font-bold text-sm hover:underline cursor-pointer">
+                    + Create one now
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-5">
+                {filteredCommunities.map((comm) => {
+                  const isMember = membershipSet.has(comm.id);
+                  const isJoining = joiningCommunityId === comm.id;
+                  const theme = getCommunityTheme(comm.id);
+                  const Icon = theme.icon;
+                  const unread = unreadCounts[comm.id] || 0;
+
+                  return (
+                    <div key={comm.id} className="bg-white rounded-[1.35rem] overflow-hidden border border-[#ECE6DD] shadow-sm hover:shadow-xl hover:shadow-black/5 transition-all flex flex-col">
+                      <div className={`h-[72px] w-full bg-gradient-to-r ${theme.gradient} relative overflow-hidden`}>
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(255,255,255,0.55),transparent_26%),radial-gradient(circle_at_78%_10%,rgba(255,255,255,0.28),transparent_22%)]" />
+                        {(comm.member_count || 0) >= (trendingCommunities[0]?.member_count || Infinity) && (
+                          <span className="absolute right-4 top-4 rounded-full bg-black/25 text-white text-[10px] font-black px-3 py-1 shadow-sm">
+                            Featured
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-[#6B6B6B] line-clamp-2 leading-relaxed min-h-[40px] font-medium">
-                        {comm.description || "No description provided."}
-                      </p>
-                      
-                      {/* Tags */}
-                      <div className="flex flex-wrap gap-1.5 mt-4">
-                        {(comm.tags || []).slice(0, 3).map(tag => (
-                          <span key={tag} className="text-[10px] bg-amber-50 text-amber-700 px-2 py-1 rounded-full font-bold">
-                            #{tag}
-                          </span>
-                        ))}
+
+                      <div className="px-5 pb-5 pt-0 flex-1 flex flex-col relative">
+                        <div className={`relative z-10 w-[52px] h-[52px] rounded-2xl ${theme.soft} ${theme.text} border-4 border-white flex items-center justify-center font-black text-xl shadow-lg -mt-6 mb-3`}>
+                          <Icon size={25} />
+                        </div>
+
+                        <div className="mb-auto">
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <h3 onClick={() => router.push(`/community/${comm.id}`)} className="text-lg font-black text-[#1A1A1A] leading-tight cursor-pointer hover:text-orange-600 transition-colors line-clamp-1">
+                              {comm.name}
+                            </h3>
+                            {comm.privacy === 'invite_only' && (
+                              <span className="bg-gray-100 text-gray-500 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0">
+                                Private
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-[#333333] line-clamp-1 font-bold">
+                            {comm.description || "Student community"}
+                          </p>
+                          <p className="text-xs text-[#6B6B6B] line-clamp-2 leading-relaxed mt-2 min-h-[34px] font-medium">
+                            {comm.description ? "Join conversations, share ideas and grow with students who care about the same things." : "A space for students to connect, collaborate and keep the conversation moving."}
+                          </p>
+
+                          <div className="flex flex-wrap gap-2 mt-4">
+                            {(comm.tags || []).slice(0, 3).map(tag => (
+                              <span key={tag} className={`text-[11px] ${theme.soft} ${theme.text} px-3 py-1 rounded-full font-black`}>
+                                #{tag}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="mt-5 pt-4 border-t border-[#F0ECE5]">
+                          <div className="flex items-center gap-2 text-xs font-black text-[#555555] mb-4">
+                            <Users2 size={16} className="text-[#1A1A1A]" />
+                            {comm.member_count} member{comm.member_count !== 1 ? 's' : ''}
+                          </div>
+
+                          {isMember ? (
+                            <button
+                              onClick={() => router.push(`/community/${comm.id}`)}
+                              className={clsx(
+                                "relative w-full flex items-center justify-center gap-2 rounded-2xl border bg-transparent px-4 py-2.5 text-sm font-black transition-all cursor-pointer hover:bg-black/[0.02]",
+                                theme.text,
+                                theme.border
+                              )}
+                            >
+                              Explore Now
+                              <ArrowRight size={16} />
+                              {unread > 0 && (
+                                <span className="absolute -right-2 -top-2 min-w-7 h-7 px-2 rounded-full bg-[#1A1A1A] text-white text-xs font-black flex items-center justify-center shadow-lg">
+                                  +{unread > 99 ? "99" : unread}
+                                </span>
+                              )}
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleJoinCommunity(comm)}
+                              disabled={isJoining}
+                              className={clsx(
+                                "w-full flex items-center justify-center gap-2 rounded-2xl border bg-transparent px-4 py-2.5 text-sm font-black transition-all disabled:opacity-50 cursor-pointer hover:bg-black/[0.02]",
+                                theme.text,
+                                theme.border
+                              )}
+                            >
+                              {isJoining ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+                              {comm.privacy === 'invite_only' ? 'Request to Join' : 'Join Community'}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    
-                    {/* Footer */}
-                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-[#F3F2EE]">
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-[#888888]">
-                        <Users2 size={14} className="text-[#C8922A]" />
-                        {comm.member_count} member{comm.member_count !== 1 ? 's' : ''}
-                      </div>
-                      
-                      {isMember ? (
-                        <button 
-                          onClick={() => router.push(`/community/${comm.id}`)}
-                          className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 px-4 py-2 rounded-xl transition-colors hover:bg-emerald-100 cursor-pointer"
-                        >
-                          <CheckCircle2 size={14} /> Open
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleJoinCommunity(comm)}
-                          disabled={isJoining}
-                          className="text-xs font-bold text-white bg-[#1A1A1A] hover:bg-[#C8922A] px-5 py-2 rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2 cursor-pointer"
-                        >
-                          {isJoining && <Loader2 size={12} className="animate-spin" />}
-                          {comm.privacy === 'invite_only' ? 'Request' : 'Join'}
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                  );
+                })}
+              </div>
+            )}
+          </main>
+
+          <aside className="space-y-5 xl:sticky xl:top-6 self-start">
+            <div className="relative overflow-hidden bg-gradient-to-br from-white via-white to-orange-50 border border-[#ECE6DD] rounded-[1.35rem] shadow-sm p-6 min-h-[190px]">
+              <div className="relative z-10">
+                <h3 className="text-lg font-black text-[#1A1A1A] mb-3">Create Community</h3>
+                <p className="text-sm text-[#666666] font-semibold leading-relaxed mb-5">
+                  Start your own community and bring like-minded students together.
+                </p>
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-5 py-3 rounded-2xl text-sm font-black shadow-lg shadow-orange-500/20 flex items-center gap-2 cursor-pointer"
+                >
+                  <Plus size={17} />
+                  Create Community
+                </button>
+              </div>
+              <div className="absolute right-5 top-14 w-20 h-20 rotate-12 rounded-[1.5rem] bg-white shadow-lg flex items-center justify-center text-amber-500">
+                <Users2 size={36} />
+              </div>
+            </div>
+
+            <div className="bg-white border border-[#ECE6DD] rounded-[1.35rem] shadow-sm p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-2xl bg-orange-50 text-orange-500 flex items-center justify-center">
+                  <Flame size={21} />
                 </div>
-              );
-            })}
-          </div>
-        )}
+                <h3 className="text-lg font-black text-[#1A1A1A]">Trending Communities</h3>
+              </div>
+              <div className="space-y-5">
+                {trendingCommunities.map((comm) => {
+                  const theme = getCommunityTheme(comm.id);
+                  const Icon = theme.icon;
+                  return (
+                    <button
+                      key={comm.id}
+                      onClick={() => router.push(`/community/${comm.id}`)}
+                      className="w-full flex items-center gap-4 text-left rounded-2xl p-2 hover:bg-[#FAF7F1] transition-colors cursor-pointer"
+                    >
+                      <div className={`w-12 h-12 rounded-2xl ${theme.soft} ${theme.text} flex items-center justify-center shrink-0`}>
+                        <Icon size={23} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-black text-[#1A1A1A] truncate">{comm.name}</p>
+                        <p className="text-xs text-[#777777] font-bold mt-0.5">{comm.member_count || 0} member{comm.member_count !== 1 ? 's' : ''}</p>
+                      </div>
+                      <ArrowRight size={16} className={theme.text} />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="bg-white border border-[#ECE6DD] rounded-[1.35rem] shadow-sm p-6">
+              <h3 className="text-lg font-black text-[#1A1A1A] mb-5">Categories</h3>
+              <div className="grid grid-cols-2 gap-3">
+                {categoryItems.map(({ label, icon: Icon }) => (
+                  <button
+                    key={label}
+                    onClick={() => {
+                      setActiveTab("all");
+                      setCategoryFilter(categoryFilter === label ? "" : label);
+                    }}
+                    className={clsx(
+                      "flex items-center gap-2 rounded-xl border px-3 py-3 text-left text-xs font-black transition-colors cursor-pointer",
+                      categoryFilter === label
+                        ? "border-orange-300 bg-orange-50 text-orange-600"
+                        : "border-[#ECE6DD] bg-[#FAFAFA] text-[#666666] hover:border-orange-200 hover:text-orange-600 hover:bg-orange-50"
+                    )}
+                  >
+                    <Icon size={17} />
+                    <span className="truncate">{label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </aside>
+        </div>
       </div>
 
       {/* Create Modal */}
