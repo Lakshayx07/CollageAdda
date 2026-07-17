@@ -1370,7 +1370,7 @@ export default function ProfilePage() {
                 {storyUploading ? "Adding..." : "Share Story"}
               </motion.button>
             </motion.div>
-          </motion.div>
+          </div>
         )}
 
         {/* ====== VIEW STORY MODAL ====== */}
