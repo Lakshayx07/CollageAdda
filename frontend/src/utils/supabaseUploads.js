@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 
 const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const VIDEO_TYPES = new Set(["video/mp4", "video/webm", "video/quicktime"]);
 
 const requireSupabase = () => {
   if (!supabase) {
@@ -47,6 +48,33 @@ export const uploadAvatar = (file, userId) => (
 export const uploadPostImage = (file, userId) => (
   uploadPublicImage({ bucket: "posts", file, userId })
 );
+
+export const uploadPublicMedia = async ({ bucket, file, userId, kind }) => {
+  const client = requireSupabase();
+  const validTypes = kind === "video" ? VIDEO_TYPES : IMAGE_TYPES;
+  const label = kind === "video" ? "MP4, WEBM, or MOV video" : "JPG, PNG, WEBP, or GIF image";
+  if (!file || !validTypes.has(file.type)) {
+    throw new Error(`Please choose a ${label}.`);
+  }
+  if (!userId) throw new Error("You must be logged in to upload media.");
+
+  const uniqueName = `${Date.now()}-${crypto.randomUUID()}.${safeExtension(file)}`;
+  const path = `${String(userId)}/${uniqueName}`;
+  const { error: uploadError } = await client.storage
+    .from(bucket)
+    .upload(path, file, {
+      cacheControl: "3600",
+      contentType: file.type,
+      upsert: false
+    });
+
+  if (uploadError) throw uploadError;
+
+  const { data } = client.storage.from(bucket).getPublicUrl(path);
+  if (!data?.publicUrl) throw new Error(`Could not create a public URL for ${bucket}/${path}.`);
+
+  return { path, publicUrl: data.publicUrl };
+};
 
 export const saveProfileAvatarUrl = async ({ userId, avatarUrl, name, university }) => {
   const client = requireSupabase();
