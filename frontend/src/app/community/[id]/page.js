@@ -61,6 +61,7 @@ export default function CommunityChatPage() {
   const remoteTypingTimersRef = useRef({});
   const photoInputRef = useRef(null);
   const videoInputRef = useRef(null);
+  const messageRefs = useRef({});
 
   const showToastMsg = (type, msg) => {
     setToast({ type, msg });
@@ -104,13 +105,40 @@ export default function CommunityChatPage() {
     localStorage.setItem(`community_pinned_${communityId}`, JSON.stringify([...ids]));
   };
 
+  const normalizePoll = (poll) => {
+    if (!poll) return null;
+    if (typeof poll === "string") {
+      try {
+        return JSON.parse(poll);
+      } catch (e) {
+        return null;
+      }
+    }
+    return poll;
+  };
+
+  const isEmojiOnly = (text) => {
+    const value = String(text || "").trim();
+    if (!value) return false;
+    const compact = value.replace(/\s/g, "");
+    return /^(\p{Extended_Pictographic}|\uFE0F|\u200D)+$/u.test(compact);
+  };
+
   const normalizeLegacyMessage = (msg) => {
     const localPinnedIds = getLocalPinnedIds(msg?.community_id);
+    const poll = normalizePoll(msg?.poll);
+    const inferredAttachment = poll
+      ? "poll"
+      : msg?.media_url
+        ? (String(msg?.media_url).match(/\.(mp4|webm|mov)(\?|$)/i) ? "video" : "photo")
+        : msg?.attachment_type || "text";
     return {
       attachment_type: "text",
       is_pinned: localPinnedIds.has(msg?.id),
       poll: null,
       ...msg,
+      attachment_type: inferredAttachment,
+      poll,
       is_pinned: Boolean(msg?.is_pinned || localPinnedIds.has(msg?.id)),
     };
   };
@@ -463,11 +491,13 @@ export default function CommunityChatPage() {
           m.id === msg.id ? { ...m, is_pinned: !msg.is_pinned } : m
         )));
         setActiveMessageId(null);
+        showToastMsg("success", msg.is_pinned ? "Message unpinned." : "Message pinned.");
         return;
       }
       if (error) throw error;
       setMessages((prev) => prev.map((m) => (m.id === msg.id ? normalizeLegacyMessage(data) : m)));
       setActiveMessageId(null);
+      showToastMsg("success", msg.is_pinned ? "Message unpinned." : "Message pinned.");
     } catch (err) {
       showToastMsg("error", "Pin needs the chat database update.");
     }
@@ -772,6 +802,13 @@ export default function CommunityChatPage() {
     }
   };
 
+  const handleJumpToPinned = () => {
+    const firstPinned = messages.find((msg) => msg.is_pinned);
+    if (!firstPinned) return;
+    messageRefs.current[firstPinned.id]?.scrollIntoView({ behavior: "smooth", block: "center" });
+    setActiveMessageId(firstPinned.id);
+  };
+
   const formatTime = (isoString) => {
     try {
       const date = new Date(isoString);
@@ -781,10 +818,8 @@ export default function CommunityChatPage() {
     }
   };
 
-  const sortedMessages = [...messages].sort((a, b) => {
-    if (!!a.is_pinned !== !!b.is_pinned) return a.is_pinned ? -1 : 1;
-    return new Date(a.created_at) - new Date(b.created_at);
-  });
+  const sortedMessages = [...messages].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  const pinnedCount = messages.filter((msg) => msg.is_pinned).length;
   const typingNames = Object.values(typingUsers).slice(0, 2);
 
   if (!isMounted) return null;
@@ -923,7 +958,18 @@ export default function CommunityChatPage() {
           </div>
         </div>
 
-        <div className="relative">
+        <div className="relative flex items-center gap-2">
+          {pinnedCount > 0 && (
+            <button
+              type="button"
+              onClick={handleJumpToPinned}
+              className="flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-black text-amber-700 hover:bg-amber-100 cursor-pointer"
+              title="Jump to pinned message"
+            >
+              <span aria-hidden="true">📌</span>
+              {pinnedCount}
+            </button>
+          )}
           {isMember && (
             <button 
               onClick={() => setShowMenu(!showMenu)}
@@ -982,9 +1028,16 @@ export default function CommunityChatPage() {
           const isMe = msg.sender_id === currentUserId;
           const showAvatar = index === 0 || sortedMessages[index - 1].sender_id !== msg.sender_id;
           const isDeleted = !!msg.deleted_at;
+          const emojiOnly = isEmojiOnly(msg.content) && !msg.poll && !msg.media_url && msg.attachment_type === "text";
           
           return (
-            <div key={msg.id} className={clsx("group flex w-full mb-1", isMe ? "justify-end" : "justify-start")}>
+            <div
+              key={msg.id}
+              ref={(node) => {
+                if (node) messageRefs.current[msg.id] = node;
+              }}
+              className={clsx("group flex w-full mb-1 scroll-mt-24", isMe ? "justify-end" : "justify-start")}
+            >
               {!isMe && showAvatar && (
                 <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center font-bold text-xs text-amber-800 border border-amber-200 mr-2 shrink-0 self-end mb-1">
                   {msg.sender_name.charAt(0).toUpperCase()}
@@ -1000,10 +1053,10 @@ export default function CommunityChatPage() {
                 )}
                 
                 <div className={clsx(
-                  "px-4 py-2.5 text-sm shadow-sm relative font-medium whitespace-pre-wrap break-words leading-relaxed",
-                  isMe 
-                    ? "ca-chat-sent" 
-                    : "ca-chat-received",
+                  emojiOnly
+                    ? "relative px-1 py-1 text-4xl leading-none"
+                    : "px-4 py-2.5 text-sm shadow-sm relative font-medium whitespace-pre-wrap break-words leading-relaxed",
+                  !emojiOnly && (isMe ? "ca-chat-sent" : "ca-chat-received"),
                   isDeleted && "opacity-70 italic"
                 )}>
                   {msg.is_pinned && (
@@ -1076,7 +1129,7 @@ export default function CommunityChatPage() {
                       </p>
                     </div>
                   )}
-                  {(!msg.poll || !msg.poll.question) && msg.content}
+                  {(!msg.poll || !msg.poll.question) && !msg.media_url && msg.content}
                   {msg.edited_at && !isDeleted && (
                     <span className={clsx("ml-2 text-[10px] font-bold", isMe ? "text-white/70" : "text-[#888888]")}>
                       edited
