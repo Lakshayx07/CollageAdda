@@ -1575,12 +1575,13 @@ export default function Home() {
       {/* Create Poll Modal */}
       <AnimatePresence>
         {showPollModal && (
-          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 px-3 py-3 backdrop-blur-sm sm:items-center sm:px-4" onClick={() => setShowPollModal(false)}>
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 px-0 pb-0 pt-10 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setShowPollModal(false)}>
             <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-[1.75rem] border border-[#E8E6E0] p-5 shadow-xl bg-white custom-scrollbar sm:rounded-[3rem] sm:p-8"
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-[1.75rem] rounded-b-none border-t border-[#E8E6E0] p-5 shadow-xl bg-white custom-scrollbar sm:rounded-[3rem] sm:border sm:p-8 mt-auto sm:mt-0"
               onClick={e => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-8">
@@ -1677,11 +1678,13 @@ export default function Home() {
 
       {/* Campus Adda Share Modal */}
       {shareModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 px-3 py-3 backdrop-blur-sm sm:items-center sm:px-4" onClick={() => setShareModal(null)}>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 px-0 pb-0 pt-10 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setShareModal(null)}>
           <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="max-h-[88dvh] w-full max-w-md overflow-y-auto rounded-[1.75rem] border border-[#E8E6E0] p-5 shadow-xl bg-white custom-scrollbar sm:rounded-[2.5rem] sm:p-6"
+            initial={{ y: "100%", opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: "100%", opacity: 0 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="max-h-[88dvh] w-full max-w-md overflow-y-auto rounded-t-[1.75rem] rounded-b-none border-t border-[#E8E6E0] p-5 shadow-xl bg-white custom-scrollbar sm:rounded-[2.5rem] sm:border sm:p-6 mt-auto sm:mt-0"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-6">

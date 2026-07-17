@@ -1348,16 +1348,14 @@ export default function CommunityChatPage() {
       {/* Poll Composer */}
       <AnimatePresence>
         {showPollModal && (
-          <div
-            className="fixed inset-0 z-[180] flex items-end justify-center bg-black/50 px-3 py-3 backdrop-blur-sm sm:items-center sm:px-4"
-            onClick={() => setShowPollModal(false)}
-          >
+          <div className="fixed inset-0 z-[180] flex items-end sm:items-center justify-center bg-black/50 px-0 pb-0 pt-10 backdrop-blur-sm sm:p-4" onClick={() => setShowPollModal(false)}>
             <motion.div
-              initial={{ scale: 0.94, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.94, opacity: 0, y: 20 }}
-              className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-[1.75rem] border border-[#E8E6E0] bg-white p-5 shadow-xl custom-scrollbar sm:rounded-[2rem] sm:p-6"
-              onClick={e => e.stopPropagation()}
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-[1.75rem] rounded-b-none border-t border-[#E8E6E0] bg-white p-5 shadow-xl custom-scrollbar sm:border sm:rounded-[2rem] sm:p-6 mt-auto sm:mt-0"
             >
               <div className="mb-6 flex items-center justify-between">
                 <div className="flex items-center gap-3">
