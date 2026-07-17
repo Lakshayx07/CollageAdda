@@ -4,12 +4,15 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { 
   ArrowLeft, Users2, Send, Loader2, Globe, CheckCircle2, 
-  AlertCircle, LogOut, MoreVertical, Plus, ArrowRight
+  AlertCircle, LogOut, MoreVertical, Plus, ArrowRight, Smile,
+  Image as ImageIcon, Video, BarChart3, Pencil, Trash2, Reply,
+  Pin, PinOff, X, Check
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
 import { supabase } from "../../../utils/supabase";
 import { getAuthenticatedSupabaseClient } from "../../../utils/supabaseAuthUser";
+import { uploadPublicMedia } from "../../../utils/supabaseUploads";
 
 export default function CommunityChatPage() {
   const params = useParams();
@@ -41,29 +44,80 @@ export default function CommunityChatPage() {
   const [inputText, setInputText] = useState("");
   const [showMenu, setShowMenu] = useState(false);
   const [toast, setToast] = useState(null);
+  const [activeMessageId, setActiveMessageId] = useState(null);
+  const [replyTo, setReplyTo] = useState(null);
+  const [editingMessage, setEditingMessage] = useState(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showAttachMenu, setShowAttachMenu] = useState(false);
+  const [showPollModal, setShowPollModal] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState(["", ""]);
+  const [pollAllowMultiple, setPollAllowMultiple] = useState(false);
+  const [typingUsers, setTypingUsers] = useState({});
 
   const scrollRef = useRef(null);
   const channelRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
+  const remoteTypingTimersRef = useRef({});
+  const photoInputRef = useRef(null);
+  const videoInputRef = useRef(null);
 
   const showToastMsg = (type, msg) => {
     setToast({ type, msg });
     setTimeout(() => setToast(null), 3000);
   };
 
-  const communityGradients = [
-    "from-amber-400 to-orange-500",
-    "from-violet-500 to-purple-600",
-    "from-teal-400 to-cyan-500",
-    "from-rose-400 to-pink-500",
-    "from-emerald-400 to-green-500",
-    "from-blue-400 to-indigo-500",
-  ];
+  const communityThemes = {
+    sports: { gradient: "from-sky-100 via-sky-200 to-cyan-100", text: "text-sky-700", avatar: "bg-sky-50 text-sky-700 border-sky-100" },
+    gaming: { gradient: "from-violet-100 via-purple-200 to-indigo-100", text: "text-violet-700", avatar: "bg-violet-50 text-violet-700 border-violet-100" },
+    tech: { gradient: "from-emerald-100 via-green-200 to-teal-100", text: "text-emerald-700", avatar: "bg-emerald-50 text-emerald-700 border-emerald-100" },
+    business: { gradient: "from-amber-100 via-yellow-200 to-orange-100", text: "text-amber-700", avatar: "bg-amber-50 text-amber-700 border-amber-100" },
+    art: { gradient: "from-rose-100 via-pink-200 to-orange-100", text: "text-rose-700", avatar: "bg-rose-50 text-rose-700 border-rose-100" },
+    music: { gradient: "from-fuchsia-100 via-pink-200 to-purple-100", text: "text-fuchsia-700", avatar: "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-100" },
+    default: { gradient: "from-amber-100 via-orange-200 to-yellow-100", text: "text-amber-700", avatar: "bg-amber-50 text-amber-700 border-amber-100" },
+  };
 
-  const getCommunityGradient = (commId) => {
-    if (!commId) return communityGradients[0];
-    let hash = 0;
-    for (let i = 0; i < commId.length; i++) hash = (hash * 31 + commId.charCodeAt(i)) & 0xffffffff;
-    return communityGradients[Math.abs(hash) % communityGradients.length];
+  const getCommunityTheme = (comm) => {
+    const haystack = [comm?.name, comm?.description, ...(comm?.tags || [])].join(" ").toLowerCase();
+    if (haystack.includes("sport")) return communityThemes.sports;
+    if (haystack.includes("gaming") || haystack.includes("esport") || haystack.includes("game")) return communityThemes.gaming;
+    if (haystack.includes("tech") || haystack.includes("code") || haystack.includes("hack")) return communityThemes.tech;
+    if (haystack.includes("business") || haystack.includes("startup")) return communityThemes.business;
+    if (haystack.includes("art") || haystack.includes("design")) return communityThemes.art;
+    if (haystack.includes("music")) return communityThemes.music;
+    return communityThemes.default;
+  };
+
+  const getLocalPinnedIds = (communityId) => {
+    if (typeof window === "undefined" || !communityId) return new Set();
+    try {
+      return new Set(JSON.parse(localStorage.getItem(`community_pinned_${communityId}`) || "[]"));
+    } catch (e) {
+      return new Set();
+    }
+  };
+
+  const setLocalPinnedId = (communityId, messageId, pinned) => {
+    const ids = getLocalPinnedIds(communityId);
+    if (pinned) ids.add(messageId);
+    else ids.delete(messageId);
+    localStorage.setItem(`community_pinned_${communityId}`, JSON.stringify([...ids]));
+  };
+
+  const normalizeLegacyMessage = (msg) => {
+    const localPinnedIds = getLocalPinnedIds(msg?.community_id);
+    return {
+      attachment_type: "text",
+      is_pinned: localPinnedIds.has(msg?.id),
+      poll: null,
+      ...msg,
+      is_pinned: Boolean(msg?.is_pinned || localPinnedIds.has(msg?.id)),
+    };
+  };
+
+  const supportsOptionalColumns = (error) => {
+    const msg = `${error?.message || ""} ${error?.details || ""}`.toLowerCase();
+    return !msg.includes("column") && !msg.includes("schema cache");
   };
 
   const buildUnreadCounts = (rows, userId, openCommunityId = activeCommunityId) => {
@@ -137,7 +191,7 @@ export default function CommunityChatPage() {
         .limit(100);
 
       if (msgs) {
-        setMessages(msgs);
+        setMessages(msgs.map(normalizeLegacyMessage));
         const lastMessageAt = msgs[msgs.length - 1]?.created_at || new Date().toISOString();
         localStorage.setItem(`community_seen_${targetId}`, lastMessageAt);
       }
@@ -170,11 +224,38 @@ export default function CommunityChatPage() {
             setMessages((prev) => {
               // Avoid duplicates
               if (prev.some((m) => m.id === payload.new.id)) return prev;
-              return [...prev, payload.new];
+              return [...prev, normalizeLegacyMessage(payload.new)];
             });
             localStorage.setItem(`community_seen_${targetId}`, payload.new.created_at);
           }
         )
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "community_messages",
+            filter: `community_id=eq.${targetId}`,
+          },
+          (payload) => {
+            setMessages((prev) => prev.map((m) => (m.id === payload.new.id ? normalizeLegacyMessage(payload.new) : m)));
+          }
+        )
+        .on("broadcast", { event: "typing" }, ({ payload }) => {
+          if (!payload?.userId || payload.userId === authUser.id) return;
+          setTypingUsers((prev) => ({
+            ...prev,
+            [payload.userId]: payload.name || "Someone",
+          }));
+          window.clearTimeout(remoteTypingTimersRef.current[payload.userId]);
+          remoteTypingTimersRef.current[payload.userId] = window.setTimeout(() => {
+            setTypingUsers((prev) => {
+              const next = { ...prev };
+              delete next[payload.userId];
+              return next;
+            });
+          }, 1800);
+        })
         .subscribe();
       channelRef.current = channel;
     } catch (err) {
@@ -195,6 +276,7 @@ export default function CommunityChatPage() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setActiveCommunityId(id);
   }, [id]);
 
@@ -241,32 +323,274 @@ export default function CommunityChatPage() {
       }
       setCurrentUserId(senderId);
 
-      const { data, error } = await authSupabase
-        .from("community_messages")
-        .insert([{
-          community_id: activeCommunityId,
-          sender_id: senderId,
-          sender_name: senderName,
-          sender_avatar: senderAvatar,
-          content: content
-        }])
-        .select()
-        .single();
+      const legacyPayload = {
+        community_id: activeCommunityId,
+        sender_id: senderId,
+        sender_name: senderName,
+        sender_avatar: senderAvatar,
+        content,
+      };
+
+      const richPayload = {
+        ...legacyPayload,
+        reply_to_id: replyTo?.id || null,
+        reply_to_content: replyTo?.content || null,
+        reply_to_sender_name: replyTo?.sender_name || null,
+        attachment_type: "text"
+      };
+
+      const request = editingMessage
+        ? authSupabase
+            .from("community_messages")
+            .update({ content, edited_at: new Date().toISOString() })
+            .eq("id", editingMessage.id)
+            .eq("sender_id", senderId)
+            .select()
+            .single()
+        : authSupabase
+            .from("community_messages")
+            .insert([richPayload])
+            .select()
+            .single();
+
+      let { data, error } = await request;
+      if (editingMessage && error && !supportsOptionalColumns(error)) {
+        const fallback = await authSupabase
+          .from("community_messages")
+          .update({ content })
+          .eq("id", editingMessage.id)
+          .eq("sender_id", senderId)
+          .select()
+          .single();
+        data = { ...fallback.data, edited_at: new Date().toISOString() };
+        error = fallback.error;
+      }
+      if (!editingMessage && error && !supportsOptionalColumns(error)) {
+        const fallback = await authSupabase
+          .from("community_messages")
+          .insert([legacyPayload])
+          .select()
+          .single();
+        data = fallback.data;
+        error = fallback.error;
+      }
 
       if (error) {
-        showToastMsg("error", "Failed to send message.");
+        showToastMsg("error", editingMessage ? "Edit needs the chat database update." : "Failed to send message.");
         setInputText(content); // restore content
       } else if (data) {
+        const normalized = normalizeLegacyMessage(data);
         setMessages((prev) => {
-          if (prev.some((m) => m.id === data.id)) return prev;
-          return [...prev, data];
+          if (editingMessage) return prev.map((m) => (m.id === normalized.id ? normalized : m));
+          if (prev.some((m) => m.id === normalized.id)) return prev;
+          return [...prev, normalized];
         });
+        if (editingMessage) showToastMsg("success", "Chat database updated.");
+        setReplyTo(null);
+        setEditingMessage(null);
       }
     } catch (err) {
       console.error(err);
       showToastMsg("error", "Network error. Try again.");
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleInputChange = (value) => {
+    setInputText(value);
+    if (!channelRef.current || !currentUserId || !value.trim()) return;
+    channelRef.current.send({
+      type: "broadcast",
+      event: "typing",
+      payload: { userId: currentUserId, name: user?.name || "Someone" },
+    });
+    window.clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = window.setTimeout(() => {}, 900);
+  };
+
+  const handleEditMessage = (msg) => {
+    setEditingMessage(msg);
+    setReplyTo(null);
+    setInputText(msg.content || "");
+    setActiveMessageId(null);
+  };
+
+  const handleDeleteMessage = async (msg) => {
+    if (!supabase || msg.sender_id !== currentUserId) return;
+    try {
+      const { client: authSupabase, user: authUser } = await getAuthenticatedSupabaseClient();
+      let { data, error } = await authSupabase
+        .from("community_messages")
+        .update({ content: "This message was deleted", deleted_at: new Date().toISOString() })
+        .eq("id", msg.id)
+        .eq("sender_id", authUser.id)
+        .select()
+        .single();
+      if (error && !supportsOptionalColumns(error)) {
+        const fallback = await authSupabase
+          .from("community_messages")
+          .update({ content: "This message was deleted" })
+          .eq("id", msg.id)
+          .eq("sender_id", authUser.id)
+          .select()
+          .single();
+        data = { ...fallback.data, deleted_at: new Date().toISOString() };
+        error = fallback.error;
+      }
+      if (error) throw error;
+      setMessages((prev) => prev.map((m) => (m.id === msg.id ? normalizeLegacyMessage(data) : m)));
+      setActiveMessageId(null);
+      showToastMsg("success", "Chat database updated.");
+    } catch (err) {
+      showToastMsg("error", "Delete needs the chat database update.");
+    }
+  };
+
+  const handleTogglePin = async (msg) => {
+    if (!supabase) return;
+    try {
+      const { client: authSupabase } = await getAuthenticatedSupabaseClient();
+      const { data, error } = await authSupabase
+        .from("community_messages")
+        .update({ is_pinned: !msg.is_pinned })
+        .eq("id", msg.id)
+        .select()
+        .single();
+      if (error && !supportsOptionalColumns(error)) {
+        setLocalPinnedId(msg.community_id, msg.id, !msg.is_pinned);
+        setMessages((prev) => prev.map((m) => (
+          m.id === msg.id ? { ...m, is_pinned: !msg.is_pinned } : m
+        )));
+        setActiveMessageId(null);
+        return;
+      }
+      if (error) throw error;
+      setMessages((prev) => prev.map((m) => (m.id === msg.id ? normalizeLegacyMessage(data) : m)));
+      setActiveMessageId(null);
+    } catch (err) {
+      showToastMsg("error", "Pin needs the chat database update.");
+    }
+  };
+
+  const handleReplyMessage = (msg) => {
+    setReplyTo(msg);
+    setEditingMessage(null);
+    setActiveMessageId(null);
+  };
+
+  const insertAttachmentMessage = async ({ type, content, mediaUrl, mediaPath, poll }) => {
+    setSending(true);
+    try {
+      const { client: authSupabase, user: authUser } = await getAuthenticatedSupabaseClient();
+      const legacyPayload = {
+        community_id: activeCommunityId,
+        sender_id: authUser.id,
+        sender_name: user?.name || "Anonymous Student",
+        sender_avatar: user?.profilePicture || "",
+        content,
+      };
+      const richPayload = {
+        ...legacyPayload,
+        reply_to_id: replyTo?.id || null,
+        reply_to_content: replyTo?.content || null,
+        reply_to_sender_name: replyTo?.sender_name || null,
+        attachment_type: type,
+        media_url: mediaUrl || null,
+        media_path: mediaPath || null,
+        poll: poll || null
+      };
+      let { data, error } = await authSupabase
+        .from("community_messages")
+        .insert([richPayload])
+        .select()
+        .single();
+      if (error && !supportsOptionalColumns(error)) {
+        if (mediaUrl || poll) {
+          throw new Error("Run Supabase chat SQL to save this attachment.");
+        }
+        const fallback = await authSupabase
+          .from("community_messages")
+          .insert([legacyPayload])
+          .select()
+          .single();
+        data = fallback.data;
+        error = fallback.error;
+      }
+      if (error) throw error;
+      const normalized = normalizeLegacyMessage(data);
+      setMessages((prev) => (prev.some((m) => m.id === normalized.id) ? prev : [...prev, normalized]));
+      setReplyTo(null);
+      return normalized;
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleAttachmentChoice = (type) => {
+    if (!isMember || sending || !supabase) return;
+    setShowAttachMenu(false);
+    setShowEmojiPicker(false);
+    if (type === "photo") {
+      photoInputRef.current?.click();
+      return;
+    }
+    if (type === "video") {
+      videoInputRef.current?.click();
+      return;
+    }
+    setShowPollModal(true);
+  };
+
+  const handleMediaSelected = async (event, type) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || !isMember || sending) return;
+
+    setSending(true);
+    try {
+      const { user: authUser } = await getAuthenticatedSupabaseClient();
+      const uploaded = await uploadPublicMedia({
+        bucket: "community-chat",
+        file,
+        userId: authUser.id,
+        kind: type === "video" ? "video" : "image"
+      });
+      await insertAttachmentMessage({
+        type,
+        content: type === "video" ? "Video" : "Photo",
+        mediaUrl: uploaded.publicUrl,
+        mediaPath: uploaded.path
+      });
+    } catch (err) {
+      showToastMsg("error", err.message || `Failed to upload ${type}.`);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleCreatePollMessage = async () => {
+    const cleanOptions = pollOptions.map(opt => opt.trim()).filter(Boolean);
+    if (!pollQuestion.trim() || cleanOptions.length < 2 || sending) return;
+
+    const pollPayload = {
+      question: pollQuestion.trim(),
+      options: cleanOptions.map((text) => ({ text, votes: [] })),
+      allowMultiple: pollAllowMultiple
+    };
+
+    try {
+      await insertAttachmentMessage({
+        type: "poll",
+        content: pollQuestion.trim(),
+        poll: pollPayload
+      });
+      setShowPollModal(false);
+      setPollQuestion("");
+      setPollOptions(["", ""]);
+      setPollAllowMultiple(false);
+    } catch (err) {
+      showToastMsg("error", "Run Supabase chat SQL to save polls.");
     }
   };
 
@@ -413,6 +737,41 @@ export default function CommunityChatPage() {
     }
   };
 
+  const handlePollVote = async (msg, optionIndex) => {
+    if (!msg.poll || !currentUserId) return;
+    const nextPoll = {
+      ...msg.poll,
+      options: (msg.poll.options || []).map((option, index) => {
+        const votes = option.votes || [];
+        const hasVote = votes.includes(currentUserId);
+        if (msg.poll.allowMultiple) {
+          if (index !== optionIndex) return option;
+          return { ...option, votes: hasVote ? votes.filter(id => id !== currentUserId) : [...votes, currentUserId] };
+        }
+        return {
+          ...option,
+          votes: index === optionIndex
+            ? (hasVote ? votes : [...votes, currentUserId])
+            : votes.filter(id => id !== currentUserId)
+        };
+      })
+    };
+
+    setMessages((prev) => prev.map((item) => (
+      item.id === msg.id ? { ...item, poll: nextPoll } : item
+    )));
+
+    try {
+      const { client: authSupabase } = await getAuthenticatedSupabaseClient();
+      await authSupabase
+        .from("community_messages")
+        .update({ poll: nextPoll })
+        .eq("id", msg.id);
+    } catch (err) {
+      // Local vote stays responsive even if the DB migration is not present yet.
+    }
+  };
+
   const formatTime = (isoString) => {
     try {
       const date = new Date(isoString);
@@ -421,6 +780,12 @@ export default function CommunityChatPage() {
       return "";
     }
   };
+
+  const sortedMessages = [...messages].sort((a, b) => {
+    if (!!a.is_pinned !== !!b.is_pinned) return a.is_pinned ? -1 : 1;
+    return new Date(a.created_at) - new Date(b.created_at);
+  });
+  const typingNames = Object.values(typingUsers).slice(0, 2);
 
   if (!isMounted) return null;
 
@@ -432,7 +797,8 @@ export default function CommunityChatPage() {
     );
   }
 
-  const grad = getCommunityGradient(activeCommunityId);
+  const theme = getCommunityTheme(community);
+  const grad = theme.gradient;
   const railCommunities = [...communities].sort((a, b) => {
     if (a.id === activeCommunityId) return -1;
     if (b.id === activeCommunityId) return 1;
@@ -456,7 +822,8 @@ export default function CommunityChatPage() {
 
         <div className="flex-1 overflow-y-auto px-5 pb-5 space-y-4 custom-scrollbar">
           {railCommunities.map((comm) => {
-            const cardGrad = getCommunityGradient(comm.id);
+            const cardTheme = getCommunityTheme(comm);
+            const cardGrad = cardTheme.gradient;
             const active = comm.id === activeCommunityId;
             const member = membershipSet.has(comm.id);
             const isJoiningCard = joiningCommunityId === comm.id;
@@ -478,7 +845,7 @@ export default function CommunityChatPage() {
                   )}
                 </div>
                 <div className="px-4 pb-4">
-                  <div className={`relative z-10 w-12 h-12 rounded-2xl bg-gradient-to-br ${cardGrad} border-4 border-white flex items-center justify-center text-white font-black text-lg shadow-sm -mt-5 mb-3 leading-none`}>
+                  <div className={`relative z-10 w-12 h-12 rounded-2xl ${cardTheme.avatar} border-4 border-white flex items-center justify-center font-black text-lg shadow-sm -mt-5 mb-3 leading-none`}>
                     {comm.name?.charAt(0).toUpperCase()}
                   </div>
                   <h3 className="font-black text-[#1A1A1A] text-base leading-tight truncate">{comm.name}</h3>
@@ -501,7 +868,7 @@ export default function CommunityChatPage() {
                     {!active && member && (
                       <button
                         onClick={() => handleOpenCommunity(comm.id)}
-                        className="relative flex items-center gap-1.5 rounded-2xl bg-amber-50 text-[#C8922A] px-4 py-2 text-xs font-black cursor-pointer hover:bg-amber-100"
+                        className={`relative flex items-center gap-1.5 rounded-2xl px-4 py-2 text-xs font-black cursor-pointer ${cardTheme.avatar} hover:bg-white`}
                       >
                         Explore Now <ArrowRight size={14} />
                         {unread > 0 && (
@@ -515,7 +882,7 @@ export default function CommunityChatPage() {
                       <button
                         onClick={() => handleJoinCommunity(comm)}
                         disabled={isJoiningCard}
-                        className="flex items-center gap-1.5 rounded-2xl bg-white border border-[#E0AE52] text-[#C8922A] px-4 py-2 text-xs font-black cursor-pointer hover:bg-amber-50 disabled:opacity-50"
+                        className={`flex items-center gap-1.5 rounded-2xl bg-white border px-4 py-2 text-xs font-black cursor-pointer disabled:opacity-50 ${cardTheme.text} ${cardTheme.avatar}`}
                       >
                         {isJoiningCard ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
                         Join
@@ -540,7 +907,7 @@ export default function CommunityChatPage() {
             <ArrowLeft size={18} />
           </button>
           
-          <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${grad} flex items-center justify-center text-white font-black shrink-0`}>
+          <div className={`w-10 h-10 rounded-xl ${theme.avatar} flex items-center justify-center font-black shrink-0`}>
             {community?.name?.charAt(0).toUpperCase()}
           </div>
           
@@ -600,7 +967,7 @@ export default function CommunityChatPage() {
       <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 min-h-0 bg-[#F9F8F5] custom-scrollbar">
         {/* Info Box */}
         <div className="max-w-md mx-auto bg-white rounded-3xl p-6 border border-[#E8E6E0] shadow-sm text-center mb-6">
-          <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${grad} flex items-center justify-center text-white font-black text-xl mx-auto mb-3 shadow-sm`}>
+          <div className={`w-14 h-14 rounded-2xl ${theme.avatar} flex items-center justify-center font-black text-xl mx-auto mb-3 shadow-sm`}>
             {community?.name?.charAt(0).toUpperCase()}
           </div>
           <h3 className="font-black text-[#1A1A1A] text-lg leading-tight">{community?.name}</h3>
@@ -611,12 +978,13 @@ export default function CommunityChatPage() {
         </div>
 
         {/* Message bubbles */}
-        {messages.map((msg, index) => {
+        {sortedMessages.map((msg, index) => {
           const isMe = msg.sender_id === currentUserId;
-          const showAvatar = index === 0 || messages[index - 1].sender_id !== msg.sender_id;
+          const showAvatar = index === 0 || sortedMessages[index - 1].sender_id !== msg.sender_id;
+          const isDeleted = !!msg.deleted_at;
           
           return (
-            <div key={msg.id} className={clsx("flex w-full mb-1", isMe ? "justify-end" : "justify-start")}>
+            <div key={msg.id} className={clsx("group flex w-full mb-1", isMe ? "justify-end" : "justify-start")}>
               {!isMe && showAvatar && (
                 <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center font-bold text-xs text-amber-800 border border-amber-200 mr-2 shrink-0 self-end mb-1">
                   {msg.sender_name.charAt(0).toUpperCase()}
@@ -624,7 +992,7 @@ export default function CommunityChatPage() {
               )}
               {!isMe && !showAvatar && <div className="w-8 mr-2 shrink-0" />}
 
-              <div className={clsx("flex flex-col max-w-[75%]", isMe ? "items-end" : "items-start")}>
+              <div className={clsx("flex flex-col max-w-[75%] relative", isMe ? "items-end" : "items-start")}>
                 {!isMe && showAvatar && (
                   <span className="text-[10px] text-[#6B6B6B] font-bold mb-1 ml-1">
                     {msg.sender_name}
@@ -635,10 +1003,124 @@ export default function CommunityChatPage() {
                   "px-4 py-2.5 text-sm shadow-sm relative font-medium whitespace-pre-wrap break-words leading-relaxed",
                   isMe 
                     ? "ca-chat-sent" 
-                    : "ca-chat-received"
+                    : "ca-chat-received",
+                  isDeleted && "opacity-70 italic"
                 )}>
-                  {msg.content}
+                  {msg.is_pinned && (
+                    <div className={clsx("mb-1 flex items-center gap-1 text-[10px] font-black", isMe ? "text-white/80" : "text-amber-700")}>
+                      <Pin size={11} />
+                      Pinned
+                    </div>
+                  )}
+                  {msg.reply_to_content && (
+                    <div className={clsx("mb-2 rounded-xl border-l-4 px-3 py-2 text-xs", isMe ? "border-white/70 bg-white/15 text-white/90" : "border-amber-300 bg-amber-50 text-[#5F4B23]")}>
+                      <p className="font-black truncate">{msg.reply_to_sender_name || "Student"}</p>
+                      <p className="truncate">{msg.reply_to_content}</p>
+                    </div>
+                  )}
+                  {msg.attachment_type && msg.attachment_type !== "text" && (
+                    <div className={clsx("mb-2 flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-black", isMe ? "bg-white/15 text-white" : "bg-[#F8F3E8] text-amber-800")}>
+                      {msg.attachment_type === "poll" && <BarChart3 size={15} />}
+                      {msg.attachment_type === "photo" && <ImageIcon size={15} />}
+                      {msg.attachment_type === "video" && <Video size={15} />}
+                      {msg.attachment_type.charAt(0).toUpperCase() + msg.attachment_type.slice(1)}
+                    </div>
+                  )}
+                  {msg.media_url && msg.attachment_type === "photo" && (
+                    <img
+                      src={msg.media_url}
+                      alt={msg.content || "Chat photo"}
+                      className="mb-2 max-h-72 w-full rounded-2xl object-cover"
+                    />
+                  )}
+                  {msg.media_url && msg.attachment_type === "video" && (
+                    <video
+                      src={msg.media_url}
+                      controls
+                      className="mb-2 max-h-80 w-full rounded-2xl bg-black"
+                    />
+                  )}
+                  {msg.poll && (
+                    <div className={clsx("mb-2 min-w-64 rounded-2xl p-3", isMe ? "bg-white/15" : "bg-[#F9F8F5] border border-[#E8E6E0]")}>
+                      <p className={clsx("mb-2 text-sm font-black", isMe ? "text-white" : "text-[#1A1A1A]")}>{msg.poll.question || msg.content}</p>
+                      <div className="space-y-2">
+                        {(msg.poll.options || []).map((option, optionIndex) => {
+                          const totalVotes = Math.max(1, (msg.poll.options || []).reduce((sum, item) => sum + (item.votes?.length || 0), 0));
+                          const votes = option.votes?.length || 0;
+                          const percentage = Math.round((votes / totalVotes) * 100);
+                          const selected = option.votes?.includes(currentUserId);
+                          return (
+                            <button
+                              key={`${option.text}-${optionIndex}`}
+                              type="button"
+                              onClick={() => handlePollVote(msg, optionIndex)}
+                              className={clsx(
+                                "relative w-full overflow-hidden rounded-xl border px-3 py-2 text-left text-xs font-black cursor-pointer",
+                                isMe ? "border-white/25 text-white" : "border-[#E8E6E0] text-[#1A1A1A]"
+                              )}
+                            >
+                              <span
+                                className={clsx("absolute inset-y-0 left-0", selected ? "bg-emerald-400/30" : "bg-amber-300/20")}
+                                style={{ width: `${percentage}%` }}
+                              />
+                              <span className="relative flex items-center justify-between gap-3">
+                                <span className="truncate">{option.text}</span>
+                                <span>{votes}</span>
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <p className={clsx("mt-2 text-[10px] font-bold", isMe ? "text-white/70" : "text-[#888888]")}>
+                        {msg.poll.allowMultiple ? "Multiple answers allowed" : "Select one answer"}
+                      </p>
+                    </div>
+                  )}
+                  {(!msg.poll || !msg.poll.question) && msg.content}
+                  {msg.edited_at && !isDeleted && (
+                    <span className={clsx("ml-2 text-[10px] font-bold", isMe ? "text-white/70" : "text-[#888888]")}>
+                      edited
+                    </span>
+                  )}
                 </div>
+
+                {!isDeleted && activeMessageId === msg.id && (
+                  <div className={clsx(
+                    "absolute z-20 top-full mt-1 flex items-center gap-1 rounded-2xl border border-[#E8E6E0] bg-white p-1 shadow-xl",
+                    isMe ? "right-0" : "left-0"
+                  )}>
+                    <button onClick={() => handleReplyMessage(msg)} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-amber-50 hover:text-amber-700 cursor-pointer" title="Reply">
+                      <Reply size={15} />
+                    </button>
+                    <button onClick={() => handleTogglePin(msg)} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-amber-50 hover:text-amber-700 cursor-pointer" title={msg.is_pinned ? "Unpin" : "Pin"}>
+                      {msg.is_pinned ? <PinOff size={15} /> : <Pin size={15} />}
+                    </button>
+                    {isMe && (
+                      <>
+                        <button onClick={() => handleEditMessage(msg)} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-amber-50 hover:text-amber-700 cursor-pointer" title="Edit">
+                          <Pencil size={15} />
+                        </button>
+                        <button onClick={() => handleDeleteMessage(msg)} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-red-50 hover:text-red-600 cursor-pointer" title="Delete">
+                          <Trash2 size={15} />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {!isDeleted && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveMessageId(activeMessageId === msg.id ? null : msg.id)}
+                    className={clsx(
+                      "absolute top-1/2 -translate-y-1/2 rounded-full bg-white border border-[#E8E6E0] p-1.5 text-[#6B6B6B] shadow-sm opacity-0 transition-opacity group-hover:opacity-100 cursor-pointer",
+                      isMe ? "-left-9" : "-right-9"
+                    )}
+                    title="Message options"
+                  >
+                    <MoreVertical size={14} />
+                  </button>
+                )}
                 
                 <span className="text-[9px] text-[#888888] font-bold mt-1 px-1">
                   {formatTime(msg.created_at)}
@@ -647,35 +1129,160 @@ export default function CommunityChatPage() {
             </div>
           );
         })}
+        {typingNames.length > 0 && (
+          <div className="flex items-end gap-2">
+            <div className="w-8 h-8 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center text-xs font-black text-amber-800">
+              {typingNames[0].charAt(0).toUpperCase()}
+            </div>
+            <div className="ca-chat-received px-4 py-3 shadow-sm">
+              <div className="mb-1 text-[10px] font-black text-[#6B6B6B]">
+                {typingNames.join(", ")} typing
+              </div>
+              <div className="ca-typing-wave" aria-label="typing">
+                <span />
+                <span />
+                <span />
+              </div>
+            </div>
+          </div>
+        )}
         <div ref={scrollRef} className="h-4" />
       </div>
 
       {/* Input Bar / Join Banner */}
       <div className="bg-white border-t border-[#E8E6E0] p-4 shrink-0">
         {isMember ? (
-          <form onSubmit={handleSendMessage} className="flex gap-2 max-w-4xl mx-auto">
+          <div className="max-w-4xl mx-auto space-y-2">
             <input
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              placeholder="Send message..."
-              disabled={sending}
-              className="flex-1 bg-[#F9F8F5] border border-[#E8E6E0] rounded-2xl px-4 py-3 text-sm focus:border-[#C8922A] focus:outline-none"
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(event) => handleMediaSelected(event, "photo")}
             />
-            <button
-              type="submit"
-              disabled={!inputText.trim() || sending}
-              className="p-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-2xl hover:from-amber-600 hover:to-amber-700 transition-colors shadow-md shadow-amber-500/20 disabled:opacity-50 cursor-pointer flex items-center justify-center shrink-0"
-            >
-              {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-            </button>
-          </form>
+            <input
+              ref={videoInputRef}
+              type="file"
+              accept="video/*"
+              className="hidden"
+              onChange={(event) => handleMediaSelected(event, "video")}
+            />
+            {(replyTo || editingMessage) && (
+              <div className="flex items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2">
+                <div className="min-w-0">
+                  <p className="text-xs font-black text-amber-800">{editingMessage ? "Editing message" : `Replying to ${replyTo?.sender_name || "Student"}`}</p>
+                  <p className="truncate text-xs font-semibold text-[#6B5A38]">{editingMessage?.content || replyTo?.content}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReplyTo(null);
+                    setEditingMessage(null);
+                    setInputText("");
+                  }}
+                  className="rounded-full p-1 text-amber-700 hover:bg-amber-100 cursor-pointer"
+                  title="Cancel"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            )}
+            <form onSubmit={handleSendMessage} className="flex gap-2">
+              <div className="relative flex flex-1 items-center rounded-2xl border border-[#E8E6E0] bg-[#F9F8F5] px-2 focus-within:border-[#C8922A]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEmojiPicker((prev) => !prev);
+                    setShowAttachMenu(false);
+                  }}
+                  className="p-2 text-[#777777] hover:text-amber-700 cursor-pointer"
+                  title="Emoji"
+                >
+                  <Smile size={20} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAttachMenu((prev) => !prev);
+                    setShowEmojiPicker(false);
+                  }}
+                  className="p-2 text-[#777777] hover:text-amber-700 cursor-pointer"
+                  title="Add"
+                >
+                  <Plus size={21} />
+                </button>
+                <input
+                  value={inputText}
+                  onChange={(e) => handleInputChange(e.target.value)}
+                  placeholder="Send message..."
+                  disabled={sending}
+                  className="flex-1 border-0 bg-transparent px-2 py-3 text-sm focus:outline-none"
+                />
+
+                <AnimatePresence>
+                  {showEmojiPicker && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                      className="absolute bottom-full left-0 mb-2 grid grid-cols-8 gap-1 rounded-2xl border border-[#E8E6E0] bg-white p-2 shadow-xl"
+                    >
+                      {["😀","😂","😍","🔥","👏","❤️","👍","🎉","😎","🤝","🥳","🙌","💯","✨","😅","😭"].map((emoji) => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          onClick={() => handleInputChange(`${inputText}${emoji}`)}
+                          className="h-8 w-8 rounded-xl text-lg hover:bg-amber-50 cursor-pointer"
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                  {showAttachMenu && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                      className="absolute bottom-full left-10 mb-2 grid w-52 gap-2 rounded-2xl border border-[#E8E6E0] bg-white p-3 shadow-xl"
+                    >
+                      {[
+                        { type: "poll", label: "Poll", icon: BarChart3, color: "text-amber-700 bg-amber-50" },
+                        { type: "photo", label: "Photo", icon: ImageIcon, color: "text-sky-700 bg-sky-50" },
+                        { type: "video", label: "Video", icon: Video, color: "text-rose-700 bg-rose-50" },
+                      ].map(({ type, label, icon: Icon, color }) => (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={() => handleAttachmentChoice(type)}
+                          className="flex items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-black text-[#1A1A1A] hover:bg-[#FAF7F1] cursor-pointer"
+                        >
+                          <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${color}`}>
+                            <Icon size={18} />
+                          </span>
+                          {label}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+              <button
+                type="submit"
+                disabled={!inputText.trim() || sending}
+                className="p-3 bg-gradient-to-r from-amber-300 to-orange-300 text-[#1A1A1A] rounded-2xl hover:from-amber-400 hover:to-orange-400 transition-colors shadow-md shadow-amber-300/20 disabled:opacity-50 cursor-pointer flex items-center justify-center shrink-0"
+              >
+                {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+              </button>
+            </form>
+          </div>
         ) : (
           <div className="max-w-md mx-auto text-center py-2">
             <p className="text-sm text-[#6B6B6B] mb-3 font-semibold">You are not a member of this community.</p>
             <button
               onClick={handleJoin}
               disabled={joining}
-              className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white py-3 rounded-2xl text-xs font-bold uppercase tracking-wider shadow-md shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full bg-gradient-to-r from-amber-300 to-orange-300 hover:from-amber-400 hover:to-orange-400 text-[#1A1A1A] py-3 rounded-2xl text-xs font-bold uppercase tracking-wider shadow-md shadow-amber-300/20 flex items-center justify-center gap-2 cursor-pointer"
             >
               {joining ? <Loader2 size={14} className="animate-spin" /> : <Globe size={14} />}
               Join Community to Participate
@@ -684,6 +1291,114 @@ export default function CommunityChatPage() {
         )}
       </div>
       </section>
+
+      {/* Poll Composer */}
+      <AnimatePresence>
+        {showPollModal && (
+          <div
+            className="fixed inset-0 z-[180] flex items-end justify-center bg-black/50 px-3 py-3 backdrop-blur-sm sm:items-center sm:px-4"
+            onClick={() => setShowPollModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.94, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.94, opacity: 0, y: 20 }}
+              className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-[1.75rem] border border-[#E8E6E0] bg-white p-5 shadow-xl custom-scrollbar sm:rounded-[2rem] sm:p-6"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="mb-6 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-2xl bg-emerald-50 p-2.5 text-emerald-600">
+                    <BarChart3 size={23} />
+                  </div>
+                  <h2 className="text-xl font-black text-[#1A1A1A]">Create Poll</h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPollModal(false)}
+                  className="rounded-full p-2 text-[#888888] hover:bg-[#F3F2EE] cursor-pointer"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="space-y-5">
+                <div className="space-y-2">
+                  <label className="ml-2 text-[11px] font-black uppercase tracking-[0.18em] text-[#888888]">Question</label>
+                  <textarea
+                    placeholder="Ask your community..."
+                    value={pollQuestion}
+                    onChange={(e) => setPollQuestion(e.target.value)}
+                    className="min-h-[96px] w-full resize-none rounded-[1.25rem] border border-[#E8E6E0] bg-[#F3F2EE] p-4 text-sm text-[#1A1A1A] outline-none transition-all focus:border-[#C8922A]/50"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <label className="ml-2 text-[11px] font-black uppercase tracking-[0.18em] text-[#888888]">Options</label>
+                  {pollOptions.map((opt, index) => (
+                    <div key={index} className="relative">
+                      <input
+                        type="text"
+                        placeholder={`Option ${index + 1}`}
+                        value={opt}
+                        onChange={(e) => {
+                          const next = [...pollOptions];
+                          next[index] = e.target.value;
+                          setPollOptions(next);
+                        }}
+                        className="w-full rounded-2xl border border-[#E8E6E0] bg-[#F3F2EE] py-3.5 pl-4 pr-11 text-sm text-[#1A1A1A] outline-none transition-all focus:border-[#C8922A]/50"
+                      />
+                      {pollOptions.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => setPollOptions(prev => prev.filter((_, itemIndex) => itemIndex !== index))}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-[#AAAAAA] hover:bg-red-50 hover:text-red-500 cursor-pointer"
+                        >
+                          <X size={15} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+
+                  {pollOptions.length < 5 && (
+                    <button
+                      type="button"
+                      onClick={() => setPollOptions(prev => [...prev, ""])}
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-[#E8E6E0] py-3.5 text-xs font-black text-[#888888] hover:bg-[#F9F8F5] cursor-pointer"
+                    >
+                      <Plus size={14} />
+                      Add Option
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between rounded-2xl border border-[#E8E6E0] bg-[#F9F8F5] p-4">
+                  <div className="flex items-center gap-3">
+                    <Check size={18} className={pollAllowMultiple ? "text-emerald-500" : "text-[#AAAAAA]"} />
+                    <span className="text-sm font-black text-[#4A4A4A]">Allow multiple answers</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPollAllowMultiple(!pollAllowMultiple)}
+                    className={clsx("h-6 w-12 rounded-full p-1 transition-all cursor-pointer", pollAllowMultiple ? "bg-emerald-500" : "bg-[#D1CFC8]")}
+                  >
+                    <div className={clsx("h-4 w-4 rounded-full bg-white shadow-md transition-transform", pollAllowMultiple ? "translate-x-6" : "translate-x-0")} />
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleCreatePollMessage}
+                  disabled={!pollQuestion.trim() || pollOptions.filter(opt => opt.trim()).length < 2 || sending}
+                  className="w-full rounded-[1.25rem] bg-emerald-500 py-4 text-sm font-black uppercase tracking-wider text-white shadow-xl shadow-emerald-500/20 transition-all disabled:opacity-40 cursor-pointer"
+                >
+                  {sending ? "Creating..." : "Launch Poll"}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Toast Alert */}
       <AnimatePresence>

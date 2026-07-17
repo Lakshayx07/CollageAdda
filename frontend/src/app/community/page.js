@@ -93,20 +93,25 @@ export default function CommunityPage() {
 
   const loading = !isMounted || communitiesLoading;
 
-  const communityThemes = [
-    { gradient: "from-orange-400 to-orange-600", soft: "bg-orange-50", text: "text-orange-600", border: "border-orange-400", tint: "bg-orange-500/10", icon: Gamepad2 },
-    { gradient: "from-violet-500 to-purple-600", soft: "bg-violet-50", text: "text-violet-600", border: "border-violet-400", tint: "bg-violet-500/10", icon: Users2 },
-    { gradient: "from-emerald-400 to-green-600", soft: "bg-emerald-50", text: "text-emerald-600", border: "border-emerald-400", tint: "bg-emerald-500/10", icon: Code2 },
-    { gradient: "from-sky-400 to-cyan-600", soft: "bg-sky-50", text: "text-sky-600", border: "border-sky-400", tint: "bg-sky-500/10", icon: Camera },
-    { gradient: "from-rose-400 to-pink-600", soft: "bg-rose-50", text: "text-rose-600", border: "border-rose-400", tint: "bg-rose-500/10", icon: Sparkles },
-    { gradient: "from-amber-400 to-yellow-600", soft: "bg-amber-50", text: "text-amber-700", border: "border-amber-400", tint: "bg-amber-500/10", icon: MessageCircle },
-  ];
+  const communityThemes = {
+    sports: { gradient: "from-sky-100 via-sky-200 to-cyan-100", soft: "bg-sky-50", text: "text-sky-700", border: "border-sky-200", icon: Users2 },
+    gaming: { gradient: "from-violet-100 via-purple-200 to-indigo-100", soft: "bg-violet-50", text: "text-violet-700", border: "border-violet-200", icon: Gamepad2 },
+    tech: { gradient: "from-emerald-100 via-green-200 to-teal-100", soft: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", icon: Code2 },
+    business: { gradient: "from-amber-100 via-yellow-200 to-orange-100", soft: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", icon: Briefcase },
+    art: { gradient: "from-rose-100 via-pink-200 to-orange-100", soft: "bg-rose-50", text: "text-rose-700", border: "border-rose-200", icon: Palette },
+    music: { gradient: "from-fuchsia-100 via-pink-200 to-purple-100", soft: "bg-fuchsia-50", text: "text-fuchsia-700", border: "border-fuchsia-200", icon: Music },
+    default: { gradient: "from-amber-100 via-orange-200 to-yellow-100", soft: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", icon: MessageCircle },
+  };
 
-  const getCommunityTheme = (id) => {
-    if (!id) return communityThemes[0];
-    let hash = 0;
-    for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) & 0xffffffff;
-    return communityThemes[Math.abs(hash) % communityThemes.length];
+  const getCommunityTheme = (community) => {
+    const haystack = [community?.name, community?.description, ...(community?.tags || [])].join(" ").toLowerCase();
+    if (haystack.includes("sport")) return communityThemes.sports;
+    if (haystack.includes("gaming") || haystack.includes("esport") || haystack.includes("game")) return communityThemes.gaming;
+    if (haystack.includes("tech") || haystack.includes("code") || haystack.includes("hack")) return communityThemes.tech;
+    if (haystack.includes("business") || haystack.includes("startup")) return communityThemes.business;
+    if (haystack.includes("art") || haystack.includes("design")) return communityThemes.art;
+    if (haystack.includes("music")) return communityThemes.music;
+    return communityThemes.default;
   };
 
   const showToast = (type, msg) => {
@@ -254,12 +259,12 @@ export default function CommunityPage() {
     .sort((a, b) => (b.member_count || 0) - (a.member_count || 0))
     .slice(0, 3);
   const categoryItems = [
-    { label: "Sports", icon: Globe },
-    { label: "Gaming", icon: Gamepad2 },
-    { label: "Tech", icon: Code2 },
-    { label: "Business", icon: Briefcase },
-    { label: "Art & Design", icon: Palette },
-    { label: "Music", icon: Music },
+    { label: "Sports", icon: Globe, idle: "bg-sky-50 text-sky-700 border-sky-100 hover:bg-sky-100 hover:border-sky-200", active: "bg-sky-100 text-sky-800 border-sky-300" },
+    { label: "Gaming", icon: Gamepad2, idle: "bg-violet-50 text-violet-700 border-violet-100 hover:bg-violet-100 hover:border-violet-200", active: "bg-violet-100 text-violet-800 border-violet-300" },
+    { label: "Tech", icon: Code2, idle: "bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100 hover:border-emerald-200", active: "bg-emerald-100 text-emerald-800 border-emerald-300" },
+    { label: "Business", icon: Briefcase, idle: "bg-amber-50 text-amber-700 border-amber-100 hover:bg-amber-100 hover:border-amber-200", active: "bg-amber-100 text-amber-800 border-amber-300" },
+    { label: "Art & Design", icon: Palette, idle: "bg-rose-50 text-rose-700 border-rose-100 hover:bg-rose-100 hover:border-rose-200", active: "bg-rose-100 text-rose-800 border-rose-300" },
+    { label: "Music", icon: Music, idle: "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-100 hover:bg-fuchsia-100 hover:border-fuchsia-200", active: "bg-fuchsia-100 text-fuchsia-800 border-fuchsia-300" },
   ];
 
   if (!isMounted) return null;
@@ -295,8 +300,8 @@ export default function CommunityPage() {
                         className={clsx(
                           "px-4 py-2.5 rounded-2xl text-xs font-black whitespace-nowrap transition-all border cursor-pointer",
                           activeTab === tab
-                            ? "bg-orange-600 text-white border-orange-600 shadow-lg shadow-orange-500/20"
-                            : "bg-white/90 text-[#333333] border-[#ECE6DD] hover:border-orange-200 hover:text-orange-600"
+                            ? "bg-gradient-to-r from-amber-300 to-orange-300 text-[#1A1A1A] border-amber-200 shadow-lg shadow-orange-300/20"
+                            : "bg-white/90 text-[#333333] border-[#ECE6DD] hover:border-amber-200 hover:text-amber-700"
                         )}
                       >
                         {tab === "all" && "All Communities"}
@@ -309,16 +314,16 @@ export default function CommunityPage() {
                 </div>
 
                 <div className="relative hidden md:block overflow-hidden">
-                  <div className="absolute inset-y-6 right-0 left-0 rounded-l-[3rem] bg-gradient-to-br from-orange-50 via-orange-100/70 to-white" />
-                  <div className="absolute right-[-70px] bottom-[-100px] w-[300px] h-[300px] rounded-full border-[24px] border-orange-200/50" />
+                  <div className="absolute inset-y-6 right-0 left-0 rounded-l-[3rem] bg-gradient-to-br from-amber-50 via-orange-100/70 to-white" />
+                  <div className="absolute right-[-70px] bottom-[-100px] w-[300px] h-[300px] rounded-full border-[24px] border-amber-200/50" />
                   <div className="absolute right-[-32px] bottom-[-70px] w-[235px] h-[235px] rounded-full border border-orange-300/30" />
-                  <div className="absolute right-12 top-8 w-11 h-11 rotate-12 rounded-2xl bg-white shadow-lg flex items-center justify-center text-orange-500">
+                  <div className="absolute right-12 top-8 w-11 h-11 rotate-12 rounded-2xl bg-white shadow-lg flex items-center justify-center text-amber-600">
                     <Send size={22} />
                   </div>
-                  <div className="absolute left-[38%] top-[43%] w-14 h-14 rounded-2xl bg-orange-500 text-white shadow-xl flex items-center justify-center">
+                  <div className="absolute left-[38%] top-[43%] w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-xl flex items-center justify-center">
                     <MessageCircle size={26} />
                   </div>
-                  <div className="absolute left-[52%] top-[62%] w-10 h-10 rounded-2xl bg-white shadow-lg flex items-center justify-center text-orange-500">
+                  <div className="absolute left-[52%] top-[62%] w-10 h-10 rounded-2xl bg-white shadow-lg flex items-center justify-center text-amber-600">
                     <Users2 size={19} />
                   </div>
                   {[
@@ -330,8 +335,8 @@ export default function CommunityPage() {
                       {initial}
                     </div>
                   ))}
-                  <div className="absolute left-[25%] top-[31%] w-[54%] h-px border-t border-dashed border-orange-300/60 rotate-12" />
-                  <div className="absolute left-[27%] top-[58%] w-[35%] h-px border-t border-dashed border-orange-300/60 -rotate-12" />
+                  <div className="absolute left-[25%] top-[31%] w-[54%] h-px border-t border-dashed border-amber-300/60 rotate-12" />
+                  <div className="absolute left-[27%] top-[58%] w-[35%] h-px border-t border-dashed border-amber-300/60 -rotate-12" />
                 </div>
               </div>
             </section>
@@ -365,17 +370,17 @@ export default function CommunityPage() {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {filteredCommunities.map((comm) => {
                   const isMember = membershipSet.has(comm.id);
                   const isJoining = joiningCommunityId === comm.id;
-                  const theme = getCommunityTheme(comm.id);
+                  const theme = getCommunityTheme(comm);
                   const Icon = theme.icon;
                   const unread = unreadCounts[comm.id] || 0;
 
                   return (
-                    <div key={comm.id} className="bg-white rounded-[1.35rem] overflow-hidden border border-[#ECE6DD] shadow-sm hover:shadow-xl hover:shadow-black/5 transition-all flex flex-col">
-                      <div className={`h-[72px] w-full bg-gradient-to-r ${theme.gradient} relative overflow-hidden`}>
+                    <div key={comm.id} className="bg-white rounded-[1.1rem] overflow-hidden border border-[#ECE6DD] shadow-sm hover:shadow-xl hover:shadow-black/5 transition-all flex flex-col">
+                      <div className={`h-[56px] w-full bg-gradient-to-r ${theme.gradient} relative overflow-hidden`}>
                         <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(255,255,255,0.55),transparent_26%),radial-gradient(circle_at_78%_10%,rgba(255,255,255,0.28),transparent_22%)]" />
                         {(comm.member_count || 0) >= (trendingCommunities[0]?.member_count || Infinity) && (
                           <span className="absolute right-4 top-4 rounded-full bg-black/25 text-white text-[10px] font-black px-3 py-1 shadow-sm">
@@ -384,14 +389,14 @@ export default function CommunityPage() {
                         )}
                       </div>
 
-                      <div className="px-5 pb-5 pt-0 flex-1 flex flex-col relative">
-                        <div className={`relative z-10 w-[52px] h-[52px] rounded-2xl ${theme.soft} ${theme.text} border-4 border-white flex items-center justify-center font-black text-xl shadow-lg -mt-6 mb-3`}>
-                          <Icon size={25} />
+                      <div className="px-4 pb-4 pt-0 flex-1 flex flex-col relative">
+                        <div className={`relative z-10 w-[46px] h-[46px] rounded-2xl ${theme.soft} ${theme.text} border-4 border-white flex items-center justify-center font-black text-xl shadow-lg -mt-5 mb-2.5`}>
+                          <Icon size={22} />
                         </div>
 
                         <div className="mb-auto">
                           <div className="flex items-start justify-between gap-2 mb-1">
-                            <h3 onClick={() => router.push(`/community/${comm.id}`)} className="text-lg font-black text-[#1A1A1A] leading-tight cursor-pointer hover:text-orange-600 transition-colors line-clamp-1">
+                            <h3 onClick={() => router.push(`/community/${comm.id}`)} className="text-base font-black text-[#1A1A1A] leading-tight cursor-pointer hover:text-amber-700 transition-colors line-clamp-1">
                               {comm.name}
                             </h3>
                             {comm.privacy === 'invite_only' && (
@@ -407,7 +412,7 @@ export default function CommunityPage() {
                             {comm.description ? "Join conversations, share ideas and grow with students who care about the same things." : "A space for students to connect, collaborate and keep the conversation moving."}
                           </p>
 
-                          <div className="flex flex-wrap gap-2 mt-4">
+                          <div className="flex flex-wrap gap-1.5 mt-3">
                             {(comm.tags || []).slice(0, 3).map(tag => (
                               <span key={tag} className={`text-[11px] ${theme.soft} ${theme.text} px-3 py-1 rounded-full font-black`}>
                                 #{tag}
@@ -416,8 +421,8 @@ export default function CommunityPage() {
                           </div>
                         </div>
 
-                        <div className="mt-5 pt-4 border-t border-[#F0ECE5]">
-                          <div className="flex items-center gap-2 text-xs font-black text-[#555555] mb-4">
+                        <div className="mt-4 pt-3 border-t border-[#F0ECE5]">
+                          <div className="flex items-center gap-2 text-xs font-black text-[#555555] mb-3">
                             <Users2 size={16} className="text-[#1A1A1A]" />
                             {comm.member_count} member{comm.member_count !== 1 ? 's' : ''}
                           </div>
@@ -426,7 +431,7 @@ export default function CommunityPage() {
                             <button
                               onClick={() => router.push(`/community/${comm.id}`)}
                               className={clsx(
-                                "relative w-full flex items-center justify-center gap-2 rounded-2xl border bg-transparent px-4 py-2.5 text-sm font-black transition-all cursor-pointer hover:bg-black/[0.02]",
+                                "relative w-full flex items-center justify-center gap-2 rounded-2xl border bg-transparent px-4 py-2 text-sm font-black transition-all cursor-pointer hover:bg-black/[0.02]",
                                 theme.text,
                                 theme.border
                               )}
@@ -444,7 +449,7 @@ export default function CommunityPage() {
                               onClick={() => handleJoinCommunity(comm)}
                               disabled={isJoining}
                               className={clsx(
-                                "w-full flex items-center justify-center gap-2 rounded-2xl border bg-transparent px-4 py-2.5 text-sm font-black transition-all disabled:opacity-50 cursor-pointer hover:bg-black/[0.02]",
+                                "w-full flex items-center justify-center gap-2 rounded-2xl border bg-transparent px-4 py-2 text-sm font-black transition-all disabled:opacity-50 cursor-pointer hover:bg-black/[0.02]",
                                 theme.text,
                                 theme.border
                               )}
@@ -471,7 +476,7 @@ export default function CommunityPage() {
                 </p>
                 <button
                   onClick={() => setShowCreateModal(true)}
-                  className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-5 py-3 rounded-2xl text-sm font-black shadow-lg shadow-orange-500/20 flex items-center gap-2 cursor-pointer"
+                className="bg-gradient-to-r from-amber-300 to-orange-300 hover:from-amber-400 hover:to-orange-400 text-[#1A1A1A] px-5 py-3 rounded-2xl text-sm font-black shadow-lg shadow-orange-300/20 flex items-center gap-2 cursor-pointer"
                 >
                   <Plus size={17} />
                   Create Community
@@ -483,15 +488,13 @@ export default function CommunityPage() {
             </div>
 
             <div className="bg-white border border-[#ECE6DD] rounded-[1.35rem] shadow-sm p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-2xl bg-orange-50 text-orange-500 flex items-center justify-center">
-                  <Flame size={21} />
-                </div>
+              <div className="flex items-center gap-2 mb-6">
+                <span className="text-2xl leading-none" aria-hidden="true">🔥</span>
                 <h3 className="text-lg font-black text-[#1A1A1A]">Trending Communities</h3>
               </div>
               <div className="space-y-5">
                 {trendingCommunities.map((comm) => {
-                  const theme = getCommunityTheme(comm.id);
+                  const theme = getCommunityTheme(comm);
                   const Icon = theme.icon;
                   return (
                     <button
@@ -516,7 +519,7 @@ export default function CommunityPage() {
             <div className="bg-white border border-[#ECE6DD] rounded-[1.35rem] shadow-sm p-6">
               <h3 className="text-lg font-black text-[#1A1A1A] mb-5">Categories</h3>
               <div className="grid grid-cols-2 gap-3">
-                {categoryItems.map(({ label, icon: Icon }) => (
+                {categoryItems.map(({ label, icon: Icon, idle, active }) => (
                   <button
                     key={label}
                     onClick={() => {
@@ -525,9 +528,7 @@ export default function CommunityPage() {
                     }}
                     className={clsx(
                       "flex items-center gap-2 rounded-xl border px-3 py-3 text-left text-xs font-black transition-colors cursor-pointer",
-                      categoryFilter === label
-                        ? "border-orange-300 bg-orange-50 text-orange-600"
-                        : "border-[#ECE6DD] bg-[#FAFAFA] text-[#666666] hover:border-orange-200 hover:text-orange-600 hover:bg-orange-50"
+                      categoryFilter === label ? active : idle
                     )}
                   >
                     <Icon size={17} />
