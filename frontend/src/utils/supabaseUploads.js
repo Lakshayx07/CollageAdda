@@ -16,6 +16,29 @@ const safeExtension = (file) => {
   return file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
 };
 
+const resizeImageFile = async (file) => {
+  if (!IMAGE_TYPES.has(file.type) || file.type === "image/gif") return file;
+  if (typeof window === "undefined" || !window.createImageBitmap) return file;
+
+  const bitmap = await createImageBitmap(file);
+  const maxSide = 1600;
+  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+  if (scale >= 1 && file.size < 900 * 1024) return file;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  const context = canvas.getContext("2d");
+  context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+
+  const blob = await new Promise((resolve) => {
+    canvas.toBlob(resolve, "image/jpeg", 0.82);
+  });
+  if (!blob) return file;
+
+  return new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" });
+};
+
 export const uploadPublicImage = async ({ bucket, file, userId }) => {
   const client = requireSupabase();
   if (!file || !IMAGE_TYPES.has(file.type)) {
@@ -58,13 +81,14 @@ export const uploadPublicMedia = async ({ bucket, file, userId, kind }) => {
   }
   if (!userId) throw new Error("You must be logged in to upload media.");
 
-  const uniqueName = `${Date.now()}-${crypto.randomUUID()}.${safeExtension(file)}`;
+  const uploadFile = kind === "video" ? file : await resizeImageFile(file);
+  const uniqueName = `${Date.now()}-${crypto.randomUUID()}.${safeExtension(uploadFile)}`;
   const path = `${String(userId)}/${uniqueName}`;
   const { error: uploadError } = await client.storage
     .from(bucket)
-    .upload(path, file, {
+    .upload(path, uploadFile, {
       cacheControl: "3600",
-      contentType: file.type,
+      contentType: uploadFile.type,
       upsert: false
     });
 
