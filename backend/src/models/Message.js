@@ -10,6 +10,22 @@ const messageSchema = mongoose.Schema({
     enum: ['image', 'video', 'file', 'none'], 
     default: 'none' 
   },
+  replyTo: {
+    messageId: { type: mongoose.Schema.Types.ObjectId, ref: 'Message' },
+    text: { type: String },
+    senderName: { type: String }
+  },
+  poll: {
+    question: { type: String },
+    allowMultiple: { type: Boolean, default: false },
+    options: [{
+      text: { type: String },
+      votes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+    }]
+  },
+  isPinned: { type: Boolean, default: false },
+  editedAt: { type: Date },
+  deletedAt: { type: Date },
   seenBy: [{
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     seenAt: { type: Date, default: Date.now }

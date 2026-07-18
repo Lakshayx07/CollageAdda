@@ -9,6 +9,39 @@ import clsx from "clsx";
 import { supabase } from "../../utils/supabase";
 import { getAuthenticatedSupabaseClient } from "../../utils/supabaseAuthUser";
 
+function JoinSparkles({ active }) {
+  const pieces = Array.from({ length: 34 }, (_, index) => ({
+    id: index,
+    left: 8 + ((index * 19) % 84),
+    delay: ((index * 7) % 35) / 100,
+    duration: 1.9 + ((index * 11) % 9) / 10,
+    size: 14 + ((index * 5) % 12),
+    drift: ((index * 23) % 80) - 40,
+  }));
+
+  return (
+    <AnimatePresence>
+      {active && (
+        <div className="pointer-events-none fixed inset-0 z-[220] overflow-hidden">
+          {pieces.map((piece) => (
+            <motion.div
+              key={piece.id}
+              initial={{ y: -40, x: 0, opacity: 0, rotate: 0, scale: 0.8 }}
+              animate={{ y: "105vh", x: piece.drift, opacity: [0, 1, 1, 0], rotate: 260, scale: [0.8, 1.15, 1] }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: piece.duration, delay: piece.delay, ease: "easeIn" }}
+              className="absolute top-0 text-amber-400 drop-shadow-[0_0_10px_rgba(251,191,36,0.65)]"
+              style={{ left: `${piece.left}%`, fontSize: piece.size }}
+            >
+              ✨
+            </motion.div>
+          ))}
+        </div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 export default function CommunityPage() {
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
@@ -22,6 +55,7 @@ export default function CommunityPage() {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [communityToast, setCommunityToast] = useState(null);
+  const [showJoinSparkles, setShowJoinSparkles] = useState(false);
   
   // Create Form States
   const [communityName, setCommunityName] = useState("");
@@ -119,6 +153,11 @@ export default function CommunityPage() {
     setTimeout(() => setCommunityToast(null), 3500);
   };
 
+  const triggerJoinSparkles = () => {
+    setShowJoinSparkles(true);
+    setTimeout(() => setShowJoinSparkles(false), 2600);
+  };
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMounted(true);
@@ -165,6 +204,7 @@ export default function CommunityPage() {
       ));
       
       showToast('success', community.privacy === 'invite_only' ? 'Request sent! 🎉' : `Joined ${community.name}! 🎉`);
+      triggerJoinSparkles();
     } catch (err) {
       showToast('error', err.message || 'Failed to join community.');
     } finally {
@@ -643,6 +683,7 @@ export default function CommunityPage() {
           </motion.div>
         )}
       </AnimatePresence>
+      <JoinSparkles active={showJoinSparkles} />
     </div>
   );
 }

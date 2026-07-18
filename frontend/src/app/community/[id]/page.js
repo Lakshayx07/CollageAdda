@@ -14,6 +14,39 @@ import { supabase } from "../../../utils/supabase";
 import { getAuthenticatedSupabaseClient } from "../../../utils/supabaseAuthUser";
 import { uploadPublicMedia } from "../../../utils/supabaseUploads";
 
+function JoinSparkles({ active }) {
+  const pieces = Array.from({ length: 34 }, (_, index) => ({
+    id: index,
+    left: 8 + ((index * 19) % 84),
+    delay: ((index * 7) % 35) / 100,
+    duration: 1.9 + ((index * 11) % 9) / 10,
+    size: 14 + ((index * 5) % 12),
+    drift: ((index * 23) % 80) - 40,
+  }));
+
+  return (
+    <AnimatePresence>
+      {active && (
+        <div className="pointer-events-none fixed inset-0 z-[220] overflow-hidden">
+          {pieces.map((piece) => (
+            <motion.div
+              key={piece.id}
+              initial={{ y: -40, x: 0, opacity: 0, rotate: 0, scale: 0.8 }}
+              animate={{ y: "105vh", x: piece.drift, opacity: [0, 1, 1, 0], rotate: 260, scale: [0.8, 1.15, 1] }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: piece.duration, delay: piece.delay, ease: "easeIn" }}
+              className="absolute top-0 text-amber-400 drop-shadow-[0_0_10px_rgba(251,191,36,0.65)]"
+              style={{ left: `${piece.left}%`, fontSize: piece.size }}
+            >
+              ✨
+            </motion.div>
+          ))}
+        </div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 export default function CommunityChatPage() {
   const params = useParams();
   const router = useRouter();
@@ -54,6 +87,8 @@ export default function CommunityChatPage() {
   const [pollOptions, setPollOptions] = useState(["", ""]);
   const [pollAllowMultiple, setPollAllowMultiple] = useState(false);
   const [typingUsers, setTypingUsers] = useState({});
+  const [pinnedJumpIndex, setPinnedJumpIndex] = useState(0);
+  const [showJoinSparkles, setShowJoinSparkles] = useState(false);
 
   const scrollRef = useRef(null);
   const channelRef = useRef(null);
@@ -62,6 +97,7 @@ export default function CommunityChatPage() {
   const photoInputRef = useRef(null);
   const videoInputRef = useRef(null);
   const messageRefs = useRef({});
+  const didInitialScrollRef = useRef(false);
 
   const showToastMsg = (type, msg) => {
     setToast({ type, msg });
@@ -306,6 +342,8 @@ export default function CommunityChatPage() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setActiveCommunityId(id);
+    didInitialScrollRef.current = false;
+    setPinnedJumpIndex(0);
   }, [id]);
 
   useEffect(() => {
@@ -327,9 +365,24 @@ export default function CommunityChatPage() {
   useEffect(() => {
     // Scroll to bottom when messages update
     if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: "smooth" });
+      scrollRef.current.scrollIntoView({ behavior: didInitialScrollRef.current ? "smooth" : "auto" });
+      didInitialScrollRef.current = true;
     }
   }, [messages]);
+
+  useEffect(() => {
+    if (!loading && messages.length > 0 && !didInitialScrollRef.current) {
+      requestAnimationFrame(() => {
+        scrollRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+        didInitialScrollRef.current = true;
+      });
+    }
+  }, [loading, messages.length]);
+
+  const triggerJoinSparkles = () => {
+    setShowJoinSparkles(true);
+    setTimeout(() => setShowJoinSparkles(false), 2600);
+  };
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -656,6 +709,7 @@ export default function CommunityChatPage() {
       setIsMember(true);
       setRole('member');
       showToastMsg("success", "You joined the community! 🎉");
+      triggerJoinSparkles();
 
       // Reload messages
       const { data: msgs } = await authSupabase
@@ -704,6 +758,7 @@ export default function CommunityChatPage() {
         setRole('member');
       }
       showToastMsg("success", `Joined ${targetCommunity.name}!`);
+      triggerJoinSparkles();
     } catch (err) {
       showToastMsg("error", "Failed to join community.");
     } finally {
@@ -803,10 +858,15 @@ export default function CommunityChatPage() {
   };
 
   const handleJumpToPinned = () => {
-    const firstPinned = messages.find((msg) => msg.is_pinned);
-    if (!firstPinned) return;
-    messageRefs.current[firstPinned.id]?.scrollIntoView({ behavior: "smooth", block: "center" });
-    setActiveMessageId(firstPinned.id);
+    const pinnedMessages = [...messages]
+      .filter((msg) => msg.is_pinned)
+      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    if (pinnedMessages.length === 0) return;
+    const nextIndex = pinnedJumpIndex % pinnedMessages.length;
+    const target = pinnedMessages[nextIndex];
+    messageRefs.current[target.id]?.scrollIntoView({ behavior: "smooth", block: "center" });
+    setActiveMessageId(target.id);
+    setPinnedJumpIndex((prev) => (prev + 1) % pinnedMessages.length);
   };
 
   const formatTime = (isoString) => {
@@ -1139,8 +1199,8 @@ export default function CommunityChatPage() {
 
                 {!isDeleted && activeMessageId === msg.id && (
                   <div className={clsx(
-                    "absolute z-20 top-full mt-1 flex items-center gap-1 rounded-2xl border border-[#E8E6E0] bg-white p-1 shadow-xl",
-                    isMe ? "right-0" : "left-0"
+                    "absolute z-20 top-1/2 flex -translate-y-1/2 items-center gap-1 rounded-2xl border border-[#E8E6E0] bg-white p-1 shadow-xl",
+                    isMe ? "right-full mr-12" : "left-full ml-12"
                   )}>
                     <button onClick={() => handleReplyMessage(msg)} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-amber-50 hover:text-amber-700 cursor-pointer" title="Reply">
                       <Reply size={15} />
@@ -1166,7 +1226,7 @@ export default function CommunityChatPage() {
                     type="button"
                     onClick={() => setActiveMessageId(activeMessageId === msg.id ? null : msg.id)}
                     className={clsx(
-                      "absolute top-1/2 -translate-y-1/2 rounded-full bg-white border border-[#E8E6E0] p-1.5 text-[#6B6B6B] shadow-sm opacity-0 transition-opacity group-hover:opacity-100 cursor-pointer",
+                      "absolute top-1/2 -translate-y-1/2 rounded-full bg-white border border-[#E8E6E0] p-1.5 text-[#6B6B6B] shadow-sm opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 cursor-pointer",
                       isMe ? "-left-9" : "-right-9"
                     )}
                     title="Message options"
@@ -1348,14 +1408,16 @@ export default function CommunityChatPage() {
       {/* Poll Composer */}
       <AnimatePresence>
         {showPollModal && (
-          <div className="fixed inset-0 z-[180] flex items-end sm:items-center justify-center bg-black/50 px-0 pb-0 pt-10 backdrop-blur-sm sm:p-4" onClick={() => setShowPollModal(false)}>
+          <div
+            className="fixed inset-0 z-[180] flex items-end justify-center bg-black/50 px-3 py-3 backdrop-blur-sm sm:items-center sm:px-4"
+            onClick={() => setShowPollModal(false)}
+          >
             <motion.div
-              initial={{ y: "100%", opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: "100%", opacity: 0 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              onClick={(e) => e.stopPropagation()}
-              className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-[1.75rem] rounded-b-none border-t border-[#E8E6E0] bg-white p-5 shadow-xl custom-scrollbar sm:border sm:rounded-[2rem] sm:p-6 mt-auto sm:mt-0"
+              initial={{ scale: 0.94, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.94, opacity: 0, y: 20 }}
+              className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-[1.75rem] border border-[#E8E6E0] bg-white p-5 shadow-xl custom-scrollbar sm:rounded-[2rem] sm:p-6"
+              onClick={e => e.stopPropagation()}
             >
               <div className="mb-6 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -1465,6 +1527,7 @@ export default function CommunityChatPage() {
           </motion.div>
         )}
       </AnimatePresence>
+      <JoinSparkles active={showJoinSparkles} />
     </div>
   );
 }

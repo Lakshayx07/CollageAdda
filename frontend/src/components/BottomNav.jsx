@@ -51,7 +51,7 @@ export default function BottomNav() {
             key={item.name}
             href={item.path}
             onClick={() => { if (isFriends) localStorage.setItem("collegeadda_friends_viewed", "true"); }}
-            className={clsx("nav-item relative min-h-[44px] min-w-[44px] px-2", isActive ? "text-[#C8922A]" : "text-[#888888]")}
+            className={clsx("nav-item relative", isActive ? "text-[#C8922A]" : "text-[#888888]")}
             aria-label={item.name}
           >
             <div className="relative flex flex-col items-center">

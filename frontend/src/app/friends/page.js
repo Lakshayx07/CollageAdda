@@ -864,9 +864,9 @@ export default function FriendsPage() {
           </div>
         </header>
 
-        <div className="max-w-7xl mx-auto px-4 py-6 relative z-10 sm:px-6 sm:py-8 flex flex-col md:flex-row md:justify-between gap-10 items-start">
+        <div className="mx-auto flex max-w-[1180px] flex-col items-start gap-8 px-4 py-6 relative z-10 sm:px-6 sm:py-8 md:flex-row md:justify-center lg:gap-10">
           {/* Left Column (Search & Lists) */}
-          <div className="w-full space-y-6 sm:space-y-8 max-w-2xl md:ml-16">
+          <div className="w-full max-w-[760px] space-y-6 sm:space-y-8">
             {/* Search Section */}
             <motion.div
               initial={{ y: 20, opacity: 0 }}
@@ -1390,7 +1390,7 @@ export default function FriendsPage() {
           </div> {/* End Left Column */}
 
           {/* Right Column (Build Your Squad + Community) */}
-          <div className="w-full md:w-[320px] xl:w-[360px] shrink-0 sticky top-24 space-y-6 hidden md:flex md:flex-col">
+          <div className="hidden w-full shrink-0 space-y-6 sticky top-24 md:flex md:w-[300px] md:flex-col xl:w-[320px]">
             {/* Build Your Squad Card */}
             <div className="app-panel rounded-[1.6rem] p-6 text-center shadow-sm">
               <div className="flex justify-center -space-x-4 mb-5">

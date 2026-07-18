@@ -1115,14 +1115,19 @@ export default function ProfilePage() {
 
         {/* Post Detail Modal */}
         {modal === "post" && activePostIndex !== null && (
-          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/95 px-0 pb-0 pt-10 backdrop-blur-xl sm:p-4" onClick={() => setModal(null)}>
-            <motion.div
-              initial={{ opacity: 0, y: "100%" }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="flex max-h-[90dvh] w-full max-w-md flex-col overflow-hidden rounded-t-[1.75rem] rounded-b-none border-t border-[#E8E6E0] bg-white shadow-sm sm:max-h-[90vh] sm:rounded-[3rem] sm:border mt-auto sm:mt-0"
-              onClick={(e) => e.stopPropagation()}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-end justify-center bg-black/95 p-3 backdrop-blur-xl sm:items-center sm:p-4"
+            onClick={() => setModal(null)}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="flex max-h-[90dvh] w-full max-w-md flex-col overflow-hidden rounded-[1.75rem] border border-[#E8E6E0] bg-white border border-[#E8E6E0] shadow-sm sm:max-h-[90vh] sm:rounded-[3rem]"
+              onClick={e => e.stopPropagation()}
             >
               {/* Post Header */}
               <div className="p-5 flex items-center justify-between">
@@ -1189,7 +1194,7 @@ export default function ProfilePage() {
                  <button className="text-[#C8922A] font-black uppercase text-[10px] tracking-widest">Post</button>
               </div>
             </motion.div>
-          </div>
+          </motion.div>
         )}
 
         {/* ====== UPLOAD CHOICE MODAL ====== */}
@@ -1300,13 +1305,19 @@ export default function ProfilePage() {
 
         {/* ====== ADD STORY MODAL ====== */}
         {modal === "addStory" && (
-          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/40 px-0 pb-0 pt-10 backdrop-blur-sm sm:p-4" onClick={() => setModal(null)}>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-3 backdrop-blur-sm sm:p-4"
+            onClick={() => setModal(null)}
+          >
             <motion.div
-              initial={{ opacity: 0, y: "100%" }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="max-h-[92dvh] w-full max-w-md space-y-4 overflow-y-auto rounded-t-[1.75rem] rounded-b-none border-t border-[#E8E6E0] bg-[#111118] p-5 custom-scrollbar sm:rounded-[2.5rem] sm:border sm:p-6 mt-auto sm:mt-0"
+              initial={{ y: 80, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 80, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="max-h-[92dvh] w-full max-w-md space-y-4 overflow-y-auto rounded-[1.75rem] border border-[#E8E6E0] bg-[#111118] p-5 custom-scrollbar sm:rounded-[2.5rem] sm:p-6"
               onClick={e => e.stopPropagation()}
             >
               <div className="flex items-center justify-between">

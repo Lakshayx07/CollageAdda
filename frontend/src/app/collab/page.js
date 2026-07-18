@@ -141,8 +141,8 @@ export default function CollabPage() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-5 py-8 relative z-10">
-        <div className="grid w-full gap-6 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start">
+      <main className="mx-auto w-full max-w-[1180px] flex-1 px-5 py-8 relative z-10">
+        <div className="grid w-full justify-center gap-6 lg:grid-cols-[minmax(0,760px)_22rem] lg:items-start">
           <OpportunityFinder currentUser={currentUser} />
 
           <CollabCarousel currentUser={currentUser} onPostCard={() => setShowPostModal(true)} />

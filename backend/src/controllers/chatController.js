@@ -13,7 +13,7 @@ export const getRooms = async (req, res) => {
   try {
     const rooms = await ChatRoom.find({ participants: req.user._id })
       .populate('participants', 'name university isVerified')
-      .populate('lastMessage', 'text mediaType createdAt sender')
+      .populate('lastMessage', 'text mediaType poll deletedAt createdAt sender')
       .sort({ updatedAt: -1 })
       .limit(50)
       .lean();
@@ -128,19 +128,38 @@ export const getOrCreatePrivateRoom = async (req, res) => {
 
 // Create a message via HTTP
 export const sendMessage = async (req, res) => {
-  const { text, mediaUrl, mediaType } = req.body;
+  const { text, mediaUrl, mediaType, replyTo, poll } = req.body;
   const roomId = req.params.id;
 
   try {
     const room = await ChatRoom.findById(roomId);
     if (!room) return res.status(404).json({ message: 'Room not found' });
 
+    if (!room.participants.some(p => p.toString() === req.user._id.toString())) {
+      return res.status(403).json({ message: 'Not a room participant' });
+    }
+
+    const cleanPoll = poll?.question?.trim() ? {
+      question: poll.question.trim(),
+      allowMultiple: Boolean(poll.allowMultiple),
+      options: (poll.options || [])
+        .map(option => ({ text: String(option?.text || option).trim(), votes: [] }))
+        .filter(option => option.text)
+        .slice(0, 6)
+    } : undefined;
+
     const message = await Message.create({
       room: roomId,
       sender: req.user._id,
       text: text || '',
       mediaUrl,
-      mediaType: mediaType || 'none'
+      mediaType: mediaType || 'none',
+      replyTo: replyTo?.messageId ? {
+        messageId: replyTo.messageId,
+        text: replyTo.text || '',
+        senderName: replyTo.senderName || 'Student'
+      } : undefined,
+      poll: cleanPoll?.options?.length >= 2 ? cleanPoll : undefined
     });
 
     // Update last message in room and unread counts
@@ -169,6 +188,111 @@ export const sendMessage = async (req, res) => {
 
     const populatedMsg = await Message.findById(message._id).populate('sender', 'name profilePic isVerified');
     res.status(201).json(populatedMsg);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const findParticipantRoom = async (roomId, userId) => {
+  const room = await ChatRoom.findById(roomId);
+  if (!room) return { error: { status: 404, message: 'Room not found' } };
+  if (!room.participants.some(p => p.toString() === userId.toString())) {
+    return { error: { status: 403, message: 'Not a room participant' } };
+  }
+  return { room };
+};
+
+const populateMessage = (id) => Message.findById(id).populate('sender', 'name profilePic isVerified');
+
+export const updateMessage = async (req, res) => {
+  const { text } = req.body;
+  try {
+    const { error } = await findParticipantRoom(req.params.id, req.user._id);
+    if (error) return res.status(error.status).json({ message: error.message });
+
+    const message = await Message.findOne({ _id: req.params.messageId, room: req.params.id });
+    if (!message) return res.status(404).json({ message: 'Message not found' });
+    if (message.sender.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Only the sender can edit this message' });
+    }
+    if (message.deletedAt) return res.status(400).json({ message: 'Deleted messages cannot be edited' });
+
+    message.text = String(text || '').trim();
+    message.editedAt = new Date();
+    await message.save();
+
+    res.json(await populateMessage(message._id));
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const deleteMessage = async (req, res) => {
+  try {
+    const { error } = await findParticipantRoom(req.params.id, req.user._id);
+    if (error) return res.status(error.status).json({ message: error.message });
+
+    const message = await Message.findOne({ _id: req.params.messageId, room: req.params.id });
+    if (!message) return res.status(404).json({ message: 'Message not found' });
+    if (message.sender.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Only the sender can delete this message' });
+    }
+
+    message.text = 'This message was deleted';
+    message.mediaUrl = '';
+    message.mediaType = 'none';
+    message.poll = undefined;
+    message.replyTo = undefined;
+    message.deletedAt = new Date();
+    message.isPinned = false;
+    await message.save();
+
+    res.json(await populateMessage(message._id));
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const togglePinMessage = async (req, res) => {
+  try {
+    const { error } = await findParticipantRoom(req.params.id, req.user._id);
+    if (error) return res.status(error.status).json({ message: error.message });
+
+    const message = await Message.findOne({ _id: req.params.messageId, room: req.params.id });
+    if (!message) return res.status(404).json({ message: 'Message not found' });
+    if (message.deletedAt) return res.status(400).json({ message: 'Deleted messages cannot be pinned' });
+
+    message.isPinned = !message.isPinned;
+    await message.save();
+
+    res.json(await populateMessage(message._id));
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const votePoll = async (req, res) => {
+  const { optionIndex } = req.body;
+  try {
+    const { error } = await findParticipantRoom(req.params.id, req.user._id);
+    if (error) return res.status(error.status).json({ message: error.message });
+
+    const message = await Message.findOne({ _id: req.params.messageId, room: req.params.id });
+    if (!message?.poll?.options?.length) return res.status(404).json({ message: 'Poll not found' });
+
+    const selectedIndex = Number(optionIndex);
+    if (Number.isNaN(selectedIndex) || selectedIndex < 0 || selectedIndex >= message.poll.options.length) {
+      return res.status(400).json({ message: 'Invalid poll option' });
+    }
+
+    const userId = req.user._id.toString();
+    message.poll.options.forEach((option, idx) => {
+      option.votes = option.votes.filter(vote => vote.toString() !== userId);
+      if (idx === selectedIndex) option.votes.push(req.user._id);
+    });
+    await message.save();
+
+    res.json(await populateMessage(message._id));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

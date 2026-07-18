@@ -208,6 +208,10 @@ io.on('connection', (socket) => {
     socket.to(room).emit('user_stop_typing');
   });
 
+  socket.on('message_updated', ({ room, message }) => {
+    socket.to(room).emit('message_updated', { room, message });
+  });
+
   socket.on('disconnect', () => {
     const user = onlineUsers.get(socket.id);
     if (user) {
