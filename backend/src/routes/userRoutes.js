@@ -9,13 +9,13 @@ import { protect } from '../middleware/authMiddleware.js';
 import { ensureUniversityGroup, normalizeUniversityName } from '../utils/universityUtils.js';
 import { publicUserPayload, syncVerificationStatus } from '../utils/verificationUtils.js';
 
-// Always point profilePic to the avatar API endpoint.
-// The /api/users/:id/avatar route already checks the DB and serves
-// the real image (base64 or URL redirect) or falls back to a default avatar.
-// This avoids fetching huge base64 profilePic data in bulk user queries.
+// Convert base64 profilePic to avatar API URL to drastically reduce payload size
 export const transformUser = (u) => {
   if (!u) return u;
-  u.profilePic = `/api/users/${u._id}/avatar`;
+  const originalProfilePic = u.profilePic;
+  u.profilePic = originalProfilePic && !isGeneratedInitialsAvatar(originalProfilePic)
+    ? `/api/users/${u._id}/avatar`
+    : `/default-avatars/${defaultAvatarFileFor(u.name, u._id)}`;
   return u;
 };
 

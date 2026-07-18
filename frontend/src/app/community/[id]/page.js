@@ -391,7 +391,7 @@ export default function CommunityChatPage() {
     if (!inputText.trim() || sending || !isMember || !supabase) return;
 
     const senderName = user?.name || "Anonymous Student";
-    const senderAvatar = user?.profilePic || "";
+    const senderAvatar = user?.profilePicture || "";
 
     const content = inputText.trim();
     setInputText("");
@@ -572,7 +572,7 @@ export default function CommunityChatPage() {
         community_id: activeCommunityId,
         sender_id: authUser.id,
         sender_name: user?.name || "Anonymous Student",
-        sender_avatar: user?.profilePic || "",
+        sender_avatar: user?.profilePicture || "",
         content,
       };
       const richPayload = {
@@ -1176,33 +1176,17 @@ export default function CommunityChatPage() {
                               type="button"
                               onClick={() => handlePollVote(msg, optionIndex)}
                               className={clsx(
-                                "group relative w-full overflow-hidden rounded-xl border px-3 py-2.5 text-left text-xs font-black cursor-pointer transition-all duration-300",
-                                isMe 
-                                  ? selected 
-                                    ? "border-emerald-400 text-white shadow-[0_0_15px_rgba(52,211,153,0.2)] bg-emerald-400/10" 
-                                    : "border-white/20 text-white hover:border-white/40 hover:bg-white/5" 
-                                  : selected 
-                                    ? "border-emerald-500 text-[#1A1A1A] shadow-[0_0_15px_rgba(52,211,153,0.15)] bg-emerald-500/10" 
-                                    : "border-[#E8E6E0] text-[#1A1A1A] hover:border-[#1A1A1A]/30 hover:bg-black/5"
+                                "relative w-full overflow-hidden rounded-xl border px-3 py-2 text-left text-xs font-black cursor-pointer",
+                                isMe ? "border-white/25 text-white" : "border-[#E8E6E0] text-[#1A1A1A]"
                               )}
                             >
                               <span
-                                className={clsx(
-                                  "absolute inset-y-0 left-0 transition-all duration-700 ease-out",
-                                  selected 
-                                    ? "bg-gradient-to-r from-emerald-500/40 to-emerald-400/10" 
-                                    : isMe ? "bg-white/10 group-hover:bg-white/15" : "bg-black/5 group-hover:bg-black/10"
-                                )}
+                                className={clsx("absolute inset-y-0 left-0", selected ? "bg-emerald-400/30" : "bg-amber-300/20")}
                                 style={{ width: `${percentage}%` }}
                               />
                               <span className="relative flex items-center justify-between gap-3">
-                                <span className="flex items-center gap-2 truncate">
-                                  {selected && <CheckCircle2 size={14} className={isMe ? "text-emerald-400" : "text-emerald-600"} />}
-                                  <span className="truncate">{option.text}</span>
-                                </span>
-                                <span className={clsx("font-bold text-[11px]", selected ? (isMe ? "text-emerald-300" : "text-emerald-700") : "opacity-70")}>
-                                  {votes} {votes === 1 ? 'vote' : 'votes'} ({percentage}%)
-                                </span>
+                                <span className="truncate">{option.text}</span>
+                                <span>{votes}</span>
                               </span>
                             </button>
                           );
