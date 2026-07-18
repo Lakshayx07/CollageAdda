@@ -11,6 +11,7 @@ import { getAuthenticatedSupabaseClient } from "../../utils/supabaseAuthUser";
 import { LOGIN_STREAK_UPDATED_EVENT, getDisplayStreak } from "../../utils/loginStreak";
 import { useApiQuery } from "@/utils/useApiQuery";
 import { useQueryClient } from "@tanstack/react-query";
+import { getAvatarSrc, getDefaultAvatar } from "@/utils/defaultAvatars";
 
 const LAST_SEEN_KEY = "collegeadda_followers_last_seen";
 
@@ -374,6 +375,14 @@ export default function FriendsPage() {
 
   const searching = search !== debouncedSearch || suggestedFetching;
 
+  const normalizeUserAvatar = useCallback((person) => {
+    if (!person) return person;
+    return {
+      ...person,
+      profilePic: getAvatarSrc(person.profilePic, person.name, person._id || person.id),
+    };
+  }, []);
+
   useEffect(() => {
     if (profileData) {
       const statusMap = {};
@@ -387,13 +396,13 @@ export default function FriendsPage() {
 
   useEffect(() => {
     if (suggestedData) {
-      const users = Array.isArray(suggestedData) ? suggestedData : [];
+      const users = (Array.isArray(suggestedData) ? suggestedData : []).map(normalizeUserAvatar);
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setSuggestedUsers(users);
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setCampusUsers(users);
     }
-  }, [suggestedData]);
+  }, [suggestedData, normalizeUserAvatar]);
 
 
   const fetchGlobalUsers = useCallback(async () => {
@@ -407,14 +416,14 @@ export default function FriendsPage() {
       });
       if (res.ok) {
         const data = await res.json();
-        setGlobalUsers(Array.isArray(data) ? data : []);
+        setGlobalUsers((Array.isArray(data) ? data : []).map(normalizeUserAvatar));
       }
     } catch (err) {
       console.error(err);
     } finally {
       setGlobalLoading(false);
     }
-  }, [apiUrl, globalUsers.length]);
+  }, [apiUrl, globalUsers.length, normalizeUserAvatar]);
 
   const handleProfileClick = async (person, rank = null, topBadge = null) => {
     const targetId = person._id || person.id;
@@ -422,7 +431,7 @@ export default function FriendsPage() {
 
     setSelectedProfileId(targetId);
     setProfileLoading(true);
-    setSelectedProfileData({ ...person, rank, badgeTitle: topBadge?.label, postsCount: undefined });
+    setSelectedProfileData({ ...normalizeUserAvatar(person), rank, badgeTitle: topBadge?.label, postsCount: undefined });
 
     try {
       const token = getToken();
@@ -446,7 +455,7 @@ export default function FriendsPage() {
 
       setSelectedProfileData(prev => ({
         ...prev,
-        ...fullData,
+        ...normalizeUserAvatar(fullData),
         postsCount: fullData.postsCount ?? fullData.posts?.length ?? realPostCount
       }));
     } catch (err) {
@@ -473,7 +482,7 @@ export default function FriendsPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
-        const followers = await res.json();
+        const followers = (await res.json()).map(normalizeUserAvatar);
         setAllFollowers(followers);
 
         const lastSeen = Number(localStorage.getItem(LAST_SEEN_KEY) || "0");
@@ -837,7 +846,7 @@ export default function FriendsPage() {
                         >
                           <div className="w-10 h-10 rounded-full p-[1.5px] gradient-bg shrink-0">
                             <img
-                              src={follower.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(follower.name)}&background=7C3AED&color=fff`}
+                              src={getAvatarSrc(follower.profilePic, follower.name, follower._id)}
                               className="w-full h-full rounded-full object-cover border-2 border-[#0A0A0F]"
                             />
                           </div>
@@ -1076,7 +1085,7 @@ export default function FriendsPage() {
                       const rank = idx + 1;
                       const topBadge = topBadgeStyles[idx];
                       const BadgeIcon = topBadge?.icon;
-                      const avatar = person.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=7C3AED&color=fff`;
+                      const avatar = getAvatarSrc(person.profilePic, person.name, person._id || person.id);
 
                       if (leaderboardTab === "global_pulse" && rank === 1) {
                         return (
@@ -1268,7 +1277,7 @@ export default function FriendsPage() {
                     ) : (
                       suggestedUsers.map(person => {
                         const status = followStatus[person._id];
-                        const avatar = person.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=7C3AED&color=fff`;
+                        const avatar = getAvatarSrc(person.profilePic, person.name, person._id || person.id);
 
                           return (
                             <motion.div
@@ -1394,9 +1403,9 @@ export default function FriendsPage() {
             {/* Build Your Squad Card */}
             <div className="app-panel rounded-[1.6rem] p-6 text-center shadow-sm">
               <div className="flex justify-center -space-x-4 mb-5">
-                <img src="https://ui-avatars.com/api/?name=A&background=F3D5B5&color=7C3D12" className="w-16 h-16 rounded-full border-4 border-white z-10 object-cover" alt="Avatar" />
-                <img src="https://ui-avatars.com/api/?name=B&background=FDE68A&color=92400E" className="w-20 h-20 rounded-full border-4 border-white z-20 -translate-y-2 object-cover" alt="Avatar" />
-                <img src="https://ui-avatars.com/api/?name=C&background=D1FAE5&color=065F46" className="w-16 h-16 rounded-full border-4 border-white z-10 object-cover" alt="Avatar" />
+                <img src={getDefaultAvatar("Priya", "p1")} className="w-16 h-16 rounded-full border-4 border-white z-10 object-cover" alt="Avatar" />
+                <img src={getDefaultAvatar("Rahul", "r1")} className="w-20 h-20 rounded-full border-4 border-white z-20 -translate-y-2 object-cover" alt="Avatar" />
+                <img src={getDefaultAvatar("Aman", "a1")} className="w-16 h-16 rounded-full border-4 border-white z-10 object-cover" alt="Avatar" />
               </div>
 
               <h3 className="text-xl font-black text-[#1A1A1A] tracking-tight mb-2">Build Your Squad</h3>
@@ -1564,7 +1573,7 @@ export default function FriendsPage() {
                         <div className="absolute inset-0 rounded-full p-[3px]" style={{ background: 'linear-gradient(135deg, #7c3aed, #06b6d4)' }}>
                           <div className="w-full h-full rounded-full overflow-hidden app-panel">
                             <img
-                              src={selectedProfileData.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedProfileData.name)}&background=7C3AED&color=fff`}
+                              src={getAvatarSrc(selectedProfileData.profilePic, selectedProfileData.name, selectedProfileData._id || selectedProfileData.id)}
                               alt={selectedProfileData.name}
                               style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }}
                             />

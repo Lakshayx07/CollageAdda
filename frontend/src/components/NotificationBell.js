@@ -5,6 +5,7 @@ import { Bell, Heart, MessageSquare, UserPlus, Sparkles, Zap } from 'lucide-reac
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import VerifiedBadge from './VerifiedBadge';
+import { getAvatarSrc } from '@/utils/defaultAvatars';
 
 export default function NotificationBell() {
   const [notifications, setNotifications] = useState([]);
@@ -167,7 +168,7 @@ export default function NotificationBell() {
                       <div className="relative flex-shrink-0">
                         <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-300 to-orange-300 p-[1.5px]">
                           <img 
-                            src={notif.sender?.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(notif.sender?.name || 'U')}&background=7C3AED&color=fff`}
+                            src={getAvatarSrc(notif.sender?.profilePic, notif.sender?.name, notif.sender?._id || notif.sender?.id)}
                             className="h-full w-full rounded-[0.9rem] border-2 border-white object-cover"
                             alt={notif.sender?.name || "User"}
                           />

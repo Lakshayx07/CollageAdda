@@ -29,6 +29,7 @@ import clsx from "clsx";
 import { extractInstagramUsername } from "@/utils/socials";
 import { LOGIN_STREAK_UPDATED_EVENT, getDisplayStreak } from "@/utils/loginStreak";
 import { saveProfileAvatarUrl, uploadAvatar } from "@/utils/supabaseUploads";
+import { getAvatarSrc } from "@/utils/defaultAvatars";
 import { useApiQuery } from "../../utils/useApiQuery";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -518,16 +519,12 @@ export default function ProfilePage() {
                     onClick={() => hasActiveStory ? setModal("viewStory") : null}
                     className={`w-full h-full rounded-full bg-[#FAFAF8] flex items-center justify-center overflow-hidden ${hasActiveStory ? 'cursor-pointer active:scale-95 transition-transform' : ''}`}
                   >
-                    {user.profilePic ? (
-                      <img
-                        src={user.profilePic}
-                        className="w-full h-full object-cover"
-                        onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=C8922A&color=fff`; }}
-                        alt={user.name}
-                      />
-                    ) : (
-                      <span className="text-4xl font-black text-[#1A1A1A]">{user.name?.charAt(0)}</span>
-                    )}
+                    <img
+                      src={getAvatarSrc(user.profilePic, user.name, user._id || user.id)}
+                      className="w-full h-full object-cover"
+                      onError={(e) => { e.target.src = getAvatarSrc("", user.name, user._id || user.id); }}
+                      alt={user.name}
+                    />
                   </div>
                   <motion.button
                     whileHover={{ scale: 1.1 }}
@@ -893,7 +890,7 @@ export default function ProfilePage() {
                       <div className="flex items-center space-x-3">
                         <div className="w-12 h-12 rounded-full p-[1.5px] gradient-bg">
                           <img 
-                            src={f.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(f.name)}&background=7C3AED&color=fff`} 
+                            src={getAvatarSrc(f.profilePic, f.name, f._id || f.id)} 
                             className="w-full h-full rounded-full object-cover border-2 border-[#0A0A0F]" 
                           />
                         </div>
@@ -1133,7 +1130,7 @@ export default function ProfilePage() {
               <div className="p-5 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 rounded-2xl p-[1.5px] gradient-bg">
-                    <img src={user.profilePic} className="w-full h-full rounded-[0.9rem] object-cover" />
+                    <img src={getAvatarSrc(user.profilePic, user.name, user._id || user.id)} className="w-full h-full rounded-[0.9rem] object-cover" />
                   </div>
                   <div>
                     <p className="text-sm font-black text-[#1A1A1A]">{user.name}</p>
@@ -1412,7 +1409,7 @@ export default function ProfilePage() {
               <div className="absolute top-8 left-4 right-4 z-20 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-white">
-                    {user.profilePic ? <img src={user.profilePic} className="w-full h-full object-cover" /> : <div className="w-full h-full gradient-bg flex items-center justify-center text-[#1A1A1A] font-black text-sm">{user.name?.charAt(0)}</div>}
+                    <img src={getAvatarSrc(user.profilePic, user.name, user._id || user.id)} className="w-full h-full object-cover" />
                   </div>
                   <div>
                     <p className="text-[#1A1A1A] font-black text-sm">{user.name}</p>

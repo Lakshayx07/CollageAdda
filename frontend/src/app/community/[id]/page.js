@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
+import { useQueryClient } from "@tanstack/react-query";
+import { getAvatarSrc, getDefaultAvatar } from "@/utils/defaultAvatars";
 import { supabase } from "../../../utils/supabase";
 import { getAuthenticatedSupabaseClient } from "../../../utils/supabaseAuthUser";
 import { uploadPublicMedia } from "../../../utils/supabaseUploads";
@@ -1099,9 +1101,15 @@ export default function CommunityChatPage() {
               className={clsx("group flex w-full mb-1 scroll-mt-24", isMe ? "justify-end" : "justify-start")}
             >
               {!isMe && showAvatar && (
-                <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center font-bold text-xs text-amber-800 border border-amber-200 mr-2 shrink-0 self-end mb-1">
-                  {msg.sender_name.charAt(0).toUpperCase()}
-                </div>
+                <img
+                  src={getAvatarSrc(msg.sender_avatar, msg.sender_name, msg.sender_id)}
+                  alt={msg.sender_name}
+                  className="w-8 h-8 rounded-full object-cover border border-[#E8E6E0] mr-2 shrink-0 self-end mb-1"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = getDefaultAvatar(msg.sender_name, msg.sender_id);
+                  }}
+                />
               )}
               {!isMe && !showAvatar && <div className="w-8 mr-2 shrink-0" />}
 
@@ -1242,23 +1250,29 @@ export default function CommunityChatPage() {
             </div>
           );
         })}
-        {typingNames.length > 0 && (
-          <div className="flex items-end gap-2">
-            <div className="w-8 h-8 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center text-xs font-black text-amber-800">
-              {typingNames[0].charAt(0).toUpperCase()}
-            </div>
-            <div className="ca-chat-received px-4 py-3 shadow-sm">
-              <div className="mb-1 text-[10px] font-black text-[#6B6B6B]">
-                {typingNames.join(", ")} typing
+        {Object.keys(typingUsers).length > 0 && (() => {
+          const firstId = Object.keys(typingUsers)[0];
+          const firstName = typingUsers[firstId];
+          return (
+            <div className="flex items-end gap-2">
+              <img
+                src={getDefaultAvatar(firstName, firstId)}
+                alt={firstName}
+                className="w-8 h-8 rounded-full object-cover border border-[#E8E6E0]"
+              />
+              <div className="ca-chat-received px-4 py-3 shadow-sm">
+                <div className="mb-1 text-[10px] font-black text-[#6B6B6B]">
+                  {Object.values(typingUsers).slice(0, 2).join(", ")} typing
+                </div>
+                <div className="ca-typing-wave" aria-label="typing">
+                  <span />
+                  <span />
+                  <span />
+                </div>
               </div>
-              <div className="ca-typing-wave" aria-label="typing">
-                <span />
-                <span />
-                <span />
-              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
         <div ref={scrollRef} className="h-4" />
       </div>
 

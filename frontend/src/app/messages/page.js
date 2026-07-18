@@ -10,6 +10,7 @@ import { Suspense, useCallback, useMemo } from "react";
 import { useApiQuery } from "@/utils/useApiQuery";
 import { useQueryClient } from "@tanstack/react-query";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import { getAvatarSrc } from "@/utils/defaultAvatars";
 
 function MessagesContent() {
   const [isMounted, setIsMounted] = useState(false);
@@ -45,7 +46,7 @@ function MessagesContent() {
       text: m.text || "",
       sender: String(senderId) === String(currentUser?._id || currentUser?.id) ? "me" : "them",
       senderName,
-      senderAvatar: m.sender?.profilePic || m.senderAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(senderName || "U")}&background=7C3AED&color=fff`,
+      senderAvatar: getAvatarSrc(m.sender?.profilePic || m.senderAvatar, senderName, senderId),
       mediaUrl: m.mediaUrl || "",
       mediaType: m.mediaType || "none",
       replyTo: m.replyTo || null,
@@ -80,21 +81,28 @@ function MessagesContent() {
 
   const queryClient = useQueryClient();
   
+  const getRoomPartner = useCallback((room) => {
+    return room.participants?.find(p => String(p._id || p.id || p) !== String(user?._id || user?.id));
+  }, [user]);
+
   const formatRooms = useCallback((data) => {
     if (!Array.isArray(data) || !user) return [];
-    return data.map(room => ({
+    return data.map(room => {
+      const partner = getRoomPartner(room);
+      return {
       id: room._id,
-      name: room.isGroup ? (room.groupName || `${room.university} Hub`) : (room.participants.find(p => p._id !== user._id)?.name || "Chat"),
+      name: room.isGroup ? (room.groupName || `${room.university} Hub`) : (partner?.name || "Chat"),
       type: room.isGroup ? "group" : "private",
-      avatar: room.isGroup ? <Users size={24} className="text-white" /> : (room.participants.find(p => p._id !== user._id)?.profilePic || `https://ui-avatars.com/api/?name=User&background=7C3AED&color=fff`),
+      avatar: room.isGroup ? <Users size={24} className="text-white" /> : getAvatarSrc(partner?.profilePic, partner?.name || "Student", partner?._id || partner?.id),
       lastMsg: getMessagePreview(room.lastMessage),
       time: room.lastMessage ? new Date(room.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "",
       timestamp: room.lastMessage?.createdAt ? new Date(room.lastMessage.createdAt).getTime() : new Date(room.updatedAt || room.createdAt || 0).getTime(),
       unreadCount: room.unreadCounts?.[user._id] || 0,
       participants: room.participants?.map(p => p._id || p.id) || [],
-      partner: room.isGroup ? null : room.participants.find(p => p._id !== user._id)
-    }));
-  }, [user, getMessagePreview]);
+      partner: room.isGroup ? null : partner
+    };
+    });
+  }, [user, getMessagePreview, getRoomPartner]);
 
   const { data: rawRooms = [], isLoading: loadingChats } = useApiQuery(
     "chat-rooms",
@@ -107,7 +115,12 @@ function MessagesContent() {
 
   const chats = useMemo(() => {
     // If rawRooms is already formatted (due to optimistic updates), use it directly
-    if (rawRooms.length > 0 && rawRooms[0].id) return rawRooms;
+    if (rawRooms.length > 0 && rawRooms[0].id) {
+      return rawRooms.map(room => ({
+        ...room,
+        avatar: room.type === "group" ? room.avatar : getAvatarSrc(room.avatar || room.partner?.profilePic, room.name || room.partner?.name || "Student", room.partner?._id || room.partner?.id || room.id),
+      }));
+    }
     return formatRooms(rawRooms);
   }, [rawRooms, formatRooms]);
 
@@ -216,7 +229,7 @@ function MessagesContent() {
               text: textMsg,
               sender: "me",
               senderName: u.name,
-              senderAvatar: u.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=7C3AED&color=fff`,
+              senderAvatar: getAvatarSrc(u.profilePic, u.name, u._id || u.id),
               time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             }]
           };
@@ -293,7 +306,7 @@ function MessagesContent() {
                   id: newRoom._id,
                   name: newRoom.participants?.find(p => p._id !== u._id)?.name || "Chat",
                   type: "private",
-                  avatar: newRoom.participants?.find(p => p._id !== u._id)?.profilePic || `https://ui-avatars.com/api/?name=User&background=7C3AED&color=fff`,
+                  avatar: getAvatarSrc(newRoom.participants?.find(p => p._id !== u._id)?.profilePic, newRoom.participants?.find(p => p._id !== u._id)?.name || "Student", newRoom.participants?.find(p => p._id !== u._id)?._id),
                   lastMsg: "No messages yet",
                   time: "",
                   timestamp: Date.now(),
@@ -504,7 +517,7 @@ function MessagesContent() {
       room: activeChat.id,
       senderId: user._id || user.id,
       senderName: user.name,
-      senderAvatar: user.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=7C3AED&color=fff`,
+      senderAvatar: getAvatarSrc(user.profilePic, user.name, user._id || user.id),
       text: input,
       mediaUrl: selectedMedia || '',
       mediaType: mediaType,
@@ -744,7 +757,7 @@ function MessagesContent() {
           room: activeChat.id,
           senderId: user._id || user.id,
           senderName: user.name,
-          senderAvatar: user.profilePic,
+          senderAvatar: getAvatarSrc(user.profilePic, user.name, user._id || user.id),
           text: question,
           mediaUrl: "",
           mediaType: "none",
@@ -1105,7 +1118,7 @@ function MessagesContent() {
                           src={chat.avatar} 
                           alt=""
                           className="w-full h-full object-cover" 
-                          onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(chat.name)}&background=7C3AED&color=fff`; }}
+                            onError={(e) => { e.target.src = getAvatarSrc("", chat.name, chat.id); }}
                         />
                       )}
                     </div>
@@ -1170,7 +1183,7 @@ function MessagesContent() {
                       ) : <img 
                             src={activeChat.avatar} 
                             className="w-full h-full object-cover" 
-                            onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(activeChat.name)}&background=7C3AED&color=fff`; }}
+                            onError={(e) => { e.target.src = getAvatarSrc("", activeChat.name, activeChat.id); }}
                           />}
                     </div>
                   </div>
@@ -1817,7 +1830,7 @@ function MessagesContent() {
                             selectedMembers.includes(c._id) ? "bg-[#C8922A]/10 border-purple-500/50" : "bg-[#F3F2EE] border-transparent hover:bg-[#F3F2EE]"
                           )}
                         >
-                          <img src={c.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=7C3AED&color=fff`} className="w-10 h-10 rounded-full object-cover" />
+                          <img src={getAvatarSrc(c.profilePic, c.name, c._id || c.id)} className="w-10 h-10 rounded-full object-cover" />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-bold text-[#1A1A1A] truncate">{c.name}</p>
                             <p className="text-[10px] text-[#6B6B6B] truncate">{c.university}</p>
@@ -1882,7 +1895,7 @@ function MessagesContent() {
                       <div key={i} className="flex items-center justify-between p-3 hover:bg-[#F3F2EE] rounded-2xl transition-all border border-transparent hover:border-[#E8E6E0] group">
                         <div className="flex items-center space-x-4">
                           <img 
-                            src={f.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(f.name)}&background=7C3AED&color=fff`} 
+                            src={getAvatarSrc(f.profilePic, f.name, f._id || f.id)} 
                             className="w-11 h-11 rounded-full object-cover border border-[#E8E6E0]" 
                           />
                           <div>

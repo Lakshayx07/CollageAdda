@@ -12,6 +12,7 @@ import {
 import VerifiedBadge from "@/components/VerifiedBadge";
 import UniversityBadges from "@/components/UniversityBadges";
 import { extractInstagramUsername, extractGenericUsername } from "@/utils/socials";
+import { getAvatarSrc } from "@/utils/defaultAvatars";
 import clsx from "clsx";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -298,7 +299,7 @@ export default function UserProfilePage({ params }) {
               <div className="w-[120px] h-[120px] rounded-full p-[3px] shadow-2xl" style={{ background: 'linear-gradient(135deg, #7c3aed, #06b6d4)' }}>
                 <div className="w-full h-full rounded-full overflow-hidden bg-[#0A0A0F]">
                   <img
-                    src={profileUser.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(profileUser.name)}&background=7C3AED&color=fff`}
+                    src={getAvatarSrc(profileUser.profilePic, profileUser.name, profileUser._id || profileUser.id)}
                     alt={profileUser.name}
                     style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }}
                   />
@@ -614,7 +615,7 @@ export default function UserProfilePage({ params }) {
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 border border-[#E8E6E0]">
                       <img
-                        src={profileUser.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(profileUser.name)}&background=7C3AED&color=fff`}
+                        src={getAvatarSrc(profileUser.profilePic, profileUser.name, profileUser._id || profileUser.id)}
                         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                         alt={profileUser.name}
                       />
@@ -659,13 +660,7 @@ export default function UserProfilePage({ params }) {
                   {activePost.comments.map(c => (
                     <div key={c.id} className="flex gap-2.5">
                       <div className="w-7 h-7 rounded-full overflow-hidden shrink-0 border border-[#E8E6E0] bg-[#F3F2EE] mt-0.5">
-                        {c.user?.profilePic ? (
-                          <img src={c.user.profilePic} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-[10px] font-black text-[#6B6B6B]">
-                            {(c.user?.name || "?").charAt(0)}
-                          </div>
-                        )}
+                        <img src={getAvatarSrc(c.user?.profilePic, c.user?.name, c.user?._id || c.user?.id)} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                       </div>
                       <div className="flex-1">
                         <p className="text-[11px] font-black text-[#4A4A4A]">{c.user?.name || "Student"}</p>
@@ -679,13 +674,7 @@ export default function UserProfilePage({ params }) {
                 {/* Comment input */}
                 <div className="px-3 py-3 border-t border-[#E8E6E0] bg-[#0d0d1a] flex items-center gap-2.5 sticky bottom-0">
                   <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-[#E8E6E0]">
-                    {currentUser?.profilePic ? (
-                      <img src={currentUser.profilePic} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                    ) : (
-                      <div className="w-full h-full bg-[#C8922A] flex items-center justify-center text-[11px] font-black text-[#1A1A1A]">
-                        {(currentUser?.name || "U").charAt(0)}
-                      </div>
-                    )}
+                    <img src={getAvatarSrc(currentUser?.profilePic, currentUser?.name, currentUser?._id || currentUser?.id)} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                   </div>
                   <input
                     value={commentInput}

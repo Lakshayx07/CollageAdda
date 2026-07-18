@@ -479,8 +479,8 @@ export default function CommunityPage() {
                               Explore Now
                               <ArrowRight size={16} />
                               {unread > 0 && (
-                                <span className="absolute -right-2 -top-2 min-w-7 h-7 px-2 rounded-full bg-[#1A1A1A] text-white text-xs font-black flex items-center justify-center shadow-lg">
-                                  +{unread > 99 ? "99" : unread}
+                                <span className="absolute -right-2 -top-2 z-10 flex h-7 min-w-7 items-center justify-center rounded-full border-2 border-white bg-amber-400 px-2 text-xs font-black leading-none text-[#1A1A1A] shadow-lg shadow-amber-300/40">
+                                  {unread > 99 ? "99+" : unread}
                                 </span>
                               )}
                             </button>

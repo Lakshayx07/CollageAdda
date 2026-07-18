@@ -7,6 +7,7 @@ import VerifiedBadge from "@/components/VerifiedBadge";
 import clsx from "clsx";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import { saveProfileAvatarUrl, uploadAvatar } from "@/utils/supabaseUploads";
+import { getDefaultAvatar } from "@/utils/defaultAvatars";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001").trim();
 
@@ -43,9 +44,7 @@ const emptyForm = {
   instagram: ""
 };
 
-const initialsAvatar = (name) => (
-  `https://ui-avatars.com/api/?name=${encodeURIComponent(name || "Campus Student")}&background=2563EB&color=fff&bold=true`
-);
+
 
 const MAX_LOCAL_AVATAR_LENGTH = 350_000;
 
@@ -201,7 +200,7 @@ export default function OnboardingPage() {
 
   const validateStep = () => {
     if (step === 1 && !form.name.trim()) return "Full name is required.";
-    if (step === 2 && !form.profilePic) return "Upload a photo or use the initials avatar.";
+    if (step === 2 && !form.profilePic) return "Upload a photo or use a default avatar.";
     if (step === 3 && !form.passOutBatch) return "Select your graduation year.";
     if (step === 4 && (!form.course || !form.branch.trim())) return "Course and branch are required.";
     if (step === 5 && !form.studyYear) return "Select your current year of study.";
@@ -220,7 +219,7 @@ export default function OnboardingPage() {
   };
 
   const skipPhoto = async () => {
-    const avatar = initialsAvatar(form.name);
+    const avatar = getDefaultAvatar(form.name);
     setForm(prev => ({ ...prev, profilePic: avatar }));
     await goNext({ profilePic: avatar });
   };
@@ -301,11 +300,11 @@ export default function OnboardingPage() {
                 <Camera className="text-[#C8922A]" size={34} />
                 <div>
                   <h1 className="text-3xl font-black tracking-tight">Add your profile picture</h1>
-                  <p className="mt-2 text-sm text-[#888888]5">Use a campus-friendly photo or continue with your initials.</p>
+                  <p className="mt-2 text-sm text-[#888888]5">Use a campus-friendly photo or continue with a default avatar.</p>
                 </div>
                 <div className="flex flex-col items-center gap-5 sm:flex-row">
                   <div className="h-32 w-32 overflow-hidden rounded-full border-4 border-cyan-300/40 bg-white/8">
-                    {form.profilePic ? <img src={form.profilePic} className="h-full w-full object-cover" alt="Profile preview" /> : <div className="flex h-full w-full items-center justify-center text-4xl font-black">{form.name.charAt(0) || "U"}</div>}
+                    {form.profilePic ? <img src={form.profilePic} className="h-full w-full object-cover" alt="Profile preview" /> : <img src={getDefaultAvatar(form.name)} className="h-full w-full object-cover" alt="Default avatar" />}
                   </div>
                   <div className="flex flex-1 flex-col gap-3">
                     <label className="inline-flex cursor-pointer items-center justify-center rounded-2xl bg-cyan-400 px-5 py-3 text-sm font-black text-black">
@@ -397,7 +396,7 @@ export default function OnboardingPage() {
                 </div>
                 <div className="mx-auto max-w-sm rounded-[1.5rem] border border-[#E8E6E0] bg-[#F3F2EE] p-5 text-left">
                   <div className="flex items-center gap-4">
-                    <img src={form.profilePic || initialsAvatar(form.name)} className="h-16 w-16 rounded-full object-cover" alt="Profile" />
+                    <img src={form.profilePic || getDefaultAvatar(form.name)} className="h-16 w-16 rounded-full object-cover" alt="Profile" />
                     <div>
                       <div className="flex items-center">
                         <h2 className="text-xl font-black">{form.name}</h2>
