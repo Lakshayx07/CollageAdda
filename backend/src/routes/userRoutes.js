@@ -327,7 +327,7 @@ router.get('/search/query', protect, async (req, res) => {
     }
     
     const users = await User.find(query)
-      .select('name university bio interests year studyYear passOutBatch course branch isVerified streak createdAt')
+      .select('name university profilePic bio interests year studyYear passOutBatch course branch isVerified streak createdAt')
       .sort({ createdAt: -1 })
       .limit(30)
       .lean();
@@ -372,7 +372,7 @@ router.get('/daily-drop', protect, async (req, res) => {
   try {
     const me = await User.findById(req.user._id)
       .select('university interests following dailyDropUsers dailyDropDate')
-      .populate('dailyDropUsers', 'name university bio interests year studyYear passOutBatch course branch isVerified streak createdAt');
+      .populate('dailyDropUsers', 'name university profilePic bio interests year studyYear passOutBatch course branch isVerified streak createdAt');
 
     if (!me) return res.status(404).json({ message: 'User not found' });
 
@@ -465,7 +465,7 @@ router.get('/daily-drop', protect, async (req, res) => {
         { $addFields: { score: { $add: [{ $size: { $ifNull: ['$followers', []] } }, { $size: { $ifNull: ['$following', []] } }] } } },
         { $sort: { score: -1 } },
         { $limit: 5 - suggested.length },
-        { $project: { name: 1, university: 1, bio: 1, interests: 1, year: 1, studyYear: 1, passOutBatch: 1, course: 1, branch: 1, followers: 1, following: 1, isVerified: 1, streak: 1, createdAt: 1 } }
+        { $project: { name: 1, university: 1, profilePic: 1, bio: 1, interests: 1, year: 1, studyYear: 1, passOutBatch: 1, course: 1, branch: 1, followers: 1, following: 1, isVerified: 1, streak: 1, createdAt: 1 } }
       ]);
       console.log(`[DailyDrop] P3 popular found: ${popular.length}`);
       suggested = [...suggested, ...popular];
