@@ -52,9 +52,8 @@ BEGIN
   END IF;
 
   v_days_diff := v_today - v_last_login_date;
-  v_new_streak_count := v_streak_count;
-
-  -- Always increment streak regardless of gap
+  
+  -- Always increment streak regardless of gap as long as it is a different day
   v_new_streak_count := v_streak_count + 1;
 
   UPDATE public.profiles

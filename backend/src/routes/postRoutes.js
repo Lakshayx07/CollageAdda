@@ -15,6 +15,7 @@ router.get('/', protect, async (req, res) => {
 
     const posts = await Post.find({ university: req.user.university })
       .populate('author', 'name profilePic university isVerified')
+      .populate('comments.user', 'name profilePic')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -169,6 +170,7 @@ router.post('/:id/comment', protect, verified, async (req, res) => {
       });
     }
 
+    await post.populate('comments.user', 'name profilePic');
     res.status(201).json(post.comments);
   } catch (error) {
     res.status(500).json({ message: error.message });

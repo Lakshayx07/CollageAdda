@@ -614,7 +614,7 @@ export default function Home() {
           return {
             ...post,
             comments: post.comments + 1,
-            commentsList: [...(post.commentsList || []), { id: Date.now(), author: "You", text }]
+            commentsList: [...(post.commentsList || []), { id: Date.now(), author: currentUser?.name || "You", text }]
           };
         }
         return post;
@@ -987,7 +987,7 @@ export default function Home() {
                     "w-20 h-20 rounded-full p-[3px] transition-all",
                     hasMyStory 
                       ? "gradient-bg animate-rotate-gradient" 
-                      : "bg-[#F3F2EE] group-hover:bg-[#E8E6E0]"
+                      : "bg-gradient-to-tr from-[#C8922A]/30 via-[#E5B85C]/20 to-[#C8922A]/40 group-hover:from-[#C8922A]/40 group-hover:to-[#C8922A]/50"
                   )}
                   onClick={() => hasMyStory ? setActiveStory(myStoriesGroup) : storyInputRef.current?.click()}
                 >

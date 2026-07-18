@@ -49,10 +49,11 @@ export const syncLoginStreakForUser = async (userId) => {
 };
 
 export const getDisplayStreak = (profile) => {
-  // Prefer streak_count (from Supabase, most authoritative) then fall back to streak (from MongoDB)
-  const raw = profile?.streak_count ?? profile?.streak;
+  // Use the highest value between Supabase (streak_count) and MongoDB (streak)
+  // to ensure users don't lose their streak if databases are slightly out of sync.
+  const raw = Math.max(profile?.streak_count || 0, profile?.streak || 0);
   const count = Number(raw);
   // Return 1 as minimum only when we have no data at all (null/undefined)
-  if (raw === null || raw === undefined || !Number.isFinite(count)) return 1;
-  return Math.max(1, count);
+  if (raw === null || raw === undefined || !Number.isFinite(count) || count === 0) return 1;
+  return count;
 };

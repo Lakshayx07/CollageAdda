@@ -152,7 +152,6 @@ router.post('/login', async (req, res) => {
 
     const user = await User.findOne({ email: normalizedEmail });
     if (user && (await user.matchPassword(password))) {
-      // Update login streak — compare in IST (UTC+5:30) so Indian users get correct day boundaries
       const toISTDateString = (d) => {
         const ist = new Date(d.getTime() + 5.5 * 60 * 60 * 1000);
         return ist.toISOString().slice(0, 10); // "YYYY-MM-DD"
