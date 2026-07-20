@@ -97,6 +97,7 @@ function ExploreContent() {
   const [chatWithStudent, setChatWithStudent] = useState(null);
   const [chatMessages, setChatMessages] = useState({});
   const [loadingCollegeId, setLoadingCollegeId] = useState(null);
+  const [loadingStudents, setLoadingStudents] = useState(false);
 
   const [currentStudentIndices, setCurrentStudentIndices] = useState({});
   const [studentSearch, setStudentSearch] = useState("");
@@ -362,9 +363,17 @@ function ExploreContent() {
       });
       if (res.ok) {
         const data = await res.json();
-        data.studentsData = sortStudentsByFollowing(data.studentsData);
-        setSelectedCollege(data);
-        setActiveTab("posts");
+        data.studentsData = sortStudentsByFollowing(data.studentsData || []);
+        // Preserve students if they were lazy-loaded while posts were still fetching
+        setSelectedCollege((prev) => {
+          const sameCollege =
+            prev &&
+            String(prev._id || prev.id) === String(data._id || data.id);
+          if (sameCollege && prev.studentsData?.length && !data.studentsData?.length) {
+            return { ...data, studentsData: prev.studentsData };
+          }
+          return data;
+        });
       }
     } catch (err) {
       console.error("Error fetching college details:", err);
@@ -388,6 +397,45 @@ function ExploreContent() {
     // Only re-fetch when the URL college changes — not when colleges list refetches
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [collegeIdParam, apiUrl]);
+
+  // Lazy-load students only when the Students tab is opened (keeps Posts fast)
+  useEffect(() => {
+    if (activeTab !== "students" || !selectedCollege) return;
+    const collegeId = selectedCollege._id || selectedCollege.id;
+    if (!collegeId) return;
+    if (selectedCollege.studentsData?.length > 0) return;
+
+    let cancelled = false;
+    const loadStudents = async () => {
+      setLoadingStudents(true);
+      try {
+        const token = localStorage.getItem("collegeadda_token");
+        const res = await fetch(`${apiUrl}/api/colleges/${collegeId}/students`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        if (cancelled) return;
+        setSelectedCollege((prev) => {
+          if (!prev || String(prev._id || prev.id) !== String(collegeId)) return prev;
+          return {
+            ...prev,
+            studentsData: sortStudentsByFollowing(data.studentsData || []),
+            realStudentCount: data.realStudentCount ?? prev.realStudentCount,
+          };
+        });
+      } catch (err) {
+        console.error("Error fetching college students:", err);
+      } finally {
+        if (!cancelled) setLoadingStudents(false);
+      }
+    };
+    loadStudents();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, selectedCollege?._id, selectedCollege?.id, apiUrl]);
 
   // Re-sort students when following list changes — do not re-fetch college details
   useEffect(() => {
@@ -1347,6 +1395,13 @@ function ExploreContent() {
                     exit={{ opacity: 0, y: -10 }}
                     className="flex flex-col items-center"
                   >
+                    {loadingStudents && !(selectedCollege.studentsData?.length > 0) ? (
+                      <div className="flex flex-col items-center justify-center py-16">
+                        <Loader2 className="h-8 w-8 animate-spin text-[#C8922A]" />
+                        <p className="text-xs text-[#888888] mt-3 font-semibold">Loading students…</p>
+                      </div>
+                    ) : (
+                    <>
                     {/* Top Bar */}
                     <div className="w-full flex items-center justify-between mb-6">
                       <div className="flex flex-col">
@@ -1354,7 +1409,7 @@ function ExploreContent() {
                           {viewMode === 'cards' ? 'Discover Students' : 'Student Directory'}
                         </h4>
                         <p className="text-[10px] text-muted font-medium mt-0.5">
-                          {selectedCollege.studentsData.length} students found
+                          {(selectedCollege.studentsData?.length || 0)} students found
                         </p>
                       </div>
                       <div className="flex bg-surface-hover p-1 rounded-xl border border-border/50">
@@ -1595,6 +1650,8 @@ function ExploreContent() {
                           </div>
                         </motion.button>
                       </div>
+                    )}
+                    </>
                     )}
                   </motion.div>
                 )}

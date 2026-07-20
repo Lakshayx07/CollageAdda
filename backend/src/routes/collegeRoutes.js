@@ -108,8 +108,48 @@ router.get('/', protect, async (req, res) => {
   }
 });
 
+/** Use avatar API URL instead of embedding huge base64 profilePic blobs. */
+function withAvatarUrl(user) {
+  if (!user) return user;
+  const id = user._id || user.id;
+  return {
+    ...user,
+    profilePic: id ? `/api/users/${id}/avatar` : '',
+  };
+}
+
+// @route   GET /api/colleges/:id/students
+// @desc    Students for a college (lazy-loaded — keeps posts tab fast)
+router.get('/:id/students', protect, async (req, res) => {
+  try {
+    const college = await College.findById(req.params.id).select('name');
+    if (!college) return res.status(404).json({ message: 'College not found' });
+
+    const universityFilter = {
+      university: { $in: getUniversityNameVariants(college.name) },
+    };
+
+    // Do NOT select profilePic — base64 blobs make this query multi-second
+    const [students, realStudentCount] = await Promise.all([
+      User.find(universityFilter)
+        .select('name bio university interests year studyYear isVerified createdAt')
+        .sort({ createdAt: -1 })
+        .limit(40)
+        .lean(),
+      User.countDocuments(universityFilter),
+    ]);
+
+    res.json({
+      studentsData: students.map(withAvatarUrl),
+      realStudentCount,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // @route   GET /api/colleges/:id
-// @desc    Get college details by ID, including posts and students with real counts
+// @desc    Get college details + recent posts (students loaded separately)
 router.get('/:id', protect, async (req, res) => {
   try {
     const college = await College.findById(req.params.id);
@@ -118,14 +158,11 @@ router.get('/:id', protect, async (req, res) => {
     const universityNames = getUniversityNameVariants(college.name);
     const universityFilter = { university: { $in: universityNames } };
 
-    const [students, posts, realStudentCount, realPostCount] = await Promise.all([
-      User.find(universityFilter)
-        .select('name profilePic bio university interests year studyYear isVerified createdAt')
-        .sort({ createdAt: -1 })
-        .limit(40)
-        .lean(),
+    // Posts tab must not wait on heavy student documents
+    const [posts, realStudentCount, realPostCount] = await Promise.all([
       Post.find(universityFilter)
-        .populate('author', 'name profilePic university isVerified')
+        .select('content mediaUrl mediaType likes comments hashtags createdAt author university')
+        .populate('author', 'name university isVerified')
         .sort({ createdAt: -1 })
         .limit(20)
         .lean(),
@@ -133,10 +170,15 @@ router.get('/:id', protect, async (req, res) => {
       Post.countDocuments(universityFilter),
     ]);
 
+    const postsData = posts.map((post) => ({
+      ...post,
+      author: withAvatarUrl(post.author),
+    }));
+
     res.json({
       ...college.toObject(),
-      studentsData: students,
-      postsData: posts,
+      studentsData: [],
+      postsData,
       realStudentCount,
       realPostCount,
       followersCount: college.followers ? college.followers.length : 0,
