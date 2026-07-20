@@ -25,7 +25,7 @@ const delhiColleges = [
     departments: 12,
     emoji: "🏛️",
     accent: "#0284C7",
-    banner: "https://spa.ac.in/sites/default/files/inline-images/Rectangle%2022740.jpg",
+    banner: "https://images.unsplash.com/photo-1498243691581-b145c3f54a5a?w=800&q=80",
     description: "A specialized university in Delhi for architecture and planning."
   },
   {
@@ -69,7 +69,7 @@ const delhiColleges = [
     departments: 6,
     emoji: "🖥️",
     accent: "#0891B2",
-    banner: "https://iiitd.ac.in/sites/all/themes/gavias_educar/images/slide-pl.jpg",
+    banner: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&q=80",
     description: "Indraprastha Institute of Information Technology Delhi."
   },
   {
@@ -80,7 +80,7 @@ const delhiColleges = [
     departments: 86,
     emoji: "🎓",
     accent: "#7C3AED",
-    banner: "https://images.shiksha.com/mediadata/images/articles/1662370481phpb8qpYu.jpeg",
+    banner: "https://images.unsplash.com/photo-1498243691581-b145c3f54a5a?w=800&q=80",
     description: "A collegiate public central university offering numerous courses."
   },
   {
@@ -102,7 +102,7 @@ const delhiColleges = [
     departments: 38,
     emoji: "🕌",
     accent: "#166534",
-    banner: "https://scontent-bom5-1.xx.fbcdn.net/v/t39.30808-6/561528853_1245033950996230_1527605211030628163_n.jpg?_nc_cat=111&ccb=1-7&_nc_sid=7b2446&_nc_ohc=uNUTIxfVPdcQ7kNvwFYmlij&_nc_oc=AdqHja1I-EpbbxGJLdWf8i7tmNcXvufZh8TKjZjjkJ8fYUCkp3n6g-6GO-ghERPAZolJLlRBveO_0nYWaMS5TORU&_nc_zt=23&_nc_ht=scontent-bom5-1.xx&_nc_gid=qTwBxoOe2UaiE0_uieCl7w&_nc_ss=7b289&oh=00_Af44xunQlnssAAB6biZUsHEhfejtFQBWLjiQNo_2lisr8g&oe=6A01B952",
+    banner: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&q=80",
     description: "A central university located in New Delhi."
   },
   {
@@ -135,7 +135,7 @@ const delhiColleges = [
     departments: 12,
     emoji: "⚙️",
     accent: "#3B82F6",
-    banner: "https://images.shiksha.com/mediadata/images/1741266149phpfUjSPk.jpeg",
+    banner: "https://images.unsplash.com/photo-1562774053-701939374585?w=800&q=80",
     description: "J.C. Bose University of Science and Technology, YMCA, formerly YMCA University of Science and Technology."
   }
 ];

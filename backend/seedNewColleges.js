@@ -10,7 +10,7 @@ const normalize = (name) => name.toLowerCase().trim().replace(/\s+/g, ' ');
 
 // ─── Placeholder banner (used for colleges without real banners yet) ─────────
 const PLACEHOLDER_BANNER =
-  'https://images.unsplash.com/photo-1523050335456-c38a7047d28c?w=800&q=80';
+  'https://images.unsplash.com/photo-1562774053-701939374585?w=800&q=80';
 
 // ─── NEW colleges to insert ───────────────────────────────────────────────────
 // (colleges already in the DB — DTU, IIIT Delhi, IIT Delhi, NSUT,
@@ -165,7 +165,7 @@ const newColleges = [
     students: '4,500+',
     emoji: '⚙️',
     accent: '#047857',
-    banner: 'https://www.searchurcollege.com/exam/admin/search/gallery/college/col_311.jpg',
+    banner: PLACEHOLDER_BANNER,
     description: 'National Institute of Technology Kurukshetra.',
     category: 'NIT',
   },
@@ -175,7 +175,7 @@ const newColleges = [
     students: '3,000+',
     emoji: '⚙️',
     accent: '#047857',
-    banner: 'https://img.collegepravesh.com/2014/06/NIT-Patna.jpg',
+    banner: PLACEHOLDER_BANNER,
     description: 'National Institute of Technology Patna.',
     category: 'NIT',
   },
@@ -247,7 +247,7 @@ const newColleges = [
     students: '1,200+',
     emoji: '🏥',
     accent: '#DC2626',
-    banner: 'https://images.shiksha.com/mediadata/images/articles/1548148474phpxwYb2L.jpeg',
+    banner: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&q=80',
     description: 'Lady Hardinge Medical College — a premier women\'s medical college in New Delhi.',
     category: 'Medical',
   },
@@ -539,12 +539,12 @@ const seedNewColleges = async () => {
 
     for (const college of newColleges) {
       if (existingNames.has(normalize(college.name))) {
-        // Already in DB — only patch category
+        // Already in DB — keep category + banner in sync with seed
         await College.updateOne(
           { name: { $regex: new RegExp(`^${college.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } },
-          { $set: { category: college.category } }
+          { $set: { category: college.category, banner: college.banner } }
         );
-        console.log(`  ↩ Already exists (category patched): ${college.name}`);
+        console.log(`  ↩ Already exists (category + banner patched): ${college.name}`);
         skipped++;
       } else {
         await College.create({

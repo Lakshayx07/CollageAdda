@@ -9,7 +9,7 @@ const collegeSchema = mongoose.Schema({
   emoji: { type: String, default: '🎓' },
   logo: { type: String, default: '' },
   accent: { type: String, default: '#6366f1' },
-  banner: { type: String, default: 'https://images.unsplash.com/photo-1523050335456-c38a7047d28c?w=800&q=80' },
+  banner: { type: String, default: 'https://images.unsplash.com/photo-1562774053-701939374585?w=800&q=80' },
   description: { type: String, default: '' },
   category: {
     type: String,
