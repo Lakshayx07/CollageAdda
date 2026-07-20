@@ -419,20 +419,8 @@ export default function CommunityChatPage() {
           }
         }, 50);
       }
-    if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: didInitialScrollRef.current ? "smooth" : "auto" });
-      didInitialScrollRef.current = true;
     }
   }, [messages]);
-
-  useEffect(() => {
-    if (!loading && messages.length > 0 && !didInitialScrollRef.current) {
-      requestAnimationFrame(() => {
-        scrollRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
-        didInitialScrollRef.current = true;
-      });
-    }
-  }, [loading, messages.length]);
 
   const triggerJoinSparkles = () => {
     setShowJoinSparkles(true);
@@ -924,6 +912,29 @@ export default function CommunityChatPage() {
     setPinnedJumpIndex((prev) => (prev + 1) % pinnedMessages.length);
   };
 
+  const formatDateDivider = (isoString) => {
+    try {
+      const date = new Date(isoString);
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      if (date.toDateString() === today.toDateString()) {
+        return "Today";
+      }
+      if (date.toDateString() === yesterday.toDateString()) {
+        return "Yesterday";
+      }
+
+      const day = date.getDate();
+      const month = date.toLocaleString('default', { month: 'long' });
+      const weekday = date.toLocaleString('default', { weekday: 'short' });
+      return `${day} ${month}, ${weekday}`;
+    } catch (e) {
+      return "";
+    }
+  };
+
   const formatTime = (isoString) => {
     try {
       const date = new Date(isoString);
@@ -1319,8 +1330,9 @@ export default function CommunityChatPage() {
                 </span>
               </div>
             </div>
-          );
-        })}
+          </Fragment>
+        );
+      })}
         {Object.keys(typingUsers).length > 0 && (() => {
           const firstId = Object.keys(typingUsers)[0];
           const firstName = typingUsers[firstId];
