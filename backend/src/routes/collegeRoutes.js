@@ -6,7 +6,7 @@ import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// Helper: build regex pattern for a college name
+// Helper: build regex pattern for a college name (used for in-memory list counts)
 function buildCollegePattern(name) {
   const fullName = name.trim();
   const baseName = fullName.split(',')[0].trim();
@@ -19,6 +19,33 @@ function buildCollegePattern(name) {
     searchPattern += `|(${escapedAcronym})`;
   }
   return new RegExp(searchPattern, 'i');
+}
+
+/** Exact university strings for indexed $in queries (detail page). */
+function getUniversityNameVariants(name) {
+  const fullName = (name || '').trim();
+  const names = new Set();
+  if (!fullName) return [];
+
+  names.add(fullName);
+  const baseName = fullName.split(',')[0].trim();
+  if (baseName) names.add(baseName);
+
+  const withoutParens = fullName.replace(/\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
+  if (withoutParens) names.add(withoutParens);
+
+  const acronymMatch = fullName.match(/\(([^)]+)\)/);
+  if (acronymMatch?.[1]) {
+    names.add(acronymMatch[1].trim());
+  }
+
+  // Rishihood users may store historical name variants
+  if (/rishihood/i.test(fullName)) {
+    names.add('Rishihood University');
+    names.add('Rishihood University Sonipat');
+  }
+
+  return [...names];
 }
 
 // @route   GET /api/colleges/public
@@ -88,24 +115,30 @@ router.get('/:id', protect, async (req, res) => {
     const college = await College.findById(req.params.id);
     if (!college) return res.status(404).json({ message: 'College not found' });
 
-    const pattern = buildCollegePattern(college.name);
+    const universityNames = getUniversityNameVariants(college.name);
+    const universityFilter = { university: { $in: universityNames } };
 
-    const students = await User.find({
-      university: { $regex: pattern }
-    }).select('name profilePic bio university interests year studyYear isVerified createdAt').sort({ createdAt: -1 });
-
-    const posts = await Post.find({
-      university: { $regex: pattern }
-    })
-      .populate('author', 'name profilePic university isVerified')
-      .sort({ createdAt: -1 });
+    const [students, posts, realStudentCount, realPostCount] = await Promise.all([
+      User.find(universityFilter)
+        .select('name profilePic bio university interests year studyYear isVerified createdAt')
+        .sort({ createdAt: -1 })
+        .limit(40)
+        .lean(),
+      Post.find(universityFilter)
+        .populate('author', 'name profilePic university isVerified')
+        .sort({ createdAt: -1 })
+        .limit(20)
+        .lean(),
+      User.countDocuments(universityFilter),
+      Post.countDocuments(universityFilter),
+    ]);
 
     res.json({
       ...college.toObject(),
       studentsData: students,
       postsData: posts,
-      realStudentCount: students.length,
-      realPostCount: posts.length,
+      realStudentCount,
+      realPostCount,
       followersCount: college.followers ? college.followers.length : 0,
     });
   } catch (error) {
