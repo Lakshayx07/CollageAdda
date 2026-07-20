@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Fragment } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { 
   ArrowLeft, Users2, Send, Loader2, Globe, CheckCircle2, 
   AlertCircle, LogOut, MoreVertical, Plus, ArrowRight, Smile,
   Image as ImageIcon, Video, BarChart3, Pencil, Trash2, Reply,
-  Pin, PinOff, X, Check
+  Pin, PinOff, X, Check, Flame
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
@@ -45,6 +45,8 @@ export default function CommunityChatPage() {
   const [showMenu, setShowMenu] = useState(false);
   const [toast, setToast] = useState(null);
   const [activeMessageId, setActiveMessageId] = useState(null);
+  const [tappedMessageId, setTappedMessageId] = useState(null);
+  const [currentPinnedIndex, setCurrentPinnedIndex] = useState(0);
   const [replyTo, setReplyTo] = useState(null);
   const [editingMessage, setEditingMessage] = useState(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -56,6 +58,8 @@ export default function CommunityChatPage() {
   const [typingUsers, setTypingUsers] = useState({});
 
   const scrollRef = useRef(null);
+  const chatContainerRef = useRef(null);
+  const initialScrollDone = useRef(false);
   const channelRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const remoteTypingTimersRef = useRef({});
@@ -306,7 +310,31 @@ export default function CommunityChatPage() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setActiveCommunityId(id);
+    initialScrollDone.current = false;
   }, [id]);
+
+  useEffect(() => {
+    if (!supabase || !currentUserId) return;
+    const channel = supabase
+      .channel('global-community-notifications')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'community_messages' },
+        (payload) => {
+          const msg = payload.new;
+          if (msg.sender_id !== currentUserId && msg.community_id !== activeCommunityId && membershipSet.has(msg.community_id)) {
+            setUnreadCounts((prev) => ({
+              ...prev,
+              [msg.community_id]: (prev[msg.community_id] || 0) + 1
+            }));
+          }
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUserId, activeCommunityId, membershipSet]);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("collegeadda_user");
@@ -326,8 +354,31 @@ export default function CommunityChatPage() {
 
   useEffect(() => {
     // Scroll to bottom when messages update
-    if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: "smooth" });
+    if (chatContainerRef.current && messages.length > 0) {
+      const isInitial = !initialScrollDone.current;
+      
+      if (isInitial) {
+        initialScrollDone.current = true;
+        // Wait slightly for DOM to settle, then animate smoothly to bottom
+        setTimeout(() => {
+          if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTo({
+              top: chatContainerRef.current.scrollHeight,
+              behavior: "smooth"
+            });
+          }
+        }, 150);
+      } else {
+        // Normal smooth scroll for new messages
+        setTimeout(() => {
+          if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTo({
+              top: chatContainerRef.current.scrollHeight,
+              behavior: "smooth"
+            });
+          }
+        }, 50);
+      }
     }
   }, [messages]);
 
@@ -803,10 +854,40 @@ export default function CommunityChatPage() {
   };
 
   const handleJumpToPinned = () => {
-    const firstPinned = messages.find((msg) => msg.is_pinned);
-    if (!firstPinned) return;
-    messageRefs.current[firstPinned.id]?.scrollIntoView({ behavior: "smooth", block: "center" });
-    setActiveMessageId(firstPinned.id);
+    const pinnedMessages = sortedMessages.filter((msg) => msg.is_pinned);
+    if (pinnedMessages.length === 0) return;
+    
+    const targetMessage = pinnedMessages[currentPinnedIndex];
+    if (targetMessage) {
+      messageRefs.current[targetMessage.id]?.scrollIntoView({ behavior: "smooth", block: "center" });
+      setActiveMessageId(targetMessage.id);
+    }
+    
+    // Cycle to next pinned message for the next click
+    setCurrentPinnedIndex((prev) => (prev + 1) % pinnedMessages.length);
+  };
+
+  const formatDateDivider = (isoString) => {
+    try {
+      const date = new Date(isoString);
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      if (date.toDateString() === today.toDateString()) {
+        return "Today";
+      }
+      if (date.toDateString() === yesterday.toDateString()) {
+        return "Yesterday";
+      }
+
+      const day = date.getDate();
+      const month = date.toLocaleString('default', { month: 'long' });
+      const weekday = date.toLocaleString('default', { weekday: 'short' });
+      return `${day} ${month}, ${weekday}`;
+    } catch (e) {
+      return "";
+    }
   };
 
   const formatTime = (isoString) => {
@@ -903,9 +984,9 @@ export default function CommunityChatPage() {
                     {!active && member && (
                       <button
                         onClick={() => handleOpenCommunity(comm.id)}
-                        className={`relative flex items-center gap-1.5 rounded-2xl px-4 py-2 text-xs font-black cursor-pointer ${cardTheme.avatar} hover:bg-white`}
+                        className={`relative flex items-center gap-1.5 rounded-2xl px-4 py-2 text-xs font-black cursor-pointer ${cardTheme.avatar} hover:bg-white group`}
                       >
-                        Explore Now <ArrowRight size={14} />
+                        Explore Now <Flame size={14} className="text-orange-500 animate-pulse group-hover:scale-125 transition-transform" />
                         {unread > 0 && (
                           <span className="absolute -right-2 -top-2 min-w-6 h-6 px-1.5 rounded-full bg-[#1A1A1A] text-white text-[10px] font-black flex items-center justify-center">
                             +{unread > 99 ? "99" : unread}
@@ -1010,7 +1091,7 @@ export default function CommunityChatPage() {
       </div>
 
       {/* Messages Scroll Area */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 min-h-0 bg-[#F9F8F5] custom-scrollbar">
+      <div ref={chatContainerRef} className="flex-1 overflow-y-auto px-4 py-6 space-y-4 min-h-0 bg-[#F9F8F5] custom-scrollbar">
         {/* Info Box */}
         <div className="max-w-md mx-auto bg-white rounded-3xl p-6 border border-[#E8E6E0] shadow-sm text-center mb-6">
           <div className={`w-14 h-14 rounded-2xl ${theme.avatar} flex items-center justify-center font-black text-xl mx-auto mb-3 shadow-sm`}>
@@ -1026,18 +1107,30 @@ export default function CommunityChatPage() {
         {/* Message bubbles */}
         {sortedMessages.map((msg, index) => {
           const isMe = msg.sender_id === currentUserId;
-          const showAvatar = index === 0 || sortedMessages[index - 1].sender_id !== msg.sender_id;
+          const prevMsg = index > 0 ? sortedMessages[index - 1] : null;
+          const showAvatar = index === 0 || prevMsg.sender_id !== msg.sender_id;
           const isDeleted = !!msg.deleted_at;
           const emojiOnly = isEmojiOnly(msg.content) && !msg.poll && !msg.media_url && msg.attachment_type === "text";
           
+          const msgDateStr = new Date(msg.created_at).toDateString();
+          const prevMsgDateStr = prevMsg ? new Date(prevMsg.created_at).toDateString() : null;
+          const showDateDivider = msgDateStr !== prevMsgDateStr;
+          
           return (
-            <div
-              key={msg.id}
-              ref={(node) => {
-                if (node) messageRefs.current[msg.id] = node;
-              }}
-              className={clsx("group flex w-full mb-1 scroll-mt-24", isMe ? "justify-end" : "justify-start")}
-            >
+            <Fragment key={msg.id}>
+              {showDateDivider && (
+                <div className="flex justify-center my-6">
+                  <span className="bg-[#E8E6E0]/60 text-[#555555] text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-sm">
+                    {formatDateDivider(msg.created_at)}
+                  </span>
+                </div>
+              )}
+              <div
+                ref={(node) => {
+                  if (node) messageRefs.current[msg.id] = node;
+                }}
+                className={clsx("group flex w-full mb-1 scroll-mt-24", isMe ? "justify-end" : "justify-start")}
+              >
               {!isMe && showAvatar && (
                 <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center font-bold text-xs text-amber-800 border border-amber-200 mr-2 shrink-0 self-end mb-1">
                   {msg.sender_name.charAt(0).toUpperCase()}
@@ -1045,7 +1138,10 @@ export default function CommunityChatPage() {
               )}
               {!isMe && !showAvatar && <div className="w-8 mr-2 shrink-0" />}
 
-              <div className={clsx("flex flex-col max-w-[75%] relative", isMe ? "items-end" : "items-start")}>
+              <div 
+                className={clsx("flex flex-col max-w-[75%] relative", isMe ? "items-end" : "items-start")}
+                onClick={() => setTappedMessageId(tappedMessageId === msg.id ? null : msg.id)}
+              >
                 {!isMe && showAvatar && (
                   <span className="text-[10px] text-[#6B6B6B] font-bold mb-1 ml-1">
                     {msg.sender_name}
@@ -1138,22 +1234,25 @@ export default function CommunityChatPage() {
                 </div>
 
                 {!isDeleted && activeMessageId === msg.id && (
-                  <div className={clsx(
-                    "absolute z-20 top-full mt-1 flex items-center gap-1 rounded-2xl border border-[#E8E6E0] bg-white p-1 shadow-xl",
-                    isMe ? "right-0" : "left-0"
-                  )}>
-                    <button onClick={() => handleReplyMessage(msg)} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-amber-50 hover:text-amber-700 cursor-pointer" title="Reply">
+                  <div 
+                    onClick={(e) => e.stopPropagation()}
+                    className={clsx(
+                      "absolute z-20 top-1/2 -translate-y-1/2 flex items-center gap-1 rounded-2xl border border-[#E8E6E0] bg-white p-1 shadow-xl",
+                      isMe ? "right-[calc(100%+2.5rem)]" : "left-[calc(100%+2.5rem)]"
+                    )}
+                  >
+                    <button onClick={(e) => { e.stopPropagation(); handleReplyMessage(msg); }} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-amber-50 hover:text-amber-700 cursor-pointer" title="Reply">
                       <Reply size={15} />
                     </button>
-                    <button onClick={() => handleTogglePin(msg)} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-amber-50 hover:text-amber-700 cursor-pointer" title={msg.is_pinned ? "Unpin" : "Pin"}>
+                    <button onClick={(e) => { e.stopPropagation(); handleTogglePin(msg); }} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-amber-50 hover:text-amber-700 cursor-pointer" title={msg.is_pinned ? "Unpin" : "Pin"}>
                       {msg.is_pinned ? <PinOff size={15} /> : <Pin size={15} />}
                     </button>
                     {isMe && (
                       <>
-                        <button onClick={() => handleEditMessage(msg)} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-amber-50 hover:text-amber-700 cursor-pointer" title="Edit">
+                        <button onClick={(e) => { e.stopPropagation(); handleEditMessage(msg); }} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-amber-50 hover:text-amber-700 cursor-pointer" title="Edit">
                           <Pencil size={15} />
                         </button>
-                        <button onClick={() => handleDeleteMessage(msg)} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-red-50 hover:text-red-600 cursor-pointer" title="Delete">
+                        <button onClick={(e) => { e.stopPropagation(); handleDeleteMessage(msg); }} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-red-50 hover:text-red-600 cursor-pointer" title="Delete">
                           <Trash2 size={15} />
                         </button>
                       </>
@@ -1164,10 +1263,14 @@ export default function CommunityChatPage() {
                 {!isDeleted && (
                   <button
                     type="button"
-                    onClick={() => setActiveMessageId(activeMessageId === msg.id ? null : msg.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveMessageId(activeMessageId === msg.id ? null : msg.id);
+                    }}
                     className={clsx(
-                      "absolute top-1/2 -translate-y-1/2 rounded-full bg-white border border-[#E8E6E0] p-1.5 text-[#6B6B6B] shadow-sm opacity-0 transition-opacity group-hover:opacity-100 cursor-pointer",
-                      isMe ? "-left-9" : "-right-9"
+                      "absolute top-1/2 -translate-y-1/2 rounded-full bg-white border border-[#E8E6E0] p-1.5 text-[#6B6B6B] shadow-sm transition-opacity group-hover:opacity-100 cursor-pointer",
+                      isMe ? "-left-9" : "-right-9",
+                      (tappedMessageId === msg.id || activeMessageId === msg.id) ? "opacity-100" : "opacity-0"
                     )}
                     title="Message options"
                   >
@@ -1180,8 +1283,9 @@ export default function CommunityChatPage() {
                 </span>
               </div>
             </div>
-          );
-        })}
+          </Fragment>
+        );
+      })}
         {typingNames.length > 0 && (
           <div className="flex items-end gap-2">
             <div className="w-8 h-8 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center text-xs font-black text-amber-800">

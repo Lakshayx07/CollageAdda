@@ -125,6 +125,32 @@ export default function CommunityPage() {
   }, []);
 
   useEffect(() => {
+    if (!supabase || !currentUserId || communities.length === 0) return;
+    const channel = supabase
+      .channel('global-community-notifications')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'community_messages' },
+        (payload) => {
+          const msg = payload.new;
+          if (msg.sender_id !== currentUserId && membershipSet.has(msg.community_id)) {
+            queryClient.setQueryData(
+              ['community-unread-counts', currentUserId, communities.map(c => c.id).join(",")], 
+              (old) => ({
+                ...old,
+                [msg.community_id]: (old?.[msg.community_id] || 0) + 1
+              })
+            );
+          }
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUserId, communities, membershipSet, queryClient]);
+
+  useEffect(() => {
     const storedUser = localStorage.getItem("collegeadda_user");
     if (!storedUser) {
       router.push("/login");
@@ -431,13 +457,13 @@ export default function CommunityPage() {
                             <button
                               onClick={() => router.push(`/community/${comm.id}`)}
                               className={clsx(
-                                "relative w-full flex items-center justify-center gap-2 rounded-2xl border bg-transparent px-4 py-2 text-sm font-black transition-all cursor-pointer hover:bg-black/[0.02]",
+                                "relative w-full flex items-center justify-center gap-2 rounded-2xl border bg-transparent px-4 py-2 text-sm font-black transition-all cursor-pointer hover:bg-black/[0.02] group",
                                 theme.text,
                                 theme.border
                               )}
                             >
                               Explore Now
-                              <ArrowRight size={16} />
+                              <Flame size={16} className="text-orange-500 animate-pulse group-hover:scale-125 transition-transform" />
                               {unread > 0 && (
                                 <span className="absolute -right-2 -top-2 min-w-7 h-7 px-2 rounded-full bg-[#1A1A1A] text-white text-xs font-black flex items-center justify-center shadow-lg">
                                   +{unread > 99 ? "99" : unread}
