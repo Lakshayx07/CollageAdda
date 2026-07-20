@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import clsx from 'clsx';
+import { getAvatarSrc, getDefaultAvatar } from "@/utils/defaultAvatars";
 
 const SPORT_CONFIG = {
   volleyball:  { limit: 12, icon: '🏐' },
@@ -291,8 +292,7 @@ export default function SportTeamsPage() {
                           .map(student => {
                             const sid = student._id || student.id;
                             const isAdded = !!newTeam.players.find(p => (p._id || p.id) === sid);
-                            const avatar = student.profilePic ||
-                              `https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=1a1a2e&color=fff`;
+                            const avatar = getAvatarSrc(student.profilePic, student.name, sid);
                             return (
                               <div key={sid} className="flex justify-between items-center p-3 bg-[#F3F2EE] rounded-xl border border-[#E8E6E0] gap-3">
                                 <img src={avatar} alt={student.name} className="w-8 h-8 rounded-full object-cover shrink-0 border border-[#E8E6E0]" />
@@ -357,9 +357,13 @@ export default function SportTeamsPage() {
                 {captainStudent && (
                   <div className="flex items-center p-3 bg-gradient-to-r from-yellow-500/10 to-transparent border border-yellow-500/20 rounded-xl">
                     <img
-                      src={captainStudent.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(captainStudent.name)}&background=1a1a2e&color=fff`}
+                      src={getAvatarSrc(captainStudent.profilePic, captainStudent.name, captainStudent._id || captainStudent.id)}
                       className="w-10 h-10 rounded-full object-cover border border-yellow-500/40 mr-3"
                       alt={captainStudent.name}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = getDefaultAvatar(captainStudent.name, captainStudent._id || captainStudent.id);
+                      }}
                     />
                     <div className="flex-1">
                       <p className="text-sm font-black text-yellow-400 flex items-center">{captainStudent.name} <Crown size={12} className="ml-1.5" /></p>
@@ -373,9 +377,13 @@ export default function SportTeamsPage() {
                   return (
                     <div key={pid} className="flex items-center p-3 bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl">
                       <img
-                        src={player.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(player.name)}&background=1a1a2e&color=fff`}
+                        src={getAvatarSrc(player.profilePic, player.name, player._id || player.id)}
                         className="w-10 h-10 rounded-full object-cover border border-[#E8E6E0] mr-3"
                         alt={player.name}
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = getDefaultAvatar(player.name, player._id || player.id);
+                        }}
                       />
                       <div>
                         <p className="text-sm font-bold text-[#1A1A1A]">{player.name}</p>

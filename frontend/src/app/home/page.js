@@ -18,6 +18,7 @@ import {
 } from "@/utils/supabaseUploads";
 import { useApiQuery } from "@/utils/useApiQuery";
 import { useQueryClient } from "@tanstack/react-query";
+import { getAvatarSrc, getDefaultAvatar } from "@/utils/defaultAvatars";
 
 export default function Home() {
   const router = useRouter();
@@ -81,9 +82,7 @@ export default function Home() {
         author: p.author?.name || 'Unknown',
         authorId: p.author?._id,
         university: p.university,
-        avatar: p.author?.profilePic
-          ? p.author.profilePic
-          : `https://ui-avatars.com/api/?name=${encodeURIComponent(p.author?.name || 'U')}&background=7C3AED&color=fff`,
+        avatar: getAvatarSrc(p.author?.profilePic, p.author?.name, p.author?._id),
         time: new Date(p.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
         content: p.content,
         likes: p.likes?.length || 0,
@@ -122,7 +121,7 @@ export default function Home() {
       select: (data) => (data || []).map(u => ({
         id: u._id,
         name: u.name,
-        avatar: u.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=7C3AED&color=fff`
+        avatar: getAvatarSrc(u.profilePic, u.name, u._id)
       })),
     }
   );
@@ -955,11 +954,7 @@ export default function Home() {
             className="brand-mark h-10 w-10 cursor-pointer rounded-2xl p-[2px] transition-transform hover:scale-105"
           >
             <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-[0.95rem] bg-white border border-[#E8E6E0]">
-              {currentUser?.profilePic ? (
-                <img src={currentUser.profilePic} className="w-full h-full object-cover" alt="Me" />
-              ) : (
-                <span className="text-sm font-bold text-[#C8922A]">{currentUser?.name?.charAt(0) || "U"}</span>
-              )}
+              <img src={getAvatarSrc(currentUser?.profilePic, currentUser?.name, currentUser?._id || currentUser?.id)} className="w-full h-full object-cover" alt="Me" />
             </div>
           </div>
         </div>
@@ -974,7 +969,7 @@ export default function Home() {
       >
         <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_280px]">
         <div className="min-w-0 space-y-7 sm:space-y-8">
-        <section className="app-panel min-w-0 max-w-full rounded-[1.6rem] p-4 sm:rounded-[2rem] sm:p-5 space-y-3">
+        <section className="app-panel min-w-0 max-w-full rounded-[1.6rem] border-2 border-[rgba(229,201,122,0.45)] p-4 transition-colors hover:border-[rgba(229,201,122,0.68)] sm:rounded-[2rem] sm:p-5 space-y-3">
           <div className="no-scrollbar flex max-w-full space-x-4 overflow-x-auto py-2 sm:space-x-5">
             {/* Your Story */}
             <div 
@@ -997,10 +992,8 @@ export default function Home() {
                          <div className="flex flex-col items-center justify-center">
                            <div className="h-4 w-4 border-2 border-[#C8922A] border-t-transparent rounded-full animate-spin"></div>
                          </div>
-                       ) : currentUser?.profilePic ? (
-                         <img src={currentUser.profilePic} className="w-full h-full object-cover" alt="You" />
                        ) : (
-                         <span className="text-2xl font-bold text-[#C8922A]">{currentUser?.name?.charAt(0) || "Y"}</span>
+                         <img src={getAvatarSrc(currentUser?.profilePic, currentUser?.name, currentUser?._id || currentUser?.id)} className="w-full h-full object-cover" alt="You" />
                        )}
                     </div>
                   </div>
@@ -1029,7 +1022,7 @@ export default function Home() {
                   <div className="w-full h-full rounded-full bg-white p-[2px]">
                     <div className="w-full h-full rounded-full bg-[#F9F8F5] flex items-center justify-center overflow-hidden border border-[#E8E6E0] shadow-inner">
                       <img 
-                        src={group.author.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(group.author.name)}&background=7C3AED&color=fff`} 
+                        src={getAvatarSrc(group.author.profilePic, group.author.name, group.author._id || group.author.id)} 
                         className="w-full h-full object-cover" 
                         alt={group.author.name} 
                       />
@@ -1052,11 +1045,7 @@ export default function Home() {
           <div className="flex min-w-0 items-start space-x-3 sm:space-x-4">
             <div className="w-12 h-12 rounded-full gradient-bg p-[2px] flex-shrink-0">
               <div className="w-full h-full bg-background rounded-full flex items-center justify-center overflow-hidden">
-                {currentUser?.profilePic ? (
-                  <img src={currentUser.profilePic} className="w-full h-full object-cover" alt="You" />
-                ) : (
-                  <span className="text-lg font-bold">{currentUser?.name?.charAt(0) || "Y"}</span>
-                )}
+                <img src={getAvatarSrc(currentUser?.profilePic, currentUser?.name, currentUser?._id || currentUser?.id)} className="w-full h-full object-cover" alt="You" />
               </div>
             </div>
             <div className="flex-1 flex flex-col gap-2 min-w-0">
@@ -1236,7 +1225,7 @@ export default function Home() {
                         src={post.avatar} 
                         alt={post.author} 
                         className="w-full h-full object-cover rounded-full" 
-                        onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author)}&background=C8922A&color=fff`; }}
+                        onError={(e) => { e.target.src = getAvatarSrc("", post.author, post.authorId); }}
                       />
                     </div>
                   </div>
@@ -1420,9 +1409,15 @@ export default function Home() {
                       {(post.commentsList || []).map(comment => (
                         <div key={comment.id} className="flex space-x-3 items-start bg-[#F9F8F5] p-3 rounded-2xl">
                           <div className="w-7 h-7 rounded-full gradient-bg p-[1px] flex-shrink-0">
-                            <div className="w-full h-full bg-white rounded-full flex items-center justify-center text-[10px] font-bold text-[#C8922A]">
-                              {comment.author.charAt(0)}
-                            </div>
+                            <img
+                              src={getAvatarSrc(comment.profilePic, comment.author, comment.id || comment._id)}
+                              alt={comment.author}
+                              className="w-full h-full rounded-full object-cover bg-white"
+                              onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = getDefaultAvatar(comment.author, comment.id || comment._id);
+                              }}
+                            />
                           </div>
                           <div className="flex-1">
                             <p className="text-xs font-bold text-[#1A1A1A]">{comment.author}</p>
@@ -1525,13 +1520,7 @@ export default function Home() {
                           className="w-9 h-9 rounded-full overflow-hidden border border-[#E8E6E0] bg-[#F9F8F5] flex-shrink-0 cursor-pointer"
                           onClick={() => router.push(`/profile/${user._id}`)}
                         >
-                          {user.profilePic ? (
-                            <img src={user.profilePic} alt={user.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-xs font-bold text-[#C8922A] bg-[#FFF8EC]">
-                              {user.name.charAt(0)}
-                            </div>
-                          )}
+                          <img src={getAvatarSrc(user.profilePic, user.name, user._id || user.id)} alt={user.name} className="w-full h-full object-cover" />
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-1">
@@ -1762,7 +1751,7 @@ export default function Home() {
               <div className="flex items-center space-x-3">
                 <div className="w-9 h-9 rounded-full p-[2px] gradient-bg">
                   <img 
-                    src={activeStory.author.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(activeStory.author.name)}&background=C8922A&color=fff`} 
+                    src={getAvatarSrc(activeStory.author.profilePic, activeStory.author.name, activeStory.author._id || activeStory.author.id)} 
                     className="w-full h-full rounded-full border border-black object-cover" 
                     alt="" 
                   />

@@ -1,4 +1,6 @@
 import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import User from '../models/User.js';
 import College from '../models/College.js';
 import Notification from '../models/Notification.js';
@@ -10,8 +12,10 @@ import { publicUserPayload, syncVerificationStatus } from '../utils/verification
 // Convert base64 profilePic to avatar API URL to drastically reduce payload size
 export const transformUser = (u) => {
   if (!u) return u;
-  // Use relative path - the Next.js rewrite proxies /api/users/:id/avatar → backend
-  u.profilePic = `/api/users/${u._id}/avatar`;
+  const originalProfilePic = u.profilePic;
+  u.profilePic = originalProfilePic && !isGeneratedInitialsAvatar(originalProfilePic)
+    ? `/api/users/${u._id}/avatar`
+    : `/default-avatars/${defaultAvatarFileFor(u.name, u._id)}`;
   return u;
 };
 
@@ -19,6 +23,9 @@ import NodeCache from 'node-cache';
 
 const router = express.Router();
 const leaderboardCache = new NodeCache({ stdTTL: 300 }); // 5 minutes
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const defaultAvatarDir = path.resolve(__dirname, '../../../frontend/public/default-avatars');
 
 const POINTS_PER_VERIFIED_STUDENT = Number(process.env.POINTS_PER_VERIFIED_STUDENT || 10);
 const KNOWN_COLLEGE_LOGOS = [
@@ -32,6 +39,50 @@ const KNOWN_COLLEGE_LOGOS = [
 ];
 
 const logoForCollege = (name) => KNOWN_COLLEGE_LOGOS.find(item => item.pattern.test(name))?.logo || '';
+
+const boyAvatarFiles = ['boy-1.png', 'boy-2.png', 'boy-3.png', 'boy-4.png', 'boy-5.png', 'boy-6.png'];
+const girlAvatarFiles = ['girl-1.png', 'girl-2.png', 'girl-3.png', 'girl-4.png'];
+const girlNameHints = [
+  'aadhya', 'aanvi', 'aditi', 'akanksha', 'ananya', 'ankita', 'anjali', 'aparna',
+  'avani', 'bhavna', 'divya', 'isha', 'kajal', 'kavya', 'khushi', 'kritika',
+  'meera', 'muskan', 'neha', 'nisha', 'pooja', 'priya', 'riya', 'sakshi',
+  'sanjana', 'shreya', 'simran', 'sneha', 'tanya', 'vaishnavi'
+];
+
+const hashText = (value = '') => {
+  const text = String(value || 'student');
+  let hash = 0;
+  for (let i = 0; i < text.length; i += 1) hash = ((hash << 5) - hash) + text.charCodeAt(i);
+  return Math.abs(hash);
+};
+
+const looksLikeGirlName = (name = '') => {
+  const firstName = String(name).trim().split(/\s+/)[0]?.toLowerCase() || '';
+  return girlNameHints.includes(firstName) || firstName.endsWith('a') || firstName.endsWith('i');
+};
+
+const defaultAvatarFileFor = (name, id) => {
+  const pool = looksLikeGirlName(name) ? girlAvatarFiles : boyAvatarFiles;
+  return pool[hashText(id || name) % pool.length];
+};
+
+const isGeneratedInitialsAvatar = (src = '') => {
+  const value = String(src).toLowerCase();
+  return [
+    'ui-avatars.com',
+    'dicebear',
+    'avatar.iran.liara.run',
+    'avatar.vercel.sh',
+    '/initials/',
+    'username='
+  ].some(marker => value.includes(marker));
+};
+
+const serveDefaultAvatar = (res, name, id) => {
+  const filename = defaultAvatarFileFor(name, id);
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  return res.sendFile(path.join(defaultAvatarDir, filename));
+};
 
 // @route   GET /api/users/leaderboard
 // @desc    Get campus leaderboard ranked by verified students
@@ -137,41 +188,46 @@ router.get('/:id/avatar', async (req, res) => {
   // Serve from cache if available and fresh — instant response
   const cached = avatarCache.get(id);
   if (cached && cached.expiry > now) {
-    if (cached.redirect) return res.redirect(cached.redirect);
+    if (cached.redirect && !isGeneratedInitialsAvatar(cached.redirect)) return res.redirect(cached.redirect);
+    if (cached.redirect) avatarCache.delete(id);
+    else {
     res.setHeader('Content-Type', cached.mime);
     res.setHeader('Cache-Control', 'public, max-age=86400');
     res.setHeader('ETag', `"${id}"`);
     return res.send(cached.buffer);
+    }
   }
 
-  // If not cached, trigger a background fetch (non-blocking)
-  // Immediately respond with initials so the UI doesn't stall
-  if (!avatarFetching.has(id)) {
-    avatarFetching.add(id);
-    // Background fetch — no await, runs after response is sent
-    User.findById(id).select('profilePic name').lean()
-      .then(user => {
-        const ttl = 24 * 60 * 60 * 1000;
-        const expiry = Date.now() + ttl;
-        if (!user || !user.profilePic) {
-          const redirect = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'U')}&background=7C3AED&color=fff`;
-          avatarCache.set(id, { redirect, expiry });
-        } else if (user.profilePic.startsWith('http')) {
-          avatarCache.set(id, { redirect: user.profilePic, expiry });
-        } else if (user.profilePic.startsWith('data:image')) {
-          const parts = user.profilePic.split(';');
-          const mime = parts[0].split(':')[1];
-          const data = parts[1].split(',')[1];
-          const buffer = Buffer.from(data, 'base64');
-          avatarCache.set(id, { mime, buffer, expiry });
-        }
-      })
-      .catch(() => {})
-      .finally(() => avatarFetching.delete(id));
-  }
+  try {
+    const user = await User.findById(id).select('profilePic name').lean();
+    const ttl = 24 * 60 * 60 * 1000;
+    const expiry = Date.now() + ttl;
 
-  // On first request, show initials instantly (next request will serve from cache)
-  return res.redirect(`https://ui-avatars.com/api/?name=U&background=7C3AED&color=fff`);
+    if (!user || !user.profilePic || isGeneratedInitialsAvatar(user.profilePic)) {
+      return serveDefaultAvatar(res, user?.name || 'Student', id);
+    }
+
+    if (user.profilePic.startsWith('http')) {
+      avatarCache.set(id, { redirect: user.profilePic, expiry });
+      return res.redirect(user.profilePic);
+    }
+
+    if (user.profilePic.startsWith('data:image')) {
+      const parts = user.profilePic.split(';');
+      const mime = parts[0].split(':')[1];
+      const data = parts[1].split(',')[1];
+      const buffer = Buffer.from(data, 'base64');
+      avatarCache.set(id, { mime, buffer, expiry });
+      res.setHeader('Content-Type', mime);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.setHeader('ETag', `"${id}"`);
+      return res.send(buffer);
+    }
+
+    return serveDefaultAvatar(res, user.name, id);
+  } catch (error) {
+    return serveDefaultAvatar(res, 'Student', id);
+  }
 });
 
 

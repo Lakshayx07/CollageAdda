@@ -1,4 +1,6 @@
 import React from "react";
+import clsx from "clsx";
+import { getAvatarSrc, getDefaultAvatar } from "@/utils/defaultAvatars";
 import { User, Briefcase, GraduationCap, Code, Link, Clock } from "lucide-react";
 
 export default function ApplicationCard({ application, onImpressive }) {
@@ -34,13 +36,15 @@ export default function ApplicationCard({ application, onImpressive }) {
       <div className="flex flex-col md:flex-row gap-5 items-start">
         {/* Left Col: Avatar + Name + applying for */}
         <div className="flex flex-col items-center min-w-[120px] shrink-0 text-center space-y-2">
-          {profile.avatar_url ? (
-            <img src={profile.avatar_url} alt={application.name} className="w-16 h-16 rounded-full object-cover border-2 border-primary/40 shadow-[0_0_15px_rgba(139,92,246,0.3)]" />
-          ) : (
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#C8922A] to-[#D4A843] flex items-center justify-center text-xl font-black text-[#1A1A1A] shadow-[0_0_15px_rgba(139,92,246,0.3)]">
-              {application.name?.charAt(0) || "?"}
-            </div>
-          )}
+          <img 
+            src={getAvatarSrc(profile?.avatar_url, application.name, application.user_id)} 
+            alt={application.name} 
+            className="w-16 h-16 rounded-full object-cover border-2 border-primary/40 shadow-[0_0_15px_rgba(139,92,246,0.3)]" 
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = getDefaultAvatar(application.name, application.user_id);
+            }}
+          />
           
           <div>
             <h3 className="text-sm font-black text-[#1A1A1A] leading-tight">{application.name}</h3>

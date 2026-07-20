@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, Loader, Users, Search } from "lucide-react";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import { getAvatarSrc } from "@/utils/defaultAvatars";
 
 export default function ShareCollabModal({ isOpen, onClose, card, currentUser }) {
   const [connections, setConnections] = useState([]);
@@ -152,7 +153,7 @@ export default function ShareCollabModal({ isOpen, onClose, card, currentUser })
                   >
                     <div className="flex items-center gap-3">
                       <img 
-                        src={friend.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.name)}&background=7C3AED&color=fff`} 
+                        src={getAvatarSrc(friend.profilePic, friend.name, friend._id || friend.id)} 
                         alt={friend.name}
                         className="w-10 h-10 rounded-full object-cover"
                       />

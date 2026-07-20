@@ -10,9 +10,44 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
+import { useQueryClient } from "@tanstack/react-query";
+import { getAvatarSrc, getDefaultAvatar } from "@/utils/defaultAvatars";
 import { supabase } from "../../../utils/supabase";
 import { getAuthenticatedSupabaseClient } from "../../../utils/supabaseAuthUser";
 import { uploadPublicMedia } from "../../../utils/supabaseUploads";
+
+function JoinSparkles({ active }) {
+  const pieces = Array.from({ length: 34 }, (_, index) => ({
+    id: index,
+    left: 8 + ((index * 19) % 84),
+    delay: ((index * 7) % 35) / 100,
+    duration: 1.9 + ((index * 11) % 9) / 10,
+    size: 14 + ((index * 5) % 12),
+    drift: ((index * 23) % 80) - 40,
+  }));
+
+  return (
+    <AnimatePresence>
+      {active && (
+        <div className="pointer-events-none fixed inset-0 z-[220] overflow-hidden">
+          {pieces.map((piece) => (
+            <motion.div
+              key={piece.id}
+              initial={{ y: -40, x: 0, opacity: 0, rotate: 0, scale: 0.8 }}
+              animate={{ y: "105vh", x: piece.drift, opacity: [0, 1, 1, 0], rotate: 260, scale: [0.8, 1.15, 1] }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: piece.duration, delay: piece.delay, ease: "easeIn" }}
+              className="absolute top-0 text-amber-400 drop-shadow-[0_0_10px_rgba(251,191,36,0.65)]"
+              style={{ left: `${piece.left}%`, fontSize: piece.size }}
+            >
+              ✨
+            </motion.div>
+          ))}
+        </div>
+      )}
+    </AnimatePresence>
+  );
+}
 
 export default function CommunityChatPage() {
   const params = useParams();
@@ -56,6 +91,8 @@ export default function CommunityChatPage() {
   const [pollOptions, setPollOptions] = useState(["", ""]);
   const [pollAllowMultiple, setPollAllowMultiple] = useState(false);
   const [typingUsers, setTypingUsers] = useState({});
+  const [pinnedJumpIndex, setPinnedJumpIndex] = useState(0);
+  const [showJoinSparkles, setShowJoinSparkles] = useState(false);
 
   const scrollRef = useRef(null);
   const chatContainerRef = useRef(null);
@@ -66,6 +103,7 @@ export default function CommunityChatPage() {
   const photoInputRef = useRef(null);
   const videoInputRef = useRef(null);
   const messageRefs = useRef({});
+  const didInitialScrollRef = useRef(false);
 
   const showToastMsg = (type, msg) => {
     setToast({ type, msg });
@@ -311,6 +349,8 @@ export default function CommunityChatPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setActiveCommunityId(id);
     initialScrollDone.current = false;
+    didInitialScrollRef.current = false;
+    setPinnedJumpIndex(0);
   }, [id]);
 
   useEffect(() => {
@@ -379,8 +419,25 @@ export default function CommunityChatPage() {
           }
         }, 50);
       }
+    if (scrollRef.current) {
+      scrollRef.current.scrollIntoView({ behavior: didInitialScrollRef.current ? "smooth" : "auto" });
+      didInitialScrollRef.current = true;
     }
   }, [messages]);
+
+  useEffect(() => {
+    if (!loading && messages.length > 0 && !didInitialScrollRef.current) {
+      requestAnimationFrame(() => {
+        scrollRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+        didInitialScrollRef.current = true;
+      });
+    }
+  }, [loading, messages.length]);
+
+  const triggerJoinSparkles = () => {
+    setShowJoinSparkles(true);
+    setTimeout(() => setShowJoinSparkles(false), 2600);
+  };
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -707,6 +764,7 @@ export default function CommunityChatPage() {
       setIsMember(true);
       setRole('member');
       showToastMsg("success", "You joined the community! 🎉");
+      triggerJoinSparkles();
 
       // Reload messages
       const { data: msgs } = await authSupabase
@@ -755,6 +813,7 @@ export default function CommunityChatPage() {
         setRole('member');
       }
       showToastMsg("success", `Joined ${targetCommunity.name}!`);
+      triggerJoinSparkles();
     } catch (err) {
       showToastMsg("error", "Failed to join community.");
     } finally {
@@ -854,40 +913,15 @@ export default function CommunityChatPage() {
   };
 
   const handleJumpToPinned = () => {
-    const pinnedMessages = sortedMessages.filter((msg) => msg.is_pinned);
+    const pinnedMessages = [...messages]
+      .filter((msg) => msg.is_pinned)
+      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
     if (pinnedMessages.length === 0) return;
-    
-    const targetMessage = pinnedMessages[currentPinnedIndex];
-    if (targetMessage) {
-      messageRefs.current[targetMessage.id]?.scrollIntoView({ behavior: "smooth", block: "center" });
-      setActiveMessageId(targetMessage.id);
-    }
-    
-    // Cycle to next pinned message for the next click
-    setCurrentPinnedIndex((prev) => (prev + 1) % pinnedMessages.length);
-  };
-
-  const formatDateDivider = (isoString) => {
-    try {
-      const date = new Date(isoString);
-      const today = new Date();
-      const yesterday = new Date(today);
-      yesterday.setDate(yesterday.getDate() - 1);
-
-      if (date.toDateString() === today.toDateString()) {
-        return "Today";
-      }
-      if (date.toDateString() === yesterday.toDateString()) {
-        return "Yesterday";
-      }
-
-      const day = date.getDate();
-      const month = date.toLocaleString('default', { month: 'long' });
-      const weekday = date.toLocaleString('default', { weekday: 'short' });
-      return `${day} ${month}, ${weekday}`;
-    } catch (e) {
-      return "";
-    }
+    const nextIndex = pinnedJumpIndex % pinnedMessages.length;
+    const target = pinnedMessages[nextIndex];
+    messageRefs.current[target.id]?.scrollIntoView({ behavior: "smooth", block: "center" });
+    setActiveMessageId(target.id);
+    setPinnedJumpIndex((prev) => (prev + 1) % pinnedMessages.length);
   };
 
   const formatTime = (isoString) => {
@@ -1132,9 +1166,15 @@ export default function CommunityChatPage() {
                 className={clsx("group flex w-full mb-1 scroll-mt-24", isMe ? "justify-end" : "justify-start")}
               >
               {!isMe && showAvatar && (
-                <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center font-bold text-xs text-amber-800 border border-amber-200 mr-2 shrink-0 self-end mb-1">
-                  {msg.sender_name.charAt(0).toUpperCase()}
-                </div>
+                <img
+                  src={getAvatarSrc(msg.sender_avatar, msg.sender_name, msg.sender_id)}
+                  alt={msg.sender_name}
+                  className="w-8 h-8 rounded-full object-cover border border-[#E8E6E0] mr-2 shrink-0 self-end mb-1"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = getDefaultAvatar(msg.sender_name, msg.sender_id);
+                  }}
+                />
               )}
               {!isMe && !showAvatar && <div className="w-8 mr-2 shrink-0" />}
 
@@ -1234,14 +1274,11 @@ export default function CommunityChatPage() {
                 </div>
 
                 {!isDeleted && activeMessageId === msg.id && (
-                  <div 
-                    onClick={(e) => e.stopPropagation()}
-                    className={clsx(
-                      "absolute z-20 top-1/2 -translate-y-1/2 flex items-center gap-1 rounded-2xl border border-[#E8E6E0] bg-white p-1 shadow-xl",
-                      isMe ? "right-[calc(100%+2.5rem)]" : "left-[calc(100%+2.5rem)]"
-                    )}
-                  >
-                    <button onClick={(e) => { e.stopPropagation(); handleReplyMessage(msg); }} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-amber-50 hover:text-amber-700 cursor-pointer" title="Reply">
+                  <div className={clsx(
+                    "absolute z-20 top-1/2 flex -translate-y-1/2 items-center gap-1 rounded-2xl border border-[#E8E6E0] bg-white p-1 shadow-xl",
+                    isMe ? "right-full mr-12" : "left-full ml-12"
+                  )}>
+                    <button onClick={() => handleReplyMessage(msg)} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-amber-50 hover:text-amber-700 cursor-pointer" title="Reply">
                       <Reply size={15} />
                     </button>
                     <button onClick={(e) => { e.stopPropagation(); handleTogglePin(msg); }} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-amber-50 hover:text-amber-700 cursor-pointer" title={msg.is_pinned ? "Unpin" : "Pin"}>
@@ -1268,9 +1305,8 @@ export default function CommunityChatPage() {
                       setActiveMessageId(activeMessageId === msg.id ? null : msg.id);
                     }}
                     className={clsx(
-                      "absolute top-1/2 -translate-y-1/2 rounded-full bg-white border border-[#E8E6E0] p-1.5 text-[#6B6B6B] shadow-sm transition-opacity group-hover:opacity-100 cursor-pointer",
-                      isMe ? "-left-9" : "-right-9",
-                      (tappedMessageId === msg.id || activeMessageId === msg.id) ? "opacity-100" : "opacity-0"
+                      "absolute top-1/2 -translate-y-1/2 rounded-full bg-white border border-[#E8E6E0] p-1.5 text-[#6B6B6B] shadow-sm opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 cursor-pointer",
+                      isMe ? "-left-9" : "-right-9"
                     )}
                     title="Message options"
                   >
@@ -1283,26 +1319,31 @@ export default function CommunityChatPage() {
                 </span>
               </div>
             </div>
-          </Fragment>
-        );
-      })}
-        {typingNames.length > 0 && (
-          <div className="flex items-end gap-2">
-            <div className="w-8 h-8 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center text-xs font-black text-amber-800">
-              {typingNames[0].charAt(0).toUpperCase()}
-            </div>
-            <div className="ca-chat-received px-4 py-3 shadow-sm">
-              <div className="mb-1 text-[10px] font-black text-[#6B6B6B]">
-                {typingNames.join(", ")} typing
+          );
+        })}
+        {Object.keys(typingUsers).length > 0 && (() => {
+          const firstId = Object.keys(typingUsers)[0];
+          const firstName = typingUsers[firstId];
+          return (
+            <div className="flex items-end gap-2">
+              <img
+                src={getDefaultAvatar(firstName, firstId)}
+                alt={firstName}
+                className="w-8 h-8 rounded-full object-cover border border-[#E8E6E0]"
+              />
+              <div className="ca-chat-received px-4 py-3 shadow-sm">
+                <div className="mb-1 text-[10px] font-black text-[#6B6B6B]">
+                  {Object.values(typingUsers).slice(0, 2).join(", ")} typing
+                </div>
+                <div className="ca-typing-wave" aria-label="typing">
+                  <span />
+                  <span />
+                  <span />
+                </div>
               </div>
-              <div className="ca-typing-wave" aria-label="typing">
-                <span />
-                <span />
-                <span />
-              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
         <div ref={scrollRef} className="h-4" />
       </div>
 
@@ -1571,6 +1612,7 @@ export default function CommunityChatPage() {
           </motion.div>
         )}
       </AnimatePresence>
+      <JoinSparkles active={showJoinSparkles} />
     </div>
   );
 }

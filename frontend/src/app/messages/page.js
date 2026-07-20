@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Search, Send, Users, ChevronLeft, Info, MessageSquare, Plus, Image as ImageIcon, Smile, MoreVertical, X, Zap, Flame, TrendingUp, LogOut, UserPlus } from "lucide-react";
+import { Search, Send, Users, ChevronLeft, MessageSquare, Plus, Image as ImageIcon, Smile, MoreVertical, X, LogOut, UserPlus, FileText, BarChart3, Pencil, Trash2, Reply, Pin, PinOff } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import clsx from "clsx";
 import { useSocket } from "@/context/SocketProvider";
@@ -10,6 +10,7 @@ import { Suspense, useCallback, useMemo } from "react";
 import { useApiQuery } from "@/utils/useApiQuery";
 import { useQueryClient } from "@tanstack/react-query";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import { getAvatarSrc } from "@/utils/defaultAvatars";
 
 function MessagesContent() {
   const [isMounted, setIsMounted] = useState(false);
@@ -27,6 +28,37 @@ function MessagesContent() {
   }, []);
   const [activeChat, setActiveChat] = useState(null);
 
+  const getMessagePreview = useCallback((message) => {
+    if (!message) return "No messages yet";
+    if (message.deletedAt) return "Message deleted";
+    if (message.poll?.question) return `Poll: ${message.poll.question}`;
+    if (message.mediaType === 'image') return "Photo";
+    if (message.mediaType === 'video') return "Video";
+    if (message.mediaType === 'file') return "Document";
+    return message.text || "Sent an attachment";
+  }, []);
+
+  const formatMessage = useCallback((m, currentUser) => {
+    const senderId = m.sender?._id || m.sender?.id || m.senderId;
+    const senderName = m.sender?.name || m.senderName || "Student";
+    return {
+      id: m._id || m.id,
+      text: m.text || "",
+      sender: String(senderId) === String(currentUser?._id || currentUser?.id) ? "me" : "them",
+      senderName,
+      senderAvatar: getAvatarSrc(m.sender?.profilePic || m.senderAvatar, senderName, senderId),
+      mediaUrl: m.mediaUrl || "",
+      mediaType: m.mediaType || "none",
+      replyTo: m.replyTo || null,
+      poll: m.poll || null,
+      isPinned: Boolean(m.isPinned),
+      editedAt: m.editedAt,
+      deletedAt: m.deletedAt,
+      time: new Date(m.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isSystem: m.isSystem
+    };
+  }, []);
+
   const { data: activeChatMessages, isLoading: loadingMessages } = useApiQuery(
     activeChat ? ["chat-messages", activeChat.id] : null,
     activeChat ? `/api/chat/rooms/${activeChat.id}/messages` : null,
@@ -39,38 +71,38 @@ function MessagesContent() {
   useEffect(() => {
     if (activeChat && activeChatMessages) {
       const u = user || JSON.parse(localStorage.getItem('collegeadda_user') || '{}');
-      const formattedMsgs = activeChatMessages.map(m => ({
-        id: m._id,
-        text: m.text,
-        sender: String(m.sender?._id || m.sender?.id) === String(u._id || u.id) ? "me" : "them",
-        senderName: m.sender?.name || "Student",
-        senderAvatar: m.sender?.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.sender?.name || "U")}&background=7C3AED&color=fff`,
-        mediaUrl: m.mediaUrl,
-        mediaType: m.mediaType,
-        time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isSystem: m.isSystem
-      }));
+      const formattedMsgs = activeChatMessages.map(m => formatMessage(m, u));
+      formattedMsgs.forEach(m => {
+        if (m.id) seenSocketMessageIdsRef.current.add(String(m.id));
+      });
       setMessages(prev => ({ ...prev, [activeChat.id]: formattedMsgs }));
     }
-  }, [activeChat, activeChatMessages, user]);
+  }, [activeChat, activeChatMessages, user, formatMessage]);
 
   const queryClient = useQueryClient();
   
+  const getRoomPartner = useCallback((room) => {
+    return room.participants?.find(p => String(p._id || p.id || p) !== String(user?._id || user?.id));
+  }, [user]);
+
   const formatRooms = useCallback((data) => {
     if (!Array.isArray(data) || !user) return [];
-    return data.map(room => ({
+    return data.map(room => {
+      const partner = getRoomPartner(room);
+      return {
       id: room._id,
-      name: room.isGroup ? (room.groupName || `${room.university} Hub`) : (room.participants.find(p => p._id !== user._id)?.name || "Chat"),
+      name: room.isGroup ? (room.groupName || `${room.university} Hub`) : (partner?.name || "Chat"),
       type: room.isGroup ? "group" : "private",
-      avatar: room.isGroup ? <Users size={24} className="text-white" /> : (room.participants.find(p => p._id !== user._id)?.profilePic || `https://ui-avatars.com/api/?name=User&background=7C3AED&color=fff`),
-      lastMsg: room.lastMessage?.text || "No messages yet",
+      avatar: room.isGroup ? <Users size={24} className="text-white" /> : getAvatarSrc(partner?.profilePic, partner?.name || "Student", partner?._id || partner?.id),
+      lastMsg: getMessagePreview(room.lastMessage),
       time: room.lastMessage ? new Date(room.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "",
       timestamp: room.lastMessage?.createdAt ? new Date(room.lastMessage.createdAt).getTime() : new Date(room.updatedAt || room.createdAt || 0).getTime(),
       unreadCount: room.unreadCounts?.[user._id] || 0,
       participants: room.participants?.map(p => p._id || p.id) || [],
-      partner: room.isGroup ? null : room.participants.find(p => p._id !== user._id)
-    }));
-  }, [user]);
+      partner: room.isGroup ? null : partner
+    };
+    });
+  }, [user, getMessagePreview, getRoomPartner]);
 
   const { data: rawRooms = [], isLoading: loadingChats } = useApiQuery(
     "chat-rooms",
@@ -83,7 +115,12 @@ function MessagesContent() {
 
   const chats = useMemo(() => {
     // If rawRooms is already formatted (due to optimistic updates), use it directly
-    if (rawRooms.length > 0 && rawRooms[0].id) return rawRooms;
+    if (rawRooms.length > 0 && rawRooms[0].id) {
+      return rawRooms.map(room => ({
+        ...room,
+        avatar: room.type === "group" ? room.avatar : getAvatarSrc(room.avatar || room.partner?.profilePic, room.name || room.partner?.name || "Student", room.partner?._id || room.partner?.id || room.id),
+      }));
+    }
     return formatRooms(rawRooms);
   }, [rawRooms, formatRooms]);
 
@@ -109,12 +146,28 @@ function MessagesContent() {
   const [showChatOptions, setShowChatOptions] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState(null);
+  const [selectedFileName, setSelectedFileName] = useState("");
   const [mediaType, setMediaType] = useState('none');
+  const [activeMessageMenu, setActiveMessageMenu] = useState(null);
+  const [replyTo, setReplyTo] = useState(null);
+  const [editingMessage, setEditingMessage] = useState(null);
+  const [typingName, setTypingName] = useState("");
+  const [showPollModal, setShowPollModal] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState(["", ""]);
+  const [pinnedJumpIndex, setPinnedJumpIndex] = useState(0);
+  const [loadingConnections, setLoadingConnections] = useState(false);
+  const [connectionsLoaded, setConnectionsLoaded] = useState(false);
   
   const emojis = ["❤️", "🔥", "😂", "😍", "🙌", "👏", "✨", "💯", "🎉", "😎", "🚀", "💡", "☕", "📚", "🎓", "🍕", "🎸", "🎮", "🏀", "🧪"];
   
   const { socket, setActiveRoom, resetUnread } = useSocket();
   const fileInputRef = useRef(null);
+  const documentInputRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
+  const outgoingTypingTimeoutRef = useRef(null);
+  const seenSocketMessageIdsRef = useRef(new Set());
+  const messageRefs = useRef({});
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -176,7 +229,7 @@ function MessagesContent() {
               text: textMsg,
               sender: "me",
               senderName: u.name,
-              senderAvatar: u.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=7C3AED&color=fff`,
+              senderAvatar: getAvatarSrc(u.profilePic, u.name, u._id || u.id),
               time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             }]
           };
@@ -253,7 +306,7 @@ function MessagesContent() {
                   id: newRoom._id,
                   name: newRoom.participants?.find(p => p._id !== u._id)?.name || "Chat",
                   type: "private",
-                  avatar: newRoom.participants?.find(p => p._id !== u._id)?.profilePic || `https://ui-avatars.com/api/?name=User&background=7C3AED&color=fff`,
+                  avatar: getAvatarSrc(newRoom.participants?.find(p => p._id !== u._id)?.profilePic, newRoom.participants?.find(p => p._id !== u._id)?.name || "Student", newRoom.participants?.find(p => p._id !== u._id)?._id),
                   lastMsg: "No messages yet",
                   time: "",
                   timestamp: Date.now(),
@@ -288,11 +341,16 @@ function MessagesContent() {
     if (!socket || !user) return;
 
     const handleReceiveMessage = (msg) => {
+      const incomingId = String(msg._id || msg.id || "");
+      const isDuplicateSocketMessage = incomingId && seenSocketMessageIdsRef.current.has(incomingId);
+      if (incomingId) seenSocketMessageIdsRef.current.add(incomingId);
+      const isMine = String(msg.senderId || msg.sender?._id || msg.sender?.id) === String(user._id || user.id);
+      const didAppendUnreadMessage = !isDuplicateSocketMessage && !isMine;
       setMessages(prev => {
         const roomMessages = prev[msg.room] || [];
         
         // Check if this message already exists (by ID)
-        if (roomMessages.find(m => m.id === msg._id)) return prev;
+        if (isDuplicateSocketMessage || roomMessages.find(m => m.id === msg._id)) return prev;
 
         // If it's my own message coming back, replace the temp one
         const tempMsgIdx = roomMessages.findIndex(m => m.id === msg.tempId);
@@ -301,24 +359,17 @@ function MessagesContent() {
           updated[tempMsgIdx] = {
             ...updated[tempMsgIdx],
             id: msg._id,
-            status: 'sent'
+            status: 'sent',
+            ...formatMessage({ ...msg, id: msg._id }, user)
           };
           return { ...prev, [msg.room]: updated };
         }
+
+        const formatted = formatMessage({ ...msg, id: msg._id }, user);
         
         return {
           ...prev,
-          [msg.room]: [...roomMessages, { 
-            id: msg._id, 
-            text: msg.text, 
-            mediaUrl: msg.mediaUrl,
-            mediaType: msg.mediaType,
-            sender: String(msg.senderId) === String(user._id || user.id) ? "me" : "them",
-            senderName: msg.senderName,
-            senderAvatar: msg.senderAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.senderName || "U")}&background=7C3AED&color=fff`,
-            time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            isSystem: msg.isSystem
-          }]
+          [msg.room]: [...roomMessages, formatted]
         };
       });
 
@@ -327,21 +378,45 @@ function MessagesContent() {
           const isCurrent = activeChat?.id === msg.room;
           return { 
             ...c, 
-            lastMsg: msg.text, 
+            lastMsg: getMessagePreview(msg), 
             time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             timestamp: new Date(msg.createdAt).getTime(),
-            unreadCount: isCurrent ? 0 : (c.unreadCount || 0) + 1
+            unreadCount: isCurrent || !didAppendUnreadMessage ? c.unreadCount || 0 : (c.unreadCount || 0) + 1
           };
         }
         return c;
       }));
     };
 
+    const handleMessageUpdated = ({ room, message }) => {
+      const updatedMessage = formatMessage(message, user);
+      setMessages(prev => ({
+        ...prev,
+        [room]: (prev[room] || []).map(m => m.id === updatedMessage.id ? { ...m, ...updatedMessage } : m)
+      }));
+      setChats(prevChats => prevChats.map(c => c.id === room ? { ...c, lastMsg: getMessagePreview(message) } : c));
+    };
+
+    const handleTyping = ({ name }) => {
+      if (!name || name === user.name) return;
+      setTypingName(name);
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => setTypingName(""), 1600);
+    };
+
+    const handleStopTyping = () => setTypingName("");
+
     socket.on('receive_message', handleReceiveMessage);
+    socket.on('message_updated', handleMessageUpdated);
+    socket.on('user_typing', handleTyping);
+    socket.on('user_stop_typing', handleStopTyping);
     return () => {
       socket.off('receive_message', handleReceiveMessage);
+      socket.off('message_updated', handleMessageUpdated);
+      socket.off('user_typing', handleTyping);
+      socket.off('user_stop_typing', handleStopTyping);
     };
-  }, [socket, user, activeChat]);
+  }, [socket, user, activeChat, formatMessage, getMessagePreview]);
 
   useEffect(() => {
     if (activeChat && socket) {
@@ -372,32 +447,81 @@ function MessagesContent() {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, activeChat]);
 
-  const handleMediaSelect = (e) => {
+  const handleMediaSelect = (e, forcedType = null) => {
     const file = e.target.files[0];
     if (!file) return;
     
-    const type = file.type.startsWith('video') ? 'video' : 'image';
+    const type = forcedType || (file.type.startsWith('video') ? 'video' : file.type.startsWith('image') ? 'image' : 'file');
     const reader = new FileReader();
     reader.onloadend = () => {
       setSelectedMedia(reader.result);
       setMediaType(type);
+      setSelectedFileName(file.name);
     };
     reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const handleInputChange = (value) => {
+    setInput(value);
+    if (!socket || !activeChat) return;
+    socket.emit('typing', { room: activeChat.id, name: user?.name });
+    clearTimeout(outgoingTypingTimeoutRef.current);
+    outgoingTypingTimeoutRef.current = setTimeout(() => {
+      socket.emit('stop_typing', { room: activeChat.id });
+    }, 900);
   };
 
   const sendMessage = async () => {
     if ((!input.trim() && !selectedMedia) || !activeChat || isSending) return;
 
     setIsSending(true);
+    const token = localStorage.getItem("collegeadda_token");
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+
+    if (editingMessage) {
+      try {
+        const res = await fetch(`${apiUrl}/api/chat/rooms/${activeChat.id}/messages/${editingMessage.id}`, {
+          method: "PUT",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ text: input })
+        });
+        if (res.ok) {
+          const updated = await res.json();
+          const formatted = formatMessage(updated, user);
+          setMessages(prev => ({
+            ...prev,
+            [activeChat.id]: (prev[activeChat.id] || []).map(m => m.id === formatted.id ? { ...m, ...formatted } : m)
+          }));
+          socket?.emit('message_updated', { room: activeChat.id, message: updated });
+          console.log("chat database updated");
+        } else {
+          const errorData = await res.json().catch(() => ({}));
+          alert(errorData.message || "Failed to edit message.");
+        }
+      } catch (err) {
+        console.error("Error editing message:", err);
+        alert("Failed to edit message.");
+      }
+      setEditingMessage(null);
+      setInput("");
+      setIsSending(false);
+      return;
+    }
+
     const tempId = `temp-${Date.now()}`;
     const data = {
       room: activeChat.id,
       senderId: user._id || user.id,
       senderName: user.name,
-      senderAvatar: user.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=7C3AED&color=fff`,
+      senderAvatar: getAvatarSrc(user.profilePic, user.name, user._id || user.id),
       text: input,
       mediaUrl: selectedMedia || '',
       mediaType: mediaType,
+      replyTo,
       tempId // Add tempId to track optimistic message
     };
 
@@ -414,6 +538,7 @@ function MessagesContent() {
           senderAvatar: data.senderAvatar,
           mediaUrl: data.mediaUrl,
           mediaType: data.mediaType,
+          replyTo,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           status: 'sending'
         }
@@ -424,7 +549,7 @@ function MessagesContent() {
       if (c.id === activeChat.id) {
         return {
           ...c,
-          lastMsg: data.text || (data.mediaUrl ? 'Sent an attachment' : ''),
+          lastMsg: data.text || getMessagePreview(data),
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           timestamp: Date.now()
         };
@@ -433,9 +558,6 @@ function MessagesContent() {
     }));
     
     try {
-      const token = localStorage.getItem("collegeadda_token");
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
-      
       const res = await fetch(`${apiUrl}/api/chat/rooms/${activeChat.id}/messages`, {
         method: "POST",
         headers: {
@@ -445,7 +567,9 @@ function MessagesContent() {
         body: JSON.stringify({
           text: data.text,
           mediaUrl: data.mediaUrl,
-          mediaType: data.mediaType
+          mediaType: data.mediaType,
+          replyTo,
+          fileName: selectedFileName
         })
       });
       
@@ -456,6 +580,11 @@ function MessagesContent() {
           socket.emit('forward_message', {
             ...data,
             _id: savedMsg._id,
+            replyTo: savedMsg.replyTo,
+            poll: savedMsg.poll,
+            isPinned: savedMsg.isPinned,
+            editedAt: savedMsg.editedAt,
+            deletedAt: savedMsg.deletedAt,
             createdAt: savedMsg.createdAt || new Date().toISOString()
           });
         }
@@ -468,7 +597,9 @@ function MessagesContent() {
 
     setInput("");
     setSelectedMedia(null);
+    setSelectedFileName("");
     setMediaType('none');
+    setReplyTo(null);
     setIsSending(false);
   };
 
@@ -477,7 +608,198 @@ function MessagesContent() {
     setShowEmojiPicker(false);
   };
 
-  const fetchConnections = async () => {
+  const emitMessageUpdate = (message) => {
+    socket?.emit('message_updated', { room: activeChat.id, message });
+  };
+
+  const applyUpdatedMessage = (message) => {
+    const formatted = formatMessage(message, user);
+    setMessages(prev => ({
+      ...prev,
+      [activeChat.id]: (prev[activeChat.id] || []).map(m => m.id === formatted.id ? { ...m, ...formatted } : m)
+    }));
+    setChats(prev => prev.map(c => c.id === activeChat.id ? { ...c, lastMsg: getMessagePreview(message) } : c));
+    emitMessageUpdate(message);
+  };
+
+  const startReply = (msg) => {
+    setReplyTo({
+      messageId: msg.id,
+      text: msg.deletedAt ? "Message deleted" : msg.poll?.question || msg.text || getMessagePreview(msg),
+      senderName: msg.senderName
+    });
+    setActiveMessageMenu(null);
+  };
+
+  const startEdit = (msg) => {
+    if (msg.deletedAt || msg.sender !== "me") return;
+    setEditingMessage(msg);
+    setInput(msg.text || "");
+    setReplyTo(null);
+    setActiveMessageMenu(null);
+  };
+
+  const readActionError = async (res, fallback) => {
+    try {
+      const data = await res.json();
+      return data.message || fallback;
+    } catch (jsonError) {
+      try {
+        const text = await res.text();
+        return text || fallback;
+      } catch (textError) {
+        return fallback;
+      }
+    }
+  };
+
+  const deleteMessage = async (msg) => {
+    if (!msg?.id || String(msg.id).startsWith("temp-")) {
+      setMessages(prev => ({
+        ...prev,
+        [activeChat.id]: (prev[activeChat.id] || []).filter(item => item.id !== msg.id)
+      }));
+      setActiveMessageMenu(null);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+      const res = await fetch(`${apiUrl}/api/chat/rooms/${activeChat.id}/messages/${msg.id}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        applyUpdatedMessage(updated);
+        console.log("chat database updated");
+      } else {
+        const deleteError = await readActionError(res, "Failed to delete message.");
+        const fallbackRes = await fetch(`${apiUrl}/api/chat/rooms/${activeChat.id}/messages/${msg.id}`, {
+          method: "PUT",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ text: "This message was deleted" })
+        });
+
+        if (fallbackRes.ok) {
+          const updated = await fallbackRes.json();
+          applyUpdatedMessage({ ...updated, deletedAt: updated.deletedAt || new Date().toISOString(), text: "This message was deleted" });
+          console.log("chat database updated");
+        } else {
+          const fallbackError = await readActionError(fallbackRes, deleteError);
+          alert(fallbackError || deleteError);
+        }
+      }
+    } catch (err) {
+      console.error("Error deleting message:", err);
+      alert("Failed to delete message.");
+    } finally {
+      setActiveMessageMenu(null);
+    }
+  };
+
+  const togglePinMessage = async (msg) => {
+    if (msg.deletedAt) return;
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+      const res = await fetch(`${apiUrl}/api/chat/rooms/${activeChat.id}/messages/${msg.id}/pin`, {
+        method: "PUT",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        applyUpdatedMessage(updated);
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        alert(errorData.message || "Failed to pin message.");
+      }
+    } catch (err) {
+      console.error("Error pinning message:", err);
+      alert("Failed to pin message.");
+    } finally {
+      setActiveMessageMenu(null);
+    }
+  };
+
+  const createPollMessage = async () => {
+    const question = pollQuestion.trim();
+    const options = pollOptions.map(option => option.trim()).filter(Boolean);
+    if (!activeChat || activeChat.type !== "group" || !question || options.length < 2 || isSending) return;
+
+    setIsSending(true);
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+      const res = await fetch(`${apiUrl}/api/chat/rooms/${activeChat.id}/messages`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          text: question,
+          mediaType: "none",
+          replyTo,
+          poll: { question, options, allowMultiple: false }
+        })
+      });
+      if (res.ok) {
+        const savedMsg = await res.json();
+        const formatted = formatMessage(savedMsg, user);
+        setMessages(prev => ({ ...prev, [activeChat.id]: [...(prev[activeChat.id] || []), formatted] }));
+        setChats(prev => prev.map(c => c.id === activeChat.id ? { ...c, lastMsg: getMessagePreview(savedMsg), timestamp: Date.now() } : c));
+        socket?.emit('forward_message', {
+          room: activeChat.id,
+          senderId: user._id || user.id,
+          senderName: user.name,
+          senderAvatar: getAvatarSrc(user.profilePic, user.name, user._id || user.id),
+          text: question,
+          mediaUrl: "",
+          mediaType: "none",
+          replyTo: savedMsg.replyTo,
+          poll: savedMsg.poll,
+          isPinned: savedMsg.isPinned,
+          _id: savedMsg._id,
+          createdAt: savedMsg.createdAt || new Date().toISOString()
+        });
+      }
+    } catch (err) {
+      console.error("Error creating poll:", err);
+    } finally {
+      setShowPollModal(false);
+      setPollQuestion("");
+      setPollOptions(["", ""]);
+      setReplyTo(null);
+      setIsSending(false);
+    }
+  };
+
+  const votePoll = async (msg, optionIndex) => {
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+      const res = await fetch(`${apiUrl}/api/chat/rooms/${activeChat.id}/messages/${msg.id}/poll`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ optionIndex })
+      });
+      if (res.ok) applyUpdatedMessage(await res.json());
+    } catch (err) {
+      console.error("Error voting poll:", err);
+    }
+  };
+
+  const fetchConnections = useCallback(async (force = false) => {
+    if (connectionsLoaded && !force) return;
+    setLoadingConnections(true);
     try {
       const token = localStorage.getItem("collegeadda_token");
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
@@ -489,10 +811,19 @@ function MessagesContent() {
       // Deduplicate
       const unique = combined.filter((v, i, a) => a.findIndex(t => (t._id === v._id)) === i);
       setConnections(unique);
+      setConnectionsLoaded(true);
     } catch (err) {
       console.error("Error fetching connections:", err);
+    } finally {
+      setLoadingConnections(false);
     }
-  };
+  }, [connectionsLoaded]);
+
+  useEffect(() => {
+    if (!user) return;
+    const timer = setTimeout(() => fetchConnections(), 800);
+    return () => clearTimeout(timer);
+  }, [user, fetchConnections]);
 
   const handleCreateGroup = async () => {
     if (!newGroupName.trim() || selectedMembers.length === 0) return;
@@ -545,6 +876,11 @@ function MessagesContent() {
     setShowAttachments(false);
     setShowEmojiPicker(false);
     setShowChatOptions(false);
+    setActiveMessageMenu(null);
+    setReplyTo(null);
+    setEditingMessage(null);
+    setTypingName("");
+    setPinnedJumpIndex(0);
 
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
@@ -561,7 +897,13 @@ function MessagesContent() {
     setShowEmojiPicker(false);
     setShowChatOptions(false);
     setSelectedMedia(null);
+    setSelectedFileName("");
     setMediaType('none');
+    setReplyTo(null);
+    setEditingMessage(null);
+    setActiveMessageMenu(null);
+    setTypingName("");
+    setPinnedJumpIndex(0);
 
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
@@ -654,6 +996,42 @@ function MessagesContent() {
   });
 
   const filteredChats = sortedChats.filter(c => c.name.toLowerCase().includes(chatSearch.toLowerCase()));
+  const activeMessages = activeChat ? (messages[activeChat.id] || []) : [];
+  const pinnedMessages = activeMessages.filter(msg => msg.isPinned && !msg.deletedAt);
+  const pinnedCount = pinnedMessages.length;
+
+  const handleJumpToPinned = () => {
+    if (pinnedMessages.length === 0) return;
+    const target = pinnedMessages[pinnedJumpIndex % pinnedMessages.length];
+    if (target && messageRefs.current[target.id]) {
+      messageRefs.current[target.id].scrollIntoView({ behavior: "smooth", block: "center" });
+      setPinnedJumpIndex(prev => (prev + 1) % pinnedMessages.length);
+    }
+  };
+
+  const renderMessageActions = (msg, isMe) => (
+    <div className={clsx(
+      "absolute z-40 top-1/2 flex -translate-y-1/2 items-center gap-1 rounded-2xl border border-[#E8E6E0] bg-white p-1 shadow-xl",
+      isMe ? "right-full mr-2" : "left-full ml-2"
+    )}>
+      <button onClick={() => startReply(msg)} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-amber-50 hover:text-amber-700" title="Reply" aria-label="Reply">
+        <Reply size={15} />
+      </button>
+      <button onClick={() => togglePinMessage(msg)} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-amber-50 hover:text-amber-700" title={msg.isPinned ? "Unpin" : "Pin"} aria-label={msg.isPinned ? "Unpin" : "Pin"}>
+        {msg.isPinned ? <PinOff size={15} /> : <Pin size={15} />}
+      </button>
+      {isMe && (
+        <>
+          <button onClick={() => startEdit(msg)} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-amber-50 hover:text-amber-700" title="Edit" aria-label="Edit">
+            <Pencil size={15} />
+          </button>
+          <button onClick={() => deleteMessage(msg)} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-red-50 hover:text-red-600" title="Delete" aria-label="Delete">
+            <Trash2 size={15} />
+          </button>
+        </>
+      )}
+    </div>
+  );
 
   if (!isMounted || !user) return null;
 
@@ -740,7 +1118,7 @@ function MessagesContent() {
                           src={chat.avatar} 
                           alt=""
                           className="w-full h-full object-cover" 
-                          onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(chat.name)}&background=7C3AED&color=fff`; }}
+                            onError={(e) => { e.target.src = getAvatarSrc("", chat.name, chat.id); }}
                         />
                       )}
                     </div>
@@ -805,7 +1183,7 @@ function MessagesContent() {
                       ) : <img 
                             src={activeChat.avatar} 
                             className="w-full h-full object-cover" 
-                            onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(activeChat.name)}&background=7C3AED&color=fff`; }}
+                            onError={(e) => { e.target.src = getAvatarSrc("", activeChat.name, activeChat.id); }}
                           />}
                     </div>
                   </div>
@@ -819,6 +1197,17 @@ function MessagesContent() {
               </div>
               
               <div className="flex items-center space-x-2 flex-shrink-0">
+                {pinnedCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleJumpToPinned}
+                    className="flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-black text-amber-700 hover:bg-amber-100"
+                    title="Jump to pinned message"
+                  >
+                    <Pin size={14} />
+                    {pinnedCount}
+                  </button>
+                )}
                 {activeChat.type === "group" && (
                   <button 
                     onClick={() => {
@@ -905,7 +1294,7 @@ function MessagesContent() {
               </div>
 
               <AnimatePresence initial={false}>
-                {(messages[activeChat.id] || []).map((msg, idx, arr) => {
+                {activeMessages.map((msg, idx, arr) => {
                     const isMe = msg.sender === "me";
                     const showAvatar = !isMe && (idx === 0 || arr[idx-1].sender !== "them");
                     
@@ -922,6 +1311,9 @@ function MessagesContent() {
                     return (
                     <motion.div 
                       key={msg.id}
+                      ref={(node) => {
+                        if (node) messageRefs.current[msg.id] = node;
+                      }}
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       className={clsx(
@@ -949,7 +1341,32 @@ function MessagesContent() {
                             {msg.senderName.split(' ')[0]}
                           </span>
                         )}
-                        {isOnlyEmoji(msg.text) ? (
+                        <div className="relative flex items-center gap-2">
+                        {isMe && !msg.deletedAt && (
+                          <div className="relative flex-shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => setActiveMessageMenu(activeMessageMenu === msg.id ? null : msg.id)}
+                              className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 p-1.5 rounded-full bg-white border border-[#E8E6E0] text-[#6B6B6B] shadow-md hover:text-[#1A1A1A] transition-all"
+                              aria-label="Message options"
+                              aria-expanded={activeMessageMenu === msg.id}
+                            >
+                              <MoreVertical size={15} />
+                            </button>
+                            <AnimatePresence>
+                              {activeMessageMenu === msg.id && (
+                                <motion.div
+                                  initial={{ opacity: 0, scale: 0.94, x: 8 }}
+                                  animate={{ opacity: 1, scale: 1, x: 0 }}
+                                  exit={{ opacity: 0, scale: 0.94, x: 8 }}
+                                >
+                                  {renderMessageActions(msg, isMe)}
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        )}
+                        {isOnlyEmoji(msg.text) && !msg.mediaUrl && !msg.poll ? (
                           <motion.div
                             initial={{ scale: 0.5, opacity: 0 }}
                             animate={{ 
@@ -968,23 +1385,98 @@ function MessagesContent() {
                           </motion.div>
                         ) : (
                           <div className={clsx(
-                            "px-3.5 py-2.5 text-[14px] leading-relaxed shadow-2xl relative",
+                            "w-fit max-w-full px-3.5 py-2.5 text-[14px] leading-relaxed shadow-2xl relative break-words",
                             isMe 
                               ? "ca-chat-sent" 
                               : "ca-chat-received"
                           )}>
+                            {msg.isPinned && (
+                              <div className="mb-1 flex items-center gap-1 text-[10px] font-black opacity-80">
+                                <Pin size={11} /> Pinned
+                              </div>
+                            )}
+                            {msg.replyTo && (
+                              <div className={clsx(
+                                "mb-2 rounded-xl border-l-4 px-3 py-2 text-xs",
+                                isMe ? "bg-white/20 border-white/70" : "bg-[#F3F2EE] border-[#C8922A]"
+                              )}>
+                                <div className="font-black">{msg.replyTo.senderName}</div>
+                                <div className="line-clamp-1 opacity-80">{msg.replyTo.text}</div>
+                              </div>
+                            )}
                             {msg.mediaUrl && (
                               <div className="mb-2 rounded-xl overflow-hidden border border-[#E8E6E0]">
                                 {msg.mediaType === 'video' ? (
                                   <video src={msg.mediaUrl} controls className="max-w-full h-auto max-h-48 object-cover" />
+                                ) : msg.mediaType === 'file' ? (
+                                  <a href={msg.mediaUrl} download className="flex items-center gap-2 bg-white/30 px-3 py-2 text-sm font-black">
+                                    <FileText size={18} /> Document
+                                  </a>
                                 ) : (
-                                  <img src={msg.mediaUrl} alt="Media" className="max-w-full h-auto max-h-48 object-cover" />
+                                  <img src={msg.mediaUrl} alt="" className="max-w-full h-auto max-h-48 object-cover" />
                                 )}
                               </div>
                             )}
-                            <div className="relative z-10 font-medium">{msg.text}</div>
+                            {msg.poll?.question && (
+                              <div className="relative z-10 w-64 max-w-[70vw] space-y-2">
+                                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest opacity-80">
+                                  <BarChart3 size={14} /> Poll
+                                </div>
+                                <div className="font-black">{msg.poll.question}</div>
+                                {msg.poll.options?.map((option, optionIndex) => {
+                                  const totalVotes = msg.poll.options.reduce((sum, item) => sum + (item.votes?.length || 0), 0);
+                                  const votes = option.votes?.length || 0;
+                                  const percent = totalVotes ? Math.round((votes / totalVotes) * 100) : 0;
+                                  const didVote = option.votes?.some(vote => String(vote) === String(user._id || user.id));
+                                  return (
+                                    <button
+                                      key={`${msg.id}-poll-${optionIndex}`}
+                                      type="button"
+                                      onClick={() => votePoll(msg, optionIndex)}
+                                      className={clsx(
+                                        "relative w-full overflow-hidden rounded-xl border px-3 py-2 text-left text-xs font-black",
+                                        didVote ? "border-white bg-white/30" : "border-white/60 bg-white/10"
+                                      )}
+                                    >
+                                      <span className="absolute inset-y-0 left-0 bg-white/20" style={{ width: `${percent}%` }} />
+                                      <span className="relative flex items-center justify-between gap-3">
+                                        <span>{option.text}</span>
+                                        <span>{votes}</span>
+                                      </span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                            {!msg.poll?.question && <div className="relative z-10 font-medium">{msg.text}</div>}
+                            {msg.editedAt && !msg.deletedAt && <div className="mt-1 text-[10px] font-bold opacity-70">edited</div>}
                           </div>
                         )}
+                        {!isMe && !msg.deletedAt && (
+                          <div className="relative flex-shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => setActiveMessageMenu(activeMessageMenu === msg.id ? null : msg.id)}
+                              className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 p-1.5 rounded-full bg-white border border-[#E8E6E0] text-[#6B6B6B] shadow-md hover:text-[#1A1A1A] transition-all"
+                              aria-label="Message options"
+                              aria-expanded={activeMessageMenu === msg.id}
+                            >
+                              <MoreVertical size={15} />
+                            </button>
+                            <AnimatePresence>
+                              {activeMessageMenu === msg.id && (
+                                <motion.div
+                                  initial={{ opacity: 0, scale: 0.94, x: -8 }}
+                                  animate={{ opacity: 1, scale: 1, x: 0 }}
+                                  exit={{ opacity: 0, scale: 0.94, x: -8 }}
+                                >
+                                  {renderMessageActions(msg, isMe)}
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        )}
+                        </div>
                         
                         <div className="flex items-center space-x-1 mt-1">
                           <span className="text-[11px] text-[#6B6B6B] font-semibold">{msg.time}</span>
@@ -1000,10 +1492,47 @@ function MessagesContent() {
                   );
                 })}
               </AnimatePresence>
+              {typingName && activeChat && (
+                <div className="mb-2 flex items-center gap-3 pl-11 text-xs font-bold text-[#6B6B6B]">
+                  <span>{typingName.split(" ")[0]} is typing</span>
+                  <span className="ca-typing-wave"><span /><span /><span /></span>
+                </div>
+              )}
               <div ref={scrollRef} className="shrink-0 h-4" />
             </div>
 
             <div className="chat-input-area">
+            <AnimatePresence>
+              {(replyTo || editingMessage) && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 8 }}
+                  className="mx-4 mt-2 flex items-center justify-between rounded-2xl border border-[#E8E6E0] bg-[#F9F8F5] px-4 py-2"
+                >
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-[#C8922A]">
+                      {editingMessage ? "Editing message" : `Replying to ${replyTo.senderName}`}
+                    </p>
+                    <p className="truncate text-xs font-bold text-[#1A1A1A]">
+                      {editingMessage ? editingMessage.text : replyTo.text}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReplyTo(null);
+                      setEditingMessage(null);
+                      if (editingMessage) setInput("");
+                    }}
+                    className="ml-3 rounded-full p-1.5 text-[#6B6B6B] hover:bg-[#F3F2EE] hover:text-[#1A1A1A]"
+                    aria-label="Cancel"
+                  >
+                    <X size={16} />
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
             {/* Selected Media Preview */}
             <AnimatePresence>
               {selectedMedia && (
@@ -1016,6 +1545,11 @@ function MessagesContent() {
                   >
                     {mediaType === 'video' ? (
                       <video src={selectedMedia} className="w-full h-full object-cover" />
+                    ) : mediaType === 'file' ? (
+                      <div className="flex h-24 w-32 flex-col items-center justify-center gap-2 bg-[#F3F2EE] p-3 text-center">
+                        <FileText size={28} className="text-[#C8922A]" />
+                        <span className="line-clamp-1 text-[10px] font-black text-[#1A1A1A]">{selectedFileName || "Document"}</span>
+                      </div>
                     ) : (
                       <img src={selectedMedia} className="w-full h-full object-cover" alt="Preview" />
                     )}
@@ -1029,28 +1563,6 @@ function MessagesContent() {
                 </div>
               )}
             </AnimatePresence>
-
-            {/* Quick Reply Pills */}
-            <div className="h-11 shrink-0 px-4 py-1.5 overflow-x-auto no-scrollbar flex items-center space-x-2 bg-transparent z-10 border-t border-[#E8E6E0]">
-              {[
-                { text: "Sup?", icon: <Zap size={12} className="text-yellow-400" /> },
-                { text: "Let's meet!", icon: <Users size={12} className="text-[#C8922A]" /> },
-                { text: "Class?", icon: <TrendingUp size={12} className="text-[#C8922A]" /> },
-                { text: "Exam check", icon: <TrendingUp size={12} className="text-blue-400" /> },
-                { text: "Canteen?", icon: <Flame size={12} className="text-orange-400" /> }
-              ].map(pill => (
-                <motion.button
-                  key={pill.text}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setInput(pill.text)}
-                  className="whitespace-nowrap px-3 py-1.5 bg-[#F3F2EE] hover:bg-[#F3F2EE] rounded-full text-[10px] font-bold text-[#888888]5 hover:text-[#1A1A1A] transition-all border border-[#E8E6E0] flex items-center space-x-1.5 shrink-0"
-                >
-                  {pill.icon}
-                  <span>{pill.text}</span>
-                </motion.button>
-              ))}
-            </div>
 
             {/* Message Input */}
             <div className="relative z-20 flex min-h-[60px] w-full shrink-0 items-center justify-between border-t border-[#E8E6E0] bg-[#FAFAF8] px-3 py-2.5 sm:px-4">
@@ -1102,7 +1614,7 @@ function MessagesContent() {
                 {/* Input Field */}
                 <input
                   value={input}
-                  onChange={e => setInput(e.target.value)}
+                  onChange={e => handleInputChange(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && sendMessage()}
                   type="text"
                   placeholder="Share a campus moment..."
@@ -1132,7 +1644,7 @@ function MessagesContent() {
                   initial={{ opacity: 0, y: 10, scale: 0.9 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                  className="absolute bottom-16 left-3 z-50 w-[min(14rem,calc(100vw-1.5rem))] overflow-hidden rounded-[1.5rem] border border-[#E8E6E0] bg-[#16161D] shadow-2xl sm:left-4 sm:w-56"
+                  className="absolute bottom-16 left-3 z-50 w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-[1.5rem] border border-[#E8E6E0] bg-white text-[#1A1A1A] shadow-2xl sm:left-4 sm:w-64"
                 >
                   <button 
                     onClick={() => { setShowAttachments(false); fileInputRef.current?.click(); }}
@@ -1141,20 +1653,33 @@ function MessagesContent() {
                     <div className="bg-[#C8922A]/10 p-2.5 rounded-xl text-[#C8922A] group-hover:scale-110 transition-transform">
                       <ImageIcon size={20} />
                     </div>
-                    <span className="text-sm font-bold text-[#4A4A4A]">Gallery</span>
+                    <span className="text-sm font-bold text-[#1A1A1A]">Gallery</span>
                   </button>
                   <button 
+                    onClick={() => { setShowAttachments(false); documentInputRef.current?.click(); }}
                     className="w-full flex items-center space-x-4 px-6 py-4 hover:bg-[#F3F2EE] transition-all text-left group border-t border-[#E8E6E0]"
                   >
                     <div className="bg-[#C8922A]/10 p-2.5 rounded-xl text-[#C8922A] group-hover:scale-110 transition-transform">
-                      <Plus size={20} />
+                      <FileText size={20} />
                     </div>
-                    <span className="text-sm font-bold text-[#4A4A4A]">Documents</span>
+                    <span className="text-sm font-bold text-[#1A1A1A]">Documents</span>
                   </button>
+                  {activeChat.type === "group" && (
+                    <button 
+                      onClick={() => { setShowAttachments(false); setShowPollModal(true); }}
+                      className="w-full flex items-center space-x-4 px-6 py-4 hover:bg-[#F3F2EE] transition-all text-left group border-t border-[#E8E6E0]"
+                    >
+                      <div className="bg-[#C8922A]/10 p-2.5 rounded-xl text-[#C8922A] group-hover:scale-110 transition-transform">
+                        <BarChart3 size={20} />
+                      </div>
+                      <span className="text-sm font-bold text-[#1A1A1A]">Poll</span>
+                    </button>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
             <input type="file" ref={fileInputRef} accept="image/*,video/*" className="hidden" onChange={handleMediaSelect} />
+            <input type="file" ref={documentInputRef} className="hidden" onChange={(e) => handleMediaSelect(e, 'file')} />
             </div>
           </>
         ) : (
@@ -1182,6 +1707,75 @@ function MessagesContent() {
         )}
       </div>
 
+      {/* --- POLL MODAL --- */}
+      <AnimatePresence>
+        {showPollModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-3 backdrop-blur-sm sm:items-center sm:p-4"
+            onClick={() => setShowPollModal(false)}
+          >
+            <motion.div 
+              initial={{ y: 80, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 80, opacity: 0 }}
+              className="w-full max-w-md overflow-hidden rounded-[1.75rem] border border-[#E8E6E0] bg-white shadow-2xl sm:rounded-[2rem]"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b border-[#E8E6E0] bg-[#F9F8F5] p-5">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-2xl bg-[#C8922A]/10 p-3 text-[#C8922A]">
+                    <BarChart3 size={20} />
+                  </div>
+                  <h3 className="text-lg font-black text-[#1A1A1A]">Create Poll</h3>
+                </div>
+                <button onClick={() => setShowPollModal(false)} className="rounded-full p-2 text-[#6B6B6B] hover:bg-[#F3F2EE]">
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="space-y-4 p-5">
+                <input
+                  value={pollQuestion}
+                  onChange={e => setPollQuestion(e.target.value)}
+                  placeholder="Ask a question"
+                  className="w-full rounded-2xl border border-[#E8E6E0] bg-[#FAFAF8] p-4 text-sm font-bold text-[#1A1A1A] outline-none focus:border-[#C8922A]"
+                />
+                <div className="space-y-2">
+                  {pollOptions.map((option, idx) => (
+                    <input
+                      key={idx}
+                      value={option}
+                      onChange={e => setPollOptions(prev => prev.map((item, i) => i === idx ? e.target.value : item))}
+                      placeholder={`Option ${idx + 1}`}
+                      className="w-full rounded-2xl border border-[#E8E6E0] bg-[#FAFAF8] p-3 text-sm font-bold text-[#1A1A1A] outline-none focus:border-[#C8922A]"
+                    />
+                  ))}
+                </div>
+                {pollOptions.length < 6 && (
+                  <button
+                    type="button"
+                    onClick={() => setPollOptions(prev => [...prev, ""])}
+                    className="text-xs font-black uppercase tracking-widest text-[#C8922A]"
+                  >
+                    Add option
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={createPollMessage}
+                  disabled={!pollQuestion.trim() || pollOptions.filter(option => option.trim()).length < 2 || isSending}
+                  className="w-full rounded-2xl bg-[#D4A843] py-4 text-sm font-black text-[#1A1A1A] shadow-lg disabled:opacity-40"
+                >
+                  Send Poll
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* --- CREATE GROUP MODAL --- */}
       <AnimatePresence>
         {showCreateGroup && (
@@ -1196,7 +1790,7 @@ function MessagesContent() {
               initial={{ y: 100 }}
               animate={{ y: 0 }}
               exit={{ y: 100 }}
-              className="flex max-h-[88dvh] w-full max-w-md flex-col overflow-hidden rounded-[1.75rem] border border-[#E8E6E0] bg-[#111118] sm:max-h-[85vh] sm:rounded-[2.5rem]"
+              className="flex max-h-[88dvh] w-full max-w-md flex-col overflow-hidden rounded-[1.75rem] border border-[#E8E6E0] bg-white shadow-2xl sm:max-h-[85vh] sm:rounded-[2.5rem]"
               onClick={e => e.stopPropagation()}
             >
               <div className="p-6 border-b border-[#E8E6E0] flex items-center justify-between shrink-0">
@@ -1219,7 +1813,12 @@ function MessagesContent() {
                     <span>Select Members ({selectedMembers.length})</span>
                   </label>
                   <div className="space-y-2 max-h-[40vh] overflow-y-auto custom-scrollbar bg-[#F3F2EE] p-2 rounded-2xl border border-[#E8E6E0]">
-                    {connections.length === 0 ? (
+                    {loadingConnections ? (
+                      <div className="flex items-center justify-center gap-2 py-6 text-xs font-black uppercase tracking-widest text-[#6B6B6B]">
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#E8E6E0] border-t-[#C8922A]" />
+                        Loading friends
+                      </div>
+                    ) : connections.length === 0 ? (
                       <p className="text-[#6B6B6B] text-xs text-center py-4 font-medium italic">No connections found. Follow people first!</p>
                     ) : (
                       connections.map(c => (
@@ -1231,7 +1830,7 @@ function MessagesContent() {
                             selectedMembers.includes(c._id) ? "bg-[#C8922A]/10 border-purple-500/50" : "bg-[#F3F2EE] border-transparent hover:bg-[#F3F2EE]"
                           )}
                         >
-                          <img src={c.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=7C3AED&color=fff`} className="w-10 h-10 rounded-full object-cover" />
+                          <img src={getAvatarSrc(c.profilePic, c.name, c._id || c.id)} className="w-10 h-10 rounded-full object-cover" />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-bold text-[#1A1A1A] truncate">{c.name}</p>
                             <p className="text-[10px] text-[#6B6B6B] truncate">{c.university}</p>
@@ -1282,7 +1881,12 @@ function MessagesContent() {
                 <button onClick={() => setShowAddMemberModal(false)} className="p-2 hover:bg-[#F3F2EE] rounded-full transition-all text-[#6B6B6B]"><X size={20} /></button>
               </div>
               <div className="max-h-[60vh] overflow-y-auto p-4 space-y-2 custom-scrollbar">
-                {connections.length === 0 ? (
+                {loadingConnections ? (
+                  <div className="flex items-center justify-center gap-2 py-10 text-[10px] font-black uppercase tracking-widest text-[#888888]">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#E8E6E0] border-t-[#C8922A]" />
+                    Loading friends
+                  </div>
+                ) : connections.length === 0 ? (
                   <div className="py-10 text-center text-[#888888] font-bold uppercase tracking-widest text-[10px]">No friends found</div>
                 ) : (
                   connections
@@ -1291,7 +1895,7 @@ function MessagesContent() {
                       <div key={i} className="flex items-center justify-between p-3 hover:bg-[#F3F2EE] rounded-2xl transition-all border border-transparent hover:border-[#E8E6E0] group">
                         <div className="flex items-center space-x-4">
                           <img 
-                            src={f.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(f.name)}&background=7C3AED&color=fff`} 
+                            src={getAvatarSrc(f.profilePic, f.name, f._id || f.id)} 
                             className="w-11 h-11 rounded-full object-cover border border-[#E8E6E0]" 
                           />
                           <div>

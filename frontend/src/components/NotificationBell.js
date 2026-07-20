@@ -5,6 +5,7 @@ import { Bell, Heart, MessageSquare, UserPlus, Sparkles, Zap } from 'lucide-reac
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import VerifiedBadge from './VerifiedBadge';
+import { getAvatarSrc } from '@/utils/defaultAvatars';
 
 export default function NotificationBell() {
   const [notifications, setNotifications] = useState([]);
@@ -40,6 +41,7 @@ export default function NotificationBell() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 10000);
     return () => clearInterval(interval);
@@ -90,7 +92,7 @@ export default function NotificationBell() {
     <div className="relative" ref={dropdownRef}>
       <button 
         onClick={toggleDropdown}
-        className="relative p-2.5 bg-[#F9F8F5] border border-[#E8E6E0] rounded-2xl hover:bg-[#F3F2EE] transition-all border border-[#E8E6E0] active:scale-90"
+        className="relative rounded-2xl border border-[#E8E6E0] bg-white p-2.5 text-[#6B6B6B] shadow-sm transition-all hover:bg-[#FFF8EC] active:scale-90"
       >
         <motion.div
           animate={vibrate ? { 
@@ -114,7 +116,7 @@ export default function NotificationBell() {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0 }}
-              className="absolute -top-1 -right-1 w-5 h-5 gradient-bg text-[#1A1A1A] text-[10px] font-black rounded-full flex items-center justify-center border-2 border-[#0A0A0F] shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)]"
+              className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-amber-400 px-1 text-[10px] font-black text-[#1A1A1A] shadow-lg shadow-amber-300/30"
             >
               {unreadCount > 9 ? '9+' : unreadCount}
             </motion.span>
@@ -128,7 +130,7 @@ export default function NotificationBell() {
             initial={{ opacity: 0, y: 15, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 15, scale: 0.95 }}
-            className="app-panel absolute right-0 z-[100] mt-4 w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-[1.5rem]"
+            className="absolute right-0 z-[100] mt-4 w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-[1.5rem] border border-[#E8E6E0] bg-white text-[#1A1A1A] shadow-2xl shadow-black/10"
           >
             <div className="p-5 border-b border-[#E8E6E0] flex justify-between items-center bg-[#F3F2EE]">
               <h3 className="text-xs font-black text-[#1A1A1A] uppercase tracking-widest">Recent Activity</h3>
@@ -151,7 +153,7 @@ export default function NotificationBell() {
                    <p className="text-[10px] text-[#888888] font-black uppercase tracking-widest">No activity found</p>
                 </div>
               ) : (
-                <div className="divide-y divide-white/5">
+                <div className="divide-y divide-[#F0ECE5]">
                   {notifications.map((notif, i) => (
                     <motion.div 
                       key={notif._id}
@@ -160,14 +162,15 @@ export default function NotificationBell() {
                       transition={{ delay: i * 0.05 }}
                       className={clsx(
                         "p-4 flex items-start space-x-3 hover:bg-[#F3F2EE] transition-all",
-                        !notif.isRead && "bg-purple-500/[0.03]"
+                        !notif.isRead && "bg-amber-50/70"
                       )}
                     >
                       <div className="relative flex-shrink-0">
-                        <div className="w-10 h-10 rounded-2xl p-[1.5px] gradient-bg">
+                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-300 to-orange-300 p-[1.5px]">
                           <img 
-                            src={notif.sender?.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(notif.sender?.name || 'U')}&background=7C3AED&color=fff`}
-                            className="w-full h-full rounded-[0.9rem] object-cover border-2 border-[#0A0A0F]"
+                            src={getAvatarSrc(notif.sender?.profilePic, notif.sender?.name, notif.sender?._id || notif.sender?.id)}
+                            className="h-full w-full rounded-[0.9rem] border-2 border-white object-cover"
+                            alt={notif.sender?.name || "User"}
                           />
                         </div>
                         <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-[#FAFAF8] rounded-lg border border-[#E8E6E0] flex items-center justify-center shadow-lg">

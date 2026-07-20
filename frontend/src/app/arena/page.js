@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
+import { getAvatarSrc, getDefaultAvatar } from "@/utils/defaultAvatars";
 
 // ─── Tab Config (UI only — no fake data) ─────────────────────────────────────
 const TABS = [
@@ -109,9 +110,7 @@ function LeaderboardRow({ college, rank, cfg, onChallenge, challenged }) {
 
 // ─── Player Card ──────────────────────────────────────────────────────────────
 function PlayerCard({ player, cfg, onClick }) {
-  const avatar =
-    player.profilePic ||
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(player.name || "?")}&background=1a1a2e&color=fff`;
+  const avatar = getAvatarSrc(player.profilePic, player.name, player.id || player._id);
 
   // Show real sport/interest from DB — never fabricate
   const badge =
@@ -130,7 +129,14 @@ function PlayerCard({ player, cfg, onClick }) {
         className="w-14 h-14 rounded-2xl overflow-hidden border-2 shrink-0"
         style={{ borderColor: `${cfg.color}55` }}
       >
-        <img src={avatar} alt={player.name} className="w-full h-full object-cover" />
+        <img 
+          src={avatar}
+          alt={player.name}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = getDefaultAvatar(player.name, player.id || player._id);
+          }} />
       </div>
       <div className="text-center w-full min-w-0">
         <p className="text-[11px] font-black text-[#1A1A1A] truncate">{player.name}</p>

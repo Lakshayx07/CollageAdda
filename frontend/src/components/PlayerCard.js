@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import clsx from 'clsx';
 import { Target, Brain, Activity, Handshake, MessageCircle, Zap, Shield, Crown, Swords, Users, Search, Play } from 'lucide-react';
+import { getAvatarSrc, getDefaultAvatar } from "@/utils/defaultAvatars";
 
 export default function PlayerCard({ player }) {
   const [isFlipped, setIsFlipped] = useState(false);
@@ -75,7 +76,15 @@ export default function PlayerCard({ player }) {
                 "w-24 h-24 rounded-full p-1 bg-gradient-to-b shadow-2xl relative z-10",
                 isEsports ? "from-[#D4A843] to-[#D4A843] shadow-cyan-500/50" : "from-orange-400 to-red-600 shadow-orange-500/50"
               )}>
-                <img src={player.photo_url || "https://ui-avatars.com/api/?name=Player"} alt={player.name} className="w-full h-full rounded-full object-cover border-2 border-[#050508]" />
+                <img 
+                  src={getAvatarSrc(player.photo_url, player.name, player.id)} 
+                  alt={player.name} 
+                  className="w-full h-full rounded-full object-cover border-2 border-[#050508]" 
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = getDefaultAvatar(player.name, player.id);
+                  }}
+                />
               </div>
               <h2 className="text-[#1A1A1A] font-black text-xl uppercase tracking-wider mt-4 text-center drop-shadow-md">{player.name}</h2>
               <p className="text-xs text-[#6B6B6B] font-bold tracking-widest">@{player.username}</p>

@@ -322,12 +322,14 @@ export default function HustleHubPage() {
       {/* Post Modal Form */}
       <AnimatePresence>
         {showPostModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-0 pb-0 pt-10 sm:p-4 bg-black/50 backdrop-blur-sm" onClick={() => { if(typeof setShowPostModal !== 'undefined') setShowPostModal(false); if(typeof setSelectedItem !== 'undefined') setSelectedItem(null); }}>
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="app-panel rounded-[1.75rem] w-full max-w-md overflow-hidden flex flex-col"
+              initial={{ opacity: 0, y: "100%" }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="app-panel rounded-t-[1.75rem] rounded-b-none sm:rounded-[1.75rem] w-full max-w-md overflow-hidden flex flex-col mt-auto sm:mt-0"
             >
               <div className="p-5 border-b border-[#E8E6E0] flex justify-between items-center bg-[#F3F2EE]">
                 <h3 className="font-black uppercase tracking-widest text-sm text-[#1A1A1A] flex items-center">
@@ -524,12 +526,14 @@ export default function HustleHubPage() {
       {/* Listing Detail Modal */}
       <AnimatePresence>
         {selectedItem && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-0 pb-0 pt-10 sm:p-4 bg-black/50 backdrop-blur-sm" onClick={() => setSelectedItem(null)}>
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="app-panel rounded-[1.75rem] w-full max-w-md overflow-hidden flex flex-col"
+              initial={{ opacity: 0, y: "100%" }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="app-panel rounded-t-[1.75rem] rounded-b-none sm:rounded-[1.75rem] w-full max-w-md overflow-hidden flex flex-col mt-auto sm:mt-0"
             >
               <div className="p-5 border-b border-[#E8E6E0] flex justify-between items-center bg-[#F3F2EE]">
                 <h3 className="font-black uppercase tracking-widest text-xs text-[#6B6B6B]">

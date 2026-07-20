@@ -39,6 +39,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useApiQuery } from "../../utils/useApiQuery";
 import { useQueryClient } from "@tanstack/react-query";
+import { getAvatarSrc } from "@/utils/defaultAvatars";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import PlayerCard from "@/components/PlayerCard";
 import PlayerCardForm from "@/components/PlayerCardForm";
@@ -1086,7 +1087,7 @@ function ExploreContent() {
                         <div key={post._id} className="bg-surface border border-border/50 rounded-2xl p-4 space-y-3">
                           <div className="flex items-center space-x-3">
                             <div className="w-10 h-10 rounded-full overflow-hidden border border-border/50 bg-muted">
-                              <img src={post.author?.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author?.name || 'U')}&background=6366f1&color=fff`} className="w-full h-full object-cover" alt="" />
+                              <img src={getAvatarSrc(post.author?.profilePic, post.author?.name, post.author?._id || post.author?.id)} className="w-full h-full object-cover" alt="" />
                             </div>
                             <div className="flex-1">
                               <p className="text-sm font-bold text-foreground leading-none flex items-center">
@@ -1303,7 +1304,7 @@ function ExploreContent() {
                               >
                                 {/* Student Profile Photo Area - always shown */}
                                 <div className="relative w-full bg-muted pointer-events-none" style={{ height: isTop ? '50%' : '100%' }}>
-                                  <img src={student.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=6366f1&color=fff`} alt={student.name} className="w-full h-full object-cover" />
+                                  <img src={getAvatarSrc(student.profilePic, student.name, student._id || student.id)} alt={student.name} className="w-full h-full object-cover" />
                                   {!isTop && <div className="absolute inset-0 bg-black/30" />}
                                 </div>
 
@@ -1374,7 +1375,7 @@ function ExploreContent() {
                           >
                             <div className="flex items-center space-x-4">
                               <div className="w-14 h-14 rounded-2xl overflow-hidden bg-muted flex-shrink-0">
-                                <img src={student.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=6366f1&color=fff`} className="w-full h-full object-cover" alt="" />
+                                <img src={getAvatarSrc(student.profilePic, student.name, student._id || student.id)} className="w-full h-full object-cover" alt="" />
                               </div>
                               <div className="min-w-0">
                                 <h4 className="font-bold text-foreground text-sm flex items-center gap-1.5 truncate">

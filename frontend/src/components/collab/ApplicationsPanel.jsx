@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/utils/supabase";
 import { Loader, Inbox, Star, X, Linkedin, Github, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { getAvatarSrc, getDefaultAvatar } from "@/utils/defaultAvatars";
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -33,17 +34,15 @@ function ApplicationCard({ application, onImpressive, onPass }) {
       <div className="p-4 flex items-start gap-3 border-b border-[#E8E6E0]">
         {/* Avatar */}
         <div className="shrink-0">
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt={name}
-              className="w-10 h-10 rounded-full object-cover border border-[#E8E6E0]"
-            />
-          ) : (
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-600 to-[#D4A843] flex items-center justify-center text-sm font-black text-[#1A1A1A]">
-              {initials}
-            </div>
-          )}
+          <img
+            src={getAvatarSrc(avatarUrl, name, application.user_id)}
+            alt={name}
+            className="w-10 h-10 rounded-full object-cover border border-[#E8E6E0]"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = getDefaultAvatar(name, application.user_id);
+            }}
+          />
         </div>
 
         {/* Name + info */}
