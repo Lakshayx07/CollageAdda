@@ -44,6 +44,7 @@ import VerifiedBadge from "@/components/VerifiedBadge";
 import PlayerCard from "@/components/PlayerCard";
 import PlayerCardForm from "@/components/PlayerCardForm";
 import clsx from "clsx";
+import { getExploreColleges, getExploreCollegePool } from "@/config/exploreColleges";
 
 
 export default function ExplorePage() {
@@ -400,39 +401,34 @@ function ExploreContent() {
 
   // ── Dynamic city list derived from all colleges ──────────────────────────
   // Excludes placeholder / TBD values so they never pollute the dropdown
+  const exploreCollegePool = useMemo(
+    () => getExploreCollegePool(colleges),
+    [colleges]
+  );
+
   const cityOptions = useMemo(() => {
     const cities = [
       ...new Set(
-        colleges
+        exploreCollegePool
           .map(c => c.location)
           .filter(loc => loc && loc !== "Location TBD" && !loc.toLowerCase().startsWith("tbd"))
       )
     ].sort((a, b) => a.localeCompare(b));
     return ["All", ...cities];
-  }, [colleges]);
+  }, [exploreCollegePool]);
 
-  // ── Filtered + sorted colleges ───────────────────────────────────────────
-  const filteredColleges = useMemo(() => {
-    let result = colleges.filter(c => {
-      // Search bar
-      if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false;
-      // City filter
-      if (filterCity !== "All" && c.location !== filterCity) return false;
-      // Category filter
-      if (filterCategory !== "All" && (c.category || "General") !== filterCategory) return false;
-      // Stream filter (derived from category)
-      if (filterStream !== "All") {
-        const collegeStream = STREAM_MAP[c.category || "General"] || "Engineering";
-        if (collegeStream !== filterStream) return false;
-      }
-      return true;
-    });
-    // Always sort A→Z, case-insensitive
-    result = [...result].sort((a, b) =>
-      a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
-    );
-    return result;
-  }, [search, colleges, filterCity, filterCategory, filterStream]);
+  // ── Filtered curated colleges (max 20, priority order) ───────────────────
+  const filteredColleges = useMemo(
+    () =>
+      getExploreColleges(colleges, {
+        search,
+        filterCity,
+        filterCategory,
+        filterStream,
+        streamMap: STREAM_MAP,
+      }),
+    [search, colleges, filterCity, filterCategory, filterStream]
+  );
 
   const hasActiveFilters = filterCity !== "All" || filterCategory !== "All" || filterStream !== "All";
 
