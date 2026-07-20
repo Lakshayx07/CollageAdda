@@ -1140,23 +1140,27 @@ function ExploreContent() {
             </div>
 
             {/* Tabs Navigation */}
-            <div className="mt-8 px-4 flex border-b border-border/50">
+            <div className="mt-6 px-4 flex border-b border-[#E8E6E0]">
               {["posts", "students", "memories"].map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
                   className={clsx(
-                    "flex-1 py-3 text-sm font-bold capitalize transition-all relative",
-                    activeTab === tab ? "text-foreground" : "text-muted"
+                    "flex-1 py-3.5 text-sm font-bold capitalize tracking-wide transition-all relative",
+                    activeTab === tab ? "text-[#1A1A1A]" : "text-[#888888] hover:text-[#4A4A4A]"
                   )}
-                  style={activeTab === tab ? { color: selectedCollege.accent } : {}}
+                  style={
+                    activeTab === tab
+                      ? { color: selectedCollege.accent || "#C8922A" }
+                      : {}
+                  }
                 >
                   {tab}
                   {activeTab === tab && (
                     <motion.div
                       layoutId="activeTab"
-                      className="absolute bottom-0 left-0 right-0 h-0.5"
-                      style={{ backgroundColor: selectedCollege.accent }}
+                      className="absolute bottom-0 left-2 right-2 h-[3px] rounded-full"
+                      style={{ backgroundColor: selectedCollege.accent || "#C8922A" }}
                     />
                   )}
                 </button>
@@ -1175,7 +1179,15 @@ function ExploreContent() {
                     className="space-y-4"
                   >
                     {!selectedCollege.postsData || selectedCollege.postsData.length === 0 ? (
-                      <div className="text-center py-10 text-[#888888]">No posts from {selectedCollege.name} yet.</div>
+                      <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+                        <div className="w-14 h-14 rounded-2xl bg-[#F9F8F5] border border-[#E8E6E0] flex items-center justify-center mb-4">
+                          <MessageSquare size={24} className="text-[#C8922A]" />
+                        </div>
+                        <p className="text-sm font-semibold text-[#1A1A1A]">No posts yet</p>
+                        <p className="text-xs text-[#888888] mt-1 max-w-xs">
+                          Be the first to share something from {selectedCollege.name}.
+                        </p>
+                      </div>
                     ) : (
                       selectedCollege.postsData.map(post => {
                         const isLiked = currentUserId && post.likes?.some(
@@ -1577,20 +1589,42 @@ function ExploreContent() {
                     exit={{ opacity: 0, y: -10 }}
                     className="w-full"
                   >
-                    {selectedCollege.postsData && selectedCollege.postsData.filter(p => p.image).length > 0 ? (
-                      <div className="grid grid-cols-3 gap-1 md:gap-2 p-2">
-                        {selectedCollege.postsData.filter(p => p.image).map((post, i) => (
-                          <div key={post._id || i} className="aspect-square relative group overflow-hidden bg-[#F3F2EE] rounded-lg">
-                            <img src={post.image} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                    {(() => {
+                      const memoryPosts = (selectedCollege.postsData || []).filter(
+                        (p) =>
+                          (p.mediaUrl || p.image) &&
+                          p.mediaType !== "video"
+                      );
+                      if (memoryPosts.length === 0) {
+                        return (
+                          <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+                            <div className="w-14 h-14 rounded-2xl bg-[#F9F8F5] border border-[#E8E6E0] flex items-center justify-center mb-4">
+                              <Bookmark size={24} className="text-[#C8922A]" />
+                            </div>
+                            <p className="text-sm font-semibold text-[#1A1A1A]">No memories yet</p>
+                            <p className="text-xs text-[#888888] mt-1 max-w-xs">
+                              Photo posts from this campus will show up here.
+                            </p>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-20 text-muted">
-                        <Bookmark size={48} className="mb-4 opacity-20" />
-                        <p>No campus memories shared yet. Be the first!</p>
-                      </div>
-                    )}
+                        );
+                      }
+                      return (
+                        <div className="grid grid-cols-3 gap-1.5 md:gap-2">
+                          {memoryPosts.map((post, i) => (
+                            <div
+                              key={post._id || i}
+                              className="aspect-square relative group overflow-hidden bg-[#F3F2EE] rounded-xl border border-[#E8E6E0]"
+                            >
+                              <img
+                                src={post.mediaUrl || post.image}
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                alt=""
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
                   </motion.div>
                 )}
               </AnimatePresence>
