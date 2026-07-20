@@ -419,20 +419,8 @@ export default function CommunityChatPage() {
           }
         }, 50);
       }
-    if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: didInitialScrollRef.current ? "smooth" : "auto" });
-      didInitialScrollRef.current = true;
     }
   }, [messages]);
-
-  useEffect(() => {
-    if (!loading && messages.length > 0 && !didInitialScrollRef.current) {
-      requestAnimationFrame(() => {
-        scrollRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
-        didInitialScrollRef.current = true;
-      });
-    }
-  }, [loading, messages.length]);
 
   const triggerJoinSparkles = () => {
     setShowJoinSparkles(true);
@@ -1319,8 +1307,9 @@ export default function CommunityChatPage() {
                 </span>
               </div>
             </div>
-          );
-        })}
+          </Fragment>
+        );
+      })}
         {Object.keys(typingUsers).length > 0 && (() => {
           const firstId = Object.keys(typingUsers)[0];
           const firstName = typingUsers[firstId];
