@@ -1026,7 +1026,7 @@ function ExploreContent() {
           >
             {/* Profile Header */}
             <div className="relative">
-              <div className="h-64 w-full bg-surface relative">
+              <div className="h-64 w-full bg-[#F3F2EE] relative overflow-hidden">
                 <img
                   src={selectedCollege.banner || COLLEGE_BANNER_FALLBACK}
                   className="w-full h-full object-cover"
@@ -1034,25 +1034,47 @@ function ExploreContent() {
                   referrerPolicy="no-referrer"
                   onError={handleBannerError}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background:
+                      "linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.45) 45%, rgba(0,0,0,0.15) 100%)",
+                  }}
+                />
 
                 {/* Back Button */}
                 <button
                   onClick={() => router.push('/explore')}
-                  className="absolute top-4 left-4 p-2 bg-black/40 backdrop-blur-md rounded-full text-[#1A1A1A] hover:bg-black/60 transition-colors z-20"
+                  className="absolute top-4 left-4 p-2.5 bg-black/45 backdrop-blur-md rounded-full text-white hover:bg-black/65 transition-colors z-20 border border-white/10"
+                  aria-label="Back to explore"
                 >
-                  <ChevronLeft size={20} className="text-white" />
+                  <ChevronLeft size={20} />
                 </button>
 
                 {/* College Info on Banner */}
-                <div className="absolute bottom-6 left-4 right-4 flex items-center space-x-4 z-10">
-                  <div className="w-16 h-16 rounded-2xl bg-[#F3F2EE] backdrop-blur-md border border-[#E8E6E0] flex items-center justify-center shadow-2xl">
-                    <Building2 size={32} className="text-[#1A1A1A]" />
+                <div className="absolute bottom-6 left-4 right-4 flex items-end space-x-4 z-10">
+                  <div className="w-16 h-16 rounded-2xl bg-white/95 backdrop-blur-md border border-white/40 flex items-center justify-center shadow-2xl shrink-0">
+                    {selectedCollege.emoji ? (
+                      <span className="text-3xl leading-none" aria-hidden>
+                        {selectedCollege.emoji}
+                      </span>
+                    ) : (
+                      <Building2 size={32} className="text-[#1A1A1A]" />
+                    )}
                   </div>
-                  <div className="flex-1">
-                    <h2 className="text-2xl font-bold text-white drop-shadow-md leading-tight">{selectedCollege.name}</h2>
-                    <p className="text-sm text-white/80 flex items-center mt-1 drop-shadow-sm">
-                      <MapPin size={14} className="mr-1" /> {selectedCollege.location}
+                  <div className="flex-1 min-w-0 pb-0.5">
+                    <h2
+                      className="text-2xl font-bold text-white leading-tight"
+                      style={{ textShadow: "0 2px 12px rgba(0,0,0,0.65)" }}
+                    >
+                      {selectedCollege.name}
+                    </h2>
+                    <p
+                      className="text-sm text-white/90 flex items-center mt-1.5"
+                      style={{ textShadow: "0 1px 6px rgba(0,0,0,0.55)" }}
+                    >
+                      <MapPin size={14} className="mr-1 shrink-0" />
+                      <span className="truncate">{selectedCollege.location}</span>
                     </p>
                   </div>
                 </div>
