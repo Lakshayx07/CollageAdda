@@ -921,6 +921,24 @@ export default function CommunityChatPage() {
     }
   };
 
+  const formatDateDivider = (isoString) => {
+    const date = new Date(isoString);
+    if (Number.isNaN(date.getTime())) return "";
+
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) return "Today";
+    if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
+
+    return date.toLocaleDateString([], {
+      day: "numeric",
+      month: "short",
+      year: date.getFullYear() === today.getFullYear() ? undefined : "numeric",
+    });
+  };
+
   const sortedMessages = [...messages].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
   const pinnedCount = messages.filter((msg) => msg.is_pinned).length;
   const typingNames = Object.values(typingUsers).slice(0, 2);
