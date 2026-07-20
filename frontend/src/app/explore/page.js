@@ -301,29 +301,40 @@ function ExploreContent() {
     }
   };
 
-  const fetchCollegeDetails = async (id) => {
-    if (!id) return;
-    setLoadingCollegeId(id);
+  const sortStudentsByFollowing = useCallback((students) => {
+    if (!Array.isArray(students) || students.length === 0) return students || [];
+    return [...students].sort((a, b) => {
+      const aFollowed = myFollowing.includes(a._id || a.id);
+      const bFollowed = myFollowing.includes(b._id || b.id);
+      if (aFollowed === bFollowed) {
+        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+      }
+      return aFollowed ? 1 : -1;
+    });
+  }, [myFollowing]);
+
+  const fetchCollegeDetails = async (id, optimisticCollege = null) => {
+    const collegeId = typeof id === "string" ? id : (id?._id || id?.id);
+    if (!collegeId) return;
+
+    setLoadingCollegeId(collegeId);
+    if (optimisticCollege) {
+      setSelectedCollege({
+        ...optimisticCollege,
+        studentsData: optimisticCollege.studentsData || [],
+        postsData: optimisticCollege.postsData || [],
+      });
+      setActiveTab("posts");
+    }
+
     try {
       const token = localStorage.getItem("collegeadda_token");
-      const res = await fetch(`${apiUrl}/api/colleges/${id}`, {
+      const res = await fetch(`${apiUrl}/api/colleges/${collegeId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
-
-        // Sort: non-connections first, existing connections last. For non-connections, newest first.
-        if (data.studentsData && data.studentsData.length > 0) {
-          data.studentsData = [...data.studentsData].sort((a, b) => {
-            const aFollowed = myFollowing.includes(a._id || a.id);
-            const bFollowed = myFollowing.includes(b._id || b.id);
-            if (aFollowed === bFollowed) {
-              return new Date(b.createdAt || 0) - new Date(a.createdAt || 0); // newest first
-            }
-            return aFollowed ? 1 : -1; // already followed → go to end
-          });
-        }
-
+        data.studentsData = sortStudentsByFollowing(data.studentsData);
         setSelectedCollege(data);
         setActiveTab("posts");
       }
@@ -337,12 +348,21 @@ function ExploreContent() {
   useEffect(() => {
     const collegeId = searchParams.get('collegeId');
     if (collegeId) {
-      fetchCollegeDetails(collegeId);
+      const listMatch = colleges.find(c => (c._id || c.id) === collegeId);
+      fetchCollegeDetails(collegeId, listMatch || null);
     } else {
       setSelectedCollege(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, myFollowing, apiUrl]);
+  }, [searchParams, apiUrl, colleges]);
+
+  // Re-sort students when following list changes — do not re-fetch college details
+  useEffect(() => {
+    setSelectedCollege((prev) => {
+      if (!prev?.studentsData?.length) return prev;
+      return { ...prev, studentsData: sortStudentsByFollowing(prev.studentsData) };
+    });
+  }, [myFollowing, sortStudentsByFollowing]);
 
   const handleSwipe = async (collegeId, direction, student) => {
     setSwipeDirection(direction);
@@ -723,7 +743,10 @@ function ExploreContent() {
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.98 }}
                   key={college._id || college.id}
-                  onClick={() => fetchCollegeDetails(college)}
+                  onClick={() => {
+                    const collegeId = college._id || college.id;
+                    router.push(`/explore?collegeId=${collegeId}`);
+                  }}
                   className="relative flex flex-col rounded-[1.5rem] overflow-hidden text-left group cursor-pointer shadow-md hover:shadow-xl transition-all duration-300"
                   style={{ height: '420px' }}
                 >
