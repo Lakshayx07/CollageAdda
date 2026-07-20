@@ -46,6 +46,15 @@ import PlayerCardForm from "@/components/PlayerCardForm";
 import clsx from "clsx";
 import { getExploreColleges, getExploreCollegePool } from "@/config/exploreColleges";
 
+const COLLEGE_BANNER_FALLBACK =
+  "https://images.unsplash.com/photo-1562774053-701939374585?w=800&q=80";
+
+const handleBannerError = (event) => {
+  const img = event.currentTarget;
+  if (img.dataset.fallbackApplied === "1") return;
+  img.dataset.fallbackApplied = "1";
+  img.src = COLLEGE_BANNER_FALLBACK;
+};
 
 export default function ExplorePage() {
   return (
@@ -720,9 +729,11 @@ function ExploreContent() {
                 >
                   {/* Full-bleed background image */}
                   <img
-                    src={college.banner}
+                    src={college.banner || COLLEGE_BANNER_FALLBACK}
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     alt={college.name}
+                    referrerPolicy="no-referrer"
+                    onError={handleBannerError}
                   />
 
                   {/* Dark gradient overlay — stronger at bottom */}
@@ -972,7 +983,13 @@ function ExploreContent() {
             {/* Profile Header */}
             <div className="relative">
               <div className="h-64 w-full bg-surface relative">
-                <img src={selectedCollege.banner} className="w-full h-full object-cover" alt="" />
+                <img
+                  src={selectedCollege.banner || COLLEGE_BANNER_FALLBACK}
+                  className="w-full h-full object-cover"
+                  alt=""
+                  referrerPolicy="no-referrer"
+                  onError={handleBannerError}
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 
                 {/* Back Button */}
