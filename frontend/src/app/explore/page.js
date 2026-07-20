@@ -56,6 +56,17 @@ const handleBannerError = (event) => {
   img.src = COLLEGE_BANNER_FALLBACK;
 };
 
+function timeAgo(dateStr) {
+  if (!dateStr) return "";
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
 export default function ExplorePage() {
   return (
     <Suspense fallback={<div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
@@ -133,6 +144,16 @@ function ExploreContent() {
     const apiIds = Array.isArray(myFollowingRaw) ? myFollowingRaw.map(u => u._id || u.id || u) : [];
     return [...new Set([...apiIds, ...localFollowingIds])];
   }, [myFollowingRaw, localFollowingIds]);
+
+  const currentUserId = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const user = JSON.parse(localStorage.getItem("collegeadda_user") || "{}");
+      return user._id || user.id || null;
+    } catch {
+      return null;
+    }
+  }, [isMounted]);
 
   const setMyFollowing = useCallback((updater) => {
     setLocalFollowingIds(prev => typeof updater === 'function' ? updater(prev) : updater);
@@ -1117,76 +1138,111 @@ function ExploreContent() {
                     className="space-y-4"
                   >
                     {!selectedCollege.postsData || selectedCollege.postsData.length === 0 ? (
-                      <div className="text-center py-10 text-muted">No posts from {selectedCollege.name} yet.</div>
+                      <div className="text-center py-10 text-[#888888]">No posts from {selectedCollege.name} yet.</div>
                     ) : (
-                      selectedCollege.postsData.map(post => (
-                        <div key={post._id} className="bg-surface border border-border/50 rounded-2xl p-4 space-y-3">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 rounded-full overflow-hidden border border-border/50 bg-muted">
-                              <img src={getAvatarSrc(post.author?.profilePic, post.author?.name, post.author?._id || post.author?.id)} className="w-full h-full object-cover" alt="" />
+                      selectedCollege.postsData.map(post => {
+                        const isLiked = currentUserId && post.likes?.some(
+                          (id) => String(id) === String(currentUserId)
+                        );
+                        return (
+                        <article
+                          key={post._id}
+                          className="bg-white border border-[#E8E6E0] rounded-3xl p-5 shadow-sm space-y-4"
+                        >
+                          <div className="flex items-center space-x-4">
+                            <div className="w-12 h-12 rounded-full p-[2px] bg-[#F3F2EE] overflow-hidden shrink-0">
+                              <img
+                                src={getAvatarSrc(post.author?.profilePic, post.author?.name, post.author?._id || post.author?.id)}
+                                className="w-full h-full object-cover rounded-full bg-white"
+                                alt=""
+                              />
                             </div>
-                            <div className="flex-1">
-                              <p className="text-sm font-bold text-foreground leading-none flex items-center">
-                                {post.author?.name || 'Student'}
-                                <VerifiedBadge user={post.author} size={14} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[15px] font-semibold text-[#1A1A1A] leading-none flex items-center gap-1.5">
+                                {post.author?.name || "Student"}
+                                <VerifiedBadge user={post.author} size={16} />
                               </p>
-                              <p className="text-[10px] text-muted mt-1">{new Date(post.createdAt).toLocaleDateString()} • {new Date(post.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                              <p className="text-sm text-[#888888] mt-1 truncate">
+                                {post.author?.university || selectedCollege.name}
+                                {post.createdAt ? ` • ${timeAgo(post.createdAt)}` : ""}
+                              </p>
                             </div>
                           </div>
-                          <p className="text-sm text-foreground/90">{post.content}</p>
+
+                          {post.content ? (
+                            <p className="text-[15px] text-[#1A1A1A] leading-relaxed whitespace-pre-wrap">
+                              {post.content}
+                            </p>
+                          ) : null}
+
                           {post.mediaUrl && (
-                            <div className="rounded-xl overflow-hidden border border-border/50 mt-2">
-                              {post.mediaType === 'video' ? (
-                                <video src={post.mediaUrl} controls className="w-full h-auto" />
+                            <div className="rounded-2xl overflow-hidden border border-[#E8E6E0] bg-[#F3F2EE]">
+                              {post.mediaType === "video" ? (
+                                <video
+                                  src={post.mediaUrl}
+                                  controls
+                                  className="w-full h-auto max-h-[420px] object-contain"
+                                />
                               ) : (
-                                <img src={post.mediaUrl} className="w-full h-auto" alt="" />
+                                <img
+                                  src={post.mediaUrl}
+                                  className="w-full h-auto max-h-[420px] object-contain mx-auto"
+                                  alt=""
+                                />
                               )}
                             </div>
                           )}
-                          <div className="flex flex-col space-y-3 pt-2">
-                            <div className="flex items-center justify-between border-t border-border/10 pt-3">
-                              <div className="flex items-center space-x-6">
+
+                          <div className="flex flex-col space-y-3">
+                            <div className="flex items-center justify-between border-t border-[#EBEBEB] pt-4">
+                              <div className="flex items-center space-x-4">
                                 <button
                                   onClick={() => toggleLike(post._id)}
                                   className={clsx(
-                                    "flex items-center space-x-1.5 transition-colors group",
-                                    post.likes?.includes(JSON.parse(localStorage.getItem('collegeadda_user') || '{}')._id) ? "text-pink-500" : "text-muted hover:text-pink-500"
+                                    "flex items-center space-x-2 p-2 rounded-full transition-colors group",
+                                    isLiked
+                                      ? "text-[#C8922A]"
+                                      : "text-[#888888] hover:text-[#C8922A]"
                                   )}
                                 >
                                   <Heart
-                                    size={20}
+                                    size={22}
                                     className={clsx(
                                       "transition-transform group-active:scale-75",
-                                      post.likes?.includes(JSON.parse(localStorage.getItem('collegeadda_user') || '{}')._id) && "fill-pink-500"
+                                      isLiked && "fill-[#C8922A]"
                                     )}
                                   />
-                                  <span className="text-xs font-bold">{post.likes?.length || 0}</span>
+                                  <span className="text-sm text-[#888888]">{post.likes?.length || 0}</span>
                                 </button>
                                 <button
                                   onClick={() => setActiveCommentPost(activeCommentPost === post._id ? null : post._id)}
-                                  className="flex items-center space-x-1.5 text-muted hover:text-blue-500 transition-colors group"
+                                  className="flex items-center space-x-2 p-2 rounded-full text-[#888888] hover:text-[#C8922A] transition-colors group"
                                 >
-                                  <MessageSquare size={20} className="transition-transform group-active:scale-75" />
-                                  <span className="text-xs font-bold">{post.comments?.length || 0}</span>
+                                  <MessageSquare size={22} className="transition-transform group-active:scale-75" />
+                                  <span className="text-sm text-[#888888]">{post.comments?.length || 0}</span>
                                 </button>
                               </div>
                               <button
-                                onClick={() => window.open(`https://wa.me/?text=Check out this post from ${selectedCollege.name} on CollageAdda: ${encodeURIComponent(post.content)}`, '_blank')}
-                                className="text-muted hover:text-green-500 transition-colors"
+                                onClick={() => window.open(`https://wa.me/?text=Check out this post from ${selectedCollege.name} on CollageAdda: ${encodeURIComponent(post.content || "")}`, "_blank")}
+                                className="p-2 rounded-full text-[#888888] hover:text-[#C8922A] transition-colors"
                               >
                                 <Share2 size={20} />
                               </button>
                             </div>
 
-                            {/* Comment Section */}
                             {activeCommentPost === post._id && (
-                              <div className="space-y-3 animate-fade-in">
+                              <div className="space-y-3 border-t border-[#EBEBEB] pt-4">
                                 {post.comments?.length > 0 && (
-                                  <div className="bg-surface-hover/50 rounded-xl p-3 space-y-2 max-h-40 overflow-y-auto">
+                                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                                     {post.comments.map((comment, i) => (
-                                      <div key={i} className="flex space-x-2 text-xs">
-                                        <span className="font-bold text-foreground">{comment.user?.name || "Student"}:</span>
-                                        <span className="text-muted">{comment.text}</span>
+                                      <div
+                                        key={i}
+                                        className="flex space-x-2 text-sm bg-[#F9F8F5] p-3 rounded-2xl"
+                                      >
+                                        <span className="font-semibold text-[#1A1A1A] shrink-0">
+                                          {comment.user?.name || "Student"}
+                                        </span>
+                                        <span className="text-[#6B6B6B]">{comment.text}</span>
                                       </div>
                                     ))}
                                   </div>
@@ -1197,11 +1253,11 @@ function ExploreContent() {
                                     onChange={e => setCommentInputs(prev => ({ ...prev, [post._id]: e.target.value }))}
                                     onKeyPress={e => e.key === "Enter" && handleComment(post._id)}
                                     placeholder="Add a comment..."
-                                    className="flex-1 bg-surface-hover border border-border/30 rounded-full px-4 py-2 text-xs text-foreground focus:outline-none focus:border-primary transition-colors"
+                                    className="flex-1 bg-[#F9F8F5] border border-[#E8E6E0] rounded-full px-4 py-2.5 text-sm text-[#1A1A1A] placeholder:text-[#888888] focus:outline-none focus:border-[#C8922A]/50 transition-colors"
                                   />
                                   <button
                                     onClick={() => handleComment(post._id)}
-                                    className="bg-primary text-[#1A1A1A] p-2 rounded-full hover:scale-105 active:scale-95 transition-all shadow-md shadow-primary/20"
+                                    className="bg-[#C8922A] text-white p-2.5 rounded-full hover:scale-105 active:scale-95 transition-all shadow-md shadow-[#C8922A]/20"
                                   >
                                     <Send size={14} />
                                   </button>
@@ -1209,8 +1265,9 @@ function ExploreContent() {
                               </div>
                             )}
                           </div>
-                        </div>
-                      ))
+                        </article>
+                        );
+                      })
                     )}
                   </motion.div>
                 )}
