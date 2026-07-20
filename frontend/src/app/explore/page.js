@@ -1081,30 +1081,38 @@ function ExploreContent() {
               </div>
             </div>
 
-            <div className="mt-8 px-4 flex items-center justify-between">
-              <div className="flex space-x-6 text-center">
-                <div>
-                  <p className="font-bold text-foreground">
-                    {selectedCollege.realStudentCount ?? selectedCollege.students}
-                  </p>
-                  <p className="text-[10px] text-muted uppercase">Students</p>
-                </div>
-                <div>
-                  <p className="font-bold text-foreground">
-                    {selectedCollege.realPostCount ?? selectedCollege.posts}
-                  </p>
-                  <p className="text-[10px] text-muted uppercase">Posts</p>
-                </div>
-                <div>
-                  <p className="font-bold text-foreground">{selectedCollege.departments}</p>
-                  <p className="text-[10px] text-muted uppercase">Depts</p>
-                </div>
+            <div className="mt-5 px-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-stretch gap-2 sm:gap-3">
+                {[
+                  {
+                    label: "Students",
+                    value: selectedCollege.realStudentCount ?? selectedCollege.students,
+                  },
+                  {
+                    label: "Posts",
+                    value: selectedCollege.realPostCount ?? selectedCollege.posts,
+                  },
+                  {
+                    label: "Depts",
+                    value: selectedCollege.departments,
+                  },
+                ].map((stat) => (
+                  <div
+                    key={stat.label}
+                    className="min-w-[72px] rounded-2xl border border-[#E8E6E0] bg-[#F9F8F5] px-3 py-2.5 text-center"
+                  >
+                    <p className="text-base font-bold text-[#1A1A1A] leading-none">{stat.value}</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-[#888888] mt-1.5">
+                      {stat.label}
+                    </p>
+                  </div>
+                ))}
               </div>
 
               {/* Follower count + Follow toggle */}
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5 bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-3 py-1.5">
-                  <Users size={13} className="text-[#6B6B6B]" />
+              <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-1.5 bg-[#F9F8F5] border border-[#E8E6E0] rounded-2xl px-3 py-2.5">
+                  <Users size={14} className="text-[#888888]" />
                   <span className="text-sm font-bold text-[#1A1A1A]">
                     {selectedCollege.followersCount ?? 0}
                   </span>
@@ -1112,14 +1120,21 @@ function ExploreContent() {
                 <button
                   onClick={() => toggleFollow(selectedCollege._id || selectedCollege.id)}
                   className={clsx(
-                    "px-6 py-2 rounded-xl text-sm font-bold transition-all active:scale-95",
+                    "px-5 py-2.5 rounded-2xl text-sm font-bold transition-all active:scale-95",
                     followed[selectedCollege._id || selectedCollege.id]
                       ? "bg-[#F3F2EE] text-[#6B6B6B] border border-[#E8E6E0]"
-                      : "text-white shadow-lg"
+                      : "text-white shadow-md"
                   )}
-                  style={!followed[selectedCollege._id || selectedCollege.id] ? { backgroundColor: selectedCollege.accent, boxShadow: `0 10px 15px -3px ${selectedCollege.accent}30` } : {}}
+                  style={
+                    !followed[selectedCollege._id || selectedCollege.id]
+                      ? {
+                          backgroundColor: selectedCollege.accent || "#C8922A",
+                          boxShadow: `0 8px 18px -4px ${selectedCollege.accent || "#C8922A"}40`,
+                        }
+                      : {}
+                  }
                 >
-                  {followed[selectedCollege._id || selectedCollege.id] ? "✓ Following" : "Follow"}
+                  {followed[selectedCollege._id || selectedCollege.id] ? "Following" : "Follow"}
                 </button>
               </div>
             </div>
