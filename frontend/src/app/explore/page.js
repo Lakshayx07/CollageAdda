@@ -339,14 +339,21 @@ function ExploreContent() {
     if (!collegeId) return;
 
     setLoadingCollegeId(collegeId);
-    if (optimisticCollege) {
-      setSelectedCollege({
+
+    // Optimistic shell only when opening a different college — never wipe loaded posts
+    setSelectedCollege((prev) => {
+      const prevId = prev?._id || prev?.id;
+      if (prevId && String(prevId) === String(collegeId)) {
+        return prev;
+      }
+      if (!optimisticCollege) return prev;
+      return {
         ...optimisticCollege,
         studentsData: optimisticCollege.studentsData || [],
         postsData: optimisticCollege.postsData || [],
-      });
-      setActiveTab("posts");
-    }
+      };
+    });
+    setActiveTab("posts");
 
     try {
       const token = localStorage.getItem("collegeadda_token");
@@ -362,20 +369,25 @@ function ExploreContent() {
     } catch (err) {
       console.error("Error fetching college details:", err);
     } finally {
-      setLoadingCollegeId(null);
+      setLoadingCollegeId((current) =>
+        String(current) === String(collegeId) ? null : current
+      );
     }
   };
 
+  const collegeIdParam = searchParams.get("collegeId");
+
   useEffect(() => {
-    const collegeId = searchParams.get('collegeId');
-    if (collegeId) {
-      const listMatch = colleges.find(c => (c._id || c.id) === collegeId);
-      fetchCollegeDetails(collegeId, listMatch || null);
+    if (collegeIdParam) {
+      const listMatch =
+        colleges.find((c) => (c._id || c.id) === collegeIdParam) || null;
+      fetchCollegeDetails(collegeIdParam, listMatch);
     } else {
       setSelectedCollege(null);
     }
+    // Only re-fetch when the URL college changes — not when colleges list refetches
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, apiUrl, colleges]);
+  }, [collegeIdParam, apiUrl]);
 
   // Re-sort students when following list changes — do not re-fetch college details
   useEffect(() => {
@@ -1178,7 +1190,13 @@ function ExploreContent() {
                     exit={{ opacity: 0, y: -10 }}
                     className="space-y-4"
                   >
-                    {!selectedCollege.postsData || selectedCollege.postsData.length === 0 ? (
+                    {(!selectedCollege.postsData || selectedCollege.postsData.length === 0) &&
+                    loadingCollegeId === (selectedCollege._id || selectedCollege.id) ? (
+                      <div className="flex flex-col items-center justify-center py-16">
+                        <Loader2 className="h-8 w-8 animate-spin text-[#C8922A]" />
+                        <p className="text-xs text-[#888888] mt-3 font-semibold">Loading posts…</p>
+                      </div>
+                    ) : !selectedCollege.postsData || selectedCollege.postsData.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
                         <div className="w-14 h-14 rounded-2xl bg-[#F9F8F5] border border-[#E8E6E0] flex items-center justify-center mb-4">
                           <MessageSquare size={24} className="text-[#C8922A]" />
