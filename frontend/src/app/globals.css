@@ -391,6 +391,19 @@ header, [class*="navbar"], [class*="topbar"], .page-header {
   color: #ffffff !important;
 }
 
+/* Explore college banner title — override global h2/[class*="text"] dark color */
+.explore-college-banner__title,
+.explore-college-banner__title * {
+  color: #ffffff !important;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.65);
+}
+
+.explore-college-banner__meta,
+.explore-college-banner__meta * {
+  color: rgba(255, 255, 255, 0.92) !important;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
+}
+
 /* Heat count always keeps its color */
 [class*="heat"] {
   color: #f97316 !important;

@@ -1123,16 +1123,10 @@ function ExploreContent() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0 pb-0.5">
-                    <h2
-                      className="text-2xl font-bold text-white leading-tight"
-                      style={{ textShadow: "0 2px 12px rgba(0,0,0,0.65)" }}
-                    >
+                    <h2 className="explore-college-banner__title text-2xl font-bold leading-tight">
                       {selectedCollege.name}
                     </h2>
-                    <p
-                      className="text-sm text-white/90 flex items-center mt-1.5"
-                      style={{ textShadow: "0 1px 6px rgba(0,0,0,0.55)" }}
-                    >
+                    <p className="explore-college-banner__meta text-sm flex items-center mt-1.5">
                       <MapPin size={14} className="mr-1 shrink-0" />
                       <span className="truncate">{selectedCollege.location}</span>
                     </p>
