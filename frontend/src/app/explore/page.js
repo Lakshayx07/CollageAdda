@@ -1146,10 +1146,6 @@ function ExploreContent() {
                     label: "Posts",
                     value: selectedCollege.realPostCount ?? selectedCollege.posts,
                   },
-                  {
-                    label: "Depts",
-                    value: selectedCollege.departments,
-                  },
                 ].map((stat) => (
                   <div
                     key={stat.label}
