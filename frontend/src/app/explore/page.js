@@ -1084,9 +1084,9 @@ function ExploreContent() {
             exit={{ opacity: 0, x: 20 }}
             className="flex-1 flex flex-col"
           >
-            {/* Profile Header */}
-            <div className="relative">
-              <div className="h-64 w-full bg-[#F3F2EE] relative overflow-hidden">
+            {/* Profile Header — framed banner with padding */}
+            <div className="relative px-3 pt-3">
+              <div className="h-56 sm:h-72 w-full bg-[#F3F2EE] relative overflow-hidden rounded-2xl shadow-sm border border-[#E8E6E0]">
                 <img
                   src={selectedCollege.banner || COLLEGE_BANNER_FALLBACK}
                   className="w-full h-full object-cover"
@@ -1105,14 +1105,14 @@ function ExploreContent() {
                 {/* Back Button */}
                 <button
                   onClick={() => router.push('/explore')}
-                  className="absolute top-4 left-4 p-2.5 bg-black/45 backdrop-blur-md rounded-full text-white hover:bg-black/65 transition-colors z-20 border border-white/10"
+                  className="absolute top-3 left-3 p-2.5 bg-black/45 backdrop-blur-md rounded-full text-white hover:bg-black/65 transition-colors z-20 border border-white/10"
                   aria-label="Back to explore"
                 >
                   <ChevronLeft size={20} />
                 </button>
 
                 {/* College Info on Banner */}
-                <div className="absolute bottom-6 left-4 right-4 flex items-end space-x-4 z-10">
+                <div className="absolute bottom-5 left-4 right-4 flex items-end space-x-4 z-10">
                   <div className="w-16 h-16 rounded-2xl bg-white/95 backdrop-blur-md border border-white/40 flex items-center justify-center shadow-2xl shrink-0">
                     {selectedCollege.emoji ? (
                       <span className="text-3xl leading-none" aria-hidden>
