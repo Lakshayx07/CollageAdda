@@ -1104,8 +1104,9 @@ function ExploreContent() {
 
                 {/* Back Button */}
                 <button
+                  type="button"
                   onClick={() => router.push('/explore')}
-                  className="absolute top-3 left-3 p-2.5 bg-black/45 backdrop-blur-md rounded-full text-white hover:bg-black/65 transition-colors z-20 border border-white/10"
+                  className="explore-college-banner__back absolute top-3 left-3 p-2.5 bg-black/45 backdrop-blur-md rounded-full hover:bg-black/65 transition-colors z-20 border border-white/10 cursor-pointer"
                   aria-label="Back to explore"
                 >
                   <ChevronLeft size={20} />
