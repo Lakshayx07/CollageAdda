@@ -37,7 +37,10 @@ export const syncLoginStreakForUser = async (userId) => {
     });
 
     if (error) {
-      console.error("Login streak RPC failed:", error);
+      console.error(
+        "Login streak RPC failed:",
+        error.message || error.code || error.details || JSON.stringify(error)
+      );
       return null;
     }
 
