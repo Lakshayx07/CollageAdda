@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Trophy, Zap, Users, Shield,
+  Trophy, Users, Shield,
   Gamepad2, Star, Flame, Activity, MapPin,
   RefreshCw, CalendarX
 } from "lucide-react";

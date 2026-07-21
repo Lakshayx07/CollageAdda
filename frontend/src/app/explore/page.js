@@ -86,7 +86,7 @@ function ExploreContent() {
   const [selectedCollege, setSelectedCollege] = useState(null);
   const [activeTab, setActiveTab] = useState("posts");
   const [exploreMode, setExploreMode] = useState("colleges"); // "colleges" | "arena"
-  const [arenaCategory, setArenaCategory] = useState("esports"); // "esports" | "sports"
+  const arenaCategory = "esports";
   const [arenaSportFilter, setArenaSportFilter] = useState("All");
   const [arenaTab, setArenaTab] = useState("posts"); // legacy fallback
   const [showPlayerCardForm, setShowPlayerCardForm] = useState(false);
@@ -690,20 +690,20 @@ function ExploreContent() {
                           : "ca-nav-inactive"
                       )}
                     >
-                      All Sports
+                      All Games
                     </button>
-                    {["🎮 Esports", "🏸 Badminton", "⚽ Football", "🏀 Basketball", "🏐 Volleyball", "🏏 Cricket", "🎾 Tennis", "🏊 Swimming", "🏅 Athletics"].map(sport => (
+                    {["🎮 Esports", "BGMI", "Valorant", "FIFA", "Chess", "Carrom"].map(game => (
                       <button
-                        key={sport}
-                        onClick={() => setArenaSportFilter(sport)}
+                        key={game}
+                        onClick={() => setArenaSportFilter(game)}
                         className={clsx(
                           "shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all",
-                          arenaSportFilter === sport
+                          arenaSportFilter === game
                             ? "ca-nav-active"
                             : "ca-nav-inactive"
                         )}
                       >
-                        {sport}
+                        {game}
                       </button>
                     ))}
                   </div>
@@ -921,145 +921,57 @@ function ExploreContent() {
             )}
               </>
             ) : (
-              /* --- ARENA VIEW --- */
+              /* --- ARENA VIEW (Esports only) --- */
               <div className="flex flex-col flex-1 relative bg-transparent">
-                {/* Top Toggle: Esports vs Sports */}
-                <div className="px-4 py-3 flex space-x-2 bg-[#FAFAF8]/80 backdrop-blur-md sticky top-0 z-30 border-b border-[#E8E6E0]">
-                  <button
-                    onClick={() => setArenaCategory("esports")}
-                    className={clsx(
-                      "flex-1 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all",
-                      arenaCategory === "esports" ? "ca-btn-primary" : "ca-btn-secondary"
-                    )}
-                  >
-                    🎮 Esports
-                  </button>
-                  <button
-                    onClick={() => setArenaCategory("sports")}
-                    className={clsx(
-                      "flex-1 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all",
-                      arenaCategory === "sports" ? "ca-btn-primary" : "ca-btn-secondary"
-                    )}
-                  >
-                    ⚽ Sports
-                  </button>
-                </div>
-
                 {/* Arena Content Scrollable Area */}
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-8 pb-20">
-                  <AnimatePresence mode="wait">
-                    {arenaCategory === "esports" ? (
-                      <motion.div
-                        key="esports"
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 20 }}
-                        className="space-y-8"
+                  <motion.div
+                    key="esports"
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-8"
+                  >
+                    {/* Action Bar */}
+                    <div className="flex justify-end">
+                      <button
+                        onClick={() => setShowPlayerCardForm(true)}
+                        className="ca-btn-primary px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition"
                       >
-                        {/* Action Bar */}
-                        <div className="flex justify-end">
+                        + Create My Card
+                      </button>
+                    </div>
+                    {/* Esports Teams */}
+                    <section>
+                      <h3 className="text-[#1A1A1A] font-black uppercase tracking-wider mb-3 flex items-center text-sm">
+                        <Swords className="mr-2 text-[#C8922A]" size={16} /> Esports Squads
+                      </h3>
+                      <div className="flex overflow-x-auto space-x-4 pb-4 no-scrollbar -mx-4 px-4">
+                        {['BGMI', 'Valorant', 'FIFA', 'Chess', 'Carrom'].map(game => (
                           <button
-                            onClick={() => setShowPlayerCardForm(true)}
-                            className="ca-btn-primary px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition"
+                            key={game}
+                            onClick={() => router.push(`/arena/sport/${game.toLowerCase()}`)}
+                            className="app-panel min-w-[120px] h-24 rounded-2xl hover:border-primary/30 transition flex flex-col items-center justify-center relative overflow-hidden group"
                           >
-                            + Create My Card
+                            <span className="text-2xl mb-1 group-hover:scale-110 transition-transform">🎮</span>
+                            <span className="text-[10px] font-black text-[#1A1A1A] uppercase tracking-widest">{game}</span>
                           </button>
-                        </div>
-                        {/* Esports Teams */}
-                        <section>
-                          <h3 className="text-[#1A1A1A] font-black uppercase tracking-wider mb-3 flex items-center text-sm">
-                            <Swords className="mr-2 text-[#C8922A]" size={16} /> Esports Squads
-                          </h3>
-                          <div className="flex overflow-x-auto space-x-4 pb-4 no-scrollbar -mx-4 px-4">
-                            {['BGMI', 'Valorant', 'FIFA'].map(game => (
-                              <button
-                                key={game}
-                                onClick={() => router.push(`/arena/sport/${game.toLowerCase()}`)}
-                                className="app-panel min-w-[120px] h-24 rounded-2xl hover:border-primary/30 transition flex flex-col items-center justify-center relative overflow-hidden group"
-                              >
-                                <span className="text-2xl mb-1 group-hover:scale-110 transition-transform">🎮</span>
-                                <span className="text-[10px] font-black text-[#1A1A1A] uppercase tracking-widest">{game}</span>
-                              </button>
-                            ))}
-                          </div>
-                        </section>
+                        ))}
+                      </div>
+                    </section>
 
-                        {/* Player Profile Card (FIFA Style) */}
-                        <section>
-                          <h3 className="text-[#1A1A1A] font-black uppercase tracking-wider mb-3 flex items-center text-sm">
-                            <Target className="mr-2 text-pink-500" size={16} /> Top Players
-                          </h3>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {/* We will map real data here soon */}
-                            {/* {realEsportsPlayers.map(player => ( ... ))} */}
-                          </div>
-                          <div className="text-center py-10">
-                            <p className="text-[#6B6B6B] text-xs font-bold uppercase tracking-widest">No players yet. Create your card!</p>
-                          </div>
-                        </section>
-                      </motion.div>
-                    ) : (
-                      /* ================= SPORTS SECTION ================= */
-                      <motion.div
-                        key="sports"
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        className="space-y-8"
-                      >
-                        {/* Action Bar */}
-                        <div className="flex justify-end">
-                          <button
-                            onClick={() => setShowPlayerCardForm(true)}
-                            className="bg-gradient-to-r from-orange-500 to-red-600 text-[#1A1A1A] px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-orange-500/20 hover:scale-105 transition"
-                          >
-                            + Create My Card
-                          </button>
-                        </div>
-                        {/* Sports Teams */}
-                        <section>
-                          <h3 className="text-[#1A1A1A] font-black uppercase tracking-wider mb-3 flex items-center text-sm">
-                            <Flame className="mr-2 text-orange-400" size={16} /> Campus Teams
-                          </h3>
-                          <div className="flex overflow-x-auto space-x-4 pb-4 no-scrollbar -mx-4 px-4">
-                            {[
-                              { name: 'Volleyball', icon: '🏐' },
-                              { name: 'Football', icon: '⚽' },
-                              { name: 'Badminton', icon: '🏸' },
-                              { name: 'Basketball', icon: '🏀' },
-                              { name: 'Cricket', icon: '🏏' },
-                              { name: 'Tennis', icon: '🎾' },
-                              { name: 'Swimming', icon: '🏊' }
-                            ].map(sport => (
-                              <button
-                                key={sport.name}
-                                onClick={() => router.push(`/arena/sport/${sport.name.toLowerCase()}`)}
-                                className="app-panel min-w-[120px] h-24 rounded-2xl hover:border-primary/30 transition flex flex-col items-center justify-center relative overflow-hidden group"
-                              >
-                                <span className="text-2xl mb-1 group-hover:scale-110 transition-transform">{sport.icon}</span>
-                                <span className="text-[10px] font-black text-[#1A1A1A] uppercase tracking-widest">{sport.name}</span>
-                              </button>
-                            ))}
-                          </div>
-                        </section>
-
-                        {/* Player Cards (Sports) */}
-                        <section>
-                          <h3 className="text-[#1A1A1A] font-black uppercase tracking-wider mb-3 flex items-center text-sm">
-                            <Users className="mr-2 text-orange-400" size={16} /> Top Athletes
-                          </h3>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {/* We will map real data here soon */}
-                            {/* {realSportsPlayers.map(player => ( ... ))} */}
-                          </div>
-                          <div className="text-center py-10">
-                            <p className="text-[#6B6B6B] text-xs font-bold uppercase tracking-widest">No athletes yet. Create your card!</p>
-                          </div>
-                        </section>
-
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                    {/* Player Profile Card (FIFA Style) */}
+                    <section>
+                      <h3 className="text-[#1A1A1A] font-black uppercase tracking-wider mb-3 flex items-center text-sm">
+                        <Target className="mr-2 text-pink-500" size={16} /> Top Players
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* We will map real data here soon */}
+                      </div>
+                      <div className="text-center py-10">
+                        <p className="text-[#6B6B6B] text-xs font-bold uppercase tracking-widest">No players yet. Create your card!</p>
+                      </div>
+                    </section>
+                  </motion.div>
                 </div>
 
                 {/* Form Overlay */}
