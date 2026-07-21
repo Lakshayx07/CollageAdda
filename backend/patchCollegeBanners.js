@@ -21,7 +21,7 @@ const CAMPUS_ALT_2 =
 const BANNER_BY_NAME = {
   // Delhi / NCR
   'Rishihood University':
-    'https://framerusercontent.com/images/XFjzi1N8IY9NG8fcSIM2Ev9sc.webp?width=680&height=377',
+    'https://framerusercontent.com/images/XFjzi1N8IY9NG8fcSIM2Ev9sc.webp?width=1600',
   'School of Planning and Architecture (SPA)':
     'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi24003tqaFcjayFwY2rQvUJE6Wl13FMKbw9C4Xqe_Pe9l2Kk7fu-ph3xOVzsEXlbkE9Z_UHqwSjbIZEHTOCRhtbf1hO5ZQr6R9NW1vfMPgcejNbWo2-5qDXbebAoHHUPa84JpGAheRV0_c/s1600/MB+hostehg_01.JPG',
   'IIT Delhi': 'https://home.iitd.ac.in/images/for-faculty/camp8.jpg',
