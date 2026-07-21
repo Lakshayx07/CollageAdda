@@ -9,19 +9,23 @@ import { useRouter, useParams } from 'next/navigation';
 import clsx from 'clsx';
 import { getAvatarSrc, getDefaultAvatar } from "@/utils/defaultAvatars";
 
+/** App theme accent — matches Campus Adda gold across the product */
+const APP_ACCENT = '#C8922A';
+const APP_ACCENT_SOFT = '#D4A843';
+
 const SPORT_CONFIG = {
-  volleyball:  { limit: 12, icon: '🏐', accent: '#F97316', tagline: 'Campus court battles' },
-  football:    { limit: 18, icon: '⚽', accent: '#22C55E', tagline: 'Inter-college football' },
-  badminton:   { limit: 4,  icon: '🏸', accent: '#06B6D4', tagline: 'Singles & doubles' },
-  basketball:  { limit: 10, icon: '🏀', accent: '#F59E0B', tagline: 'Hoops on campus' },
-  cricket:     { limit: 15, icon: '🏏', accent: '#84CC16', tagline: 'Build your XI' },
-  tennis:      { limit: 4,  icon: '🎾', accent: '#A3E635', tagline: 'Court challenge' },
-  swimming:    { limit: 8,  icon: '🏊', accent: '#38BDF8', tagline: 'Relay & freestyle' },
-  bgmi:        { limit: 5,  icon: '🎮', accent: '#39FF82', tagline: 'Squad up. Drop in.' },
-  valorant:    { limit: 5,  icon: '🔫', accent: '#FF4655', tagline: '5v5 agent battles' },
-  fifa:        { limit: 2,  icon: '⚽', accent: '#00A3FF', tagline: '1v1 & co-op' },
-  chess:       { limit: 2,  icon: '♟️', accent: '#C8922A', tagline: 'Mind games' },
-  carrom:      { limit: 2,  icon: '🎯', accent: '#F97316', tagline: 'Strike & pocket' },
+  volleyball:  { limit: 12, icon: '🏐', tagline: 'Campus court battles' },
+  football:    { limit: 18, icon: '⚽', tagline: 'Inter-college football' },
+  badminton:   { limit: 4,  icon: '🏸', tagline: 'Singles & doubles' },
+  basketball:  { limit: 10, icon: '🏀', tagline: 'Hoops on campus' },
+  cricket:     { limit: 15, icon: '🏏', tagline: 'Build your XI' },
+  tennis:      { limit: 4,  icon: '🎾', tagline: 'Court challenge' },
+  swimming:    { limit: 8,  icon: '🏊', tagline: 'Relay & freestyle' },
+  bgmi:        { limit: 5,  icon: '🎮', tagline: 'Squad up. Drop in.' },
+  valorant:    { limit: 5,  icon: '🔫', tagline: '5v5 agent battles' },
+  fifa:        { limit: 2,  icon: '⚽', tagline: '1v1 & co-op' },
+  chess:       { limit: 2,  icon: '♟️', tagline: 'Mind games' },
+  carrom:      { limit: 2,  icon: '🎯', tagline: 'Strike & pocket' },
 };
 
 const Sk = ({ className }) => (
@@ -43,10 +47,8 @@ export default function SportTeamsPage() {
   const sportData  = SPORT_CONFIG[sportKey] || {
     limit: 10,
     icon: '🏆',
-    accent: '#C8922A',
     tagline: 'Campus competition',
   };
-  const accent = sportData.accent || '#C8922A';
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
@@ -137,7 +139,7 @@ export default function SportTeamsPage() {
       <div
         className="pointer-events-none fixed top-0 left-0 right-0 h-64 z-0"
         style={{
-          background: `linear-gradient(180deg, ${accent}18 0%, transparent 100%)`,
+          background: `linear-gradient(180deg, ${APP_ACCENT}14 0%, transparent 100%)`,
         }}
       />
 
@@ -153,8 +155,7 @@ export default function SportTeamsPage() {
             <ChevronLeft size={20} />
           </button>
           <div
-            className="h-11 w-11 rounded-2xl flex items-center justify-center border shrink-0 shadow-sm"
-            style={{ background: `${accent}18`, borderColor: `${accent}40` }}
+            className="h-11 w-11 rounded-2xl flex items-center justify-center border-2 border-[#E8D9B0] bg-[#FFF8EC] shrink-0 shadow-sm"
           >
             <span className="text-xl leading-none">{sportData.icon}</span>
           </div>
@@ -176,27 +177,17 @@ export default function SportTeamsPage() {
           <motion.section
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="relative overflow-hidden rounded-[1.75rem] border border-[#E8E6E0] bg-white shadow-[0_8px_28px_rgba(0,0,0,0.06)]"
+            className="relative overflow-hidden rounded-[1.75rem] border-2 border-[#E8E6E0] bg-white shadow-[0_8px_28px_rgba(0,0,0,0.05)]"
           >
             <div
               className="h-1.5 w-full"
-              style={{ background: `linear-gradient(90deg, ${accent}, ${accent}66)` }}
+              style={{ background: `linear-gradient(90deg, ${APP_ACCENT}, ${APP_ACCENT_SOFT})` }}
             />
             <div className="p-6 sm:p-8 flex flex-col items-center text-center">
-              <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 border shadow-sm"
-                style={{
-                  background: `${accent}14`,
-                  borderColor: `${accent}35`,
-                  boxShadow: `0 8px 24px ${accent}22`,
-                }}
-              >
-                <Users size={28} style={{ color: accent }} />
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 border-2 border-[#E8D9B0] bg-[#FFF8EC] shadow-sm">
+                <Users size={28} className="text-[#C8922A]" />
               </div>
-              <p
-                className="text-[10px] font-black uppercase tracking-[0.2em] mb-2"
-                style={{ color: accent }}
-              >
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 text-[#C8922A]">
                 Open Lobby
               </p>
               <h2 className="text-xl font-black tracking-tight text-[#1A1A1A] mb-2">
@@ -218,7 +209,7 @@ export default function SportTeamsPage() {
                 onClick={() => { setNewTeam({ letter: 'A', captainId: '', players: [] }); setShowRegisterModal(true); }}
                 className="sport-lobby-cta w-full sm:w-auto min-w-[240px] font-black uppercase tracking-widest text-xs px-6 py-3.5 rounded-2xl transition hover:opacity-95 cursor-pointer shadow-[0_6px_18px_rgba(200,146,42,0.28)]"
                 style={{
-                  background: `linear-gradient(135deg, ${accent}, #C8922A)`,
+                  background: `linear-gradient(135deg, ${APP_ACCENT}, ${APP_ACCENT_SOFT})`,
                   color: '#1A1A1A',
                 }}
               >
@@ -229,18 +220,12 @@ export default function SportTeamsPage() {
         ) : (
           <div className="space-y-4">
             <h3 className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest pl-1">Your Squad</h3>
-            <div
-              className="relative overflow-hidden rounded-[1.5rem] border bg-white shadow-[0_6px_20px_rgba(0,0,0,0.05)]"
-              style={{ borderColor: `${accent}40` }}
-            >
+            <div className="relative overflow-hidden rounded-[1.5rem] border-2 border-[#E8E6E0] bg-white shadow-[0_6px_20px_rgba(0,0,0,0.05)]">
               <div
                 className="h-1.5 w-full"
-                style={{ background: `linear-gradient(90deg, ${accent}, ${accent}66)` }}
+                style={{ background: `linear-gradient(90deg, ${APP_ACCENT}, ${APP_ACCENT_SOFT})` }}
               />
-              <div
-                className="absolute top-3 right-3 text-[9px] font-black uppercase px-2.5 py-1 rounded-full"
-                style={{ background: `${accent}22`, color: '#1A1A1A', border: `1px solid ${accent}45` }}
-              >
+              <div className="absolute top-3 right-3 text-[9px] font-black uppercase px-2.5 py-1 rounded-full bg-[#FFF8EC] text-[#1A1A1A] border border-[#E8D9B0]">
                 Your Team
               </div>
               <div className="p-4 sm:p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -274,7 +259,7 @@ export default function SportTeamsPage() {
         )}
 
         {/* ── OTHER COLLEGES — real data from /api/colleges ────────────── */}
-        <OtherColleges sportName={sportName} sportData={sportData} accent={accent} apiUrl={apiUrl} />
+        <OtherColleges sportName={sportName} sportData={sportData} apiUrl={apiUrl} />
 
       </div>
 
@@ -537,20 +522,14 @@ function OtherColleges({ sportName, sportData, accent, apiUrl }) {
         </div>
       ) : (
         <div className="space-y-3">
-          {colleges.slice(0, 6).map((college) => (
+          {        colleges.slice(0, 6).map((college) => (
             <div
               key={college._id}
-              className="group relative overflow-hidden rounded-[1.35rem] border border-[#E8E6E0] bg-white shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.07)] hover:border-[#C8922A]/40 transition-all"
+              className="group relative overflow-hidden rounded-[1.35rem] border-2 border-[#E8E6E0] bg-white shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.07)] hover:border-[#C8922A]/55 transition-all"
             >
-              <div
-                className="absolute left-0 top-0 bottom-0 w-1"
-                style={{ background: accent }}
-              />
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#C8922A]" />
               <div className="p-4 pl-5 flex flex-col sm:flex-row sm:items-center gap-4">
-                <div
-                  className="h-12 w-12 rounded-2xl flex items-center justify-center border shrink-0"
-                  style={{ background: `${accent}12`, borderColor: `${accent}30` }}
-                >
+                <div className="h-12 w-12 rounded-2xl flex items-center justify-center border-2 border-[#E8D9B0] bg-[#FFF8EC] shrink-0">
                   <span className="text-xl leading-none">{sportData.icon}</span>
                 </div>
                 <div className="flex-1 min-w-0">
@@ -564,14 +543,9 @@ function OtherColleges({ sportName, sportData, accent, apiUrl }) {
                 <button
                   type="button"
                   onClick={() => setShowInviteFor(college)}
-                  className="sport-lobby-cta w-full sm:w-auto shrink-0 inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border text-[10px] font-black uppercase tracking-widest transition cursor-pointer"
-                  style={{
-                    background: `${accent}14`,
-                    borderColor: `${accent}40`,
-                    color: '#1A1A1A',
-                  }}
+                  className="sport-lobby-cta w-full sm:w-auto shrink-0 inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border-2 border-[#E8D9B0] bg-[#FFF8EC] hover:bg-[#C8922A]/15 text-[10px] font-black uppercase tracking-widest transition cursor-pointer"
                 >
-                  <Swords size={13} style={{ color: accent }} />
+                  <Swords size={13} className="text-[#C8922A]" />
                   Challenge
                 </button>
               </div>
@@ -586,18 +560,15 @@ function OtherColleges({ sportName, sportData, accent, apiUrl }) {
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
               onClick={e => e.stopPropagation()}
-              className="bg-white border border-[#E8E6E0] rounded-[1.75rem] w-full max-w-sm overflow-hidden flex flex-col relative shadow-2xl"
+              className="bg-white border-2 border-[#E8E6E0] rounded-[1.75rem] w-full max-w-sm overflow-hidden flex flex-col relative shadow-2xl"
             >
               <div
                 className="absolute top-0 left-0 w-full h-1.5"
-                style={{ background: `linear-gradient(90deg, ${accent}, #C8922A)` }}
+                style={{ background: `linear-gradient(90deg, ${APP_ACCENT}, ${APP_ACCENT_SOFT})` }}
               />
               <div className="p-6 text-center">
-                <div
-                  className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center border"
-                  style={{ background: `${accent}14`, borderColor: `${accent}35` }}
-                >
-                  <Swords size={26} style={{ color: accent }} />
+                <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center border-2 border-[#E8D9B0] bg-[#FFF8EC]">
+                  <Swords size={26} className="text-[#C8922A]" />
                 </div>
                 <h3 className="font-black text-lg text-[#1A1A1A] tracking-tight mb-1">
                   Challenge {showInviteFor.name}?
@@ -612,7 +583,7 @@ function OtherColleges({ sportName, sportData, accent, apiUrl }) {
                   <button
                     type="button"
                     onClick={() => setShowInviteFor(null)}
-                    className="flex-1 py-3 rounded-xl bg-[#F3F2EE] text-[#4A4A4A] text-xs font-black uppercase tracking-widest cursor-pointer"
+                    className="flex-1 py-3 rounded-xl bg-[#F3F2EE] border border-[#E8E6E0] text-[#4A4A4A] text-xs font-black uppercase tracking-widest cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -621,7 +592,7 @@ function OtherColleges({ sportName, sportData, accent, apiUrl }) {
                     onClick={() => { alert(`Invitation sent to ${showInviteFor.name}!`); setShowInviteFor(null); }}
                     className="sport-lobby-cta flex-[2] py-3 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer shadow-lg"
                     style={{
-                      background: `linear-gradient(135deg, ${accent}, #C8922A)`,
+                      background: `linear-gradient(135deg, ${APP_ACCENT}, ${APP_ACCENT_SOFT})`,
                       color: '#1A1A1A',
                     }}
                   >
