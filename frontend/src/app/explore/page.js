@@ -681,6 +681,7 @@ function ExploreContent() {
                     />
                   </div>
                   <motion.button
+                    type="button"
                     whileTap={{ scale: 0.97 }}
                     onClick={() => {
                       setExploreMode(exploreMode === "colleges" ? "arena" : "colleges");
@@ -688,20 +689,20 @@ function ExploreContent() {
                       setArenaSportFilter("All");
                     }}
                     className={clsx(
-                      "flex w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-2xl border px-5 py-3 text-sm font-black transition-all cursor-pointer",
+                      "explore-mode-switch flex w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-2xl border px-5 py-3 font-black transition-all cursor-pointer",
                       exploreMode === "colleges"
-                        ? "bg-[#1A1A1A] text-white border-transparent hover:bg-[#2a2a2a]"
-                        : "bg-white border-[#E8E6E0] text-[#1A1A1A] hover:border-[#C8922A]/50 hover:bg-[#FFF8EC]"
+                        ? "explore-mode-switch--arena bg-gradient-to-r from-[#C8922A] to-[#D4A843] border-transparent shadow-[0_4px_14px_rgba(200,146,42,0.25)] hover:opacity-95"
+                        : "explore-mode-switch--colleges bg-white border-[#E8E6E0] hover:border-[#C8922A]/50 hover:bg-[#FFF8EC]"
                     )}
                   >
                     {exploreMode === "colleges" ? (
                       <>
-                        <Swords size={16} className="text-[#E8B84B]" />
+                        <Swords size={16} strokeWidth={2.25} />
                         <span className="tracking-widest uppercase text-[10px] sm:text-xs">Arena</span>
                       </>
                     ) : (
                       <>
-                        <Building2 size={16} className="text-[#C8922A]" />
+                        <Building2 size={16} strokeWidth={2.25} />
                         <span className="tracking-widest uppercase text-[10px] sm:text-xs">Colleges</span>
                       </>
                     )}

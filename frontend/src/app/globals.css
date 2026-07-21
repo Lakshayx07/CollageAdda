@@ -409,6 +409,23 @@ header, [class*="navbar"], [class*="topbar"], .page-header {
   stroke: #ffffff !important;
 }
 
+/* Explore mode switch — global [class*="text"] was hiding label on dark buttons */
+.explore-mode-switch--arena,
+.explore-mode-switch--arena * {
+  color: #1a1a1a !important;
+}
+.explore-mode-switch--arena svg {
+  stroke: #1a1a1a !important;
+}
+.explore-mode-switch--colleges,
+.explore-mode-switch--colleges * {
+  color: #1a1a1a !important;
+}
+.explore-mode-switch--colleges svg {
+  stroke: #c8922a !important;
+  color: #c8922a !important;
+}
+
 .explore-college-banner__meta,
 .explore-college-banner__meta * {
   color: rgba(255, 255, 255, 0.92) !important;
