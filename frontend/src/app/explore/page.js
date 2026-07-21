@@ -1682,11 +1682,11 @@ function ExploreContent() {
                           {memoryPosts.map((post, i) => (
                             <div
                               key={post._id || i}
-                              className="aspect-square relative group overflow-hidden bg-[#F3F2EE] rounded-xl border border-[#E8E6E0]"
+                              className="aspect-square relative group overflow-hidden bg-[#F3F2EE] rounded-xl border border-[#E8E6E0] p-1.5"
                             >
                               <img
                                 src={post.mediaUrl || post.image}
-                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
                                 alt=""
                               />
                             </div>
