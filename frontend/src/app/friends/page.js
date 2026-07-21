@@ -1294,7 +1294,7 @@ export default function FriendsPage() {
                                 transition: { duration: 0.25, ease: "easeOut" }
                               }}
                               style={{ transformStyle: "preserve-3d", perspective: 1000 }}
-                              className="rounded-[2rem] border border-white/70 bg-white/62 p-4 shadow-[0_18px_48px_rgba(26,26,26,0.12),inset_0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-xl hover:border-white hover:shadow-[0_24px_58px_rgba(124,58,237,0.16),inset_0_1px_0_rgba(255,255,255,0.8)] transition-all group cursor-pointer relative overflow-hidden"
+                              className="rounded-[2rem] border border-white/70 bg-white/62 p-4 shadow-[0_18px_48px_rgba(26,26,26,0.12),inset_0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-xl hover:border-white hover:shadow-[0_24px_58px_rgba(124,58,237,0.16),inset_0_1px_0_rgba(255,255,255,0.8)] transition-all group cursor-default relative overflow-hidden"
                             >
                               <div className="relative h-[220px] overflow-hidden rounded-[1.5rem] border border-white/55 shadow-[0_12px_28px_rgba(0,0,0,0.12)]">
                                 <img
@@ -1367,20 +1367,22 @@ export default function FriendsPage() {
                               <div>
                                 {status === "connected" ? (
                                   <motion.button
+                                    type="button"
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
                                     onClick={(e) => { e.stopPropagation(); handleDirectMessage(person._id); }}
-                                    className="w-full bg-white hover:bg-[#FFF8EC] text-[#C8922A] border border-[#D4A843]/45 py-3 rounded-full text-[12px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-[0_10px_24px_rgba(200,146,42,0.14)]"
+                                    className="w-full bg-white hover:bg-[#FFF8EC] text-[#C8922A] border border-[#D4A843]/45 py-3 rounded-full text-[12px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-[0_10px_24px_rgba(200,146,42,0.14)] cursor-pointer"
                                   >
                                     <MessageCircle size={13} />
                                     Chat Now
                                   </motion.button>
                                 ) : (
                                   <motion.button
+                                    type="button"
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
                                     onClick={(e) => { e.stopPropagation(); toggleFollow(person._id); }}
-                                    className="w-full bg-white hover:bg-[#FFF8EC] text-[#C8922A] border border-[#D4A843]/45 py-3 rounded-full text-[12px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-[0_10px_24px_rgba(200,146,42,0.14)]"
+                                    className="w-full bg-white hover:bg-[#FFF8EC] text-[#C8922A] border border-[#D4A843]/45 py-3 rounded-full text-[12px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-[0_10px_24px_rgba(200,146,42,0.14)] cursor-pointer"
                                   >
                                     <UserPlus size={13} />
                                     Connect +
