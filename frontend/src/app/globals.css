@@ -426,6 +426,20 @@ header, [class*="navbar"], [class*="topbar"], .page-header {
   color: #c8922a !important;
 }
 
+/* Sport lobby back button — keep chevron dark and visible */
+.sport-lobby-back,
+.sport-lobby-back svg,
+.sport-lobby-back svg path {
+  color: #1a1a1a !important;
+  stroke: #1a1a1a !important;
+  cursor: pointer;
+}
+
+.sport-lobby-cta,
+.sport-lobby-cta * {
+  color: #1a1a1a !important;
+}
+
 /* Arena filter chips — avoid black+white (global [class*="text"] kills white labels) */
 .explore-arena-chip--active,
 .explore-arena-chip--active * {
