@@ -477,6 +477,23 @@ header, [class*="navbar"], [class*="topbar"], .page-header {
 }
 
 /* ══════════════════════════════════════════════
+   INTERACTIVE CURSOR AFFORDANCE
+   Tailwind preflight does not set pointer on buttons.
+══════════════════════════════════════════════ */
+button:not(:disabled):not([aria-disabled="true"]),
+[role="button"]:not([aria-disabled="true"]),
+a[href],
+summary {
+  cursor: pointer;
+}
+
+button:disabled,
+button[aria-disabled="true"],
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+/* ══════════════════════════════════════════════
    UTILITIES
 ══════════════════════════════════════════════ */
 @media (max-width: 767px) {

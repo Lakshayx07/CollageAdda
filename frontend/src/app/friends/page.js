@@ -945,7 +945,7 @@ export default function FriendsPage() {
                             setFilter("all");
                             setShowFiltersDropdown(false);
                           }}
-                          className="ml-1 p-0.5 hover:bg-[#C8922A]/20 rounded-full transition-colors flex items-center justify-center"
+                          className="ml-1 p-0.5 hover:bg-[#C8922A]/20 rounded-full transition-colors flex items-center justify-center cursor-pointer"
                         >
                           <X size={12} />
                         </span>
