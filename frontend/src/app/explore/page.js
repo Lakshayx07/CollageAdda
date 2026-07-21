@@ -6,7 +6,6 @@ import {
   MapPin,
   Users,
   MessageSquare,
-  ChevronLeft,
   Heart,
   Share2,
   Plus,
