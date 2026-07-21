@@ -7,10 +7,17 @@ export const EXPLORE_PRIORITY_COLLEGES = [
   "IIIT Delhi",
   "University of Delhi (DU)",
   "Jawaharlal Nehru University (JNU)",
-  "Jamia Millia Islamia",
-  "Guru Gobind Singh Indraprastha University (IPU)",
-  "Kurukshetra University",
   "YMCA Faridabad",
+  "AIIMS, New Delhi",
+  "Polaris University",
+  "VIT University",
+  "World University of Design (WUD), Sonipat",
+  "O.P. Jindal Global University (JGU), Sonipat",
+  "SRM University, Delhi-NCR (Sonepat)",
+  "Ashoka University",
+  "DY Patil University",
+  "S-VYASA (NST Bangalore)",
+  "St. Mary's University (NST Hyderabad)",
   "IIT Bombay",
   "IIT Kanpur",
   "IIT Kharagpur",
@@ -18,13 +25,42 @@ export const EXPLORE_PRIORITY_COLLEGES = [
   "IIT (BHU) Varanasi",
   "IIT Guwahati",
   "NIT Rourkela",
-  "AIIMS, New Delhi",
 ];
 
 const PRIORITY_ALIASES = {
   "IIT Delhi": ["indian institute of technology (iit) delhi"],
-  "Guru Gobind Singh Indraprastha University (IPU)": [
-    "guru gobind singh indraprastha university (ggsipu)",
+  "Polaris University": ["pollaries university", "polaris"],
+  "VIT University": ["vit vellore", "vellore institute of technology", "vit"],
+  "World University of Design (WUD), Sonipat": [
+    "world university of design",
+    "wud",
+  ],
+  "O.P. Jindal Global University (JGU), Sonipat": [
+    "op jindal global university",
+    "o.p. jindal",
+    "jgu",
+  ],
+  "SRM University, Delhi-NCR (Sonepat)": [
+    "srm university",
+    "srm delhi",
+    "srm sonepat",
+  ],
+  "Ashoka University": ["ashoka"],
+  "DY Patil University": [
+    "d.y. patil",
+    "dy patil",
+    "dr. d.y. patil",
+  ],
+  "S-VYASA (NST Bangalore)": [
+    "s-vyasa",
+    "svyasa",
+    "nst bangalore",
+    "nst bengaluru",
+  ],
+  "St. Mary's University (NST Hyderabad)": [
+    "st marys university",
+    "st. mary's",
+    "nst hyderabad",
   ],
 };
 
