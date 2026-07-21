@@ -426,6 +426,20 @@ header, [class*="navbar"], [class*="topbar"], .page-header {
   color: #c8922a !important;
 }
 
+/* Arena filter chips — avoid black+white (global [class*="text"] kills white labels) */
+.explore-arena-chip--active,
+.explore-arena-chip--active * {
+  color: #1a1a1a !important;
+}
+.explore-arena-chip--idle,
+.explore-arena-chip--idle * {
+  color: #6b6b6b !important;
+}
+.explore-arena-chip--idle:hover,
+.explore-arena-chip--idle:hover * {
+  color: #1a1a1a !important;
+}
+
 .explore-college-banner__meta,
 .explore-college-banner__meta * {
   color: rgba(255, 255, 255, 0.92) !important;

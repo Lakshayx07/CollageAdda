@@ -726,13 +726,15 @@ function ExploreContent() {
                           type="button"
                           onClick={() => setArenaSportFilter(game.id)}
                           className={clsx(
-                            "shrink-0 px-3.5 py-1.5 rounded-full text-[11px] font-bold tracking-wide transition-all cursor-pointer border",
+                            "explore-arena-chip shrink-0 px-3.5 py-1.5 rounded-full font-bold tracking-wide transition-all cursor-pointer border",
                             active
-                              ? "bg-[#1A1A1A] text-white border-[#1A1A1A] shadow-sm"
-                              : "bg-[#F9F8F5] text-[#6B6B6B] border-[#E8E6E0] hover:border-[#C8922A]/40 hover:text-[#1A1A1A]"
+                              ? "explore-arena-chip--active bg-gradient-to-r from-[#C8922A] to-[#D4A843] border-transparent shadow-sm"
+                              : "explore-arena-chip--idle bg-[#F9F8F5] border-[#E8E6E0] hover:border-[#C8922A]/40"
                           )}
                         >
-                          {game.label}
+                          <span className="uppercase" style={{ fontSize: 11 }}>
+                            {game.label}
+                          </span>
                         </button>
                       );
                     })}
