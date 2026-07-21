@@ -1102,14 +1102,30 @@ function ExploreContent() {
                   }}
                 />
 
-                {/* Back Button */}
+                {/* Back Button — hardcoded white stroke (global CSS overrides lucide currentColor) */}
                 <button
                   type="button"
                   onClick={() => router.push('/explore')}
                   className="explore-college-banner__back absolute top-3 left-3 p-2.5 bg-black/45 backdrop-blur-md rounded-full hover:bg-black/65 transition-colors z-20 border border-white/10 cursor-pointer"
                   aria-label="Back to explore"
+                  style={{ cursor: "pointer", color: "#ffffff" }}
                 >
-                  <ChevronLeft size={20} />
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M15 18l-6-6 6-6"
+                      stroke="#ffffff"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
                 </button>
 
                 {/* College Info on Banner */}

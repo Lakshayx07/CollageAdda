@@ -398,12 +398,15 @@ header, [class*="navbar"], [class*="topbar"], .page-header {
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.65);
 }
 
-/* Back chevron — global [class*="text"] forces dark currentColor on lucide icons */
-.explore-college-banner__back,
-.explore-college-banner__back svg {
+/* Back chevron — force white even when body/currentColor is dark */
+.explore-college-banner__back {
+  color: #ffffff !important;
+  cursor: pointer !important;
+}
+.explore-college-banner__back svg,
+.explore-college-banner__back svg path {
   color: #ffffff !important;
   stroke: #ffffff !important;
-  cursor: pointer;
 }
 
 .explore-college-banner__meta,
