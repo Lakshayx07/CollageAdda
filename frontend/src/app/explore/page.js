@@ -31,7 +31,8 @@ import {
   Activity,
   Medal,
   Play,
-  Loader2
+  Loader2,
+  Gamepad2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useApiQuery } from "../../utils/useApiQuery";
@@ -45,6 +46,14 @@ import { getExploreColleges, getExploreCollegePool } from "@/config/exploreColle
 
 const COLLEGE_BANNER_FALLBACK =
   "https://images.unsplash.com/photo-1562774053-701939374585?w=800&q=80";
+
+const ESPORTS_SQUADS = [
+  { name: "BGMI", key: "bgmi", icon: Gamepad2, accent: "#39FF82" },
+  { name: "Valorant", key: "valorant", icon: Crosshair, accent: "#FF4655" },
+  { name: "FIFA", key: "fifa", icon: Trophy, accent: "#00A3FF" },
+  { name: "Chess", key: "chess", icon: Medal, accent: "#C8922A" },
+  { name: "Carrom", key: "carrom", icon: Target, accent: "#F97316" },
+];
 
 const handleBannerError = (event) => {
   const img = event.currentTarget;
@@ -943,30 +952,61 @@ function ExploreContent() {
                       <h3 className="text-[#1A1A1A] font-black uppercase tracking-wider mb-3 flex items-center text-sm">
                         <Swords className="mr-2 text-[#C8922A]" size={16} /> Esports Squads
                       </h3>
-                      <div className="flex overflow-x-auto space-x-4 pb-4 no-scrollbar -mx-4 px-4">
-                        {['BGMI', 'Valorant', 'FIFA', 'Chess', 'Carrom'].map(game => (
-                          <button
-                            key={game}
-                            onClick={() => router.push(`/arena/sport/${game.toLowerCase()}`)}
-                            className="app-panel min-w-[120px] h-24 rounded-2xl hover:border-primary/30 transition flex flex-col items-center justify-center relative overflow-hidden group"
-                          >
-                            <span className="text-2xl mb-1 group-hover:scale-110 transition-transform">🎮</span>
-                            <span className="text-[10px] font-black text-[#1A1A1A] uppercase tracking-widest">{game}</span>
-                          </button>
-                        ))}
+                      <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar -mx-1 px-1 sm:grid sm:grid-cols-3 md:grid-cols-5 sm:overflow-visible">
+                        {ESPORTS_SQUADS.map((game) => {
+                          const Icon = game.icon;
+                          return (
+                            <motion.button
+                              key={game.key}
+                              type="button"
+                              whileHover={{ y: -4, scale: 1.02 }}
+                              whileTap={{ scale: 0.97 }}
+                              onClick={() => router.push(`/arena/sport/${game.key}`)}
+                              className="group relative shrink-0 min-w-[140px] h-32 sm:min-w-0 sm:w-full rounded-2xl border border-[#E8E6E0] bg-[#F9F8F5] shadow-sm hover:shadow-md hover:border-[#C8922A]/55 transition-all cursor-pointer flex flex-col items-center justify-center gap-3 overflow-hidden"
+                            >
+                              <div
+                                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+                                style={{
+                                  background: `radial-gradient(circle at 50% 0%, ${game.accent}22, transparent 70%)`,
+                                }}
+                              />
+                              <div
+                                className="relative w-12 h-12 rounded-2xl flex items-center justify-center border transition-transform group-hover:scale-110"
+                                style={{
+                                  background: `${game.accent}18`,
+                                  borderColor: `${game.accent}40`,
+                                }}
+                              >
+                                <Icon size={22} style={{ color: game.accent }} strokeWidth={2.25} />
+                              </div>
+                              <span className="relative text-[11px] font-black text-[#1A1A1A] uppercase tracking-widest">
+                                {game.name}
+                              </span>
+                            </motion.button>
+                          );
+                        })}
                       </div>
                     </section>
 
-                    {/* Player Profile Card (FIFA Style) */}
+                    {/* Top Players */}
                     <section>
                       <h3 className="text-[#1A1A1A] font-black uppercase tracking-wider mb-3 flex items-center text-sm">
                         <Target className="mr-2 text-pink-500" size={16} /> Top Players
                       </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {/* We will map real data here soon */}
-                      </div>
-                      <div className="text-center py-10">
-                        <p className="text-[#6B6B6B] text-xs font-bold uppercase tracking-widest">No players yet. Create your card!</p>
+                      <div className="rounded-2xl border border-dashed border-[#E8E6E0] bg-[#F9F8F5] px-6 py-12 flex flex-col items-center text-center gap-3">
+                        <div className="w-12 h-12 rounded-2xl bg-white border border-[#E8E6E0] flex items-center justify-center">
+                          <Gamepad2 size={22} className="text-[#C8922A]" />
+                        </div>
+                        <p className="text-[#6B6B6B] text-xs font-bold uppercase tracking-widest">
+                          No players yet. Create your card!
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setShowPlayerCardForm(true)}
+                          className="mt-1 text-[11px] font-black uppercase tracking-widest text-[#C8922A] hover:underline cursor-pointer"
+                        >
+                          Create My Card
+                        </button>
                       </div>
                     </section>
                   </motion.div>
