@@ -852,14 +852,8 @@ function ExploreContent() {
 
               {filteredColleges.map(college => (
                 <motion.div
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.98 }}
                   key={college._id || college.id}
-                  onClick={() => {
-                    const collegeId = college._id || college.id;
-                    router.push(`/explore?collegeId=${collegeId}`);
-                  }}
-                  className="relative flex flex-col rounded-[1.5rem] overflow-hidden text-left group cursor-pointer shadow-md hover:shadow-xl transition-all duration-300"
+                  className="relative flex flex-col rounded-[1.5rem] overflow-hidden text-left group shadow-md hover:shadow-xl transition-all duration-300 cursor-default"
                   style={{ height: '420px' }}
                 >
                   {/* Full-bleed background image */}
@@ -903,14 +897,14 @@ function ExploreContent() {
                       </div>
                     </div>
 
-                    {/* Explore Now button */}
-                    <button 
-                      onClick={(e) => { 
-                        e.stopPropagation(); 
+                    {/* Explore Now button — only interactive hotspot on the card */}
+                    <button
+                      type="button"
+                      onClick={() => {
                         router.push(`/explore?collegeId=${college._id || college.id}`);
                       }}
                       disabled={loadingCollegeId === (college._id || college.id)}
-                      className="w-full bg-white rounded-2xl py-3 flex items-center justify-center text-sm font-bold text-[#1A1A1A] shadow-lg group-hover:bg-[#FFF8EC] transition-colors disabled:opacity-80"
+                      className="w-full bg-white rounded-2xl py-3 flex items-center justify-center text-sm font-bold text-[#1A1A1A] shadow-lg hover:bg-[#FFF8EC] transition-colors disabled:opacity-80 cursor-pointer"
                     >
                       {loadingCollegeId === (college._id || college.id) ? (
                         <Loader2 className="h-5 w-5 animate-spin" />
