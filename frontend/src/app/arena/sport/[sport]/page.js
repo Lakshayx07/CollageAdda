@@ -467,7 +467,7 @@ export default function SportTeamsPage() {
 }
 
 // ─── Other Colleges component — fetches real data ─────────────────────────────
-function OtherColleges({ sportName, sportData, accent, apiUrl }) {
+function OtherColleges({ sportName, sportData, apiUrl }) {
   const [colleges, setColleges] = useState(null);
   const [showInviteFor, setShowInviteFor] = useState(null);
 
