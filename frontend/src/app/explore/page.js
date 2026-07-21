@@ -1086,10 +1086,10 @@ function ExploreContent() {
           >
             {/* Profile Header — framed banner with padding */}
             <div className="relative px-3 pt-3">
-              <div className="h-56 sm:h-72 w-full bg-[#F3F2EE] relative overflow-hidden rounded-2xl shadow-sm border border-[#E8E6E0]">
+              <div className="h-[380px] sm:h-[420px] w-full bg-[#F3F2EE] relative overflow-hidden rounded-2xl shadow-sm border border-[#E8E6E0]">
                 <img
                   src={selectedCollege.banner || COLLEGE_BANNER_FALLBACK}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover object-center"
                   alt=""
                   referrerPolicy="no-referrer"
                   onError={handleBannerError}
