@@ -398,6 +398,62 @@ header, [class*="navbar"], [class*="topbar"], .page-header {
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.65);
 }
 
+/* Back chevron — force white even when body/currentColor is dark */
+.explore-college-banner__back {
+  color: #ffffff !important;
+  cursor: pointer !important;
+}
+.explore-college-banner__back svg,
+.explore-college-banner__back svg path {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* Explore mode switch — global [class*="text"] was hiding label on dark buttons */
+.explore-mode-switch--arena,
+.explore-mode-switch--arena * {
+  color: #1a1a1a !important;
+}
+.explore-mode-switch--arena svg {
+  stroke: #1a1a1a !important;
+}
+.explore-mode-switch--colleges,
+.explore-mode-switch--colleges * {
+  color: #1a1a1a !important;
+}
+.explore-mode-switch--colleges svg {
+  stroke: #c8922a !important;
+  color: #c8922a !important;
+}
+
+/* Sport lobby back button — keep chevron dark and visible */
+.sport-lobby-back,
+.sport-lobby-back svg,
+.sport-lobby-back svg path {
+  color: #1a1a1a !important;
+  stroke: #1a1a1a !important;
+  cursor: pointer;
+}
+
+.sport-lobby-cta,
+.sport-lobby-cta * {
+  color: #1a1a1a !important;
+}
+
+/* Arena filter chips — avoid black+white (global [class*="text"] kills white labels) */
+.explore-arena-chip--active,
+.explore-arena-chip--active * {
+  color: #1a1a1a !important;
+}
+.explore-arena-chip--idle,
+.explore-arena-chip--idle * {
+  color: #6b6b6b !important;
+}
+.explore-arena-chip--idle:hover,
+.explore-arena-chip--idle:hover * {
+  color: #1a1a1a !important;
+}
+
 .explore-college-banner__meta,
 .explore-college-banner__meta * {
   color: rgba(255, 255, 255, 0.92) !important;
@@ -418,6 +474,23 @@ header, [class*="navbar"], [class*="topbar"], .page-header {
 
 .brand-mark * {
   color: #ffffff !important;
+}
+
+/* ══════════════════════════════════════════════
+   INTERACTIVE CURSOR AFFORDANCE
+   Tailwind preflight does not set pointer on buttons.
+══════════════════════════════════════════════ */
+button:not(:disabled):not([aria-disabled="true"]),
+[role="button"]:not([aria-disabled="true"]),
+a[href],
+summary {
+  cursor: pointer;
+}
+
+button:disabled,
+button[aria-disabled="true"],
+[aria-disabled="true"] {
+  cursor: not-allowed;
 }
 
 /* ══════════════════════════════════════════════

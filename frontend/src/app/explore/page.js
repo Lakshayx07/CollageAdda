@@ -6,7 +6,6 @@ import {
   MapPin,
   Users,
   MessageSquare,
-  ChevronLeft,
   Heart,
   Share2,
   Plus,
@@ -15,7 +14,6 @@ import {
   Bookmark,
   Send,
   Zap,
-  Flame,
   TrendingUp,
   Hand,
   GraduationCap,
@@ -25,7 +23,6 @@ import {
   Trees,
   Compass,
   Trophy,
-  Gamepad2,
   Swords,
   MonitorPlay,
   Target,
@@ -34,7 +31,8 @@ import {
   Activity,
   Medal,
   Play,
-  Loader2
+  Loader2,
+  Gamepad2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useApiQuery } from "../../utils/useApiQuery";
@@ -48,6 +46,14 @@ import { getExploreColleges, getExploreCollegePool } from "@/config/exploreColle
 
 const COLLEGE_BANNER_FALLBACK =
   "https://images.unsplash.com/photo-1562774053-701939374585?w=800&q=80";
+
+const ESPORTS_SQUADS = [
+  { name: "BGMI", key: "bgmi", icon: Gamepad2, accent: "#39FF82" },
+  { name: "Valorant", key: "valorant", icon: Crosshair, accent: "#FF4655" },
+  { name: "FIFA", key: "fifa", icon: Trophy, accent: "#00A3FF" },
+  { name: "Chess", key: "chess", icon: Medal, accent: "#C8922A" },
+  { name: "Carrom", key: "carrom", icon: Target, accent: "#F97316" },
+];
 
 const handleBannerError = (event) => {
   const img = event.currentTarget;
@@ -87,7 +93,7 @@ function ExploreContent() {
   const [selectedCollege, setSelectedCollege] = useState(null);
   const [activeTab, setActiveTab] = useState("posts");
   const [exploreMode, setExploreMode] = useState("colleges"); // "colleges" | "arena"
-  const [arenaCategory, setArenaCategory] = useState("esports"); // "esports" | "sports"
+  const arenaCategory = "esports";
   const [arenaSportFilter, setArenaSportFilter] = useState("All");
   const [arenaTab, setArenaTab] = useState("posts"); // legacy fallback
   const [showPlayerCardForm, setShowPlayerCardForm] = useState(false);
@@ -633,47 +639,70 @@ function ExploreContent() {
           >
             <header className="page-header sticky top-0 z-40 px-5 py-4">
               <div className="mx-auto flex w-full max-w-6xl flex-col space-y-4">
-                <div className="flex items-center space-x-3">
-                  <div className={clsx("icon-tile h-11 w-11", exploreMode === "colleges" ? "text-primary" : "gradient-bg")}>
-                    {exploreMode === "colleges" ? <Building2 className="text-primary" size={20} /> : <Trophy className="text-[#1A1A1A]" size={20} />}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {exploreMode === "colleges" ? (
+                      <div className="h-11 w-11 shrink-0 rounded-2xl bg-[#FFF8EC] border border-[#E8D9B0] flex items-center justify-center">
+                        <Building2 size={20} className="text-[#C8922A]" />
+                      </div>
+                    ) : (
+                      <div className="relative h-11 w-11 shrink-0">
+                        <div
+                          className="absolute inset-0 rounded-2xl opacity-40 blur-md"
+                          style={{ background: "linear-gradient(135deg, #C8922A, #E8B84B)" }}
+                        />
+                        <div className="relative h-11 w-11 rounded-2xl brand-mark flex items-center justify-center shadow-[0_6px_16px_rgba(200,146,42,0.28)] ring-1 ring-white/40">
+                          <Swords size={20} className="text-white" strokeWidth={2.25} />
+                        </div>
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <h1 className="text-xl font-black tracking-tight text-[#1A1A1A] truncate">
+                        {exploreMode === "colleges" ? "Explore Colleges" : "Campus Arena"}
+                      </h1>
+                      <p className="text-[11px] font-semibold text-[#888888] mt-0.5">
+                        {exploreMode === "colleges"
+                          ? "Discover campuses near you"
+                          : "Esports squads & campus battles"}
+                      </p>
+                    </div>
                   </div>
-                  <h1 className="text-xl font-black tracking-tight text-foreground">
-                    {exploreMode === "colleges" ? "Explore Colleges" : "Campus Arena"}
-                  </h1>
                 </div>
 
                 <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
-                  <div className="relative w-full sm:w-1/2">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
+                  <div className="relative w-full sm:flex-1">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#888888]" size={16} />
                     <input
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       type="text"
                       placeholder={exploreMode === "colleges" ? "Search college..." : "Search players..."}
-                      className="ca-input w-full py-3 pl-10 pr-4 text-sm"
+                      className="ca-input w-full py-3 pl-10 pr-4 text-sm rounded-2xl"
                     />
                   </div>
                   <motion.button
-                    whileTap={{ scale: 0.95 }}
+                    type="button"
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => {
                       setExploreMode(exploreMode === "colleges" ? "arena" : "colleges");
                       setSearch("");
+                      setArenaSportFilter("All");
                     }}
                     className={clsx(
-                      "flex w-full items-center justify-center space-x-2 rounded-2xl border px-4 py-3 text-sm font-black shadow-lg transition-all sm:w-1/2",
+                      "explore-mode-switch flex w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-2xl border px-5 py-3 font-black transition-all cursor-pointer",
                       exploreMode === "colleges"
-                        ? "bg-gradient-to-r from-[#C8922A] via-[#D4A843] to-[#C8922A] text-[#1A1A1A] border-transparent shadow-[0_4px_14px_rgba(200,146,42,0.15)] hover:shadow-[#C8922A]/50"
-                        : "bg-[#F9F8F5] border border-[#E8E6E0] border-border/50 text-foreground hover:bg-surface-hover"
+                        ? "explore-mode-switch--arena bg-gradient-to-r from-[#C8922A] to-[#D4A843] border-transparent shadow-[0_4px_14px_rgba(200,146,42,0.25)] hover:opacity-95"
+                        : "explore-mode-switch--colleges bg-white border-[#E8E6E0] hover:border-[#C8922A]/50 hover:bg-[#FFF8EC]"
                     )}
                   >
                     {exploreMode === "colleges" ? (
                       <>
-                        <Trophy size={18} className="text-yellow-300 drop-shadow-md" />
+                        <Swords size={16} strokeWidth={2.25} />
                         <span className="tracking-widest uppercase text-[10px] sm:text-xs">Arena</span>
                       </>
                     ) : (
                       <>
-                        <Building2 size={18} className="text-primary" />
+                        <Building2 size={16} strokeWidth={2.25} />
                         <span className="tracking-widest uppercase text-[10px] sm:text-xs">Colleges</span>
                       </>
                     )}
@@ -681,32 +710,34 @@ function ExploreContent() {
                 </div>
 
                 {exploreMode === "arena" && (
-                  <div className="flex overflow-x-auto space-x-2 pb-2 custom-scrollbar no-scrollbar -mx-4 px-4">
-                    <button
-                      onClick={() => setArenaSportFilter("All")}
-                      className={clsx(
-                        "shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all",
-                        arenaSportFilter === "All"
-                          ? "ca-nav-active"
-                          : "ca-nav-inactive"
-                      )}
-                    >
-                      All Sports
-                    </button>
-                    {["🎮 Esports", "🏸 Badminton", "⚽ Football", "🏀 Basketball", "🏐 Volleyball", "🏏 Cricket", "🎾 Tennis", "🏊 Swimming", "🏅 Athletics"].map(sport => (
-                      <button
-                        key={sport}
-                        onClick={() => setArenaSportFilter(sport)}
-                        className={clsx(
-                          "shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all",
-                          arenaSportFilter === sport
-                            ? "ca-nav-active"
-                            : "ca-nav-inactive"
-                        )}
-                      >
-                        {sport}
-                      </button>
-                    ))}
+                  <div className="flex overflow-x-auto gap-2 pb-1 no-scrollbar -mx-1 px-1">
+                    {[
+                      { id: "All", label: "All Games" },
+                      { id: "BGMI", label: "BGMI" },
+                      { id: "Valorant", label: "Valorant" },
+                      { id: "FIFA", label: "FIFA" },
+                      { id: "Chess", label: "Chess" },
+                      { id: "Carrom", label: "Carrom" },
+                    ].map((game) => {
+                      const active = arenaSportFilter === game.id;
+                      return (
+                        <button
+                          key={game.id}
+                          type="button"
+                          onClick={() => setArenaSportFilter(game.id)}
+                          className={clsx(
+                            "explore-arena-chip shrink-0 px-3.5 py-1.5 rounded-full font-bold tracking-wide transition-all cursor-pointer border",
+                            active
+                              ? "explore-arena-chip--active bg-gradient-to-r from-[#C8922A] to-[#D4A843] border-transparent shadow-sm"
+                              : "explore-arena-chip--idle bg-[#F9F8F5] border-[#E8E6E0] hover:border-[#C8922A]/40"
+                          )}
+                        >
+                          <span className="uppercase" style={{ fontSize: 11 }}>
+                            {game.label}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -821,14 +852,8 @@ function ExploreContent() {
 
               {filteredColleges.map(college => (
                 <motion.div
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.98 }}
                   key={college._id || college.id}
-                  onClick={() => {
-                    const collegeId = college._id || college.id;
-                    router.push(`/explore?collegeId=${collegeId}`);
-                  }}
-                  className="relative flex flex-col rounded-[1.5rem] overflow-hidden text-left group cursor-pointer shadow-md hover:shadow-xl transition-all duration-300"
+                  className="relative flex flex-col rounded-[1.5rem] overflow-hidden text-left group shadow-md hover:shadow-xl transition-all duration-300 cursor-default"
                   style={{ height: '420px' }}
                 >
                   {/* Full-bleed background image */}
@@ -872,14 +897,14 @@ function ExploreContent() {
                       </div>
                     </div>
 
-                    {/* Explore Now button */}
-                    <button 
-                      onClick={(e) => { 
-                        e.stopPropagation(); 
+                    {/* Explore Now button — only interactive hotspot on the card */}
+                    <button
+                      type="button"
+                      onClick={() => {
                         router.push(`/explore?collegeId=${college._id || college.id}`);
                       }}
                       disabled={loadingCollegeId === (college._id || college.id)}
-                      className="w-full bg-white rounded-2xl py-3 flex items-center justify-center text-sm font-bold text-[#1A1A1A] shadow-lg group-hover:bg-[#FFF8EC] transition-colors disabled:opacity-80"
+                      className="w-full bg-white rounded-2xl py-3 flex items-center justify-center text-sm font-bold text-[#1A1A1A] shadow-lg hover:bg-[#FFF8EC] transition-colors disabled:opacity-80 cursor-pointer"
                     >
                       {loadingCollegeId === (college._id || college.id) ? (
                         <Loader2 className="h-5 w-5 animate-spin" />
@@ -922,145 +947,108 @@ function ExploreContent() {
             )}
               </>
             ) : (
-              /* --- ARENA VIEW --- */
+              /* --- ARENA VIEW (Esports only) --- */
               <div className="flex flex-col flex-1 relative bg-transparent">
-                {/* Top Toggle: Esports vs Sports */}
-                <div className="px-4 py-3 flex space-x-2 bg-[#FAFAF8]/80 backdrop-blur-md sticky top-0 z-30 border-b border-[#E8E6E0]">
-                  <button
-                    onClick={() => setArenaCategory("esports")}
-                    className={clsx(
-                      "flex-1 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all",
-                      arenaCategory === "esports" ? "ca-btn-primary" : "ca-btn-secondary"
-                    )}
+                <div className="flex-1 overflow-y-auto custom-scrollbar px-4 sm:px-5 pb-24 pt-2">
+                  <motion.div
+                    key="esports"
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mx-auto w-full max-w-6xl space-y-7"
                   >
-                    🎮 Esports
-                  </button>
-                  <button
-                    onClick={() => setArenaCategory("sports")}
-                    className={clsx(
-                      "flex-1 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all",
-                      arenaCategory === "sports" ? "ca-btn-primary" : "ca-btn-secondary"
-                    )}
-                  >
-                    ⚽ Sports
-                  </button>
-                </div>
-
-                {/* Arena Content Scrollable Area */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-8 pb-20">
-                  <AnimatePresence mode="wait">
-                    {arenaCategory === "esports" ? (
-                      <motion.div
-                        key="esports"
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 20 }}
-                        className="space-y-8"
+                    {/* Section header + CTA */}
+                    <div className="flex items-end justify-between gap-3">
+                      <div>
+                        <h3 className="text-[#1A1A1A] font-black uppercase tracking-wider flex items-center text-sm">
+                          <Swords className="mr-2 text-[#C8922A]" size={16} /> Esports Squads
+                        </h3>
+                        <p className="text-[11px] text-[#888888] font-medium mt-1">
+                          Pick a game and jump into campus matchmaking
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowPlayerCardForm(true)}
+                        className="shrink-0 ca-btn-primary px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition cursor-pointer"
                       >
-                        {/* Action Bar */}
-                        <div className="flex justify-end">
-                          <button
-                            onClick={() => setShowPlayerCardForm(true)}
-                            className="ca-btn-primary px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition"
-                          >
-                            + Create My Card
-                          </button>
+                        + Create Card
+                      </button>
+                    </div>
+
+                    {/* Esports game cards */}
+                    <section>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                        {ESPORTS_SQUADS.filter(
+                          (game) =>
+                            arenaSportFilter === "All" ||
+                            arenaSportFilter === game.name
+                        ).map((game) => {
+                          const Icon = game.icon;
+                          return (
+                            <motion.button
+                              key={game.key}
+                              type="button"
+                              whileHover={{ y: -3 }}
+                              whileTap={{ scale: 0.98 }}
+                              onClick={() => router.push(`/arena/sport/${game.key}`)}
+                              className="group relative rounded-[1.35rem] border border-[#E8E6E0] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:border-[#C8922A]/45 transition-all cursor-pointer overflow-hidden text-left"
+                            >
+                              <div
+                                className="h-1.5 w-full"
+                                style={{ background: `linear-gradient(90deg, ${game.accent}, ${game.accent}88)` }}
+                              />
+                              <div className="p-4 flex flex-col gap-3">
+                                <div
+                                  className="w-11 h-11 rounded-xl flex items-center justify-center border transition-transform group-hover:scale-105"
+                                  style={{
+                                    background: `${game.accent}14`,
+                                    borderColor: `${game.accent}35`,
+                                  }}
+                                >
+                                  <Icon size={20} style={{ color: game.accent }} strokeWidth={2.25} />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-black text-[#1A1A1A] tracking-tight">
+                                    {game.name}
+                                  </p>
+                                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#888888] mt-0.5 group-hover:text-[#C8922A] transition-colors">
+                                    Open lobby
+                                  </p>
+                                </div>
+                              </div>
+                            </motion.button>
+                          );
+                        })}
+                      </div>
+                    </section>
+
+                    {/* Top Players */}
+                    <section>
+                      <h3 className="text-[#1A1A1A] font-black uppercase tracking-wider mb-3 flex items-center text-sm">
+                        <Target className="mr-2 text-[#C8922A]" size={16} /> Top Players
+                      </h3>
+                      <div className="rounded-[1.5rem] border border-[#E8E6E0] bg-gradient-to-b from-[#FFF8EC]/70 to-[#F9F8F5] px-6 py-12 flex flex-col items-center text-center gap-3">
+                        <div className="w-14 h-14 rounded-2xl bg-white border border-[#E8D9B0] shadow-sm flex items-center justify-center">
+                          <Gamepad2 size={24} className="text-[#C8922A]" />
                         </div>
-                        {/* Esports Teams */}
-                        <section>
-                          <h3 className="text-[#1A1A1A] font-black uppercase tracking-wider mb-3 flex items-center text-sm">
-                            <Swords className="mr-2 text-[#C8922A]" size={16} /> Esports Squads
-                          </h3>
-                          <div className="flex overflow-x-auto space-x-4 pb-4 no-scrollbar -mx-4 px-4">
-                            {['BGMI', 'Valorant', 'FIFA'].map(game => (
-                              <button
-                                key={game}
-                                onClick={() => router.push(`/arena/sport/${game.toLowerCase()}`)}
-                                className="app-panel min-w-[120px] h-24 rounded-2xl hover:border-primary/30 transition flex flex-col items-center justify-center relative overflow-hidden group"
-                              >
-                                <span className="text-2xl mb-1 group-hover:scale-110 transition-transform">🎮</span>
-                                <span className="text-[10px] font-black text-[#1A1A1A] uppercase tracking-widest">{game}</span>
-                              </button>
-                            ))}
-                          </div>
-                        </section>
-
-                        {/* Player Profile Card (FIFA Style) */}
-                        <section>
-                          <h3 className="text-[#1A1A1A] font-black uppercase tracking-wider mb-3 flex items-center text-sm">
-                            <Target className="mr-2 text-pink-500" size={16} /> Top Players
-                          </h3>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {/* We will map real data here soon */}
-                            {/* {realEsportsPlayers.map(player => ( ... ))} */}
-                          </div>
-                          <div className="text-center py-10">
-                            <p className="text-[#6B6B6B] text-xs font-bold uppercase tracking-widest">No players yet. Create your card!</p>
-                          </div>
-                        </section>
-                      </motion.div>
-                    ) : (
-                      /* ================= SPORTS SECTION ================= */
-                      <motion.div
-                        key="sports"
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        className="space-y-8"
-                      >
-                        {/* Action Bar */}
-                        <div className="flex justify-end">
-                          <button
-                            onClick={() => setShowPlayerCardForm(true)}
-                            className="bg-gradient-to-r from-orange-500 to-red-600 text-[#1A1A1A] px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-orange-500/20 hover:scale-105 transition"
-                          >
-                            + Create My Card
-                          </button>
+                        <div>
+                          <p className="text-sm font-black text-[#1A1A1A]">
+                            Be the first on the board
+                          </p>
+                          <p className="text-[11px] text-[#888888] font-medium mt-1 max-w-xs">
+                            Create your player card and show up in Top Players for your campus.
+                          </p>
                         </div>
-                        {/* Sports Teams */}
-                        <section>
-                          <h3 className="text-[#1A1A1A] font-black uppercase tracking-wider mb-3 flex items-center text-sm">
-                            <Flame className="mr-2 text-orange-400" size={16} /> Campus Teams
-                          </h3>
-                          <div className="flex overflow-x-auto space-x-4 pb-4 no-scrollbar -mx-4 px-4">
-                            {[
-                              { name: 'Volleyball', icon: '🏐' },
-                              { name: 'Football', icon: '⚽' },
-                              { name: 'Badminton', icon: '🏸' },
-                              { name: 'Basketball', icon: '🏀' },
-                              { name: 'Cricket', icon: '🏏' },
-                              { name: 'Tennis', icon: '🎾' },
-                              { name: 'Swimming', icon: '🏊' }
-                            ].map(sport => (
-                              <button
-                                key={sport.name}
-                                onClick={() => router.push(`/arena/sport/${sport.name.toLowerCase()}`)}
-                                className="app-panel min-w-[120px] h-24 rounded-2xl hover:border-primary/30 transition flex flex-col items-center justify-center relative overflow-hidden group"
-                              >
-                                <span className="text-2xl mb-1 group-hover:scale-110 transition-transform">{sport.icon}</span>
-                                <span className="text-[10px] font-black text-[#1A1A1A] uppercase tracking-widest">{sport.name}</span>
-                              </button>
-                            ))}
-                          </div>
-                        </section>
-
-                        {/* Player Cards (Sports) */}
-                        <section>
-                          <h3 className="text-[#1A1A1A] font-black uppercase tracking-wider mb-3 flex items-center text-sm">
-                            <Users className="mr-2 text-orange-400" size={16} /> Top Athletes
-                          </h3>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {/* We will map real data here soon */}
-                            {/* {realSportsPlayers.map(player => ( ... ))} */}
-                          </div>
-                          <div className="text-center py-10">
-                            <p className="text-[#6B6B6B] text-xs font-bold uppercase tracking-widest">No athletes yet. Create your card!</p>
-                          </div>
-                        </section>
-
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                        <button
+                          type="button"
+                          onClick={() => setShowPlayerCardForm(true)}
+                          className="mt-1 ca-btn-primary px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest cursor-pointer"
+                        >
+                          Create My Card
+                        </button>
+                      </div>
+                    </section>
+                  </motion.div>
                 </div>
 
                 {/* Form Overlay */}
@@ -1084,12 +1072,12 @@ function ExploreContent() {
             exit={{ opacity: 0, x: 20 }}
             className="flex-1 flex flex-col"
           >
-            {/* Profile Header */}
-            <div className="relative">
-              <div className="h-64 w-full bg-[#F3F2EE] relative overflow-hidden">
+            {/* Profile Header — framed banner with padding */}
+            <div className="relative px-3 pt-3">
+              <div className="h-[380px] sm:h-[420px] w-full bg-[#F3F2EE] relative overflow-hidden rounded-2xl shadow-sm border border-[#E8E6E0]">
                 <img
                   src={selectedCollege.banner || COLLEGE_BANNER_FALLBACK}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover object-center"
                   alt=""
                   referrerPolicy="no-referrer"
                   onError={handleBannerError}
@@ -1102,17 +1090,34 @@ function ExploreContent() {
                   }}
                 />
 
-                {/* Back Button */}
+                {/* Back Button — hardcoded white stroke (global CSS overrides lucide currentColor) */}
                 <button
+                  type="button"
                   onClick={() => router.push('/explore')}
-                  className="absolute top-4 left-4 p-2.5 bg-black/45 backdrop-blur-md rounded-full text-white hover:bg-black/65 transition-colors z-20 border border-white/10"
+                  className="explore-college-banner__back absolute top-3 left-3 p-2.5 bg-black/45 backdrop-blur-md rounded-full hover:bg-black/65 transition-colors z-20 border border-white/10 cursor-pointer"
                   aria-label="Back to explore"
+                  style={{ cursor: "pointer", color: "#ffffff" }}
                 >
-                  <ChevronLeft size={20} />
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M15 18l-6-6 6-6"
+                      stroke="#ffffff"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
                 </button>
 
                 {/* College Info on Banner */}
-                <div className="absolute bottom-6 left-4 right-4 flex items-end space-x-4 z-10">
+                <div className="absolute bottom-5 left-4 right-4 flex items-end space-x-4 z-10">
                   <div className="w-16 h-16 rounded-2xl bg-white/95 backdrop-blur-md border border-white/40 flex items-center justify-center shadow-2xl shrink-0">
                     {selectedCollege.emoji ? (
                       <span className="text-3xl leading-none" aria-hidden>
@@ -1145,10 +1150,6 @@ function ExploreContent() {
                   {
                     label: "Posts",
                     value: selectedCollege.realPostCount ?? selectedCollege.posts,
-                  },
-                  {
-                    label: "Depts",
-                    value: selectedCollege.departments,
                   },
                 ].map((stat) => (
                   <div
@@ -1682,11 +1683,11 @@ function ExploreContent() {
                           {memoryPosts.map((post, i) => (
                             <div
                               key={post._id || i}
-                              className="aspect-square relative group overflow-hidden bg-[#F3F2EE] rounded-xl border border-[#E8E6E0]"
+                              className="aspect-square relative group overflow-hidden bg-[#F3F2EE] rounded-xl border border-[#E8E6E0] p-1.5"
                             >
                               <img
                                 src={post.mediaUrl || post.image}
-                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
                                 alt=""
                               />
                             </div>

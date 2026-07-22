@@ -2,45 +2,28 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Trophy, Swords, Zap, Users, Shield, Dumbbell,
-  Gamepad2, Star, Flame, Clock, Activity, MapPin,
+  Trophy, Users, Shield,
+  Gamepad2, Star, Flame, Activity, MapPin,
   RefreshCw, CalendarX
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { getAvatarSrc, getDefaultAvatar } from "@/utils/defaultAvatars";
 
-// ─── Tab Config (UI only — no fake data) ─────────────────────────────────────
-const TABS = [
-  {
-    id: "sports",
-    label: "Sports",
-    icon: Dumbbell,
-    color: "#FF6B35",
-    sports: [
-      { key: "volleyball", icon: "🏐" },
-      { key: "football",   icon: "⚽" },
-      { key: "cricket",    icon: "🏏" },
-      { key: "basketball", icon: "🏀" },
-      { key: "badminton",  icon: "🏸" },
-      { key: "tennis",     icon: "🎾" },
-      { key: "swimming",   icon: "🏊" },
-    ]
-  },
-  {
-    id: "esports",
-    label: "Esports",
-    icon: Gamepad2,
-    color: "#39FF82",
-    sports: [
-      { key: "bgmi",     icon: "🎮" },
-      { key: "valorant", icon: "🔫" },
-      { key: "fifa",     icon: "⚽" },
-      { key: "chess",    icon: "♟️" },
-      { key: "carrom",   icon: "🎯" },
-    ]
-  }
-];
+// ─── Esports-only Arena config ───────────────────────────────────────────────
+const ESPORTS_TAB = {
+  id: "esports",
+  label: "Esports",
+  icon: Gamepad2,
+  color: "#39FF82",
+  sports: [
+    { key: "bgmi",     icon: "🎮" },
+    { key: "valorant", icon: "🔫" },
+    { key: "fifa",     icon: "⚽" },
+    { key: "chess",    icon: "♟️" },
+    { key: "carrom",   icon: "🎯" },
+  ]
+};
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 const Sk = ({ className }) => (
@@ -190,7 +173,6 @@ function Toast({ msg, onDone }) {
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function ArenaPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("sports");
   const [loading, setLoading] = useState(true);
   const [colleges, setColleges] = useState(null);   // null = not yet loaded
   const [players, setPlayers] = useState(null);     // null = not yet loaded
@@ -199,13 +181,13 @@ export default function ArenaPage() {
   const [isMounted, setIsMounted] = useState(false);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-  const cfg = TABS.find(t => t.id === activeTab);
+  const cfg = ESPORTS_TAB;
 
   // ── Boot ──────────────────────────────────────────────────────────────────
   useEffect(() => { setIsMounted(true); }, []);
 
-  // ── Fetch — reset everything on tab switch ────────────────────────────────
-  const fetchAll = useCallback(async (tab) => {
+  // ── Fetch colleges + esports players ──────────────────────────────────────
+  const fetchAll = useCallback(async () => {
     setLoading(true);
     setColleges(null);
     setPlayers(null);
@@ -248,15 +230,11 @@ export default function ArenaPage() {
     }
     setColleges(enrichedColleges);
 
-    // ── 2. Players — use real sport/interest keywords per tab ────────────
+    // ── 2. Players — esports interest keywords ───────────────────────────
     let playerList = [];
     try {
-      // Pick a real interest keyword that matches tab type
-      const keywords = tab === "esports"
-        ? ["gaming", "esports", "bgmi", "valorant"]
-        : ["sports", "football", "cricket", "basketball", "badminton"];
+      const keywords = ["gaming", "esports", "bgmi", "valorant"];
 
-      // Try keywords until we get results
       for (const kw of keywords) {
         const res = await fetch(
           `${apiUrl}/api/users/search/query?q=${encodeURIComponent(kw)}`,
@@ -279,8 +257,8 @@ export default function ArenaPage() {
   }, [apiUrl]);
 
   useEffect(() => {
-    if (isMounted) fetchAll(activeTab);
-  }, [activeTab, isMounted, fetchAll]);
+    if (isMounted) fetchAll();
+  }, [isMounted, fetchAll]);
 
   // ── Challenge handler ─────────────────────────────────────────────────────
   const handleChallenge = (college) => {
@@ -297,7 +275,7 @@ export default function ArenaPage() {
 
   return (
     <div className="page-shell relative overflow-x-hidden pb-24">
-      {/* Background glow — changes with tab */}
+      {/* Background glow */}
       <div
         className="fixed top-[-10%] right-[-10%] w-[50%] h-[50%] blur-[130px] rounded-full z-0 pointer-events-none transition-all duration-700"
         style={{ background: `${tabColor}14` }}
@@ -322,13 +300,13 @@ export default function ArenaPage() {
                 Arena<span style={{ color: tabColor }}>.</span>
               </h1>
               <p className="text-[10px] text-[#6B6B6B] font-bold uppercase tracking-widest">
-                {activeTab === "sports" ? "Sports Championships" : "Esports Battles"}
+                Esports Battles
               </p>
             </div>
           </div>
 
           <button
-            onClick={() => fetchAll(activeTab)}
+            onClick={() => fetchAll()}
             disabled={loading}
             className="p-2 bg-[#F9F8F5] border border-[#E8E6E0] rounded-xl text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors disabled:opacity-40"
           >
@@ -339,33 +317,11 @@ export default function ArenaPage() {
 
       <div className="mx-auto w-full max-w-3xl px-5 space-y-7 relative z-10">
 
-        {/* ── Tab Switcher ────────────────────────────────────────────────── */}
-        <div className="app-panel grid grid-cols-2 gap-1.5 rounded-[1.35rem] p-1.5">
-          {TABS.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => { if (tab.id !== activeTab) setActiveTab(tab.id); }}
-              className={clsx(
-                "rounded-[1rem] px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] transition-all flex items-center justify-center gap-2",
-                activeTab === tab.id ? "text-black" : "text-[#6B6B6B] hover:text-[#1A1A1A]"
-              )}
-              style={
-                activeTab === tab.id
-                  ? { background: tab.color, boxShadow: `0 4px 20px ${tab.color}40` }
-                  : undefined
-              }
-            >
-              <tab.icon size={14} />
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* ── Pick Your Sport ─────────────────────────────────────────────── */}
+        {/* ── Pick Your Game ──────────────────────────────────────────────── */}
         <section>
           <h2 className="text-[11px] font-black text-[#6B6B6B] uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
             <Shield size={12} style={{ color: tabColor }} />
-            {activeTab === "sports" ? "Compete In" : "Play On"}
+            Play On
           </h2>
           <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide -mx-1 px-1">
             {cfg.sports.map(entry => (
@@ -513,18 +469,13 @@ export default function ArenaPage() {
             className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
             style={{ background: `${tabColor}18`, border: `1.5px solid ${tabColor}40` }}
           >
-            {activeTab === "sports"
-              ? <Swords size={26} style={{ color: tabColor }} />
-              : <Flame size={26} style={{ color: tabColor }} />
-            }
+            <Flame size={26} style={{ color: tabColor }} />
           </div>
           <h3 className="text-lg font-black text-[#1A1A1A] mb-1">
-            {activeTab === "sports" ? "Register Your Team" : "Join the Battle"}
+            Join the Battle
           </h3>
           <p className="text-xs text-[#6B6B6B] mb-5 font-medium max-w-xs mx-auto">
-            {activeTab === "sports"
-              ? "Build your college sports team and challenge other universities."
-              : "Form your esports squad and dominate the campus leaderboard."}
+            Form your esports squad and dominate the campus leaderboard.
           </p>
           <div className="flex gap-3 justify-center flex-wrap">
             {cfg.sports.slice(0, 4).map(entry => (

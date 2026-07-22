@@ -21,23 +21,36 @@ const CAMPUS_ALT_2 =
 const BANNER_BY_NAME = {
   // Delhi / NCR
   'Rishihood University':
-    'https://framerusercontent.com/images/XFjzi1N8IY9NG8fcSIM2Ev9sc.webp?width=680&height=377',
-  'School of Planning and Architecture (SPA)': CAMPUS_ALT_2,
+    'https://framerusercontent.com/images/XFjzi1N8IY9NG8fcSIM2Ev9sc.webp?width=1600',
+  'School of Planning and Architecture (SPA)':
+    'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi24003tqaFcjayFwY2rQvUJE6Wl13FMKbw9C4Xqe_Pe9l2Kk7fu-ph3xOVzsEXlbkE9Z_UHqwSjbIZEHTOCRhtbf1hO5ZQr6R9NW1vfMPgcejNbWo2-5qDXbebAoHHUPa84JpGAheRV0_c/s1600/MB+hostehg_01.JPG',
   'IIT Delhi': 'https://home.iitd.ac.in/images/for-faculty/camp8.jpg',
   'Delhi Technological University (DTU)':
     'https://learn.vcnow.in/wp-content/uploads/2026/01/DTU.jpg',
   'Netaji Subhas University of Technology (NSUT)':
     'https://edufever.in/colleges/wp-content/uploads/2021/03/NSUT-Delhi.webp',
-  'IIIT Delhi': CAMPUS_ALT,
-  'University of Delhi (DU)': CAMPUS_ALT_2,
-  'Jawaharlal Nehru University (JNU)':
-    'https://images.hindustantimes.com/img/2021/06/09/1600x900/https___blankpaper.htdigital.in_cms-backend-service-mt_image_redirect_link=https___images.hindustantimes.com_rf_image_size_960x540_HT_p2_2020_12_02_Pictures_jnu_faac0890-344e-11eb-a095-f4dd1fe9b7fb_1623229693932_1623229700573.jpg',
+  'IIIT Delhi':
+    'https://scontent.fsc8-1.fna.fbcdn.net/v/t39.30808-6/474463365_1043647644469899_7392936379056642518_n.jpg?stp=dst-jpg_tt6&cstp=mx2048x1508&ctp=s2048x1508&_nc_cat=108&ccb=1-7&_nc_sid=cc71e4&_nc_ohc=YPyOjxXUppQQ7kNvwHwMaAf&_nc_oc=AdovWGGac135xRDRby4Qgm-INs9WHpBcHnlzP0HGu0_RbKnJHlT6A5MKtasnXM7rql7WHu-dcY9IrLBqrdLS5DvL&_nc_zt=23&_nc_ht=scontent.fsc8-1.fna&_nc_gid=VsNcHwUaRkdV2mqDng3LGA&_nc_ss=7b289&oh=00_AQBtemBO20_f5orfSNKRmoa61CHWYaMB0eFibfLgLblb0A&oe=6A64E8B7',
+  'University of Delhi (DU)':
+    'https://images.shiksha.com/mediadata/images/articles/1662370481phpb8qpYu.jpeg',
+  'Jawaharlal Nehru University (JNU)': 'https://jnuee.jnu.ac.in/images/slide4.jpg',
   'Jamia Millia Islamia': CAMPUS_ALT,
   'Guru Gobind Singh Indraprastha University (IPU)':
     'https://images.indianexpress.com/2025/02/ggsipu-1.jpg',
   'Kurukshetra University':
     'https://notopedia-uploads.s3.us-east-2.amazonaws.com/clg-photo/pic-202212220610052590.jpg',
-  'YMCA Faridabad': WORKING_PLACEHOLDER,
+  'YMCA Faridabad':
+    'https://content3.jdmagicbox.com/v2/comp/faridabad/f7/011pxx11.xx11.240506201615.g9f7/catalogue/j-c-bose-university-of-science-and-technology-ymca-faridabad-sector-6-faridabad-universities-c2j9ylsv1u.jpg',
+  'Polaris University':
+    'https://framerusercontent.com/images/GK1DzI1zh4f9uHpc7W7XdJgA.jpg?width=1500&height=885',
+  'VIT University': 'https://vit.ac.in/wp-content/uploads/2023/06/banner7.webp',
+  'Ashoka University':
+    'https://akm-img-a-in.tosshub.com/indiatoday/images/story/201902/Ashoka.jpeg?size=690:388',
+  'DY Patil University':
+    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT6q7UDPbtvT_iGGpZWgv80VIr9OaKCszWcenRL39ryi797zHIJ6P0mxEY&s=10',
+  'S-VYASA (NST Bangalore)': 'https://pbs.twimg.com/media/G8NSI0hbEAAQFYZ.jpg',
+  "St. Mary's University (NST Hyderabad)":
+    'https://www.appily.com/sites/default/files/styles/max_1200/public/images/hero/college/228149_hero.jpg?itok=Tfzv-e_N',
 
   // IITs
   'IIT (BHU) Varanasi':
@@ -112,7 +125,7 @@ const BANNER_BY_NAME = {
   'Puran Murti College of Law (PMCL)':
     'https://www.collegebatch.com/static/clg-gallery/puran-murti-campus-sonipat-235215.webp',
   'SRM University, Delhi-NCR (Sonepat)':
-    'https://dfhe5ze0n4pxu.cloudfront.net/College/Background-Images/Background-Image-1718788403619.jpg',
+    'https://collegewollege.com/_next/image?url=https%3A%2F%2Fcdn.collegewollege.com%2Fstorage%2Fcolleges%2Fbranding%2FipycSpCJRcIFxTDX2A507VyuSaJCH4PLMFbcJCNu.png&w=3840&q=60',
 
   // Design
   'Amity University, Gurugram':
@@ -122,13 +135,13 @@ const BANNER_BY_NAME = {
   'NIFT New Delhi':
     'https://iirfranking2.s3.ap-south-1.amazonaws.com/upload__1620895522963.webp',
   'O.P. Jindal Global University (JGU), Sonipat':
-    'https://static.boostmytalent.com/img/univ/jindal-global-university-online-mba-admission.webp',
+    'https://www.admissionwala.in/storage/productimages/Banner4-1.jpg',
   'Pearl Academy, Delhi':
     'https://campuspro.co.in/collage-image/1737943310_row_406.jpg',
   'Pearl Academy, Gurugram':
     'https://images.adsttc.com/media/images/5011/e982/28ba/0d5f/4c00/03ce/newsletter/stringio.jpg?1414473798',
   'World University of Design (WUD), Sonipat':
-    'https://www.collegebatch.com/static/clg-gallery/world-university-of-design-sonipat-230555.webp',
+    'https://images.shiksha.com/mediadata/images/1514283925php4SnqUv.png',
 };
 
 const normalize = (name) => name.toLowerCase().trim().replace(/\s+/g, ' ');

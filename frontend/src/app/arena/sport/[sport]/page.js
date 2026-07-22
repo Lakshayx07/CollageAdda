@@ -9,19 +9,23 @@ import { useRouter, useParams } from 'next/navigation';
 import clsx from 'clsx';
 import { getAvatarSrc, getDefaultAvatar } from "@/utils/defaultAvatars";
 
+/** App theme accent — matches Campus Adda gold across the product */
+const APP_ACCENT = '#C8922A';
+const APP_ACCENT_SOFT = '#D4A843';
+
 const SPORT_CONFIG = {
-  volleyball:  { limit: 12, icon: '🏐' },
-  football:    { limit: 18, icon: '⚽' },
-  badminton:   { limit: 4,  icon: '🏸' },
-  basketball:  { limit: 10, icon: '🏀' },
-  cricket:     { limit: 15, icon: '🏏' },
-  tennis:      { limit: 4,  icon: '🎾' },
-  swimming:    { limit: 8,  icon: '🏊' },
-  bgmi:        { limit: 5,  icon: '🎮' },
-  valorant:    { limit: 5,  icon: '🎮' },
-  fifa:        { limit: 2,  icon: '🎮' },
-  chess:       { limit: 2,  icon: '♟️' },
-  carrom:      { limit: 2,  icon: '🎯' },
+  volleyball:  { limit: 12, icon: '🏐', tagline: 'Campus court battles' },
+  football:    { limit: 18, icon: '⚽', tagline: 'Inter-college football' },
+  badminton:   { limit: 4,  icon: '🏸', tagline: 'Singles & doubles' },
+  basketball:  { limit: 10, icon: '🏀', tagline: 'Hoops on campus' },
+  cricket:     { limit: 15, icon: '🏏', tagline: 'Build your XI' },
+  tennis:      { limit: 4,  icon: '🎾', tagline: 'Court challenge' },
+  swimming:    { limit: 8,  icon: '🏊', tagline: 'Relay & freestyle' },
+  bgmi:        { limit: 5,  icon: '🎮', tagline: 'Squad up. Drop in.' },
+  valorant:    { limit: 5,  icon: '🔫', tagline: '5v5 agent battles' },
+  fifa:        { limit: 2,  icon: '⚽', tagline: '1v1 & co-op' },
+  chess:       { limit: 2,  icon: '♟️', tagline: 'Mind games' },
+  carrom:      { limit: 2,  icon: '🎯', tagline: 'Strike & pocket' },
 };
 
 const Sk = ({ className }) => (
@@ -40,7 +44,11 @@ export default function SportTeamsPage() {
   const rawSport   = params.sport || 'volleyball';
   const sportKey   = rawSport.toLowerCase();
   const sportName  = rawSport.charAt(0).toUpperCase() + rawSport.slice(1);
-  const sportData  = SPORT_CONFIG[sportKey] || { limit: 10, icon: '🏆' };
+  const sportData  = SPORT_CONFIG[sportKey] || {
+    limit: 10,
+    icon: '🏆',
+    tagline: 'Campus competition',
+  };
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
@@ -126,69 +134,123 @@ export default function SportTeamsPage() {
   );
 
   return (
-    <div className="page-shell text-[#1A1A1A] overflow-hidden pb-24">
+    <div className="page-shell text-[#1A1A1A] overflow-x-hidden pb-24">
+      {/* Soft accent wash */}
+      <div
+        className="pointer-events-none fixed top-0 left-0 right-0 h-64 z-0"
+        style={{
+          background: `linear-gradient(180deg, ${APP_ACCENT}14 0%, transparent 100%)`,
+        }}
+      />
+
       {/* Header */}
-      <header className="page-header sticky top-0 z-40 px-4 py-4">
+      <header className="page-header sticky top-0 z-40 px-4 py-3 backdrop-blur-md bg-[#FAFAF8]/90 border-b border-[#E8E6E0]/80">
         <div className="mx-auto flex max-w-3xl items-center gap-3">
-          <button onClick={() => router.back()} className="p-2 bg-[#F3F2EE] rounded-full hover:bg-[#F3F2EE] transition">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="sport-lobby-back p-2.5 rounded-full border border-[#E8E6E0] bg-white hover:bg-[#F9F8F5] transition cursor-pointer shadow-sm"
+            aria-label="Back"
+          >
             <ChevronLeft size={20} />
           </button>
-          <h1 className="text-xl font-black uppercase tracking-widest flex items-center gap-2">
-            <span className="text-2xl">{sportData.icon}</span> {sportName}
-          </h1>
+          <div
+            className="h-11 w-11 rounded-2xl flex items-center justify-center border-2 border-[#E8D9B0] bg-[#FFF8EC] shrink-0 shadow-sm"
+          >
+            <span className="text-xl leading-none">{sportData.icon}</span>
+          </div>
+          <div className="min-w-0">
+            <h1 className="text-lg font-black uppercase tracking-widest text-[#1A1A1A] truncate">
+              {sportName}
+            </h1>
+            <p className="text-[11px] font-semibold text-[#888888] truncate">
+              {sportData.tagline}
+            </p>
+          </div>
         </div>
       </header>
 
-      <div className="p-4 max-w-2xl mx-auto space-y-6 relative z-10">
+      <div className="relative z-10 p-4 max-w-3xl mx-auto space-y-6">
 
-        {/* ── MY TEAM SECTION ─────────────────────────────────────────────── */}
+        {/* ── MY TEAM / LOBBY HERO ─────────────────────────────────────────── */}
         {!hasMyTeam ? (
-          <div className="app-panel border-orange-500/30 rounded-[1.5rem] p-8 flex flex-col items-center text-center relative overflow-hidden">
-            <div className="w-16 h-16 rounded-full bg-orange-500/20 flex items-center justify-center mb-4 shadow-[0_0_30px_rgba(249,115,22,0.3)] border border-orange-500/50">
-              <Users size={28} className="text-orange-400" />
+          <motion.section
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative overflow-hidden rounded-[1.75rem] border-2 border-[#E8E6E0] bg-white shadow-[0_8px_28px_rgba(0,0,0,0.05)]"
+          >
+            <div
+              className="h-1.5 w-full"
+              style={{ background: `linear-gradient(90deg, ${APP_ACCENT}, ${APP_ACCENT_SOFT})` }}
+            />
+            <div className="p-6 sm:p-8 flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 border-2 border-[#E8D9B0] bg-[#FFF8EC] shadow-sm">
+                <Users size={28} className="text-[#C8922A]" />
+              </div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 text-[#C8922A]">
+                Open Lobby
+              </p>
+              <h2 className="text-xl font-black tracking-tight text-[#1A1A1A] mb-2">
+                No team yet for {userCollege}
+              </h2>
+              <p className="text-sm text-[#6B6B6B] mb-6 font-medium max-w-sm leading-relaxed">
+                Be the first to register a {sportName} squad. Invite campus players and start challenging other colleges.
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+                <span className="rounded-full bg-[#F9F8F5] border border-[#E8E6E0] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#6B6B6B]">
+                  Max {sportData.limit} players
+                </span>
+                <span className="rounded-full bg-[#F9F8F5] border border-[#E8E6E0] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#6B6B6B]">
+                  College vs college
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setNewTeam({ letter: 'A', captainId: '', players: [] }); setShowRegisterModal(true); }}
+                className="sport-lobby-cta w-full sm:w-auto min-w-[240px] font-black uppercase tracking-widest text-xs px-6 py-3.5 rounded-2xl transition hover:opacity-95 cursor-pointer shadow-[0_6px_18px_rgba(200,146,42,0.28)]"
+                style={{
+                  background: `linear-gradient(135deg, ${APP_ACCENT}, ${APP_ACCENT_SOFT})`,
+                  color: '#1A1A1A',
+                }}
+              >
+                + Register Your College Team
+              </button>
             </div>
-            <h2 className="text-lg font-black uppercase tracking-widest mb-2">No Team Yet</h2>
-            <p className="text-xs text-[#6B6B6B] mb-6 font-medium">
-              {userCollege} doesn't have a registered {sportName} team yet.
-              Be the first to build the squad!
-            </p>
-            <button
-              onClick={() => { setNewTeam({ letter: 'A', captainId: '', players: [] }); setShowRegisterModal(true); }}
-              className="bg-gradient-to-r from-orange-500 to-red-500 text-[#1A1A1A] font-black uppercase tracking-widest text-xs px-6 py-3 rounded-xl shadow-lg shadow-orange-500/30 hover:scale-105 transition w-full"
-            >
-              + Register Your College Team
-            </button>
-          </div>
+          </motion.section>
         ) : (
           <div className="space-y-4">
             <h3 className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest pl-1">Your Squad</h3>
-            <div className="bg-[#F3F2EE] border border-orange-500/30 rounded-2xl p-1 shadow-[0_0_20px_rgba(249,115,22,0.1)] relative">
-              <div className="absolute top-0 right-4 bg-orange-500 text-black text-[9px] font-black uppercase px-2 py-0.5 rounded-b-md shadow-lg">
-                Your Team ✅
+            <div className="relative overflow-hidden rounded-[1.5rem] border-2 border-[#E8E6E0] bg-white shadow-[0_6px_20px_rgba(0,0,0,0.05)]">
+              <div
+                className="h-1.5 w-full"
+                style={{ background: `linear-gradient(90deg, ${APP_ACCENT}, ${APP_ACCENT_SOFT})` }}
+              />
+              <div className="absolute top-3 right-3 text-[9px] font-black uppercase px-2.5 py-1 rounded-full bg-[#FFF8EC] text-[#1A1A1A] border border-[#E8D9B0]">
+                Your Team
               </div>
-              <div className="app-panel rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="p-4 sm:p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <h4 className="font-black text-base text-[#1A1A1A] uppercase tracking-wider">{myTeamName}</h4>
+                  <h4 className="font-black text-base text-[#1A1A1A] tracking-tight">{myTeamName}</h4>
                   <div className="flex items-center gap-2 mt-2">
                     <StatusPill count={newTeam.players.length} max={sportData.limit} />
                     <span className="text-[10px] text-[#6B6B6B] uppercase tracking-widest font-bold">Max {sportData.limit}</span>
                   </div>
                 </div>
-                <div className="flex gap-2 w-full sm:w-auto">
-                  <button
-                    onClick={() => setShowSeeTeamModal(true)}
-                    className="flex-1 sm:flex-none py-2 px-4 rounded-xl bg-[#F3F2EE] hover:bg-[#F3F2EE] text-[#1A1A1A] text-[10px] font-black uppercase tracking-widest transition"
-                  >
-                    See Team 👥
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowSeeTeamModal(true)}
+                  className="w-full sm:w-auto py-2.5 px-4 rounded-xl border border-[#E8E6E0] bg-[#F9F8F5] hover:bg-white text-[#1A1A1A] text-[10px] font-black uppercase tracking-widest transition cursor-pointer"
+                >
+                  See Team
+                </button>
               </div>
             </div>
 
             {myTeamFull && (
               <button
+                type="button"
                 onClick={() => { setNewTeam({ letter: 'B', captainId: '', players: [] }); setShowRegisterModal(true); }}
-                className="w-full py-3 rounded-xl border border-dashed border-[#E8E6E0] text-[#6B6B6B] hover:bg-[#F3F2EE] text-[10px] font-black uppercase tracking-widest transition"
+                className="w-full py-3 rounded-xl border border-dashed border-[#E8E6E0] text-[#6B6B6B] hover:bg-[#F9F8F5] text-[10px] font-black uppercase tracking-widest transition cursor-pointer"
               >
                 + Register 2nd Team (Team B)
               </button>
@@ -426,85 +488,115 @@ function OtherColleges({ sportName, sportData, apiUrl }) {
     load();
   }, [apiUrl]);
 
-  const Sk = ({ className }) => <div className={clsx("animate-pulse rounded-xl bg-white/6", className)} />;
+  const Sk = ({ className }) => <div className={clsx("animate-pulse rounded-xl bg-[#EFEDE8]", className)} />;
 
   return (
-    <div className="space-y-4 pt-4">
-      <h3 className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest pl-1 border-t border-[#E8E6E0] pt-6">
-        Other College Teams
-      </h3>
+    <div className="space-y-4 pt-2">
+      <div className="flex items-end justify-between gap-3 border-t border-[#E8E6E0] pt-6">
+        <div>
+          <h3 className="text-[11px] text-[#1A1A1A] font-black uppercase tracking-widest">
+            Challenge Board
+          </h3>
+          <p className="text-[11px] text-[#888888] font-medium mt-1">
+            Other college teams for {sportName}
+          </p>
+        </div>
+        {colleges && (
+          <span className="shrink-0 rounded-full bg-[#F9F8F5] border border-[#E8E6E0] px-2.5 py-1 text-[10px] font-bold text-[#6B6B6B]">
+            {Math.min(colleges.length, 6)} listed
+          </span>
+        )}
+      </div>
 
       {colleges === null ? (
         Array.from({ length: 2 }).map((_, i) => (
-          <div key={i} className="app-panel rounded-[1.35rem] p-4 space-y-3">
+          <div key={i} className="rounded-[1.35rem] border border-[#E8E6E0] bg-white p-4 space-y-3">
             <Sk className="h-5 w-40" />
             <Sk className="h-4 w-24" />
-            <div className="flex gap-2">
-              <Sk className="h-10 flex-1 rounded-xl" />
-              <Sk className="h-10 flex-1 rounded-xl" />
-            </div>
+            <Sk className="h-10 w-full rounded-xl" />
           </div>
         ))
       ) : colleges.length === 0 ? (
-        <div className="app-panel rounded-[1.5rem] py-12 text-center border border-[#E8E6E0]">
+        <div className="rounded-[1.5rem] py-12 text-center border border-[#E8E6E0] bg-white">
           <p className="text-sm font-black text-[#888888]">No colleges found</p>
         </div>
       ) : (
-        colleges.slice(0, 6).map(college => (
-          <div key={college._id} className="app-panel rounded-[1.35rem] p-4 hover:border-[#E8E6E0] transition group">
-            <div className="flex justify-between items-start mb-3">
-              <div>
-                <h4 className="font-black text-sm text-[#1A1A1A] uppercase tracking-wider group-hover:text-[#C8922A] transition">
-                  {college.name} {sportName}
-                </h4>
-                <p className="text-[10px] text-[#6B6B6B] flex items-center gap-1 mt-1 font-bold">
-                  <MapPin size={9} /> {college.location || 'India'}
-                </p>
+        <div className="space-y-3">
+          {        colleges.slice(0, 6).map((college) => (
+            <div
+              key={college._id}
+              className="group relative overflow-hidden rounded-[1.35rem] border-2 border-[#E8E6E0] bg-white shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.07)] hover:border-[#C8922A]/55 transition-all"
+            >
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#C8922A]" />
+              <div className="p-4 pl-5 flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="h-12 w-12 rounded-2xl flex items-center justify-center border-2 border-[#E8D9B0] bg-[#FFF8EC] shrink-0">
+                  <span className="text-xl leading-none">{sportData.icon}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-black text-sm text-[#1A1A1A] tracking-tight truncate group-hover:text-[#C8922A] transition">
+                    {college.name} {sportName}
+                  </h4>
+                  <p className="text-[11px] text-[#6B6B6B] flex items-center gap-1 mt-1 font-semibold">
+                    <MapPin size={11} /> {college.location || 'India'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowInviteFor(college)}
+                  className="sport-lobby-cta w-full sm:w-auto shrink-0 inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border-2 border-[#E8D9B0] bg-[#FFF8EC] hover:bg-[#C8922A]/15 text-[10px] font-black uppercase tracking-widest transition cursor-pointer"
+                >
+                  <Swords size={13} className="text-[#C8922A]" />
+                  Challenge
+                </button>
               </div>
-              <span className="text-2xl">{sportData.icon}</span>
             </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowInviteFor(college)}
-                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-[#C8922A]/20 to-[#D4A843]/20 border border-[#C8922A]/30 text-[#C8922A] hover:from-[#C8922A]/40 hover:to-[#D4A843]/40 text-[10px] font-black uppercase tracking-widest transition"
-              >
-                Send Invitation ⚔️
-              </button>
-            </div>
-          </div>
-        ))
+          ))}
+        </div>
       )}
 
-      {/* Invite Modal — no hardcoded team names */}
       <AnimatePresence>
         {showInviteFor && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-md" onClick={() => setShowInviteFor(null)}>
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
               onClick={e => e.stopPropagation()}
-              className="app-panel border-[#C8922A]/30 rounded-[1.75rem] w-full max-w-sm overflow-hidden flex flex-col relative"
+              className="bg-white border-2 border-[#E8E6E0] rounded-[1.75rem] w-full max-w-sm overflow-hidden flex flex-col relative shadow-2xl"
             >
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#C8922A] to-[#D4A843]" />
+              <div
+                className="absolute top-0 left-0 w-full h-1.5"
+                style={{ background: `linear-gradient(90deg, ${APP_ACCENT}, ${APP_ACCENT_SOFT})` }}
+              />
               <div className="p-6 text-center">
-                <Swords size={32} className="text-[#C8922A] mx-auto mb-4" />
-                <h3 className="font-black text-lg text-[#1A1A1A] uppercase tracking-wider mb-1">
+                <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center border-2 border-[#E8D9B0] bg-[#FFF8EC]">
+                  <Swords size={26} className="text-[#C8922A]" />
+                </div>
+                <h3 className="font-black text-lg text-[#1A1A1A] tracking-tight mb-1">
                   Challenge {showInviteFor.name}?
                 </h3>
-                <p className="text-xs text-[#6B6B6B] mb-6 font-medium">
+                <p className="text-xs text-[#6B6B6B] mb-4 font-medium">
                   Send an official {sportName} match invitation to their team captain.
                 </p>
-                <p className="text-[10px] text-[#6B6B6B] mb-6 font-bold uppercase tracking-widest">
+                <p className="text-[10px] text-[#888888] mb-6 font-bold uppercase tracking-widest">
                   Match scheduling coming soon
                 </p>
                 <div className="flex gap-3">
-                  <button onClick={() => setShowInviteFor(null)} className="flex-1 py-3 rounded-xl bg-[#F3F2EE] text-[#4A4A4A] text-xs font-black uppercase tracking-widest">
+                  <button
+                    type="button"
+                    onClick={() => setShowInviteFor(null)}
+                    className="flex-1 py-3 rounded-xl bg-[#F3F2EE] border border-[#E8E6E0] text-[#4A4A4A] text-xs font-black uppercase tracking-widest cursor-pointer"
+                  >
                     Cancel
                   </button>
                   <button
+                    type="button"
                     onClick={() => { alert(`Invitation sent to ${showInviteFor.name}!`); setShowInviteFor(null); }}
-                    className="flex-[2] py-3 rounded-xl bg-gradient-to-r from-[#C8922A] to-[#D4A843] text-[#1A1A1A] text-xs font-black uppercase tracking-widest shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)]"
+                    className="sport-lobby-cta flex-[2] py-3 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer shadow-lg"
+                    style={{
+                      background: `linear-gradient(135deg, ${APP_ACCENT}, ${APP_ACCENT_SOFT})`,
+                      color: '#1A1A1A',
+                    }}
                   >
-                    Send Challenge ⚔️
+                    Send Challenge
                   </button>
                 </div>
               </div>

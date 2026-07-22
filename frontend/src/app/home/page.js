@@ -979,7 +979,7 @@ export default function Home() {
               <div className="relative">
                 <div 
                   className={clsx(
-                    "w-20 h-20 rounded-full p-[3px] transition-all",
+                    "w-20 h-20 rounded-full p-[3px] transition-all cursor-pointer",
                     hasMyStory 
                       ? "gradient-bg animate-rotate-gradient" 
                       : "bg-[#F3F2EE] group-hover:bg-[#E8E6E0]"
@@ -1001,7 +1001,7 @@ export default function Home() {
                 {(!hasMyStory || (myStoriesGroup?.stories?.length || 0) < 3) && (
                   <div 
                     onClick={(e) => { e.stopPropagation(); storyInputRef.current?.click(); }}
-                    className="absolute bottom-1 right-1 w-6 h-6 gradient-bg rounded-full border-2 border-white flex items-center justify-center text-white shadow-lg z-10 hover:scale-110 transition-transform"
+                    className="absolute bottom-1 right-1 w-6 h-6 gradient-bg rounded-full border-2 border-white flex items-center justify-center text-white shadow-lg z-10 hover:scale-110 transition-transform cursor-pointer"
                   >
                     <Plus size={14} strokeWidth={3} />
                   </div>

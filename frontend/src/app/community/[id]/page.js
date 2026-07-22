@@ -1184,8 +1184,8 @@ export default function CommunityChatPage() {
               )}
               {!isMe && !showAvatar && <div className="w-8 mr-2 shrink-0" />}
 
-              <div 
-                className={clsx("flex flex-col max-w-[75%] relative", isMe ? "items-end" : "items-start")}
+              <div
+                className={clsx("flex flex-col max-w-[75%] relative cursor-pointer", isMe ? "items-end" : "items-start")}
                 onClick={() => setTappedMessageId(tappedMessageId === msg.id ? null : msg.id)}
               >
                 {!isMe && showAvatar && (
