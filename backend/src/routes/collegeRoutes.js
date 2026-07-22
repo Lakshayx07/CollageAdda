@@ -162,8 +162,8 @@ router.get('/:id', protect, async (req, res) => {
     const [posts, realStudentCount, realPostCount] = await Promise.all([
       Post.find(universityFilter)
         .select('content mediaUrl mediaType likes comments hashtags createdAt author university')
-        .populate('author', 'name profilePic university isVerified')
-        .populate('comments.user', 'name profilePic isVerified')
+        .populate('author', 'name profilePic university isVerified xp points currentTick')
+        .populate('comments.user', 'name profilePic isVerified xp points currentTick')
         .sort({ createdAt: -1 })
         .limit(20)
         .lean(),

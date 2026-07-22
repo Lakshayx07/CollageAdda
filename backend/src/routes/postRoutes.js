@@ -2,6 +2,7 @@ import express from 'express';
 import Post from '../models/Post.js';
 import Notification from '../models/Notification.js';
 import { protect, verified } from '../middleware/authMiddleware.js';
+import { awardXP } from '../services/xpService.js';
 
 const router = express.Router();
 
@@ -14,8 +15,8 @@ router.get('/', protect, async (req, res) => {
     const skip = (page - 1) * limit;
 
     const posts = await Post.find({ university: req.user.university })
-      .populate('author', 'name profilePic university isVerified')
-      .populate('comments.user', 'name profilePic isVerified')
+      .populate('author', 'name profilePic university isVerified xp points currentTick')
+      .populate('comments.user', 'name profilePic isVerified xp points currentTick')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -65,7 +66,9 @@ router.post('/', protect, verified, async (req, res) => {
       poll: (poll && poll.options && poll.options.length > 0) ? poll : undefined
     });
     
-    const populated = await post.populate('author', 'name profilePic university isVerified');
+    await awardXP(req.user._id, 'CREATE_POST', post._id.toString());
+    
+    const populated = await post.populate('author', 'name profilePic university isVerified xp points currentTick');
     res.status(201).json(populated);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -128,6 +131,7 @@ router.put('/:id/like', protect, verified, async (req, res) => {
       post.likes = post.likes.filter((id) => id.toString() !== req.user._id.toString());
     } else {
       post.likes.push(req.user._id);
+      await awardXP(post.author.toString(), 'LIKE_POST', `like_${req.user._id}_${post._id}`);
     }
     await post.save();
 
@@ -170,9 +174,11 @@ router.post('/:id/comment', protect, verified, async (req, res) => {
       });
     }
 
+    await awardXP(req.user._id, 'COMMENT_POST', `comment_${post.comments[post.comments.length - 1]._id.toString()}`);
+
     const populatedPost = await Post.findById(post._id)
-      .populate('author', 'name profilePic university isVerified')
-      .populate('comments.user', 'name profilePic isVerified');
+      .populate('author', 'name profilePic university isVerified xp points currentTick')
+      .populate('comments.user', 'name profilePic isVerified xp points currentTick');
 
     res.status(201).json(populatedPost);
   } catch (error) {

@@ -2,6 +2,7 @@ import express from 'express';
 import Story from '../models/Story.js';
 import Notification from '../models/Notification.js';
 import { protect } from '../middleware/authMiddleware.js';
+import { awardXP } from '../services/xpService.js';
 
 const router = express.Router();
 
@@ -64,7 +65,9 @@ router.post('/', protect, async (req, res) => {
       caption: caption || ''
     });
 
-    const populatedStory = await Story.findById(story._id).populate('author', 'name profilePic');
+    await awardXP(req.user._id, 'CREATE_STORY', story._id.toString());
+
+    const populatedStory = await Story.findById(story._id).populate('author', 'name profilePic isVerified xp points currentTick');
     res.status(201).json(populatedStory);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -79,7 +82,7 @@ router.get('/', protect, async (req, res) => {
       university: req.user.university,
       expiresAt: { $gt: new Date() }
     })
-    .populate('author', 'name profilePic')
+    .populate('author', 'name profilePic isVerified xp points currentTick')
     .sort({ createdAt: -1 })
     .lean();
 

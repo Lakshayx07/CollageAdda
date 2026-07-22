@@ -54,8 +54,11 @@ const userSchema = mongoose.Schema({
   // Growth Hacking Fields
   referralCode: { type: String, unique: true, sparse: true },
   referredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  xp: { type: Number, default: 0 },
   points: { type: Number, default: 0 },
   inviteCount: { type: Number, default: 0 },
+  currentTick: { type: String, default: null },
+  unlockedBadges: [{ badgeId: String, unlockedAt: Date }],
 
   // Streak & Login Fields
   streak: { type: Number, default: 0 },

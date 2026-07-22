@@ -3,6 +3,10 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import User from '../models/User.js';
 import College from '../models/College.js';
+import { generateDailyDrop } from '../utils/dropAlgorithm.js';
+import { awardXP } from '../services/xpService.js';
+import { BADGES } from '../config/xpConfig.js';
+import XpLog from '../models/XpLog.js';
 import Notification from '../models/Notification.js';
 import Post from '../models/Post.js';
 import { protect } from '../middleware/authMiddleware.js';
@@ -344,7 +348,7 @@ router.get('/search/query', protect, async (req, res) => {
     }
     
     const users = await User.find(query)
-      .select('name university profilePic bio interests year studyYear passOutBatch course branch isVerified streak createdAt updatedAt')
+      .select('name university profilePic bio interests year studyYear passOutBatch course branch isVerified xp points currentTick streak createdAt updatedAt')
       .sort({ createdAt: -1 })
       .limit(30)
       .lean();
@@ -389,7 +393,7 @@ router.get('/daily-drop', protect, async (req, res) => {
   try {
     const me = await User.findById(req.user._id)
       .select('university interests following dailyDropUsers dailyDropDate')
-      .populate('dailyDropUsers', 'name university profilePic bio interests year studyYear passOutBatch course branch isVerified streak createdAt updatedAt');
+      .populate('dailyDropUsers', 'name university profilePic bio interests year studyYear passOutBatch course branch isVerified xp points currentTick streak createdAt updatedAt');
 
     if (!me) return res.status(404).json({ message: 'User not found' });
 
@@ -440,7 +444,7 @@ router.get('/daily-drop', protect, async (req, res) => {
     const followingIds = (me.following || []).map(id => id.toString());
     const excludeIds = [me._id.toString(), ...followingIds];
 
-    const fields = 'name university profilePic bio interests year studyYear passOutBatch course branch isVerified streak createdAt updatedAt';
+    const fields = 'name university profilePic bio interests year studyYear passOutBatch course branch isVerified xp points currentTick streak createdAt updatedAt';
     let suggested = [];
 
     const notAlreadyPicked = () => [...excludeIds, ...suggested.map(u => u._id.toString())];
@@ -482,7 +486,7 @@ router.get('/daily-drop', protect, async (req, res) => {
         { $addFields: { score: { $add: [{ $size: { $ifNull: ['$followers', []] } }, { $size: { $ifNull: ['$following', []] } }] } } },
         { $sort: { score: -1 } },
         { $limit: 5 - suggested.length },
-        { $project: { name: 1, university: 1, profilePic: 1, bio: 1, interests: 1, year: 1, studyYear: 1, passOutBatch: 1, course: 1, branch: 1, followers: 1, following: 1, isVerified: 1, streak: 1, createdAt: 1, updatedAt: 1 } }
+        { $project: { name: 1, university: 1, profilePic: 1, bio: 1, interests: 1, year: 1, studyYear: 1, passOutBatch: 1, course: 1, branch: 1, followers: 1, following: 1, isVerified: 1, xp: 1, points: 1, currentTick: 1, streak: 1, createdAt: 1, updatedAt: 1 } }
       ]);
       console.log(`[DailyDrop] P3 popular found: ${popular.length}`);
       suggested = [...suggested, ...popular];
@@ -562,7 +566,7 @@ router.get('/daily-drop', protect, async (req, res) => {
 // @desc    Get logged-in user's followers
 router.get('/me/followers', protect, async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).populate('followers', 'name university profilePic _id isVerified createdAt');
+    const user = await User.findById(req.user._id).populate('followers', 'name university profilePic _id isVerified xp points currentTick createdAt');
     res.json((user.followers || []).map(follower => transformUser(follower.toObject ? follower.toObject() : follower)));
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -575,7 +579,7 @@ router.get('/me/followers/new', protect, async (req, res) => {
   try {
     const since = req.query.since ? new Date(Number(req.query.since)) : new Date(0);
     // Populate followers with their joinedAt / updatedAt so we can filter
-    const user = await User.findById(req.user._id).populate('followers', 'name university profilePic _id createdAt isVerified');
+    const user = await User.findById(req.user._id).populate('followers', 'name university profilePic _id createdAt isVerified xp points currentTick');
     
     // Return all followers if no since param, otherwise filter by createdAt after 'since'
     const allFollowers = user.followers || [];
@@ -593,7 +597,7 @@ router.get('/me/followers/new', protect, async (req, res) => {
 // @desc    Get logged-in user's following list
 router.get('/me/following', protect, async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).populate('following', 'name university profilePic _id isVerified createdAt');
+    const user = await User.findById(req.user._id).populate('following', 'name university profilePic _id isVerified xp points currentTick createdAt');
     res.json((user.following || []).map(following => transformUser(following.toObject ? following.toObject() : following)));
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -645,9 +649,14 @@ router.put('/:id/follow', protect, async (req, res) => {
     if (isFollowing) {
       currentUser.following = currentUser.following.filter(id => id.toString() !== req.params.id);
       targetUser.followers = targetUser.followers.filter(id => id.toString() !== req.user._id.toString());
+      // We don't remove XP on unfollow in this architecture, to avoid complex rollback
     } else {
       currentUser.following.push(req.params.id);
       targetUser.followers.push(req.user._id);
+      // Award XP to the user being followed (as a connection event)
+      await awardXP(targetUser._id, 'CONNECT_USER', `follow_${req.user._id}_${targetUser._id}`);
+      // Also award to the follower if desired, but typically "Make 15 connections" might mean both sides
+      await awardXP(req.user._id, 'CONNECT_USER', `follow_${req.user._id}_${targetUser._id}`);
     }
     await currentUser.save();
     await targetUser.save();
@@ -665,6 +674,44 @@ router.put('/:id/follow', protect, async (req, res) => {
     res.json({ following: !isFollowing, followersCount: targetUser.followers.length });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+// @route   GET /api/users/me/xp-progress
+// @desc    Get logged-in user's XP and badge progress
+router.get('/me/xp-progress', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const progress = {};
+    for (const badge of BADGES) {
+      const actionType = badge.type === 'posts' ? 'CREATE_POST' 
+                       : badge.type === 'stories' ? 'CREATE_STORY'
+                       : badge.type === 'comments' ? 'COMMENT_POST'
+                       : badge.type === 'likes_received' ? 'LIKE_POST'
+                       : 'CONNECT_USER';
+                       
+      let query = { user: user._id, actionType };
+      if (badge.window === 'week') {
+        query.createdAt = { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) };
+      } else if (badge.window === 'month') {
+        query.createdAt = { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) };
+      }
+
+      const count = await XpLog.countDocuments(query);
+      progress[badge.id] = { current: count, target: badge.target };
+    }
+    
+    res.json({
+      xp: user.xp,
+      points: user.points,
+      currentTick: user.currentTick,
+      unlockedBadges: user.unlockedBadges || [],
+      progress
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 

@@ -45,6 +45,7 @@ export const publicUserPayload = (user, token) => {
     onboardingComplete: user.onboardingComplete,
     onboardingStep: user.onboardingStep || 1,
     referralCode: user.referralCode,
+    xp: user.xp || 0,
     points: user.points,
     streak: user.streak || 0,
     lastLoginDate: user.lastLoginDate,

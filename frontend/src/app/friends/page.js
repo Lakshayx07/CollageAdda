@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from "rea
 import { UserPlus, Search, Users, MessageCircle, Loader2, Heart, X, Sparkles, MapPin, Zap, Trophy, Star, Globe, Plus, CheckCircle2, Users2, ChevronRight, AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import VerifiedBadge from "../../components/VerifiedBadge";
+import VerifiedBadge from "@/components/VerifiedBadge";
+import NameWithTick from '../../components/NameWithTick';
 import clsx from "clsx";
 import { supabase } from "../../utils/supabase";
 import { getAuthenticatedSupabaseClient } from "../../utils/supabaseAuthUser";
@@ -856,7 +857,7 @@ export default function FriendsPage() {
                             />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-[#1A1A1A] truncate">{follower.name}</p>
+                            <p className="text-sm font-bold text-[#1A1A1A] truncate"><NameWithTick name={follower.name} tick={follower.currentTick} user={follower} /></p>
                             <p className="text-[10px] text-[#6B6B6B] truncate flex items-center">
                               <MapPin size={8} className="mr-1" />
                               {follower.university}
@@ -1146,7 +1147,7 @@ export default function FriendsPage() {
 
                               <div className="mt-3">
                                 <div className="flex items-center justify-center gap-2">
-                                  <p className="text-2xl font-black text-[#1A1A1A] tracking-tight">{person.name}</p>
+                                  <p className="text-2xl font-black text-[#1A1A1A] tracking-tight"><NameWithTick name={person.name} tick={person.currentTick} user={person} /></p>
                                   <VerifiedBadge user={person} size={20} />
                                 </div>
                                 <p className="text-xs font-bold text-[#6B6B6B] mt-1 flex items-center justify-center gap-1">
@@ -1224,7 +1225,7 @@ export default function FriendsPage() {
 
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <p className="truncate text-sm font-black text-[#1A1A1A]">{person.name}</p>
+                              <p className="truncate text-sm font-black text-[#1A1A1A]"><NameWithTick name={person.name} tick={person.currentTick} user={person} /></p>
                               <VerifiedBadge user={person} size={14} />
                             </div>
                             <p className="mt-1 truncate text-[11px] font-bold text-[#888888]">{person.university || "Campus Adda"}</p>
@@ -1337,7 +1338,7 @@ export default function FriendsPage() {
                                 {/* Name and Verified Badge */}
                                 <div className="space-y-0.5">
                                   <div className="flex items-center space-x-1.5">
-                                    <h4 className="font-black text-[18px] text-[#1A1A1A] truncate tracking-tight leading-tight">{person.name}</h4>
+                                    <h4 className="font-black text-[18px] text-[#1A1A1A] truncate tracking-tight leading-tight"><NameWithTick name={person.name} tick={person.currentTick} user={person} /></h4>
                                     <VerifiedBadge user={person} size={15} />
                                   </div>
                                   <p className="text-[9.5px] text-[#1A1A1A]/80 font-black uppercase tracking-widest flex items-center">
@@ -1621,7 +1622,7 @@ export default function FriendsPage() {
                       {/* Name & Uni */}
                       <div className="text-center space-y-1.5">
                         <motion.div variants={modalVars.slideUp1} className="flex items-center justify-center gap-2">
-                          <h2 className="text-2xl font-black text-[#1A1A1A] tracking-tight">{selectedProfileData.name}</h2>
+                          <h2 className="text-2xl font-black text-[#1A1A1A] tracking-tight"><NameWithTick name={selectedProfileData.name} tick={selectedProfileData.currentTick} user={selectedProfileData} /></h2>
                           <VerifiedBadge user={selectedProfileData} size={20} />
                         </motion.div>
                         <motion.p variants={modalVars.slideUp2} className="text-xs font-bold text-[#6B6B6B] flex items-center justify-center gap-1">

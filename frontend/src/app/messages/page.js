@@ -9,7 +9,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Suspense, useCallback, useMemo } from "react";
 import { useApiQuery } from "@/utils/useApiQuery";
 import { useQueryClient } from "@tanstack/react-query";
-import VerifiedBadge from "@/components/VerifiedBadge";
 import { getAvatarSrc } from "@/utils/defaultAvatars";
 
 function MessagesContent() {
@@ -1194,7 +1193,6 @@ function MessagesContent() {
                   <div className="flex justify-between items-center mb-1">
                     <div className="flex min-w-0 items-center">
                       <p className="font-bold text-[15px] text-[#1A1A1A] truncate leading-tight">{chat.name}</p>
-                      {chat.partner && <VerifiedBadge user={chat.partner} size={12} />}
                     </div>
                     <span className="text-[10px] text-[#6B6B6B] font-medium flex-shrink-0 ml-2">{chat.time}</span>
                   </div>
@@ -1256,7 +1254,6 @@ function MessagesContent() {
                 <div className="min-w-0">
                   <div className="flex items-center space-x-1.5 min-w-0">
                     <h2 className="font-bold text-[#1A1A1A] text-[14px] truncate max-w-[120px] xs:max-w-[150px] sm:max-w-none leading-tight">{activeChat.name}</h2>
-                    {activeChat.partner && <VerifiedBadge user={activeChat.partner} size={12} />}
                   </div>
                 </div>
               </div>
