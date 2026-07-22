@@ -21,6 +21,7 @@ export function SocketProvider({ children }) {
   const [unreadCount, setUnreadCount] = useState(0);
   // Track which room the user is actively viewing so we don't count those as unread
   const activeRoomRef = useRef(null);
+  const seenMessageIdsRef = useRef(new Set());
 
   useEffect(() => {
     // Only connect if user is authenticated
@@ -59,13 +60,20 @@ export function SocketProvider({ children }) {
     // Global handler — increment unread when message arrives for a room we're NOT viewing
     newSocket.on("receive_message", (msg) => {
       const myId = String(user._id || user.id);
-      const senderId = String(msg.senderId);
+      const senderId = String(msg.senderId || msg.sender?._id || msg.sender?.id || "");
+      const roomId = String(msg.room || "");
+      const messageId = String(msg._id || msg.id || msg.tempId || "");
+
+      if (messageId) {
+        if (seenMessageIdsRef.current.has(messageId)) return;
+        seenMessageIdsRef.current.add(messageId);
+      }
 
       // Don't count our own messages
       if (senderId === myId) return;
 
       // Don't count if user is actively viewing this room
-      if (activeRoomRef.current === msg.room) return;
+      if (activeRoomRef.current === roomId) return;
 
       setUnreadCount((prev) => prev + 1);
     });
@@ -77,7 +85,7 @@ export function SocketProvider({ children }) {
   }, []);
 
   const setActiveRoom = useCallback((roomId) => {
-    activeRoomRef.current = roomId;
+    activeRoomRef.current = roomId ? String(roomId) : null;
   }, []);
 
   const resetUnread = useCallback(() => {

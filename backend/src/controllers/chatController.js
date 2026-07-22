@@ -12,7 +12,7 @@ import { transformUser } from '../routes/userRoutes.js';
 export const getRooms = async (req, res) => {
   try {
     const rooms = await ChatRoom.find({ participants: req.user._id })
-      .populate('participants', 'name university isVerified')
+      .populate('participants', 'name profilePic university isVerified')
       .populate('lastMessage', 'text mediaType poll deletedAt createdAt sender')
       .sort({ updatedAt: -1 })
       .limit(50)

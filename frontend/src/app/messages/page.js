@@ -80,29 +80,60 @@ function MessagesContent() {
   }, [activeChat, activeChatMessages, user, formatMessage]);
 
   const queryClient = useQueryClient();
+
+  const getEntityId = useCallback((entity) => String(entity?._id || entity?.id || entity || ""), []);
+  const getCurrentUserId = useCallback(() => getEntityId(user), [getEntityId, user]);
   
   const getRoomPartner = useCallback((room) => {
-    return room.participants?.find(p => String(p._id || p.id || p) !== String(user?._id || user?.id));
-  }, [user]);
+    const currentUserId = getCurrentUserId();
+    return room.participants?.find(p => getEntityId(p) !== currentUserId);
+  }, [getCurrentUserId, getEntityId]);
+
+  const getPrivatePartnerId = useCallback((room) => {
+    if (room.type === "group" || room.isGroup) return "";
+    if (room.partner) return getEntityId(room.partner);
+    const currentUserId = getCurrentUserId();
+    return (room.participants || [])
+      .map(getEntityId)
+      .find(id => id && id !== currentUserId) || "";
+  }, [getCurrentUserId, getEntityId]);
+
+  const dedupeChats = useCallback((roomList) => {
+    const byKey = new Map();
+
+    roomList.forEach(room => {
+      if (!room?.id) return;
+      const partnerId = getPrivatePartnerId(room);
+      const key = room.type === "private" && partnerId ? `private:${partnerId}` : `${room.type || "room"}:${room.id}`;
+      const existing = byKey.get(key);
+      if (!existing || (room.timestamp || 0) > (existing.timestamp || 0)) {
+        byKey.set(key, { ...room, partnerId });
+      }
+    });
+
+    return Array.from(byKey.values());
+  }, [getPrivatePartnerId]);
 
   const formatRooms = useCallback((data) => {
     if (!Array.isArray(data) || !user) return [];
-    return data.map(room => {
+    const formatted = data.map(room => {
       const partner = getRoomPartner(room);
       return {
       id: room._id,
       name: room.isGroup ? (room.groupName || `${room.university} Hub`) : (partner?.name || "Chat"),
       type: room.isGroup ? "group" : "private",
-      avatar: room.isGroup ? <Users size={24} className="text-white" /> : getAvatarSrc(partner?.profilePic, partner?.name || "Student", partner?._id || partner?.id),
+      avatar: room.isGroup ? "group" : getAvatarSrc(partner?.profilePic, partner?.name || "Student", partner?._id || partner?.id),
       lastMsg: getMessagePreview(room.lastMessage),
       time: room.lastMessage ? new Date(room.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "",
       timestamp: room.lastMessage?.createdAt ? new Date(room.lastMessage.createdAt).getTime() : new Date(room.updatedAt || room.createdAt || 0).getTime(),
-      unreadCount: room.unreadCounts?.[user._id] || 0,
+      unreadCount: room.unreadCounts?.[user._id] || room.unreadCounts?.[user.id] || 0,
       participants: room.participants?.map(p => p._id || p.id) || [],
+      partnerId: partner?._id || partner?.id || "",
       partner: room.isGroup ? null : partner
     };
     });
-  }, [user, getMessagePreview, getRoomPartner]);
+    return dedupeChats(formatted);
+  }, [user, getMessagePreview, getRoomPartner, dedupeChats]);
 
   const { data: rawRooms = [], isLoading: loadingChats } = useApiQuery(
     "chat-rooms",
@@ -116,21 +147,24 @@ function MessagesContent() {
   const chats = useMemo(() => {
     // If rawRooms is already formatted (due to optimistic updates), use it directly
     if (rawRooms.length > 0 && rawRooms[0].id) {
-      return rawRooms.map(room => ({
+      return dedupeChats(rawRooms.map(room => ({
         ...room,
-        avatar: room.type === "group" ? room.avatar : getAvatarSrc(room.avatar || room.partner?.profilePic, room.name || room.partner?.name || "Student", room.partner?._id || room.partner?.id || room.id),
-      }));
+        participants: room.participants || [],
+        partnerId: room.partnerId || getPrivatePartnerId(room),
+        avatar: room.type === "group" ? "group" : getAvatarSrc(room.avatar || room.partner?.profilePic, room.name || room.partner?.name || "Student", room.partner?._id || room.partner?.id || room.id),
+      })));
     }
     return formatRooms(rawRooms);
-  }, [rawRooms, formatRooms]);
+  }, [rawRooms, formatRooms, dedupeChats, getPrivatePartnerId]);
 
   const setChats = useCallback((updater) => {
     queryClient.setQueryData(["chat-rooms"], (oldRawData) => {
       if (!oldRawData) return oldRawData;
       const currentFormatted = (oldRawData.length > 0 && oldRawData[0].id) ? oldRawData : formatRooms(oldRawData);
-      return typeof updater === 'function' ? updater(currentFormatted) : updater;
+      const nextChats = typeof updater === 'function' ? updater(currentFormatted) : updater;
+      return dedupeChats(nextChats);
     });
-  }, [queryClient, formatRooms]);
+  }, [queryClient, formatRooms, dedupeChats]);
   const [messages, setMessages] = useState({});
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -167,6 +201,7 @@ function MessagesContent() {
   const typingTimeoutRef = useRef(null);
   const outgoingTypingTimeoutRef = useRef(null);
   const seenSocketMessageIdsRef = useRef(new Set());
+  const creatingDirectRoomRef = useRef(null);
   const messageRefs = useRef({});
   const scrollRef = useRef(null);
 
@@ -267,74 +302,93 @@ function MessagesContent() {
     }
     setUser(u);
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
-
-    
-    if (!loadingChats) {
-      // Handle ?chat=roomId (direct room link)
-      const chatParam = searchParams.get("chat");
-      if (chatParam && !activeChat) {
-        const found = chats.find(c => c.id === chatParam);
-        if (found) { setActiveChat(found); }
-      }
-
-      // Handle ?userId=X (open/create DM from Squad page)
-      const userIdParam = searchParams.get("userId");
-      if (userIdParam && !activeChat) {
-        // Check if a private room with this user already exists
-        const existingRoom = chats.find(r => r.type === "private" && r.participants.includes(userIdParam));
-        if (existingRoom) {
-          setActiveChat(existingRoom);
-          const interestParam = searchParams.get("interestProduct");
-          if (interestParam) {
-            sendAutoInterestMessage(existingRoom.id, interestParam);
-          }
-        } else {
-          // Create a new private DM room
-          const createDM = async () => {
-            try {
-              const token = localStorage.getItem("collegeadda_token");
-              const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
-              const createRes = await fetch(`${apiUrl}/api/chat/rooms`, {
-                method: "POST",
-                headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
-                body: JSON.stringify({ participantId: userIdParam })
-              });
-              if (createRes.ok) {
-                const newRoom = await createRes.json();
-                const formatted = {
-                  id: newRoom._id,
-                  name: newRoom.participants?.find(p => p._id !== u._id)?.name || "Chat",
-                  type: "private",
-                  avatar: getAvatarSrc(newRoom.participants?.find(p => p._id !== u._id)?.profilePic, newRoom.participants?.find(p => p._id !== u._id)?.name || "Student", newRoom.participants?.find(p => p._id !== u._id)?._id),
-                  lastMsg: "No messages yet",
-                  time: "",
-                  timestamp: Date.now(),
-                  unreadCount: 0,
-                  partner: newRoom.participants?.find(p => p._id !== u._id)
-                };
-                setChats(prev => {
-                  const exists = prev.find(c => c.id === formatted.id);
-                  return exists ? prev : [formatted, ...prev];
-                });
-                setActiveChat(formatted);
-                const interestParam = searchParams.get("interestProduct");
-                if (interestParam) {
-                  sendAutoInterestMessage(formatted.id, interestParam);
-                }
-              }
-            } catch (err) {
-              console.error("Error creating DM room:", err);
-            }
-          };
-          createDM();
-        }
-      }
-    }
-
     resetUnread(); // Clear unread notifications when entering messages page
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!user || loadingChats) return;
+
+    const chatParam = searchParams.get("chat");
+    const userIdParam = searchParams.get("userId");
+    const interestParam = searchParams.get("interestProduct");
+
+    if (chatParam) {
+      if (activeChat?.id === chatParam) return;
+      const found = chats.find(c => c.id === chatParam);
+      if (found) setActiveChat(found);
+      return;
+    }
+
+    if (!userIdParam || activeChat) return;
+
+    const existingRoom = chats.find(room =>
+      room.type === "private" &&
+      (room.partnerId === userIdParam || room.participants?.map(String).includes(String(userIdParam)))
+    );
+
+    const openDirectRoom = (room) => {
+      setActiveChat(room);
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        url.searchParams.set("chat", room.id);
+        url.searchParams.delete("userId");
+        url.searchParams.delete("interestProduct");
+        window.history.replaceState({}, document.title, `${url.pathname}${url.search}`);
+      }
+      if (interestParam) sendAutoInterestMessage(room.id, interestParam);
+    };
+
+    if (existingRoom) {
+      openDirectRoom(existingRoom);
+      return;
+    }
+
+    if (creatingDirectRoomRef.current === userIdParam) return;
+    creatingDirectRoomRef.current = userIdParam;
+
+    const createDM = async () => {
+      try {
+        const token = localStorage.getItem("collegeadda_token");
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+        const createRes = await fetch(`${apiUrl}/api/chat/rooms`, {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ participantId: userIdParam })
+        });
+        if (createRes.ok) {
+          const newRoom = await createRes.json();
+          const currentUserId = getCurrentUserId();
+          const partner = newRoom.participants?.find(p => getEntityId(p) !== currentUserId);
+          const participantIds = newRoom.participants?.map(p => getEntityId(p)).filter(Boolean) || [];
+          const formatted = {
+            id: newRoom._id,
+            name: partner?.name || "Chat",
+            type: "private",
+            avatar: getAvatarSrc(partner?.profilePic, partner?.name || "Student", getEntityId(partner)),
+            lastMsg: getMessagePreview(newRoom.lastMessage),
+            time: newRoom.lastMessage ? new Date(newRoom.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "",
+            timestamp: new Date(newRoom.updatedAt || newRoom.createdAt || Date.now()).getTime(),
+            unreadCount: 0,
+            participants: participantIds,
+            partnerId: getEntityId(partner),
+            partner
+          };
+          setChats(prev => {
+            const exists = prev.find(c => c.id === formatted.id || (c.type === "private" && c.partnerId === formatted.partnerId));
+            return exists ? prev.map(c => c.id === exists.id ? { ...c, ...formatted } : c) : [formatted, ...prev];
+          });
+          openDirectRoom(formatted);
+        }
+      } catch (err) {
+        console.error("Error creating DM room:", err);
+      } finally {
+        creatingDirectRoomRef.current = null;
+      }
+    };
+
+    createDM();
+  }, [user, loadingChats, chats, activeChat, searchParams, getCurrentUserId, getEntityId, getMessagePreview, setChats]);
 
   // Separate useEffect to handle global socket message reception locally
   useEffect(() => {
@@ -373,8 +427,11 @@ function MessagesContent() {
         };
       });
 
-      setChats(prevChats => prevChats.map(c => {
+      setChats(prevChats => {
+        let matchedRoom = false;
+        const nextChats = prevChats.map(c => {
         if (c.id === msg.room) {
+          matchedRoom = true;
           const isCurrent = activeChat?.id === msg.room;
           return { 
             ...c, 
@@ -385,7 +442,12 @@ function MessagesContent() {
           };
         }
         return c;
-      }));
+        });
+        if (!matchedRoom) {
+          queryClient.invalidateQueries({ queryKey: ["chat-rooms"] });
+        }
+        return nextChats;
+      });
     };
 
     const handleMessageUpdated = ({ room, message }) => {
@@ -416,7 +478,7 @@ function MessagesContent() {
       socket.off('user_typing', handleTyping);
       socket.off('user_stop_typing', handleStopTyping);
     };
-  }, [socket, user, activeChat, formatMessage, getMessagePreview]);
+  }, [socket, user, activeChat, formatMessage, getMessagePreview, queryClient]);
 
   useEffect(() => {
     if (activeChat && socket) {
@@ -439,6 +501,9 @@ function MessagesContent() {
 
     }
     return () => {
+      if (activeChat?.id && socket) {
+        socket.emit('leave_room', activeChat.id);
+      }
       setActiveRoom(null);
     };
   }, [activeChat, socket, setActiveRoom]);
@@ -847,7 +912,7 @@ function MessagesContent() {
           id: newRoom._id,
           name: newRoom.groupName,
           type: "group",
-          avatar: <Users size={24} className="text-white" />,
+          avatar: "group",
           lastMsg: "Group created",
           time: "",
           timestamp: Date.now(),
@@ -1111,7 +1176,7 @@ function MessagesContent() {
                     <div className="w-full h-full rounded-full bg-[#FAFAF8] flex items-center justify-center overflow-hidden">
                       {chat.type === "group" ? (
                         <div className="w-full h-full bg-[#7C3AED] flex items-center justify-center">
-                          {chat.avatar}
+                          <Users size={24} className="text-white" />
                         </div>
                       ) : (
                         <img 

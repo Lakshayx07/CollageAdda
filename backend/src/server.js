@@ -109,6 +109,11 @@ io.on('connection', (socket) => {
     console.log(`[WS] ${socket.id} joined room: ${room}`);
   });
 
+  socket.on('leave_room', (room) => {
+    socket.leave(room);
+    console.log(`[WS] ${socket.id} left room: ${room}`);
+  });
+
   // Send a message to a room
   socket.on('send_message', async (data) => {
     // data: { room, senderId, senderName, text, mediaUrl, mediaType }

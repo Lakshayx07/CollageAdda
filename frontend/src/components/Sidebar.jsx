@@ -67,7 +67,7 @@ export default function Sidebar() {
       getAuthenticatedSupabaseClient()
         .then(({ user }) => setAuthUser(user))
         .catch((error) => {
-          console.error("Could not confirm Supabase session for streak:", error);
+          console.warn("Could not confirm Supabase session for streak:", error);
           setAuthUser(null);
         });
     } else {
