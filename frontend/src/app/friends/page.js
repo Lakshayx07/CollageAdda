@@ -14,6 +14,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { getAvatarSrc, getDefaultAvatar } from "@/utils/defaultAvatars";
 
 const LAST_SEEN_KEY = "collegeadda_followers_last_seen";
+const SQUAD_PROFILE_PHOTO_VERSION = "profile-pictures-v3";
 
 const ConfettiSparkles = ({ active }) => {
   const [pieces, setPieces] = useState([]);
@@ -365,11 +366,11 @@ export default function FriendsPage() {
   );
 
   const { data: suggestedData, isFetching: suggestedFetching } = useApiQuery(
-    ["squad-suggested", debouncedSearch, activeSquadTab, filter],
+    ["squad-suggested", SQUAD_PROFILE_PHOTO_VERSION, debouncedSearch, activeSquadTab, filter],
     buildSearchUrl(debouncedSearch).replace(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001', ''),
     {
       enabled: !!user,
-      staleTime: 5 * 60 * 1000
+      staleTime: 30 * 1000
     }
   );
 
@@ -377,11 +378,15 @@ export default function FriendsPage() {
 
   const normalizeUserAvatar = useCallback((person) => {
     if (!person) return person;
+    const userId = person._id || person.id;
+    const avatarUrl = userId
+      ? `${apiUrl}/api/users/${encodeURIComponent(userId)}/avatar?v=${SQUAD_PROFILE_PHOTO_VERSION}`
+      : person.profilePic;
     return {
       ...person,
-      profilePic: getAvatarSrc(person.profilePic, person.name, person._id || person.id),
+      profilePic: getAvatarSrc(avatarUrl, person.name, userId),
     };
-  }, []);
+  }, [apiUrl]);
 
   useEffect(() => {
     if (profileData) {
@@ -1116,7 +1121,15 @@ export default function FriendsPage() {
                                 {/* Pulse Ring Behind Avatar */}
                                 <div className="absolute inset-0 rounded-[2.2rem] bg-gradient-to-tr from-[#D4A843] to-[#D4A843] animate-ping opacity-30 blur-md" />
 
-                                <img src={avatar} className="relative w-28 h-28 rounded-[2.2rem] border-4 border-[#E8E6E0] object-cover shadow-2xl z-10 group-hover:scale-105 transition-transform duration-300" />
+                                <img
+                                  src={avatar}
+                                  className="relative w-28 h-28 rounded-[2.2rem] border-4 border-[#E8E6E0] object-cover shadow-2xl z-10 group-hover:scale-105 transition-transform duration-300"
+                                  alt={person.name}
+                                  onError={(e) => {
+                                    e.currentTarget.onerror = null;
+                                    e.currentTarget.src = getDefaultAvatar(person.name, person._id || person.id);
+                                  }}
+                                />
 
                                 <motion.div
                                   animate={{ y: [0, -10, 0], rotate: [0, 15, -10, 0] }}
@@ -1191,7 +1204,15 @@ export default function FriendsPage() {
                           </div>
 
                           <div className="relative shrink-0">
-                            <img src={avatar} className="h-14 w-14 rounded-2xl border border-[#E8E6E0] object-cover" />
+                            <img
+                              src={avatar}
+                              className="h-14 w-14 rounded-2xl border border-[#E8E6E0] object-cover"
+                              alt={person.name}
+                              onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = getDefaultAvatar(person.name, person._id || person.id);
+                              }}
+                            />
                             {rank <= 3 && (
                               <div className="absolute -bottom-2 -right-2 rounded-xl bg-[#FAFAF8] p-1">
                                 <div className={`flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br ${topBadge.className}`}>
@@ -1301,6 +1322,10 @@ export default function FriendsPage() {
                                   src={avatar}
                                   className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105 group-hover:rotate-[0.35deg]"
                                   alt={person.name}
+                                  onError={(e) => {
+                                    e.currentTarget.onerror = null;
+                                    e.currentTarget.src = getDefaultAvatar(person.name, person._id || person.id);
+                                  }}
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/18 via-transparent to-white/8 pointer-events-none" />
                                 {/* Glossy shine sweep effect */}

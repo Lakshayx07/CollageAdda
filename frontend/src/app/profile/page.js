@@ -372,6 +372,18 @@ export default function ProfilePage() {
         });
         setUser(updatedUser);
         localStorage.setItem("collegeadda_user", JSON.stringify(updatedUser));
+        queryClient.setQueryData(["user-profile"], updatedUser);
+        [
+          ["posts", updatedUser._id || updatedUser.id],
+          ["friends"],
+          ["suggested"],
+          ["squad-suggested"],
+          ["squad-profile"],
+          ["user-followers"],
+          ["user-following"],
+          ["chat-rooms"],
+          ["stories"],
+        ].forEach(queryKey => queryClient.invalidateQueries({ queryKey }));
         setSaved(true);
         setTimeout(() => { setSaved(false); setModal(null); }, 1200);
       } else {

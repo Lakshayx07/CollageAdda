@@ -9,12 +9,18 @@ import { protect } from '../middleware/authMiddleware.js';
 import { ensureUniversityGroup, normalizeUniversityName } from '../utils/universityUtils.js';
 import { publicUserPayload, syncVerificationStatus } from '../utils/verificationUtils.js';
 
-// Convert base64 profilePic to avatar API URL to drastically reduce payload size
+const isDefaultAvatarAsset = (src = '') => String(src).toLowerCase().includes('/default-avatars/');
+
+const hasCustomProfilePic = (src = '') => {
+  return Boolean(src) && !isGeneratedInitialsAvatar(src) && !isDefaultAvatarAsset(src);
+};
+
+// Convert custom profilePic to avatar API URL to drastically reduce payload size
 export const transformUser = (u) => {
   if (!u) return u;
   const originalProfilePic = u.profilePic;
-  u.profilePic = originalProfilePic && !isGeneratedInitialsAvatar(originalProfilePic)
-    ? `/api/users/${u._id}/avatar`
+  u.profilePic = hasCustomProfilePic(originalProfilePic)
+    ? `/api/users/${u._id}/avatar?v=${hashText(`${originalProfilePic}-${u.updatedAt || ''}`)}`
     : `/default-avatars/${defaultAvatarFileFor(u.name, u._id)}`;
   return u;
 };
@@ -181,19 +187,27 @@ const AVATAR_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 // Track in-flight DB fetches to avoid duplicate requests for the same user
 const avatarFetching = new Set();
 
+const clearAvatarCacheForUser = (userId) => {
+  const prefix = `${userId}:`;
+  for (const key of avatarCache.keys()) {
+    if (String(key).startsWith(prefix)) avatarCache.delete(key);
+  }
+};
+
 router.get('/:id/avatar', async (req, res) => {
   const id = req.params.id;
+  const cacheKey = `${id}:${req.query.v || 'current'}`;
   const now = Date.now();
 
   // Serve from cache if available and fresh — instant response
-  const cached = avatarCache.get(id);
+  const cached = avatarCache.get(cacheKey);
   if (cached && cached.expiry > now) {
     if (cached.redirect && !isGeneratedInitialsAvatar(cached.redirect)) return res.redirect(cached.redirect);
-    if (cached.redirect) avatarCache.delete(id);
+    if (cached.redirect) avatarCache.delete(cacheKey);
     else {
     res.setHeader('Content-Type', cached.mime);
-    res.setHeader('Cache-Control', 'public, max-age=86400');
-    res.setHeader('ETag', `"${id}"`);
+    res.setHeader('Cache-Control', 'public, max-age=86400, immutable');
+    res.setHeader('ETag', `"${cacheKey}"`);
     return res.send(cached.buffer);
     }
   }
@@ -203,12 +217,12 @@ router.get('/:id/avatar', async (req, res) => {
     const ttl = 24 * 60 * 60 * 1000;
     const expiry = Date.now() + ttl;
 
-    if (!user || !user.profilePic || isGeneratedInitialsAvatar(user.profilePic)) {
+    if (!user || !hasCustomProfilePic(user.profilePic)) {
       return serveDefaultAvatar(res, user?.name || 'Student', id);
     }
 
     if (user.profilePic.startsWith('http')) {
-      avatarCache.set(id, { redirect: user.profilePic, expiry });
+      avatarCache.set(cacheKey, { redirect: user.profilePic, expiry });
       return res.redirect(user.profilePic);
     }
 
@@ -217,10 +231,10 @@ router.get('/:id/avatar', async (req, res) => {
       const mime = parts[0].split(':')[1];
       const data = parts[1].split(',')[1];
       const buffer = Buffer.from(data, 'base64');
-      avatarCache.set(id, { mime, buffer, expiry });
+      avatarCache.set(cacheKey, { mime, buffer, expiry });
       res.setHeader('Content-Type', mime);
-      res.setHeader('Cache-Control', 'public, max-age=86400');
-      res.setHeader('ETag', `"${id}"`);
+      res.setHeader('Cache-Control', 'public, max-age=86400, immutable');
+      res.setHeader('ETag', `"${cacheKey}"`);
       return res.send(buffer);
     }
 
@@ -263,7 +277,10 @@ router.put('/profile', protect, async (req, res) => {
 
     if (name) user.name = name;
     if (bio !== undefined) user.bio = bio;
-    if (profilePic !== undefined) user.profilePic = profilePic;
+    if (profilePic !== undefined) {
+      user.profilePic = profilePic;
+      clearAvatarCacheForUser(user._id);
+    }
     if (instagram !== undefined) user.instagram = instagram;
     if (linkedin !== undefined) user.linkedin = linkedin;
     if (github !== undefined) user.github = github;
@@ -327,7 +344,7 @@ router.get('/search/query', protect, async (req, res) => {
     }
     
     const users = await User.find(query)
-      .select('name university bio interests year studyYear passOutBatch course branch isVerified streak createdAt')
+      .select('name university profilePic bio interests year studyYear passOutBatch course branch isVerified streak createdAt updatedAt')
       .sort({ createdAt: -1 })
       .limit(30)
       .lean();
@@ -372,7 +389,7 @@ router.get('/daily-drop', protect, async (req, res) => {
   try {
     const me = await User.findById(req.user._id)
       .select('university interests following dailyDropUsers dailyDropDate')
-      .populate('dailyDropUsers', 'name university bio interests year studyYear passOutBatch course branch isVerified streak createdAt');
+      .populate('dailyDropUsers', 'name university profilePic bio interests year studyYear passOutBatch course branch isVerified streak createdAt updatedAt');
 
     if (!me) return res.status(404).json({ message: 'User not found' });
 
@@ -423,7 +440,7 @@ router.get('/daily-drop', protect, async (req, res) => {
     const followingIds = (me.following || []).map(id => id.toString());
     const excludeIds = [me._id.toString(), ...followingIds];
 
-    const fields = 'name university profilePic bio interests year studyYear passOutBatch course branch isVerified streak createdAt';
+    const fields = 'name university profilePic bio interests year studyYear passOutBatch course branch isVerified streak createdAt updatedAt';
     let suggested = [];
 
     const notAlreadyPicked = () => [...excludeIds, ...suggested.map(u => u._id.toString())];
@@ -465,7 +482,7 @@ router.get('/daily-drop', protect, async (req, res) => {
         { $addFields: { score: { $add: [{ $size: { $ifNull: ['$followers', []] } }, { $size: { $ifNull: ['$following', []] } }] } } },
         { $sort: { score: -1 } },
         { $limit: 5 - suggested.length },
-        { $project: { name: 1, university: 1, bio: 1, interests: 1, year: 1, studyYear: 1, passOutBatch: 1, course: 1, branch: 1, followers: 1, following: 1, isVerified: 1, streak: 1, createdAt: 1 } }
+        { $project: { name: 1, university: 1, profilePic: 1, bio: 1, interests: 1, year: 1, studyYear: 1, passOutBatch: 1, course: 1, branch: 1, followers: 1, following: 1, isVerified: 1, streak: 1, createdAt: 1, updatedAt: 1 } }
       ]);
       console.log(`[DailyDrop] P3 popular found: ${popular.length}`);
       suggested = [...suggested, ...popular];
@@ -546,7 +563,7 @@ router.get('/daily-drop', protect, async (req, res) => {
 router.get('/me/followers', protect, async (req, res) => {
   try {
     const user = await User.findById(req.user._id).populate('followers', 'name university profilePic _id isVerified createdAt');
-    res.json(user.followers || []);
+    res.json((user.followers || []).map(follower => transformUser(follower.toObject ? follower.toObject() : follower)));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -566,7 +583,7 @@ router.get('/me/followers/new', protect, async (req, res) => {
       ? allFollowers.filter(f => f.createdAt && new Date(f.createdAt) > since)
       : allFollowers;
 
-    res.json(newFollowers);
+    res.json(newFollowers.map(follower => transformUser(follower.toObject ? follower.toObject() : follower)));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -577,7 +594,7 @@ router.get('/me/followers/new', protect, async (req, res) => {
 router.get('/me/following', protect, async (req, res) => {
   try {
     const user = await User.findById(req.user._id).populate('following', 'name university profilePic _id isVerified createdAt');
-    res.json(user.following || []);
+    res.json((user.following || []).map(following => transformUser(following.toObject ? following.toObject() : following)));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
