@@ -91,6 +91,8 @@ export default function Home() {
         commentsList: p.comments?.map(c => ({
           id: c._id || Math.random().toString(),
           author: c.user?.name || 'Student',
+          userId: c.user?._id || c.user?.id,
+          profilePic: c.user?.profilePic,
           text: c.text
         })) || [],
         mediaUrl: p.mediaUrl,
@@ -613,7 +615,13 @@ export default function Home() {
           return {
             ...post,
             comments: post.comments + 1,
-            commentsList: [...(post.commentsList || []), { id: Date.now(), author: "You", text }]
+            commentsList: [...(post.commentsList || []), {
+              id: `temp-${Date.now()}`,
+              author: currentUser?.name || "You",
+              userId: currentUser?._id || currentUser?.id,
+              profilePic: currentUser?.profilePic,
+              text
+            }]
           };
         }
         return post;
@@ -623,7 +631,7 @@ export default function Home() {
 
     try {
       const token = localStorage.getItem("collegeadda_token");
-      await fetch(`${apiUrl}/api/posts/${postId}/comment`, {
+      const res = await fetch(`${apiUrl}/api/posts/${postId}/comment`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -631,6 +639,13 @@ export default function Home() {
         },
         body: JSON.stringify({ text })
       });
+      if (res.ok) {
+        const updatedPost = await res.json();
+        const [formattedPost] = formatPosts([updatedPost]);
+        if (formattedPost) {
+          setPosts(currentPosts => currentPosts.map(post => post.id === postId ? formattedPost : post));
+        }
+      }
     } catch (err) {
       console.error(err);
     }
@@ -1530,7 +1545,7 @@ export default function Home() {
                             >
                               {user.name}
                             </p>
-                            {user.isVerified && <VerifiedBadge size={12} />}
+                            {user.isVerified && <VerifiedBadge user={user} size={12} />}
                           </div>
                           <p className="text-[10px] text-[#888888] truncate max-w-[120px]">
                             {user.university || "CampusAdda User"}

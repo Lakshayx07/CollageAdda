@@ -160,7 +160,7 @@ export default function ShareCollabModal({ isOpen, onClose, card, currentUser })
                       <div className="text-left">
                         <div className="flex items-center gap-1">
                           <p className="text-sm font-bold text-[#1A1A1A] leading-none">{friend.name}</p>
-                          {friend.isVerified && <VerifiedBadge size={12} />}
+                          {friend.isVerified && <VerifiedBadge user={friend} size={12} />}
                         </div>
                         <p className="text-[10px] text-[#6B6B6B] mt-1">{friend.university || "Student"}</p>
                       </div>

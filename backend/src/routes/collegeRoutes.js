@@ -162,7 +162,8 @@ router.get('/:id', protect, async (req, res) => {
     const [posts, realStudentCount, realPostCount] = await Promise.all([
       Post.find(universityFilter)
         .select('content mediaUrl mediaType likes comments hashtags createdAt author university')
-        .populate('author', 'name university isVerified')
+        .populate('author', 'name profilePic university isVerified')
+        .populate('comments.user', 'name profilePic isVerified')
         .sort({ createdAt: -1 })
         .limit(20)
         .lean(),
@@ -173,6 +174,10 @@ router.get('/:id', protect, async (req, res) => {
     const postsData = posts.map((post) => ({
       ...post,
       author: withAvatarUrl(post.author),
+      comments: (post.comments || []).map((comment) => ({
+        ...comment,
+        user: withAvatarUrl(comment.user),
+      })),
     }));
 
     res.json({

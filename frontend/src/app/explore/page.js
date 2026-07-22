@@ -37,7 +37,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useApiQuery } from "../../utils/useApiQuery";
 import { useQueryClient } from "@tanstack/react-query";
-import { getAvatarSrc } from "@/utils/defaultAvatars";
+import { getAvatarSrc, getDefaultAvatar } from "@/utils/defaultAvatars";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import PlayerCard from "@/components/PlayerCard";
 import PlayerCardForm from "@/components/PlayerCardForm";
@@ -305,18 +305,13 @@ function ExploreContent() {
 
       if (res.ok) {
         const updatedPost = await res.json();
-        // The API might return the new comment or the whole post.
-        // Based on chatController, it usually returns the created comment or similar.
-        // But for Explore, let's just update the local state optimistically or re-fetch if needed.
-        // Actually, let's just update local state with what we know.
         setSelectedCollege(prev => ({
           ...prev,
           postsData: prev.postsData.map(post => {
             if (post._id === postId) {
-              const newComment = { _id: Date.now(), user: { name: user.name, profilePic: user.profilePic }, text };
-              return {
+              return updatedPost?._id ? updatedPost : {
                 ...post,
-                comments: [...(post.comments || []), newComment]
+                comments: [...(post.comments || []), { _id: Date.now(), user: { name: user.name, profilePic: user.profilePic, _id: user._id || user.id }, text }]
               };
             }
             return post;
@@ -1346,13 +1341,26 @@ function ExploreContent() {
                                   <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                                     {post.comments.map((comment, i) => (
                                       <div
-                                        key={i}
-                                        className="flex space-x-2 text-sm bg-[#F9F8F5] p-3 rounded-2xl"
+                                        key={comment._id || i}
+                                        className="flex items-start space-x-3 text-sm bg-[#F9F8F5] p-3 rounded-2xl"
                                       >
-                                        <span className="font-semibold text-[#1A1A1A] shrink-0">
-                                          {comment.user?.name || "Student"}
-                                        </span>
-                                        <span className="text-[#6B6B6B]">{comment.text}</span>
+                                        <div className="h-8 w-8 rounded-full gradient-bg p-[1px] shrink-0">
+                                          <img
+                                            src={getAvatarSrc(comment.user?.profilePic, comment.user?.name, comment.user?._id || comment.user?.id || comment._id)}
+                                            alt={comment.user?.name || "Student"}
+                                            className="h-full w-full rounded-full object-cover bg-white"
+                                            onError={(e) => {
+                                              e.currentTarget.onerror = null;
+                                              e.currentTarget.src = getDefaultAvatar(comment.user?.name || "Student", comment.user?._id || comment.user?.id || comment._id);
+                                            }}
+                                          />
+                                        </div>
+                                        <div className="min-w-0">
+                                          <p className="font-semibold text-[#1A1A1A] leading-tight">
+                                            {comment.user?.name || "Student"}
+                                          </p>
+                                          <p className="text-[#6B6B6B] mt-0.5">{comment.text}</p>
+                                        </div>
                                       </div>
                                     ))}
                                   </div>
