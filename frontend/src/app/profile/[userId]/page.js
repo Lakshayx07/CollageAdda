@@ -248,7 +248,7 @@ export default function UserProfilePage({ params }) {
   /* ──────────────────────── loading / error ──────────────────── */
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0A0A0F] flex flex-col items-center justify-center space-y-4">
+      <div className="min-h-screen bg-[#FAFAF8] flex flex-col items-center justify-center space-y-4">
         <Loader2 size={40} className="animate-spin text-[#C8922A]" />
         <p className="text-xs font-black uppercase tracking-widest text-[#6B6B6B]">Loading Profile...</p>
       </div>
@@ -257,12 +257,12 @@ export default function UserProfilePage({ params }) {
 
   if (error || !profileUser) {
     return (
-      <div className="min-h-screen bg-[#0A0A0F] flex flex-col items-center justify-center space-y-6">
+      <div className="min-h-screen bg-[#FAFAF8] flex flex-col items-center justify-center space-y-6">
         <div className="w-20 h-20 bg-[#F3F2EE] rounded-full flex items-center justify-center text-[#6B6B6B]">
           <Ghost size={30} />
         </div>
         <p className="text-sm font-bold text-[#6B6B6B]">{error || "User not found"}</p>
-        <button onClick={() => router.back()} className="px-6 py-2 bg-[#F9F8F5] border border-[#E8E6E0] rounded-full text-xs font-black uppercase text-[#1A1A1A] hover:bg-[#F3F2EE] transition-colors">
+        <button onClick={() => router.back()} className="px-6 py-2 bg-white border border-[#E8E6E0] rounded-full text-xs font-black uppercase text-[#1A1A1A] hover:bg-[#F3F2EE] transition-colors shadow-sm">
           Go Back
         </button>
       </div>
@@ -274,163 +274,166 @@ export default function UserProfilePage({ params }) {
 
   /* ──────────────────────────── render ─────────────────────────── */
   return (
-    <div className="min-h-screen bg-[#0A0A0F] relative overflow-x-hidden pb-24">
-      {/* Background glows */}
-      <div className="fixed top-[-10%] right-[-10%] w-[60%] h-[60%] bg-[#C8922A]/10 blur-[150px] rounded-full z-0 pointer-events-none" />
-      <div className="fixed bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-[#C8922A]/10 blur-[150px] rounded-full z-0 pointer-events-none" />
+    <div className="min-h-screen bg-[#FAFAF8] relative overflow-x-hidden pb-24">
+      {/* Soft ambient wash */}
+      <div className="fixed top-[-15%] right-[-10%] w-[50%] h-[50%] bg-[#C8922A]/8 blur-[140px] rounded-full z-0 pointer-events-none" />
+      <div className="fixed bottom-[-15%] left-[-10%] w-[45%] h-[45%] bg-[#D4A843]/6 blur-[140px] rounded-full z-0 pointer-events-none" />
 
-      {/* Top nav */}
-      <div className="fixed top-0 inset-x-0 z-50 p-4 flex items-center pointer-events-none">
-        <button onClick={() => router.back()} className="p-3 bg-[#F9F8F5] border border-[#E8E6E0] rounded-full text-[#1A1A1A] pointer-events-auto hover:bg-[#F3F2EE] transition-colors shadow-lg backdrop-blur-md">
-          <ChevronLeft size={20} />
-        </button>
-      </div>
+      {/* Back button — offset past sidebar on desktop */}
+      <button
+        onClick={() => router.back()}
+        aria-label="Go back"
+        className="fixed top-4 z-50 left-4 lg:left-[calc(var(--sidebar-width,80px)+1rem)] p-3 bg-white border border-[#E8E6E0] rounded-full text-[#1A1A1A] hover:bg-[#FFF8EC] transition-colors shadow-md"
+      >
+        <ChevronLeft size={20} />
+      </button>
 
-      <div className="max-w-xl mx-auto relative z-10">
+      <div className="max-w-xl mx-auto relative z-10 px-3 sm:px-4 pt-16 lg:pt-8 space-y-6">
 
-        {/* ── SECTION 1: HERO BANNER ── */}
-        <div className="relative">
-          <div className="h-[140px] md:h-[180px] w-full bg-gradient-to-br from-[#C8922A] via-pink-500 to-[#C8922A] relative">
-            <div className="absolute inset-0 bg-black/20 mix-blend-overlay" />
+        {/* ── PROFILE CARD ── */}
+        <div className="relative overflow-hidden rounded-[1.75rem] border border-[#E8E6E0] bg-white shadow-sm">
+          {/* Banner */}
+          <div className="relative h-[140px] md:h-[170px] w-full bg-gradient-to-br from-[#C8922A] via-pink-500 to-[#D4A843]">
+            <div className="absolute inset-0 bg-black/10" />
           </div>
-          <div className="absolute left-1/2 -translate-x-1/2 -bottom-14">
+
+          {/* Avatar */}
+          <div className="relative flex justify-center -mt-14">
             <div className="relative">
-              {/* Gradient border ring */}
-              <div className="w-[120px] h-[120px] rounded-full p-[3px] shadow-2xl" style={{ background: 'linear-gradient(135deg, #7c3aed, #06b6d4)' }}>
-                <div className="w-full h-full rounded-full overflow-hidden bg-[#0A0A0F]">
+              <div className="w-[112px] h-[112px] rounded-full p-[3px] shadow-xl bg-white" style={{ background: 'linear-gradient(135deg, #C8922A, #06b6d4)' }}>
+                <div className="w-full h-full rounded-full overflow-hidden bg-[#F3F2EE] border-[3px] border-white">
                   <img
                     src={getAvatarSrc(profileUser.profilePic, profileUser.name, profileUser._id || profileUser.id)}
                     alt={profileUser.name}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }}
+                    className="w-full h-full object-cover object-center block"
                   />
                 </div>
               </div>
               {profileUser.rank && (
-                <div className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[13px] font-black px-3 py-1 rounded-full border-[3px] border-[#0A0A0F] shadow-lg">
+                <div className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[12px] font-black px-2.5 py-0.5 rounded-full border-[3px] border-white shadow-md">
                   #{profileUser.rank}
                 </div>
               )}
             </div>
           </div>
-        </div>
 
-        {/* ── SECTION 2: IDENTITY ── */}
-        <div className="pt-20 px-6 text-center space-y-2">
-          <div className="flex justify-center">
-            <span className="bg-[#F3F2EE] text-[#C8922A] text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border border-[#E8E6E0] cursor-default inline-block">
-              {profileUser.badgeTitle || "Verified Student"}
-            </span>
-          </div>
-          <div className="flex items-center justify-center gap-2">
-            <h2 className="text-2xl sm:text-3xl font-black text-[#1A1A1A] tracking-tighter">{profileUser.name}</h2>
-            <VerifiedBadge user={profileUser} size={22} />
-          </div>
-          {profileUser.bio && (
-            <p className="text-sm text-[#6B6B6B] italic font-medium max-w-sm mx-auto">"{profileUser.bio}"</p>
-          )}
-          <p className="text-[11px] font-bold text-[#6B6B6B] uppercase tracking-wider flex items-center justify-center gap-1 pt-1">
-            <MapPin size={12} className="text-[#C8922A]" />
-            {profileUser.university || "Campus Adda"}
-          </p>
-          {/* Course · Year · Batch single line */}
-          {(profileUser.course || profileUser.studyYear || profileUser.year || profileUser.passOutBatch) && (
-            <p className="text-[11px] font-bold text-[#C8922A] uppercase tracking-wider">
-              {[profileUser.course, profileUser.studyYear || profileUser.year, profileUser.passOutBatch ? `Batch of ${profileUser.passOutBatch}` : ""].filter(Boolean).join(" • ")}
+          {/* Identity */}
+          <div className="px-5 sm:px-6 pt-4 pb-2 text-center space-y-2">
+            <div className="flex justify-center">
+              <span className="bg-[#FFF8EC] text-[#C8922A] text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border border-[#C8922A]/20 cursor-default inline-block">
+                {profileUser.badgeTitle || "Verified Student"}
+              </span>
+            </div>
+            <div className="flex items-center justify-center gap-2">
+              <h2 className="text-2xl sm:text-3xl font-black text-[#1A1A1A] tracking-tighter">{profileUser.name}</h2>
+              <VerifiedBadge user={profileUser} size={22} />
+            </div>
+            {profileUser.bio && (
+              <p className="text-sm text-[#6B6B6B] italic font-medium max-w-sm mx-auto">"{profileUser.bio}"</p>
+            )}
+            <p className="text-[11px] font-bold text-[#6B6B6B] uppercase tracking-wider flex items-center justify-center gap-1 pt-0.5">
+              <MapPin size={12} className="text-[#C8922A]" />
+              {profileUser.university || "Campus Adda"}
             </p>
-          )}
-        </div>
-
-        {/* ── FIX 3: COURSE / BATCH / YEAR info card ── */}
-        <div className="px-6 mt-6">
-          <div className="grid grid-cols-2 gap-3 rounded-[1.5rem] border border-white/8 bg-[#F3F2EE] p-4">
-            <div>
-              <p className="text-[9px] font-black uppercase tracking-widest text-[#6B6B6B]">Course</p>
-              <p className="mt-1 text-sm font-bold text-[#4A4A4A]">{profileUser.course || "Not added"}</p>
-            </div>
-            <div>
-              <p className="text-[9px] font-black uppercase tracking-widest text-[#6B6B6B]">Batch</p>
-              <p className="mt-1 text-sm font-bold text-[#4A4A4A]">{profileUser.passOutBatch ? `Batch of ${profileUser.passOutBatch}` : "—"}</p>
-            </div>
-            <div>
-              <p className="text-[9px] font-black uppercase tracking-widest text-[#6B6B6B]">Year</p>
-              <p className="mt-1 text-sm font-bold text-[#4A4A4A]">{profileUser.studyYear || profileUser.year || "—"}</p>
-            </div>
-            <div>
-              <p className="text-[9px] font-black uppercase tracking-widest text-[#6B6B6B]">Campus</p>
-              <p className="mt-1 text-sm font-bold text-[#4A4A4A] truncate">{profileUser.university || "—"}</p>
-            </div>
+            {(profileUser.course || profileUser.studyYear || profileUser.year || profileUser.passOutBatch) && (
+              <p className="text-[11px] font-bold text-[#C8922A] uppercase tracking-wider">
+                {[profileUser.course, profileUser.studyYear || profileUser.year, profileUser.passOutBatch ? `Batch of ${profileUser.passOutBatch}` : ""].filter(Boolean).join(" • ")}
+              </p>
+            )}
           </div>
-        </div>
 
-        {/* ── SECTION 3: STATS ROW ── */}
-        <div className="px-6 mt-6">
-          <div className="grid grid-cols-3 gap-3 w-full">
-            <div className="bg-white border border-[#E8E6E0] shadow-sm p-4 rounded-3xl border border-[#E8E6E0] text-center cursor-default hover:bg-[#F3F2EE] transition-colors">
-              <p className="text-2xl font-black text-[#1A1A1A] tracking-tighter">{userPosts.length}</p>
-              <p className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest mt-1">Posts</p>
-            </div>
-            <button onClick={() => setModal("followers")} className="bg-white border border-[#E8E6E0] shadow-sm p-4 rounded-3xl border border-[#E8E6E0] text-center hover:bg-[#F3F2EE] transition-colors hover:scale-[1.02]">
-              <p className="text-2xl font-black text-[#1A1A1A] tracking-tighter">{followers.length}</p>
-              <p className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest mt-1">Followers</p>
-            </button>
-            <button onClick={() => setModal("following")} className="bg-white border border-[#E8E6E0] shadow-sm p-4 rounded-3xl border border-[#E8E6E0] text-center hover:bg-[#F3F2EE] transition-colors hover:scale-[1.02]">
-              <p className="text-2xl font-black text-[#1A1A1A] tracking-tighter">{following.length}</p>
-              <p className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest mt-1">Following</p>
-            </button>
-          </div>
-        </div>
-
-        {/* ── SECTION 4: ACTION BUTTONS ── */}
-        <div className="px-6 mt-5 flex gap-3">
-          {isSelf ? (
-            <>
-              <button onClick={() => router.push('/profile')} className="flex-1 gradient-bg py-4 rounded-2xl text-[11px] font-black text-[#1A1A1A] uppercase tracking-widest shadow-xl hover:scale-[1.02] transition-transform">
-                ✏️ Edit Profile
-              </button>
-              <button onClick={() => navigator.share ? navigator.share({ title: 'Campus Adda', url: window.location.href }) : alert(window.location.href)} className="p-4 bg-[#F9F8F5] border border-[#E8E6E0] rounded-2xl text-[#6B6B6B] border border-[#E8E6E0] hover:text-[#1A1A1A] transition-colors">
-                <Share2 size={18} />
-              </button>
-            </>
-          ) : connectStatus === "connected" ? (
-            <>
-              <button onClick={handleDirectMessage} className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-400 py-4 rounded-2xl text-[11px] font-black text-[#1A1A1A] uppercase tracking-widest shadow-lg shadow-emerald-500/20 hover:scale-[1.02] transition-transform">
-                💬 Chat Now
-              </button>
-              <div className="flex-1 bg-[#F9F8F5] border border-[#E8E6E0] py-4 rounded-2xl text-[11px] font-black text-[#6B6B6B] uppercase tracking-widest text-center border border-[#E8E6E0] flex items-center justify-center cursor-default">
-                👥 Squad ✓
+          {/* Course / year / batch / campus */}
+          <div className="px-5 sm:px-6 mt-4">
+            <div className="grid grid-cols-2 gap-3 rounded-2xl border border-[#E8E6E0] bg-[#F9F8F5] p-4">
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-widest text-[#888888]">Course</p>
+                <p className="mt-1 text-sm font-bold text-[#1A1A1A]">{profileUser.course || "Not added"}</p>
               </div>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={handleConnectAction}
-                disabled={connectStatus !== "idle"}
-                className={clsx("flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all",
-                  connectStatus === "pending" ? "bg-[#F3F2EE] text-[#6B6B6B] border border-[#E8E6E0] cursor-not-allowed" : "gradient-bg text-[#1A1A1A] shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)] hover:scale-[1.02]"
-                )}
-              >
-                {connectStatus === "idle" && "⚡ Connect"}
-                {connectStatus === "connecting" && <span className="flex items-center justify-center gap-2"><Loader2 size={14} className="animate-spin" /> ...</span>}
-                {connectStatus === "pending" && "⏳ Request Sent"}
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-widest text-[#888888]">Year</p>
+                <p className="mt-1 text-sm font-bold text-[#1A1A1A]">{profileUser.studyYear || profileUser.year || "—"}</p>
+              </div>
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-widest text-[#888888]">Batch</p>
+                <p className="mt-1 text-sm font-bold text-[#1A1A1A]">{profileUser.passOutBatch ? `Batch of ${profileUser.passOutBatch}` : "—"}</p>
+              </div>
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-widest text-[#888888]">Campus</p>
+                <p className="mt-1 text-sm font-bold text-[#1A1A1A] truncate">{profileUser.university || "—"}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="px-5 sm:px-6 mt-4">
+            <div className="grid grid-cols-3 gap-2.5 w-full">
+              <div className="bg-[#F9F8F5] border border-[#E8E6E0] p-3.5 rounded-2xl text-center cursor-default">
+                <p className="text-2xl font-black text-[#1A1A1A] tracking-tighter">{userPosts.length}</p>
+                <p className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest mt-1">Posts</p>
+              </div>
+              <button onClick={() => setModal("followers")} className="bg-[#F9F8F5] border border-[#E8E6E0] p-3.5 rounded-2xl text-center hover:bg-[#FFF8EC] hover:border-[#C8922A]/30 transition-colors">
+                <p className="text-2xl font-black text-[#1A1A1A] tracking-tighter">{followers.length}</p>
+                <p className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest mt-1">Followers</p>
               </button>
-              <button onClick={() => navigator.share ? navigator.share({ title: `Campus Adda: ${profileUser.name}`, url: window.location.href }) : alert(window.location.href)} className="p-4 bg-[#F9F8F5] border border-[#E8E6E0] rounded-2xl text-[#6B6B6B] border border-[#E8E6E0] hover:text-[#1A1A1A] transition-colors hover:scale-[1.02]">
-                <Share2 size={18} />
+              <button onClick={() => setModal("following")} className="bg-[#F9F8F5] border border-[#E8E6E0] p-3.5 rounded-2xl text-center hover:bg-[#FFF8EC] hover:border-[#C8922A]/30 transition-colors">
+                <p className="text-2xl font-black text-[#1A1A1A] tracking-tighter">{following.length}</p>
+                <p className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest mt-1">Following</p>
               </button>
-            </>
-          )}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="px-5 sm:px-6 mt-4 pb-5 flex gap-3">
+            {isSelf ? (
+              <>
+                <button onClick={() => router.push('/profile')} className="flex-1 gradient-bg py-3.5 rounded-2xl text-[11px] font-black text-white uppercase tracking-widest shadow-md hover:scale-[1.01] transition-transform">
+                  Edit Profile
+                </button>
+                <button onClick={() => navigator.share ? navigator.share({ title: 'Campus Adda', url: window.location.href }) : alert(window.location.href)} className="p-3.5 bg-[#F9F8F5] border border-[#E8E6E0] rounded-2xl text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors">
+                  <Share2 size={18} />
+                </button>
+              </>
+            ) : connectStatus === "connected" ? (
+              <>
+                <button onClick={handleDirectMessage} className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-400 py-3.5 rounded-2xl text-[11px] font-black text-white uppercase tracking-widest shadow-md shadow-emerald-500/20 hover:scale-[1.01] transition-transform">
+                  Chat Now
+                </button>
+                <div className="flex-1 bg-[#F9F8F5] border border-[#E8E6E0] py-3.5 rounded-2xl text-[11px] font-black text-[#6B6B6B] uppercase tracking-widest text-center flex items-center justify-center cursor-default">
+                  Squad ✓
+                </div>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={handleConnectAction}
+                  disabled={connectStatus !== "idle"}
+                  className={clsx("flex-1 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all",
+                    connectStatus === "pending" ? "bg-[#F3F2EE] text-[#6B6B6B] border border-[#E8E6E0] cursor-not-allowed" : "gradient-bg text-white shadow-md shadow-[0_4px_14px_rgba(200,146,42,0.2)] hover:scale-[1.01]"
+                  )}
+                >
+                  {connectStatus === "idle" && "Connect"}
+                  {connectStatus === "connecting" && <span className="flex items-center justify-center gap-2"><Loader2 size={14} className="animate-spin" /> ...</span>}
+                  {connectStatus === "pending" && "Request Sent"}
+                </button>
+                <button onClick={() => navigator.share ? navigator.share({ title: `Campus Adda: ${profileUser.name}`, url: window.location.href }) : alert(window.location.href)} className="p-3.5 bg-[#F9F8F5] border border-[#E8E6E0] rounded-2xl text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors hover:scale-[1.01]">
+                  <Share2 size={18} />
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* ── SECTION 5: CAMPUS SOCIALS ── */}
         {(profileUser.instagram || profileUser.linkedin || profileUser.github || profileUser.snapchat) && (
-          <div className="px-6 mt-10">
+          <div className="rounded-[1.75rem] border border-[#E8E6E0] bg-white shadow-sm p-5 sm:p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[11px] font-black text-[#6B6B6B] uppercase tracking-[0.2em]">Campus Socials</h3>
+              <h3 className="text-[11px] font-black text-[#1A1A1A] uppercase tracking-[0.2em]">Campus Socials</h3>
               <UniversityBadges userId={profileUser._id} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               {profileUser.instagram && (
-                <a href={profileUser.instagram.includes('http') ? profileUser.instagram : `https://instagram.com/${profileUser.instagram}`} target="_blank" rel="noopener noreferrer" className="bg-white border border-[#E8E6E0] shadow-sm p-4 rounded-3xl border border-[#E8E6E0] flex items-center space-x-3 hover:-translate-y-1 transition-transform">
-                  <div className="w-10 h-10 bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] rounded-2xl flex items-center justify-center text-[#1A1A1A] shrink-0"><InstagramIcon size={20} /></div>
+                <a href={profileUser.instagram.includes('http') ? profileUser.instagram : `https://instagram.com/${profileUser.instagram}`} target="_blank" rel="noopener noreferrer" className="bg-[#F9F8F5] border border-[#E8E6E0] p-4 rounded-2xl flex items-center space-x-3 hover:-translate-y-0.5 transition-transform">
+                  <div className="w-10 h-10 bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] rounded-2xl flex items-center justify-center text-white shrink-0"><InstagramIcon size={20} /></div>
                   <div className="min-w-0">
                     <p className="text-[9px] text-[#6B6B6B] font-bold uppercase tracking-widest">Instagram</p>
                     <p className="text-[13px] font-black text-[#1A1A1A] truncate leading-none mt-0.5">{extractInstagramUsername(profileUser.instagram)}</p>
@@ -438,8 +441,8 @@ export default function UserProfilePage({ params }) {
                 </a>
               )}
               {profileUser.linkedin && (
-                <a href={profileUser.linkedin} target="_blank" rel="noopener noreferrer" className="bg-white border border-[#E8E6E0] shadow-sm p-4 rounded-3xl border border-[#E8E6E0] flex items-center space-x-3 hover:-translate-y-1 transition-transform">
-                  <div className="w-10 h-10 bg-[#0A66C2] rounded-2xl flex items-center justify-center text-[#1A1A1A] shrink-0"><Briefcase size={18} /></div>
+                <a href={profileUser.linkedin} target="_blank" rel="noopener noreferrer" className="bg-[#F9F8F5] border border-[#E8E6E0] p-4 rounded-2xl flex items-center space-x-3 hover:-translate-y-0.5 transition-transform">
+                  <div className="w-10 h-10 bg-[#0A66C2] rounded-2xl flex items-center justify-center text-white shrink-0"><Briefcase size={18} /></div>
                   <div className="min-w-0">
                     <p className="text-[9px] text-[#6B6B6B] font-bold uppercase tracking-widest">LinkedIn</p>
                     <p className="text-[13px] font-black text-[#1A1A1A] truncate leading-none mt-0.5">View Profile →</p>
@@ -447,8 +450,8 @@ export default function UserProfilePage({ params }) {
                 </a>
               )}
               {profileUser.github && (
-                <a href={profileUser.github} target="_blank" rel="noopener noreferrer" className="bg-white border border-[#E8E6E0] shadow-sm p-4 rounded-3xl border border-[#E8E6E0] flex items-center space-x-3 hover:-translate-y-1 transition-transform">
-                  <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center text-black shrink-0"><Code size={18} /></div>
+                <a href={profileUser.github} target="_blank" rel="noopener noreferrer" className="bg-[#F9F8F5] border border-[#E8E6E0] p-4 rounded-2xl flex items-center space-x-3 hover:-translate-y-0.5 transition-transform">
+                  <div className="w-10 h-10 bg-[#1A1A1A] rounded-2xl flex items-center justify-center text-white shrink-0"><Code size={18} /></div>
                   <div className="min-w-0">
                     <p className="text-[9px] text-[#6B6B6B] font-bold uppercase tracking-widest">GitHub</p>
                     <p className="text-[13px] font-black text-[#1A1A1A] truncate leading-none mt-0.5">{extractGenericUsername(profileUser.github, 'github.com') || 'Profile →'}</p>
@@ -456,7 +459,7 @@ export default function UserProfilePage({ params }) {
                 </a>
               )}
               {profileUser.snapchat && (
-                <a href={`https://snapchat.com/add/${profileUser.snapchat}`} target="_blank" rel="noopener noreferrer" className="bg-white border border-[#E8E6E0] shadow-sm p-4 rounded-3xl border border-[#E8E6E0] flex items-center space-x-3 hover:-translate-y-1 transition-transform">
+                <a href={`https://snapchat.com/add/${profileUser.snapchat}`} target="_blank" rel="noopener noreferrer" className="bg-[#F9F8F5] border border-[#E8E6E0] p-4 rounded-2xl flex items-center space-x-3 hover:-translate-y-0.5 transition-transform">
                   <div className="w-10 h-10 bg-[#FFFC00] rounded-2xl flex items-center justify-center text-black shrink-0"><Ghost size={20} /></div>
                   <div className="min-w-0">
                     <p className="text-[9px] text-[#6B6B6B] font-bold uppercase tracking-widest">Snapchat</p>
@@ -470,16 +473,16 @@ export default function UserProfilePage({ params }) {
 
         {/* ── SECTION 6: INTERESTS & SPORTS ── */}
         {((profileUser.interests?.length > 0) || (profileUser.sports?.length > 0)) && (
-          <div className="px-6 mt-10">
-            <h3 className="text-[11px] font-black text-[#6B6B6B] uppercase tracking-[0.2em] mb-4">✨ Interests & Sports</h3>
+          <div className="rounded-[1.75rem] border border-[#E8E6E0] bg-white shadow-sm p-5 sm:p-6">
+            <h3 className="text-[11px] font-black text-[#1A1A1A] uppercase tracking-[0.2em] mb-4">Interests & Sports</h3>
             <div className="flex flex-wrap gap-2.5">
               {(profileUser.interests || []).map(int => (
-                <span key={int} className="bg-[#F9F8F5] border border-[#E8E6E0] px-4 py-2 rounded-full text-[11px] font-bold text-[#4A4A4A] border border-[#E8E6E0] flex items-center gap-1.5 hover:border-[#C8922A]/30 hover:text-[#C8922A] transition-colors cursor-default">
-                  💡 {int}
+                <span key={int} className="bg-[#F9F8F5] border border-[#E8E6E0] px-4 py-2 rounded-full text-[11px] font-bold text-[#4A4A4A] flex items-center gap-1.5 hover:border-[#C8922A]/30 hover:text-[#C8922A] transition-colors cursor-default">
+                  {int}
                 </span>
               ))}
               {(profileUser.sports || []).map(sport => (
-                <span key={sport} className="bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 cursor-default">
+                <span key={sport} className="bg-[#FFF8EC] text-[#C8922A] border border-[#C8922A]/20 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 cursor-default">
                   <Trophy size={11} /> {sport}
                 </span>
               ))}
@@ -489,11 +492,11 @@ export default function UserProfilePage({ params }) {
 
         {/* ── SECTION 8: CAMPUS VIBE ── */}
         {userPosts.length > 5 && (
-          <div className="px-6 mt-10">
-            <h3 className="text-[11px] font-black text-[#6B6B6B] uppercase tracking-[0.2em] mb-4">🔥 Campus Vibe</h3>
-            <div className="bg-[#F9F8F5] border border-[#E8E6E0] rounded-2xl p-4 border border-[#E8E6E0] flex items-center gap-4 cursor-default hover:bg-[#F3F2EE] transition-colors">
-              <div className="w-12 h-12 rounded-xl gradient-bg flex items-center justify-center shrink-0 shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)]">
-                <Zap size={20} className="text-[#1A1A1A] fill-white" />
+          <div className="rounded-[1.75rem] border border-[#E8E6E0] bg-white shadow-sm p-5 sm:p-6">
+            <h3 className="text-[11px] font-black text-[#1A1A1A] uppercase tracking-[0.2em] mb-4">Campus Vibe</h3>
+            <div className="bg-[#F9F8F5] border border-[#E8E6E0] rounded-2xl p-4 flex items-center gap-4 cursor-default">
+              <div className="w-12 h-12 rounded-xl gradient-bg flex items-center justify-center shrink-0 shadow-md shadow-[0_4px_14px_rgba(200,146,42,0.15)]">
+                <Zap size={20} className="text-white fill-white" />
               </div>
               <div>
                 <p className="text-[15px] font-bold text-[#1A1A1A]">Frequent Poster</p>
@@ -504,16 +507,16 @@ export default function UserProfilePage({ params }) {
         )}
 
         {/* ── SECTION 7: MEMORIES / POSTS GRID ── */}
-        <div className="px-6 mt-10 pb-10">
+        <div className="rounded-[1.75rem] border border-[#E8E6E0] bg-white shadow-sm p-5 sm:p-6 pb-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-[11px] font-black text-[#6B6B6B] uppercase tracking-[0.2em]">📸 Memories</h3>
+            <h3 className="text-[11px] font-black text-[#1A1A1A] uppercase tracking-[0.2em]">Memories</h3>
             <Grid size={16} className="text-[#888888]" />
           </div>
           <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
             {userPosts.length === 0 ? (
-              <div className="col-span-3 py-16 bg-white border border-[#E8E6E0] shadow-sm rounded-[2rem] border border-[#E8E6E0] border-dashed text-center">
+              <div className="col-span-3 py-14 bg-[#F9F8F5] border border-dashed border-[#E8E6E0] rounded-2xl text-center">
                 <ImageIcon size={30} className="mx-auto text-[#888888] mb-3" />
-                <p className="text-[13px] font-black text-[#6B6B6B]">No memories yet 📷</p>
+                <p className="text-[13px] font-black text-[#6B6B6B]">No memories yet</p>
                 <p className="text-[10px] text-[#888888] font-bold uppercase tracking-widest mt-1">Check back later</p>
               </div>
             ) : (
@@ -530,9 +533,9 @@ export default function UserProfilePage({ params }) {
                       <BookOpen size={24} />
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center gap-3">
-                    <span className="flex items-center text-[#1A1A1A] text-[11px] font-black"><Heart size={13} className="fill-white mr-1" /> {post.likes}</span>
-                    <span className="flex items-center text-[#1A1A1A] text-[11px] font-black"><MessageCircle size={13} className="fill-white mr-1" /> {post.comments.length}</span>
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center gap-3">
+                    <span className="flex items-center text-white text-[11px] font-black"><Heart size={13} className="fill-white mr-1" /> {post.likes}</span>
+                    <span className="flex items-center text-white text-[11px] font-black"><MessageCircle size={13} className="fill-white mr-1" /> {post.comments?.length || 0}</span>
                   </div>
                 </div>
               ))
@@ -555,7 +558,7 @@ export default function UserProfilePage({ params }) {
           >
             <motion.div
               initial={{ y: 100, scale: 0.95 }} animate={{ y: 0, scale: 1 }} exit={{ y: 100, scale: 0.95 }}
-              className="w-full max-w-sm overflow-hidden rounded-[2rem] border border-[#E8E6E0] bg-[#0A0A0F] sm:rounded-[2.5rem]"
+              className="w-full max-w-sm overflow-hidden rounded-[2rem] border border-[#E8E6E0] bg-white shadow-xl sm:rounded-[2.5rem]"
               onClick={e => e.stopPropagation()}
             >
               <div className="p-5 border-b border-[#E8E6E0] flex items-center justify-between">
