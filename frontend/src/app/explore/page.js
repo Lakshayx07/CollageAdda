@@ -52,7 +52,6 @@ const ESPORTS_SQUADS = [
   { name: "Valorant", key: "valorant", icon: Crosshair, accent: "#FF4655" },
   { name: "FIFA", key: "fifa", icon: Trophy, accent: "#00A3FF" },
   { name: "Chess", key: "chess", icon: Medal, accent: "#C8922A" },
-  { name: "Carrom", key: "carrom", icon: Target, accent: "#F97316" },
 ];
 
 const handleBannerError = (event) => {
@@ -717,7 +716,6 @@ function ExploreContent() {
                       { id: "Valorant", label: "Valorant" },
                       { id: "FIFA", label: "FIFA" },
                       { id: "Chess", label: "Chess" },
-                      { id: "Carrom", label: "Carrom" },
                     ].map((game) => {
                       const active = arenaSportFilter === game.id;
                       return (
