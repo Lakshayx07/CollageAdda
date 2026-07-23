@@ -48,6 +48,7 @@ export default function UserProfilePage({ params }) {
   const [followers, setFollowers] = useState([]);
   const [following, setFollowing] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingPosts, setLoadingPosts] = useState(true);
   const [error, setError] = useState(null);
 
   // modal: null | "followers" | "following" | "post"
@@ -63,33 +64,71 @@ export default function UserProfilePage({ params }) {
 
   /* ─────────────────────────── init ─────────────────────────── */
   useEffect(() => {
+    let cancelled = false;
+
+    const mapPosts = (posts, me) => (posts || []).map((p) => ({
+      id: p._id,
+      img: p.mediaUrl || "",
+      content: p.content || "",
+      author: p.author,
+      createdAt: p.createdAt,
+      likes: typeof p.likesCount === "number" ? p.likesCount : (p.likes?.length || 0),
+      isLiked: typeof p.likedByMe === "boolean"
+        ? p.likedByMe
+        : !!(p.likes?.includes?.(me._id || me.id)),
+      likeIds: Array.isArray(p.likes) ? p.likes : [],
+      comments: (p.comments || []).map((c) => ({
+        id: c._id || Math.random().toString(),
+        user: c.user,
+        text: c.text,
+        createdAt: c.createdAt
+      })),
+    }));
+
     const init = async () => {
       const stored = localStorage.getItem("collegeadda_user");
       const token = localStorage.getItem("collegeadda_token");
       if (!stored || !token) { router.push("/login"); return; }
       const me = JSON.parse(stored);
       setCurrentUser(me);
+      setLoading(true);
+      setLoadingPosts(true);
+      setUserPosts([]);
+      setError(null);
 
       try {
-        // Fetch target user profile
+        // 1) Paint profile card as soon as user data arrives
         const userRes = await fetch(`${apiUrl}/api/users/${targetUserId}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` }
         });
 
-        if (userRes.ok) {
-          const userData = await userRes.json();
-          setProfileUser(userData);
-          setFollowers(userData.followers || []);
-          setFollowing(userData.following || []);
+        if (!userRes.ok) {
+          if (!cancelled) {
+            setError("User not found");
+            setLoading(false);
+            setLoadingPosts(false);
+          }
+          return;
+        }
 
-          if (me._id === userData._id || me.id === userData._id) {
-            setConnectStatus("self");
-          } else {
-            const myRes = await fetch(`${apiUrl}/api/users/profile`, {
-              headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (myRes.ok) {
-              const myData = await myRes.json();
+        const userData = await userRes.json();
+        if (cancelled) return;
+
+        setProfileUser(userData);
+        setFollowers(userData.followers || []);
+        setFollowing(userData.following || []);
+        setLoading(false);
+
+        if (me._id === userData._id || me.id === userData._id) {
+          setConnectStatus("self");
+        } else {
+          // Non-blocking connect status
+          fetch(`${apiUrl}/api/users/profile`, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+            .then((res) => (res.ok ? res.json() : null))
+            .then((myData) => {
+              if (cancelled || !myData) return;
               if (myData.following && myData.following.includes(userData._id)) {
                 setConnectStatus("connected");
               } else if (userData.connectionRequests && userData.connectionRequests.includes(me._id || me.id)) {
@@ -97,46 +136,34 @@ export default function UserProfilePage({ params }) {
               } else {
                 setConnectStatus("idle");
               }
-            }
-          }
-        } else {
-          setError("User not found");
+            })
+            .catch(() => {});
         }
 
-        // Fetch posts
-        const postsRes = await fetch(`${apiUrl}/api/posts`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+        // 2) Load only this author's posts (not the full campus feed)
+        const postsRes = await fetch(
+          `${apiUrl}/api/posts?author=${encodeURIComponent(targetUserId)}&limit=12`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (cancelled) return;
         if (postsRes.ok) {
-          const allPosts = await postsRes.json();
-          const me2 = JSON.parse(stored);
-          const pPosts = allPosts.filter(p => p.author?._id === targetUserId || p.author?.id === targetUserId);
-          setUserPosts(pPosts.map(p => ({
-            id: p._id,
-            img: p.mediaUrl || "",
-            content: p.content || "",
-            author: p.author,
-            createdAt: p.createdAt,
-            likes: p.likes?.length || 0,
-            isLiked: !!(p.likes?.includes(me2._id || me2.id)),
-            likeIds: p.likes || [],
-            comments: (p.comments || []).map(c => ({
-              id: c._id || Math.random().toString(),
-              user: c.user,
-              text: c.text,
-              createdAt: c.createdAt
-            })),
-          })));
+          const authorPosts = await postsRes.json();
+          setUserPosts(mapPosts(authorPosts, me));
         }
       } catch (err) {
         console.error(err);
-        setError("Error loading profile");
+        if (!cancelled) setError("Error loading profile");
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setLoadingPosts(false);
+        }
       }
     };
+
     init();
-  }, [targetUserId, router]);
+    return () => { cancelled = true; };
+  }, [targetUserId, router, apiUrl]);
 
   /* ─────────────────────── keyboard shortcuts ─────────────────── */
   useEffect(() => {
@@ -513,7 +540,11 @@ export default function UserProfilePage({ params }) {
             <Grid size={16} className="text-[#888888]" />
           </div>
           <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-            {userPosts.length === 0 ? (
+            {loadingPosts ? (
+              [1, 2, 3].map((n) => (
+                <div key={n} className="aspect-square rounded-[1rem] bg-[#F3F2EE] animate-pulse border border-[#E8E6E0]" />
+              ))
+            ) : userPosts.length === 0 ? (
               <div className="col-span-3 py-14 bg-[#F9F8F5] border border-dashed border-[#E8E6E0] rounded-2xl text-center">
                 <ImageIcon size={30} className="mx-auto text-[#888888] mb-3" />
                 <p className="text-[13px] font-black text-[#6B6B6B]">No memories yet</p>

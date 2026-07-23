@@ -91,6 +91,7 @@ const slimPost = (post, userId) => {
 
 // @route   GET /api/posts
 // @desc    Get university feed with pagination (lean payloads)
+// @query   author — optional user id to return only that author's posts
 router.get('/', protect, async (req, res) => {
   try {
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
@@ -98,7 +99,12 @@ router.get('/', protect, async (req, res) => {
     const limit = Math.min(Math.max(requestedLimit, 1), 30);
     const skip = (page - 1) * limit;
 
-    const posts = await Post.find({ university: req.user.university })
+    const filter = { university: req.user.university };
+    if (req.query.author) {
+      filter.author = req.query.author;
+    }
+
+    const posts = await Post.find(filter)
       .select('content mediaUrl mediaType hashtags university createdAt updatedAt author likes comments poll')
       .populate('author', 'name university isVerified')
       .populate('comments.user', 'name')
