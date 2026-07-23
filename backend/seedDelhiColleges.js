@@ -69,7 +69,7 @@ const delhiColleges = [
     departments: 6,
     emoji: "🖥️",
     accent: "#0891B2",
-    banner: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&q=80",
+    banner: "/college-banners/iiit-delhi.jpg",
     description: "Indraprastha Institute of Information Technology Delhi."
   },
   {

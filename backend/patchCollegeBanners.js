@@ -29,8 +29,7 @@ const BANNER_BY_NAME = {
     'https://learn.vcnow.in/wp-content/uploads/2026/01/DTU.jpg',
   'Netaji Subhas University of Technology (NSUT)':
     'https://edufever.in/colleges/wp-content/uploads/2021/03/NSUT-Delhi.webp',
-  'IIIT Delhi':
-    'https://scontent.fsc8-1.fna.fbcdn.net/v/t39.30808-6/474463365_1043647644469899_7392936379056642518_n.jpg?stp=dst-jpg_tt6&cstp=mx2048x1508&ctp=s2048x1508&_nc_cat=108&ccb=1-7&_nc_sid=cc71e4&_nc_ohc=YPyOjxXUppQQ7kNvwHwMaAf&_nc_oc=AdovWGGac135xRDRby4Qgm-INs9WHpBcHnlzP0HGu0_RbKnJHlT6A5MKtasnXM7rql7WHu-dcY9IrLBqrdLS5DvL&_nc_zt=23&_nc_ht=scontent.fsc8-1.fna&_nc_gid=VsNcHwUaRkdV2mqDng3LGA&_nc_ss=7b289&oh=00_AQBtemBO20_f5orfSNKRmoa61CHWYaMB0eFibfLgLblb0A&oe=6A64E8B7',
+  'IIIT Delhi': '/college-banners/iiit-delhi.jpg',
   'University of Delhi (DU)':
     'https://images.shiksha.com/mediadata/images/articles/1662370481phpb8qpYu.jpeg',
   'Jawaharlal Nehru University (JNU)': 'https://jnuee.jnu.ac.in/images/slide4.jpg',
