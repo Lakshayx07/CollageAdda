@@ -80,29 +80,66 @@ function MessagesContent() {
   }, [activeChat, activeChatMessages, user, formatMessage]);
 
   const queryClient = useQueryClient();
-  
-  const getRoomPartner = useCallback((room) => {
-    return room.participants?.find(p => String(p._id || p.id || p) !== String(user?._id || user?.id));
-  }, [user]);
+
+  const readStoredUser = useCallback(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      return JSON.parse(localStorage.getItem("collegeadda_user") || "null");
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const isFormattedRoomCache = useCallback((rooms) => (
+    Array.isArray(rooms) && rooms.length > 0 && !!rooms[0]?.id && !rooms[0]?._id
+  ), []);
 
   const formatRooms = useCallback((data) => {
-    if (!Array.isArray(data) || !user) return [];
-    return data.map(room => {
-      const partner = getRoomPartner(room);
+    const currentUser = user || readStoredUser();
+    if (!Array.isArray(data) || !currentUser) return [];
+
+    // Recover display from a previously poisoned UI-shaped cache (do not wipe)
+    if (isFormattedRoomCache(data)) {
+      return data.map((room) => ({
+        ...room,
+        avatar: room.type === "group"
+          ? (room.avatar || <Users size={24} className="text-white" />)
+          : getAvatarSrc(
+              typeof room.avatar === "string" ? room.avatar : room.partner?.profilePic,
+              room.name || room.partner?.name || "Student",
+              room.partner?._id || room.partner?.id || room.id
+            ),
+      }));
+    }
+
+    const myId = String(currentUser._id || currentUser.id);
+    const unreadKey = currentUser._id || currentUser.id;
+    return data.map((room) => {
+      const partner = room.participants?.find(
+        (p) => String(p._id || p.id || p) !== myId
+      );
       return {
-      id: room._id,
-      name: room.isGroup ? (room.groupName || `${room.university} Hub`) : (partner?.name || "Chat"),
-      type: room.isGroup ? "group" : "private",
-      avatar: room.isGroup ? <Users size={24} className="text-white" /> : getAvatarSrc(partner?.profilePic, partner?.name || "Student", partner?._id || partner?.id),
-      lastMsg: getMessagePreview(room.lastMessage),
-      time: room.lastMessage ? new Date(room.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "",
-      timestamp: room.lastMessage?.createdAt ? new Date(room.lastMessage.createdAt).getTime() : new Date(room.updatedAt || room.createdAt || 0).getTime(),
-      unreadCount: room.unreadCounts?.[user._id] || 0,
-      participants: room.participants?.map(p => p._id || p.id) || [],
-      partner: room.isGroup ? null : partner
-    };
+        id: room._id,
+        name: room.isGroup
+          ? (room.groupName || `${room.university} Hub`)
+          : (partner?.name || "Chat"),
+        type: room.isGroup ? "group" : "private",
+        avatar: room.isGroup
+          ? <Users size={24} className="text-white" />
+          : getAvatarSrc(partner?.profilePic, partner?.name || "Student", partner?._id || partner?.id),
+        lastMsg: getMessagePreview(room.lastMessage),
+        time: room.lastMessage
+          ? new Date(room.lastMessage.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          : "",
+        timestamp: room.lastMessage?.createdAt
+          ? new Date(room.lastMessage.createdAt).getTime()
+          : new Date(room.updatedAt || room.createdAt || 0).getTime(),
+        unreadCount: room.unreadCounts?.[unreadKey] || room.unreadCounts?.[String(unreadKey)] || 0,
+        participants: room.participants?.map((p) => p._id || p.id) || [],
+        partner: room.isGroup ? null : partner,
+      };
     });
-  }, [user, getMessagePreview, getRoomPartner]);
+  }, [user, readStoredUser, isFormattedRoomCache, getMessagePreview]);
 
   const { data: rawRooms = [], isLoading: loadingChats } = useApiQuery(
     "chat-rooms",
@@ -113,24 +150,75 @@ function MessagesContent() {
     }
   );
 
-  const chats = useMemo(() => {
-    // If rawRooms is already formatted (due to optimistic updates), use it directly
-    if (rawRooms.length > 0 && rawRooms[0].id) {
-      return rawRooms.map(room => ({
-        ...room,
-        avatar: room.type === "group" ? room.avatar : getAvatarSrc(room.avatar || room.partner?.profilePic, room.name || room.partner?.name || "Student", room.partner?._id || room.partner?.id || room.id),
-      }));
-    }
-    return formatRooms(rawRooms);
-  }, [rawRooms, formatRooms]);
+  // Keep API-shaped rooms in the query cache; format only for UI
+  const chats = useMemo(() => formatRooms(rawRooms), [rawRooms, formatRooms]);
 
-  const setChats = useCallback((updater) => {
-    queryClient.setQueryData(["chat-rooms"], (oldRawData) => {
-      if (!oldRawData) return oldRawData;
-      const currentFormatted = (oldRawData.length > 0 && oldRawData[0].id) ? oldRawData : formatRooms(oldRawData);
-      return typeof updater === 'function' ? updater(currentFormatted) : updater;
+  const invalidateChatRooms = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["chat-rooms"] });
+  }, [queryClient]);
+
+  const patchRawRoom = useCallback((roomId, updater) => {
+    queryClient.setQueryData(["chat-rooms"], (old) => {
+      if (!Array.isArray(old)) return old;
+      if (isFormattedRoomCache(old)) {
+        // Poisoned cache — refetch full list instead of patching UI shapes
+        queueMicrotask(() => invalidateChatRooms());
+        return old;
+      }
+      return old.map((room) => {
+        if (String(room._id) !== String(roomId)) return room;
+        return typeof updater === "function" ? updater(room) : { ...room, ...updater };
+      });
     });
-  }, [queryClient, formatRooms]);
+  }, [queryClient, isFormattedRoomCache, invalidateChatRooms]);
+
+  const removeRawRoom = useCallback((roomId) => {
+    queryClient.setQueryData(["chat-rooms"], (old) => {
+      if (!Array.isArray(old)) return old;
+      return old.filter((room) => String(room._id || room.id) !== String(roomId));
+    });
+  }, [queryClient]);
+
+  const applyRoomMessagePreview = useCallback((roomId, message, { unreadDelta = 0, clearUnread = false } = {}) => {
+    const currentUser = user || readStoredUser();
+    const uid = currentUser?._id || currentUser?.id;
+    patchRawRoom(roomId, (room) => {
+      const nextUnread = { ...(room.unreadCounts || {}) };
+      if (uid) {
+        const key = String(uid);
+        if (clearUnread) {
+          nextUnread[uid] = 0;
+          nextUnread[key] = 0;
+        } else if (unreadDelta) {
+          const current = nextUnread[uid] ?? nextUnread[key] ?? 0;
+          nextUnread[uid] = current + unreadDelta;
+          nextUnread[key] = current + unreadDelta;
+        }
+      }
+      return {
+        ...room,
+        lastMessage: message
+          ? {
+              text: message.text,
+              mediaType: message.mediaType,
+              poll: message.poll,
+              deletedAt: message.deletedAt,
+              createdAt: message.createdAt || new Date().toISOString(),
+              sender: message.sender || message.senderId,
+            }
+          : room.lastMessage,
+        updatedAt: message?.createdAt || room.updatedAt || new Date().toISOString(),
+        unreadCounts: nextUnread,
+      };
+    });
+  }, [patchRawRoom, user, readStoredUser]);
+
+  // Drop poisoned UI-shaped room lists persisted from older builds
+  useEffect(() => {
+    if (isFormattedRoomCache(rawRooms)) {
+      invalidateChatRooms();
+    }
+  }, [rawRooms, isFormattedRoomCache, invalidateChatRooms]);
   const [messages, setMessages] = useState({});
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -167,6 +255,7 @@ function MessagesContent() {
   const typingTimeoutRef = useRef(null);
   const outgoingTypingTimeoutRef = useRef(null);
   const seenSocketMessageIdsRef = useRef(new Set());
+  const deepLinkHandledRef = useRef(false);
   const messageRefs = useRef({});
   const scrollRef = useRef(null);
 
@@ -245,13 +334,14 @@ function MessagesContent() {
     window.history.replaceState({}, document.title, url.pathname + url.search);
   };
 
+  // Auth bootstrap — keep separate from deep-link handling
   useEffect(() => {
     const storedUser = localStorage.getItem("collegeadda_user");
     if (!storedUser) {
       router.push("/login");
       return;
     }
-    
+
     let u;
     try {
       u = JSON.parse(storedUser);
@@ -260,81 +350,76 @@ function MessagesContent() {
       router.push("/login");
       return;
     }
-    
+
     if (!u) {
       router.push("/login");
       return;
     }
     setUser(u);
-
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
-
-    
-    if (!loadingChats) {
-      // Handle ?chat=roomId (direct room link)
-      const chatParam = searchParams.get("chat");
-      if (chatParam && !activeChat) {
-        const found = chats.find(c => c.id === chatParam);
-        if (found) { setActiveChat(found); }
-      }
-
-      // Handle ?userId=X (open/create DM from Squad page)
-      const userIdParam = searchParams.get("userId");
-      if (userIdParam && !activeChat) {
-        // Check if a private room with this user already exists
-        const existingRoom = chats.find(r => r.type === "private" && r.participants.includes(userIdParam));
-        if (existingRoom) {
-          setActiveChat(existingRoom);
-          const interestParam = searchParams.get("interestProduct");
-          if (interestParam) {
-            sendAutoInterestMessage(existingRoom.id, interestParam);
-          }
-        } else {
-          // Create a new private DM room
-          const createDM = async () => {
-            try {
-              const token = localStorage.getItem("collegeadda_token");
-              const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
-              const createRes = await fetch(`${apiUrl}/api/chat/rooms`, {
-                method: "POST",
-                headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
-                body: JSON.stringify({ participantId: userIdParam })
-              });
-              if (createRes.ok) {
-                const newRoom = await createRes.json();
-                const formatted = {
-                  id: newRoom._id,
-                  name: newRoom.participants?.find(p => p._id !== u._id)?.name || "Chat",
-                  type: "private",
-                  avatar: getAvatarSrc(newRoom.participants?.find(p => p._id !== u._id)?.profilePic, newRoom.participants?.find(p => p._id !== u._id)?.name || "Student", newRoom.participants?.find(p => p._id !== u._id)?._id),
-                  lastMsg: "No messages yet",
-                  time: "",
-                  timestamp: Date.now(),
-                  unreadCount: 0,
-                  partner: newRoom.participants?.find(p => p._id !== u._id)
-                };
-                setChats(prev => {
-                  const exists = prev.find(c => c.id === formatted.id);
-                  return exists ? prev : [formatted, ...prev];
-                });
-                setActiveChat(formatted);
-                const interestParam = searchParams.get("interestProduct");
-                if (interestParam) {
-                  sendAutoInterestMessage(formatted.id, interestParam);
-                }
-              }
-            } catch (err) {
-              console.error("Error creating DM room:", err);
-            }
-          };
-          createDM();
-        }
-      }
-    }
-
-    resetUnread(); // Clear unread notifications when entering messages page
+    resetUnread();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Deep-link: ?chat= / ?userId= — wait until user + rooms are ready
+  useEffect(() => {
+    if (!user || loadingChats || deepLinkHandledRef.current || activeChat) return;
+
+    const chatParam = searchParams.get("chat");
+    const userIdParam = searchParams.get("userId");
+    if (!chatParam && !userIdParam) return;
+
+    if (chatParam) {
+      const found = chats.find((c) => String(c.id) === String(chatParam));
+      if (found) {
+        deepLinkHandledRef.current = true;
+        setActiveChat(found);
+      }
+      return;
+    }
+
+    // Always getOrCreate so empty DMs get a one-shot inbox surface bump
+    deepLinkHandledRef.current = true;
+    let cancelled = false;
+
+    const openOrCreateDM = async () => {
+      try {
+        const token = localStorage.getItem("collegeadda_token");
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+        const createRes = await fetch(`${apiUrl}/api/chat/rooms`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ participantId: userIdParam }),
+        });
+        if (!createRes.ok) {
+          deepLinkHandledRef.current = false;
+          return;
+        }
+        const room = await createRes.json();
+        if (cancelled) return;
+        await queryClient.invalidateQueries({ queryKey: ["chat-rooms"] });
+        const formatted = formatRooms([room])[0];
+        if (formatted) {
+          setActiveChat(formatted);
+          const interestParam = searchParams.get("interestProduct");
+          if (interestParam) {
+            sendAutoInterestMessage(formatted.id, interestParam);
+          }
+        }
+      } catch (err) {
+        console.error("Error opening DM room:", err);
+        deepLinkHandledRef.current = false;
+      }
+    };
+
+    openOrCreateDM();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, loadingChats, chats, searchParams, activeChat]);
 
   // Separate useEffect to handle global socket message reception locally
   useEffect(() => {
@@ -373,19 +458,10 @@ function MessagesContent() {
         };
       });
 
-      setChats(prevChats => prevChats.map(c => {
-        if (c.id === msg.room) {
-          const isCurrent = activeChat?.id === msg.room;
-          return { 
-            ...c, 
-            lastMsg: getMessagePreview(msg), 
-            time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            timestamp: new Date(msg.createdAt).getTime(),
-            unreadCount: isCurrent || !didAppendUnreadMessage ? c.unreadCount || 0 : (c.unreadCount || 0) + 1
-          };
-        }
-        return c;
-      }));
+      const isCurrent = activeChat?.id === msg.room;
+      applyRoomMessagePreview(msg.room, msg, {
+        unreadDelta: isCurrent || !didAppendUnreadMessage ? 0 : 1,
+      });
     };
 
     const handleMessageUpdated = ({ room, message }) => {
@@ -394,7 +470,7 @@ function MessagesContent() {
         ...prev,
         [room]: (prev[room] || []).map(m => m.id === updatedMessage.id ? { ...m, ...updatedMessage } : m)
       }));
-      setChats(prevChats => prevChats.map(c => c.id === room ? { ...c, lastMsg: getMessagePreview(message) } : c));
+      applyRoomMessagePreview(room, message);
     };
 
     const handleTyping = ({ name }) => {
@@ -416,7 +492,7 @@ function MessagesContent() {
       socket.off('user_typing', handleTyping);
       socket.off('user_stop_typing', handleStopTyping);
     };
-  }, [socket, user, activeChat, formatMessage, getMessagePreview]);
+  }, [socket, user, activeChat, formatMessage, applyRoomMessagePreview]);
 
   useEffect(() => {
     if (activeChat && socket) {
@@ -431,7 +507,7 @@ function MessagesContent() {
             method: 'PUT',
             headers: { 'Authorization': `Bearer ${token}` }
           });
-          setChats(prev => prev.map(c => c.id === activeChat.id ? { ...c, unreadCount: 0 } : c));
+          applyRoomMessagePreview(activeChat.id, null, { clearUnread: true });
         } catch (e) { console.error(e); }
       };
       markSeen();
@@ -441,7 +517,7 @@ function MessagesContent() {
     return () => {
       setActiveRoom(null);
     };
-  }, [activeChat, socket, setActiveRoom]);
+  }, [activeChat, socket, setActiveRoom, applyRoomMessagePreview]);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -544,18 +620,12 @@ function MessagesContent() {
         }
       ]
     }));
-    // Optimistic UI update for chat list
-    setChats(prevChats => prevChats.map(c => {
-      if (c.id === activeChat.id) {
-        return {
-          ...c,
-          lastMsg: data.text || getMessagePreview(data),
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          timestamp: Date.now()
-        };
-      }
-      return c;
-    }));
+    // Optimistic UI update for chat list (raw cache)
+    applyRoomMessagePreview(activeChat.id, {
+      text: data.text,
+      mediaType: data.mediaType,
+      createdAt: new Date().toISOString(),
+    });
     
     try {
       const res = await fetch(`${apiUrl}/api/chat/rooms/${activeChat.id}/messages`, {
@@ -618,7 +688,7 @@ function MessagesContent() {
       ...prev,
       [activeChat.id]: (prev[activeChat.id] || []).map(m => m.id === formatted.id ? { ...m, ...formatted } : m)
     }));
-    setChats(prev => prev.map(c => c.id === activeChat.id ? { ...c, lastMsg: getMessagePreview(message) } : c));
+    applyRoomMessagePreview(activeChat.id, message);
     emitMessageUpdate(message);
   };
 
@@ -752,7 +822,7 @@ function MessagesContent() {
         const savedMsg = await res.json();
         const formatted = formatMessage(savedMsg, user);
         setMessages(prev => ({ ...prev, [activeChat.id]: [...(prev[activeChat.id] || []), formatted] }));
-        setChats(prev => prev.map(c => c.id === activeChat.id ? { ...c, lastMsg: getMessagePreview(savedMsg), timestamp: Date.now() } : c));
+        applyRoomMessagePreview(activeChat.id, savedMsg);
         socket?.emit('forward_message', {
           room: activeChat.id,
           senderId: user._id || user.id,
@@ -843,19 +913,9 @@ function MessagesContent() {
       
       if (res.ok) {
         const newRoom = await res.json();
-        const formatted = {
-          id: newRoom._id,
-          name: newRoom.groupName,
-          type: "group",
-          avatar: <Users size={24} className="text-white" />,
-          lastMsg: "Group created",
-          time: "",
-          timestamp: Date.now(),
-          unreadCount: 0,
-          participants: newRoom.participants?.map(p => p._id || p.id) || []
-        };
-        setChats(prev => [formatted, ...prev]);
-        setActiveChat(formatted);
+        await queryClient.invalidateQueries({ queryKey: ["chat-rooms"] });
+        const formatted = formatRooms([newRoom])[0];
+        if (formatted) setActiveChat(formatted);
         setShowCreateGroup(false);
         setNewGroupName("");
         setSelectedMembers([]);
@@ -936,7 +996,8 @@ function MessagesContent() {
           isSystem: true
         });
 
-        setChats(prev => prev.filter(c => c.id !== activeChat.id));
+        removeRawRoom(activeChat.id);
+        invalidateChatRooms();
         setActiveChat(null);
         setShowChatOptions(false);
       }
@@ -962,10 +1023,8 @@ function MessagesContent() {
       });
       
       if (res.ok) {
-        const data = await res.json();
-        // Update local chat info
-        setChats(prev => prev.map(c => c.id === activeChat.id ? { ...c, participants: [...c.participants, memberId] } : c));
-        
+        invalidateChatRooms();
+
         // Emit system message via socket
         socket?.emit('send_message', {
           room: activeChat.id,
@@ -1890,7 +1949,7 @@ function MessagesContent() {
                   <div className="py-10 text-center text-[#888888] font-bold uppercase tracking-widest text-[10px]">No friends found</div>
                 ) : (
                   connections
-                    .filter(f => !activeChat.participants.includes(f._id || f.id))
+                    .filter(f => !(activeChat.participants || []).includes(f._id || f.id))
                     .map((f, i) => (
                       <div key={i} className="flex items-center justify-between p-3 hover:bg-[#F3F2EE] rounded-2xl transition-all border border-transparent hover:border-[#E8E6E0] group">
                         <div className="flex items-center space-x-4">
