@@ -36,8 +36,20 @@ export default function Home() {
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [selectedMediaFile, setSelectedMediaFile] = useState(null);
   const [mediaType, setMediaType] = useState('none');
-  const [currentUser, setCurrentUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // Hydrate from localStorage on first paint so the posts query uses the right cache key immediately
+  const [currentUser, setCurrentUser] = useState(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const stored = localStorage.getItem("collegeadda_user");
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return Boolean(localStorage.getItem("collegeadda_token"));
+  });
   const [activeStory, setActiveStory] = useState(null);
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const [isStoryPaused, setIsStoryPaused] = useState(false);
@@ -126,15 +138,19 @@ export default function Home() {
     });
   }, [currentUser]);
 
+  const feedUserId = currentUser?._id || currentUser?.id;
   const { data: posts = [], isLoading: loadingPosts, refetch: refetchPosts } = useApiQuery(
-    ["posts", currentUser?._id],
+    ["posts", feedUserId],
     `/api/posts?limit=${FEED_PAGE_SIZE}`,
     {
-      enabled: isAuthenticated && !!currentUser,
+      enabled: isAuthenticated && !!feedUserId,
       select: formatPosts,
-      staleTime: 60 * 1000, // 1 min for posts — they change frequently
+      staleTime: 5 * 60 * 1000, // keep feed warm when navigating away
+      gcTime: 24 * 60 * 60 * 1000,
+      refetchOnMount: true, // background refresh if stale; cached posts still render
     }
   );
+  const showFeedSkeleton = loadingPosts && posts.length === 0;
 
   useEffect(() => {
     setFeedPage(1);
@@ -1216,7 +1232,7 @@ export default function Home() {
 
         {/* Posts List */}
         <div className="overflow-hidden rounded-[1.25rem] border border-[#E8E6E0] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-          {loadingPosts && (
+          {showFeedSkeleton && (
             <div className="divide-y divide-[#E8E6E0]">
               {[1, 2, 3].map((n) => (
                 <div key={n} className="p-6 space-y-4 animate-pulse bg-white">
@@ -1242,7 +1258,7 @@ export default function Home() {
             </div>
           )}
 
-          {!loadingPosts && posts.length === 0 && (
+          {!showFeedSkeleton && posts.length === 0 && (
             <div className="bg-white p-8 text-center flex flex-col items-center justify-center space-y-4">
               <div className="w-16 h-16 rounded-full bg-[#FFF8EC] flex items-center justify-center text-[#C8922A]">
                 <Compass size={32} />
@@ -1260,7 +1276,7 @@ export default function Home() {
             </div>
           )}
 
-          {!loadingPosts && posts.length > 0 && filteredPosts.length === 0 && (
+          {!showFeedSkeleton && posts.length > 0 && filteredPosts.length === 0 && (
             <div className="bg-white p-8 text-center flex flex-col items-center justify-center space-y-4">
               <div className="w-16 h-16 rounded-full bg-[#FFF8EC] flex items-center justify-center text-[#C8922A]">
                 <Flame size={32} />
@@ -1278,7 +1294,7 @@ export default function Home() {
             </div>
           )}
           
-          {!loadingPosts && filteredPosts.map((post) => (
+          {!showFeedSkeleton && filteredPosts.map((post) => (
             <motion.article
               key={post.id} 
               variants={itemVariants}
@@ -1521,7 +1537,7 @@ export default function Home() {
             </motion.article>
           ))}
 
-          {!loadingPosts && posts.length > 0 && hasMorePosts && !selectedTopic && (
+          {!showFeedSkeleton && posts.length > 0 && hasMorePosts && !selectedTopic && (
             <div className="p-4 bg-white border-t border-[#E8E6E0]">
               <button
                 type="button"
