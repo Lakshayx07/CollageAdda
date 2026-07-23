@@ -5,7 +5,8 @@ import { queryClient, createIDBPersister } from "../utils/queryClient";
 
 export default function QueryProvider({ children }) {
   // Use a constant valid key for IndexedDB
-  const persister = createIDBPersister("campusAdda_reactQueryCache");
+  // v2: drop poisoned chat-rooms caches that stored UI-formatted room lists
+  const persister = createIDBPersister("campusAdda_reactQueryCache_v2");
 
   return (
     <PersistQueryClientProvider

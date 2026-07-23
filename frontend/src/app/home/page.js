@@ -36,8 +36,20 @@ export default function Home() {
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [selectedMediaFile, setSelectedMediaFile] = useState(null);
   const [mediaType, setMediaType] = useState('none');
-  const [currentUser, setCurrentUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // Hydrate from localStorage on first paint so the posts query uses the right cache key immediately
+  const [currentUser, setCurrentUser] = useState(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const stored = localStorage.getItem("collegeadda_user");
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return Boolean(localStorage.getItem("collegeadda_token"));
+  });
   const [activeStory, setActiveStory] = useState(null);
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const [isStoryPaused, setIsStoryPaused] = useState(false);
@@ -55,6 +67,10 @@ export default function Home() {
   // setConfessions is defined below as a custom updater for optimistic updates on cached queries
   const [confessionCommentInputs, setConfessionCommentInputs] = useState({});
   const [confessionScope, setConfessionScope] = useState('local'); // 'local' | 'global'
+  const FEED_PAGE_SIZE = 12;
+  const [feedPage, setFeedPage] = useState(1);
+  const [hasMorePosts, setHasMorePosts] = useState(true);
+  const [loadingMorePosts, setLoadingMorePosts] = useState(false);
   const [placeholderText, setPlaceholderText] = useState(() => {
     const prompts = [
       "What is the unwritten rule of the night canteen?",
@@ -73,9 +89,16 @@ export default function Home() {
   // ── TanStack Query hooks for cached data fetching ────────────────────────
   const formatPosts = useCallback((data) => {
     const user = currentUser || {};
+    const userId = user._id || user.id;
     return (data || []).map(p => {
       // If the post is already formatted (from optimistic UI updates in the cache), return it as is
       if (p.id && !p._id) return p;
+
+      const likesCount = typeof p.likesCount === 'number' ? p.likesCount : (p.likes?.length || 0);
+      const commentsCount = typeof p.commentsCount === 'number' ? p.commentsCount : (p.comments?.length || 0);
+      const isLiked = typeof p.likedByMe === 'boolean'
+        ? p.likedByMe
+        : Boolean(p.likes?.some?.((id) => String(id) === String(userId)) || p.likes?.includes?.(userId));
 
       return {
         id: p._id,
@@ -86,9 +109,9 @@ export default function Home() {
         avatar: getAvatarSrc(p.author?.profilePic, p.author?.name, p.author?._id),
         time: new Date(p.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
         content: p.content,
-        likes: p.likes?.length || 0,
-        isLiked: p.likes?.includes(user._id || user.id),
-        comments: p.comments?.length || 0,
+        likes: likesCount,
+        isLiked,
+        comments: commentsCount,
         commentsList: p.comments?.map(c => ({
           id: c._id || Math.random().toString(),
           author: c.user?.name || 'Student',
@@ -99,7 +122,19 @@ export default function Home() {
         })) || [],
         mediaUrl: p.mediaUrl,
         mediaType: p.mediaType,
-        poll: p.poll,
+        poll: p.poll
+          ? {
+              ...p.poll,
+              options: (p.poll.options || []).map((option) => ({
+                text: option.text,
+                votesCount: typeof option.votesCount === 'number' ? option.votesCount : (option.votes?.length || 0),
+                votedByMe: typeof option.votedByMe === 'boolean'
+                  ? option.votedByMe
+                  : Boolean(option.votes?.some?.((id) => String(id) === String(userId)) || option.votes?.includes?.(userId)),
+                votes: option.votes
+              }))
+            }
+          : p.poll,
         authorFollowers: p.author?.followers || [],
         authorFollowing: p.author?.following || [],
         authorUser: p.author || { isVerified: false }
@@ -107,15 +142,60 @@ export default function Home() {
     });
   }, [currentUser]);
 
+  const feedUserId = currentUser?._id || currentUser?.id;
   const { data: posts = [], isLoading: loadingPosts, refetch: refetchPosts } = useApiQuery(
-    ["posts", currentUser?._id],
-    "/api/posts",
+    ["posts", feedUserId],
+    `/api/posts?limit=${FEED_PAGE_SIZE}`,
     {
-      enabled: isAuthenticated && !!currentUser,
+      enabled: isAuthenticated && !!feedUserId,
       select: formatPosts,
-      staleTime: 60 * 1000, // 1 min for posts — they change frequently
+      staleTime: 5 * 60 * 1000, // keep feed warm when navigating away
+      gcTime: 24 * 60 * 60 * 1000,
+      refetchOnMount: true, // background refresh if stale; cached posts still render
     }
   );
+  const showFeedSkeleton = loadingPosts && posts.length === 0;
+
+  useEffect(() => {
+    setFeedPage(1);
+    setHasMorePosts(true);
+  }, [currentUser?._id]);
+
+  useEffect(() => {
+    if (!loadingPosts && feedPage === 1 && posts.length < FEED_PAGE_SIZE) {
+      setHasMorePosts(false);
+    }
+  }, [loadingPosts, posts.length, feedPage]);
+
+  const loadMorePosts = async () => {
+    if (loadingMorePosts || !hasMorePosts || !currentUser?._id) return;
+    setLoadingMorePosts(true);
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const nextPage = feedPage + 1;
+      const res = await fetch(`${apiUrl}/api/posts?page=${nextPage}&limit=${FEED_PAGE_SIZE}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (!res.ok) throw new Error(`Failed to load more posts (${res.status})`);
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length < FEED_PAGE_SIZE) {
+        setHasMorePosts(false);
+      }
+      if (Array.isArray(data) && data.length > 0) {
+        queryClient.setQueryData(["posts", currentUser._id], (old) => {
+          const existing = Array.isArray(old) ? old : [];
+          const seen = new Set(existing.map((p) => String(p._id || p.id)));
+          const fresh = data.filter((p) => !seen.has(String(p._id)));
+          return [...existing, ...fresh];
+        });
+        setFeedPage(nextPage);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingMorePosts(false);
+    }
+  };
 
   const { data: friendsList = [] } = useApiQuery(
     "friends",
@@ -153,7 +233,8 @@ export default function Home() {
     ["confessions", confessionScope],
     `/api/confessions?scope=${confessionScope}`,
     {
-      enabled: isAuthenticated,
+      // Confessions are not rendered on the home feed — skip the mount-time request
+      enabled: false,
       staleTime: 30 * 1000,
     }
   );
@@ -176,7 +257,8 @@ export default function Home() {
     "leaderboard",
     "/api/users/leaderboard",
     {
-      enabled: isAuthenticated,
+      // Let the feed win bandwidth first
+      enabled: isAuthenticated && !loadingPosts,
       select: (data) => {
         const rows = Array.isArray(data) ? data : data?.leaderboard || [];
         return rows.slice(0, 5);
@@ -189,7 +271,7 @@ export default function Home() {
     "suggested",
     "/api/users/daily-drop",
     {
-      enabled: isAuthenticated,
+      enabled: isAuthenticated && !loadingPosts,
       select: (data) => Array.isArray(data) ? data : [],
       staleTime: 5 * 60 * 1000,
     }
@@ -525,6 +607,8 @@ export default function Home() {
           });
         }
         
+        setFeedPage(1);
+        setHasMorePosts(true);
         refetchPosts();
         
         setToastMsg("Post created!");
@@ -1165,7 +1249,7 @@ export default function Home() {
 
         {/* Posts List */}
         <div className="overflow-hidden rounded-[1.25rem] border border-[#E8E6E0] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-          {loadingPosts && (
+          {showFeedSkeleton && (
             <div className="divide-y divide-[#E8E6E0]">
               {[1, 2, 3].map((n) => (
                 <div key={n} className="p-6 space-y-4 animate-pulse bg-white">
@@ -1191,7 +1275,7 @@ export default function Home() {
             </div>
           )}
 
-          {!loadingPosts && posts.length === 0 && (
+          {!showFeedSkeleton && posts.length === 0 && (
             <div className="bg-white p-8 text-center flex flex-col items-center justify-center space-y-4">
               <div className="w-16 h-16 rounded-full bg-[#FFF8EC] flex items-center justify-center text-[#C8922A]">
                 <Compass size={32} />
@@ -1209,7 +1293,7 @@ export default function Home() {
             </div>
           )}
 
-          {!loadingPosts && posts.length > 0 && filteredPosts.length === 0 && (
+          {!showFeedSkeleton && posts.length > 0 && filteredPosts.length === 0 && (
             <div className="bg-white p-8 text-center flex flex-col items-center justify-center space-y-4">
               <div className="w-16 h-16 rounded-full bg-[#FFF8EC] flex items-center justify-center text-[#C8922A]">
                 <Flame size={32} />
@@ -1227,7 +1311,7 @@ export default function Home() {
             </div>
           )}
           
-          {!loadingPosts && filteredPosts.map((post) => (
+          {!showFeedSkeleton && filteredPosts.map((post) => (
             <motion.article
               key={post.id} 
               variants={itemVariants}
@@ -1317,11 +1401,14 @@ export default function Home() {
                   </div>
                   <div className="space-y-2.5">
                     {post.poll.options.map((option, idx) => {
-                      const maxVotes = Math.max(...post.poll.options.map(o => o.votes?.length || 0));
-                      const totalVotes = post.poll.options.reduce((sum, opt) => sum + (opt.votes?.length || 0), 0);
-                      const optionVotes = option.votes?.length || 0;
+                      const voteCountOf = (o) => (typeof o.votesCount === 'number' ? o.votesCount : (o.votes?.length || 0));
+                      const maxVotes = Math.max(...post.poll.options.map(voteCountOf));
+                      const totalVotes = post.poll.options.reduce((sum, opt) => sum + voteCountOf(opt), 0);
+                      const optionVotes = voteCountOf(option);
                       const percentage = totalVotes === 0 ? 0 : Math.round((optionVotes / totalVotes) * 100);
-                      const hasVoted = option.votes?.includes(currentUser?._id || currentUser?.id);
+                      const hasVoted = typeof option.votedByMe === 'boolean'
+                        ? option.votedByMe
+                        : Boolean(option.votes?.includes?.(currentUser?._id || currentUser?.id));
                       const isLeading = optionVotes === maxVotes && maxVotes > 0;
                       
                       return (
@@ -1363,7 +1450,7 @@ export default function Home() {
                       <BarChart2 size={12} />
                       View Breakdown
                     </button>
-                    <span className="text-[#888888] text-[10px] font-bold uppercase tracking-wider">{post.poll.options.reduce((sum, opt) => sum + (opt.votes?.length || 0), 0)} total votes</span>
+                    <span className="text-[#888888] text-[10px] font-bold uppercase tracking-wider">{post.poll.options.reduce((sum, opt) => sum + (typeof opt.votesCount === 'number' ? opt.votesCount : (opt.votes?.length || 0)), 0)} total votes</span>
                   </div>
                 </div>
               )}
@@ -1465,6 +1552,19 @@ export default function Home() {
               </AnimatePresence>
             </motion.article>
           ))}
+
+          {!showFeedSkeleton && posts.length > 0 && hasMorePosts && !selectedTopic && (
+            <div className="p-4 bg-white border-t border-[#E8E6E0]">
+              <button
+                type="button"
+                onClick={loadMorePosts}
+                disabled={loadingMorePosts}
+                className="w-full rounded-full border border-[#E8E6E0] bg-[#F9F8F5] px-4 py-3 text-xs font-black uppercase tracking-widest text-[#1A1A1A] transition-colors hover:border-[#C8922A]/40 hover:bg-[#FFF8EC] disabled:cursor-wait disabled:opacity-60"
+              >
+                {loadingMorePosts ? "Loading more..." : "Load more posts"}
+              </button>
+            </div>
+          )}
         </div>
         </div>
 

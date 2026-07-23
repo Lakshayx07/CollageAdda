@@ -654,7 +654,7 @@
 
 .switchMode {
   margin: 3px 0 0;
-  color: rgba(255, 255, 255, .5) !important;
+  color: #6B6B6B !important;
   text-align: center;
   font-size: 12px;
 }
@@ -663,7 +663,7 @@
   margin-left: 6px;
   border: 0;
   background: none;
-  color: #9a78ff;
+  color: #F97316;
   font: inherit;
   font-weight: 750;
   cursor: pointer;
@@ -672,10 +672,10 @@
 .message {
   margin: 14px 0 0;
   padding: 10px 12px;
-  border: 1px solid rgba(248, 113, 113, .25);
+  border: 1px solid rgba(220, 38, 38, .28);
   border-radius: 9px;
-  background: rgba(127, 29, 29, .18);
-  color: #fecaca !important;
+  background: rgba(254, 226, 226, .95);
+  color: #991b1b !important;
   text-align: center;
   font-size: 12px;
   line-height: 1.45;
@@ -683,7 +683,7 @@
 
 .terms {
   margin: 32px 0 0;
-  color: rgba(255, 255, 255, .55) !important;
+  color: #6B6B6B !important;
   text-align: center;
   font-size: 12px;
   line-height: 1.8;
@@ -702,13 +702,13 @@
   justify-content: center;
   gap: 11px;
   margin-top: 72px;
-  color: rgba(255, 255, 255, .7);
+  color: #6B6B6B;
   font-size: 13px;
 }
 
 .security svg {
   width: 22px;
-  color: rgba(255, 255, 255, .82);
+  color: #F97316;
 }
 
 .securityCheck {

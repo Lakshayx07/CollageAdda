@@ -21,7 +21,6 @@ const ESPORTS_TAB = {
     { key: "valorant", icon: "🔫" },
     { key: "fifa",     icon: "⚽" },
     { key: "chess",    icon: "♟️" },
-    { key: "carrom",   icon: "🎯" },
   ]
 };
 

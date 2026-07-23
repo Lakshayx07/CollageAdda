@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, startTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { Bell, Heart, MessageSquare, UserPlus, Sparkles, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
@@ -8,6 +9,7 @@ import VerifiedBadge from './VerifiedBadge';
 import { getAvatarSrc } from '@/utils/defaultAvatars';
 
 export default function NotificationBell() {
+  const router = useRouter();
   const [notifications, setNotifications] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -15,6 +17,25 @@ export default function NotificationBell() {
   const dropdownRef = useRef(null);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+
+  const senderIdOf = (sender) => sender?._id || sender?.id;
+
+  const prefetchSenderProfile = (sender) => {
+    const senderId = senderIdOf(sender);
+    if (!senderId) return;
+    router.prefetch(`/profile/${senderId}`);
+  };
+
+  const openSenderProfile = (event, sender) => {
+    event.stopPropagation();
+    const senderId = senderIdOf(sender);
+    if (!senderId) return;
+    setIsOpen(false);
+    prefetchSenderProfile(sender);
+    startTransition(() => {
+      router.push(`/profile/${senderId}`);
+    });
+  };
 
   const fetchNotifications = async () => {
     try {
@@ -166,21 +187,52 @@ export default function NotificationBell() {
                       )}
                     >
                       <div className="relative flex-shrink-0">
-                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-300 to-orange-300 p-[1.5px]">
-                          <img 
-                            src={getAvatarSrc(notif.sender?.profilePic, notif.sender?.name, notif.sender?._id || notif.sender?.id)}
-                            className="h-full w-full rounded-[0.9rem] border-2 border-white object-cover"
-                            alt={notif.sender?.name || "User"}
-                          />
-                        </div>
-                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-[#FAFAF8] rounded-lg border border-[#E8E6E0] flex items-center justify-center shadow-lg">
+                        {senderIdOf(notif.sender) ? (
+                          <button
+                            type="button"
+                            onMouseEnter={() => prefetchSenderProfile(notif.sender)}
+                            onFocus={() => prefetchSenderProfile(notif.sender)}
+                            onPointerDown={() => prefetchSenderProfile(notif.sender)}
+                            onClick={(event) => openSenderProfile(event, notif.sender)}
+                            className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-300 to-orange-300 p-[1.5px] cursor-pointer"
+                            aria-label={`Open ${notif.sender?.name || "user"} profile`}
+                          >
+                            <img
+                              src={getAvatarSrc(notif.sender?.profilePic, notif.sender?.name, senderIdOf(notif.sender))}
+                              className="h-full w-full rounded-[0.9rem] border-2 border-white object-cover"
+                              alt={notif.sender?.name || "User"}
+                            />
+                          </button>
+                        ) : (
+                          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-300 to-orange-300 p-[1.5px]">
+                            <img
+                              src={getAvatarSrc(notif.sender?.profilePic, notif.sender?.name, senderIdOf(notif.sender))}
+                              className="h-full w-full rounded-[0.9rem] border-2 border-white object-cover"
+                              alt={notif.sender?.name || "User"}
+                            />
+                          </div>
+                        )}
+                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-[#FAFAF8] rounded-lg border border-[#E8E6E0] flex items-center justify-center shadow-lg pointer-events-none">
                           {getIcon(notif.type)}
                         </div>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[11px] text-[#4A4A4A] leading-tight">
                           <span className="inline-flex items-center font-black text-[#1A1A1A] mr-1">
-                            {notif.sender?.name}
+                            {senderIdOf(notif.sender) ? (
+                              <button
+                                type="button"
+                                onMouseEnter={() => prefetchSenderProfile(notif.sender)}
+                                onFocus={() => prefetchSenderProfile(notif.sender)}
+                                onPointerDown={() => prefetchSenderProfile(notif.sender)}
+                                onClick={(event) => openSenderProfile(event, notif.sender)}
+                                className="cursor-pointer hover:underline hover:text-[#C8922A] transition-colors"
+                              >
+                                {notif.sender?.name}
+                              </button>
+                            ) : (
+                              <span>{notif.sender?.name}</span>
+                            )}
                             <VerifiedBadge user={notif.sender} size={12} />
                           </span> 
                           {notif.text}
