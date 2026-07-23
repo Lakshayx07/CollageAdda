@@ -55,6 +55,16 @@ const slimComments = (comments = []) => {
   }));
 };
 
+const resolveMediaUrl = (post) => {
+  const mediaUrl = post?.mediaUrl || '';
+  if (!mediaUrl) return '';
+  // Keep remote/public URLs as-is; rewrite inline base64 to a dedicated endpoint
+  if (mediaUrl.startsWith('data:')) {
+    return `/api/posts/${toIdString(post._id)}/media`;
+  }
+  return mediaUrl;
+};
+
 const slimPost = (post, userId) => {
   if (!post) return post;
   const uid = toIdString(userId);
@@ -64,7 +74,7 @@ const slimPost = (post, userId) => {
   return {
     _id: post._id,
     content: post.content,
-    mediaUrl: post.mediaUrl,
+    mediaUrl: resolveMediaUrl(post),
     mediaType: post.mediaType,
     hashtags: post.hashtags || [],
     university: post.university,
@@ -98,6 +108,36 @@ router.get('/', protect, async (req, res) => {
       .lean();
 
     res.json(posts.map((post) => slimPost(post, req.user._id)));
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @route   GET /api/posts/:id/media
+// @desc    Serve inline base64 post media without embedding it in the feed JSON
+// Public like avatars so <img>/<video> tags can load without Authorization headers.
+router.get('/:id/media', async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id).select('mediaUrl').lean();
+    if (!post || !post.mediaUrl) {
+      return res.status(404).json({ message: 'Media not found' });
+    }
+
+    if (post.mediaUrl.startsWith('http')) {
+      return res.redirect(post.mediaUrl);
+    }
+
+    if (post.mediaUrl.startsWith('data:')) {
+      const match = post.mediaUrl.match(/^data:([^;]+);base64,(.+)$/);
+      if (!match) return res.status(400).json({ message: 'Invalid media data' });
+      const mime = match[1];
+      const buffer = Buffer.from(match[2], 'base64');
+      res.setHeader('Content-Type', mime);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      return res.send(buffer);
+    }
+
+    return res.status(400).json({ message: 'Unsupported media format' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

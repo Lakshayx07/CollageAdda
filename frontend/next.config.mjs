@@ -16,6 +16,10 @@ const nextConfig = {
         source: '/api/users/:id/avatar',
         destination: `${apiBase}/api/users/:id/avatar`,
       },
+      {
+        source: '/api/posts/:id/media',
+        destination: `${apiBase}/api/posts/:id/media`,
+      },
     ];
   },
 };
