@@ -2,7 +2,8 @@ import express from 'express';
 import Post from '../models/Post.js';
 import Notification from '../models/Notification.js';
 import { protect, verified } from '../middleware/authMiddleware.js';
-import { slimPost } from '../utils/postSerialize.js';
+import { slimPost, slimComments } from '../utils/postSerialize.js';
+import { awardXP } from '../services/xpService.js';
 
 const router = express.Router();
 
@@ -23,8 +24,8 @@ router.get('/', protect, async (req, res) => {
 
     const posts = await Post.find(filter)
       .select('content mediaUrl mediaType hashtags university createdAt updatedAt author likes comments poll')
-      .populate('author', 'name university isVerified')
-      .populate('comments.user', 'name')
+      .populate('author', 'name university isVerified xp points currentTick')
+      .populate('comments.user', 'name isVerified')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
@@ -103,9 +104,11 @@ router.post('/', protect, verified, async (req, res) => {
       poll: poll && poll.options && poll.options.length > 0 ? poll : undefined
     });
 
+    await awardXP(req.user._id, 'CREATE_POST', post._id.toString());
+
     const populated = await Post.findById(post._id)
       .select('content mediaUrl mediaType hashtags university createdAt updatedAt author likes comments poll')
-      .populate('author', 'name university isVerified')
+      .populate('author', 'name university isVerified xp points currentTick')
       .populate('comments.user', 'name')
       .lean();
 
@@ -167,6 +170,7 @@ router.put('/:id/like', protect, verified, async (req, res) => {
       post.likes = post.likes.filter((id) => id.toString() !== req.user._id.toString());
     } else {
       post.likes.push(req.user._id);
+      await awardXP(post.author.toString(), 'LIKE_POST', `like_${req.user._id}_${post._id}`);
     }
     await post.save();
 
@@ -206,6 +210,8 @@ router.post('/:id/comment', protect, verified, async (req, res) => {
         text: 'commented on your post'
       });
     }
+
+    await awardXP(req.user._id, 'COMMENT_POST', `comment_${post.comments[post.comments.length - 1]._id.toString()}`);
 
     await post.populate('comments.user', 'name');
     res.status(201).json(slimComments(post.comments));

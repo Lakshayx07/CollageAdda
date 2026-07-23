@@ -17,7 +17,16 @@ export const queryClient = new QueryClient({
 export const createIDBPersister = (idbValidKey = 'reactQuery') => {
   return {
     persistClient: async (client) => {
-      await set(idbValidKey, client);
+      try {
+        await set(idbValidKey, client);
+      } catch (error) {
+        if (error?.name === "DataCloneError") {
+          await del(idbValidKey);
+          console.warn("Skipped non-serializable React Query cache snapshot.", error);
+          return;
+        }
+        throw error;
+      }
     },
     restoreClient: async () => {
       return await get(idbValidKey);

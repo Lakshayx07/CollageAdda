@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check, Plus, Flame, TrendingUp, Search, Zap, BarChart2, Compass, ShieldCheck, Flag, Globe, GraduationCap, ChevronLeft, ChevronRight, Users, Trophy, Sun, Sunset, Moon, Pause, Play } from "lucide-react";
 import Image from "next/image";
 import NotificationBell from "../../components/NotificationBell";
+import NameWithTick from '../../components/NameWithTick';
 
-import VerifiedBadge from "../../components/VerifiedBadge";
 import CampusLeaderboard from "../../components/CampusLeaderboard";
 import clsx from "clsx";
 import { motion, AnimatePresence } from "framer-motion";
@@ -103,6 +103,7 @@ export default function Home() {
       return {
         id: p._id,
         author: p.author?.name || 'Unknown',
+        authorTick: p.author?.currentTick || null,
         authorId: p.author?._id,
         university: p.university,
         avatar: getAvatarSrc(p.author?.profilePic, p.author?.name, p.author?._id),
@@ -114,6 +115,9 @@ export default function Home() {
         commentsList: p.comments?.map(c => ({
           id: c._id || Math.random().toString(),
           author: c.user?.name || 'Student',
+          authorTick: c.user?.currentTick || null,
+          userId: c.user?._id || c.user?.id,
+          profilePic: c.user?.profilePic,
           text: c.text
         })) || [],
         mediaUrl: p.mediaUrl,
@@ -697,7 +701,13 @@ export default function Home() {
           return {
             ...post,
             comments: post.comments + 1,
-            commentsList: [...(post.commentsList || []), { id: Date.now(), author: "You", text }]
+            commentsList: [...(post.commentsList || []), {
+              id: `temp-${Date.now()}`,
+              author: currentUser?.name || "You",
+              userId: currentUser?._id || currentUser?.id,
+              profilePic: currentUser?.profilePic,
+              text
+            }]
           };
         }
         return post;
@@ -707,7 +717,7 @@ export default function Home() {
 
     try {
       const token = localStorage.getItem("collegeadda_token");
-      await fetch(`${apiUrl}/api/posts/${postId}/comment`, {
+      const res = await fetch(`${apiUrl}/api/posts/${postId}/comment`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -715,6 +725,13 @@ export default function Home() {
         },
         body: JSON.stringify({ text })
       });
+      if (res.ok) {
+        const updatedPost = await res.json();
+        const [formattedPost] = formatPosts([updatedPost]);
+        if (formattedPost) {
+          setPosts(currentPosts => currentPosts.map(post => post.id === postId ? formattedPost : post));
+        }
+      }
     } catch (err) {
       console.error(err);
     }
@@ -1315,8 +1332,7 @@ export default function Home() {
                   </div>
                   <div>
                     <h3 className="text-[#1A1A1A] font-semibold flex items-center gap-2">
-                      {post.author}
-                      <VerifiedBadge user={post.authorUser} size={16} /> 
+                      <NameWithTick name={post.author} tick={post.authorTick} />
                     </h3>
                     <p className="text-[#888888] text-sm">{post.university} • {post.time}</p>
                   </div>
@@ -1507,7 +1523,7 @@ export default function Home() {
                             />
                           </div>
                           <div className="flex-1">
-                            <p className="text-xs font-bold text-[#1A1A1A]">{comment.author}</p>
+                            <p className="text-xs font-bold text-[#1A1A1A]"><NameWithTick name={comment.author} tick={comment.authorTick} /></p>
                             <p className="text-xs text-[#6B6B6B] mt-0.5">{comment.text}</p>
                           </div>
                         </div>
@@ -1630,7 +1646,6 @@ export default function Home() {
                             >
                               {user.name}
                             </p>
-                            {user.isVerified && <VerifiedBadge size={12} />}
                           </div>
                           <p className="text-[10px] text-[#888888] truncate max-w-[120px]">
                             {user.university || "CampusAdda User"}

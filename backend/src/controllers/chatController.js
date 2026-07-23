@@ -12,7 +12,7 @@ import { transformUser } from '../routes/userRoutes.js';
 export const getRooms = async (req, res) => {
   try {
     const rooms = await ChatRoom.find({ participants: req.user._id })
-      .populate('participants', 'name university isVerified')
+      .populate('participants', 'name university isVerified updatedAt')
       .populate('lastMessage', 'text mediaType poll deletedAt createdAt sender')
       .sort({ updatedAt: -1 })
       .limit(50)
@@ -36,10 +36,11 @@ export const getRooms = async (req, res) => {
  * @access  Private
  */
 export const getMessages = async (req, res) => {
-  const { page = 1, limit = 50 } = req.query;
+  const page = parseInt(req.query.page, 10) || 1;
+  const limit = parseInt(req.query.limit, 10) || 50;
   try {
     const messages = await Message.find({ room: req.params.id })
-      .populate('sender', 'name isVerified')
+      .populate('sender', 'name isVerified updatedAt')
       .sort({ createdAt: -1 })
       .limit(limit)
       .skip((page - 1) * limit)
@@ -100,7 +101,7 @@ export const getOrCreatePrivateRoom = async (req, res) => {
         isGroup: true,
         groupName: groupName
       });
-      const populatedRoom = await ChatRoom.findById(room._id).populate('participants', 'name profilePic university isVerified');
+      const populatedRoom = await ChatRoom.findById(room._id).populate('participants', 'name university isVerified updatedAt');
       return res.status(201).json(populatedRoom);
     }
 
@@ -110,7 +111,7 @@ export const getOrCreatePrivateRoom = async (req, res) => {
     let room = await ChatRoom.findOne({
       isGroup: false,
       participants: { $all: [req.user._id, target] }
-    }).populate('participants', 'name profilePic university isVerified');
+    }).populate('participants', 'name university isVerified updatedAt');
 
     if (!room) {
       room = await ChatRoom.create({
@@ -118,7 +119,7 @@ export const getOrCreatePrivateRoom = async (req, res) => {
         isGroup: false,
         surfacedFor: [req.user._id]
       });
-      room = await ChatRoom.findById(room._id).populate('participants', 'name profilePic university isVerified');
+      room = await ChatRoom.findById(room._id).populate('participants', 'name university isVerified updatedAt');
       return res.status(201).json(room);
     }
 
@@ -137,7 +138,7 @@ export const getOrCreatePrivateRoom = async (req, res) => {
         );
         room = await ChatRoom.findById(room._id).populate(
           'participants',
-          'name profilePic university isVerified'
+          'name university isVerified updatedAt'
         );
       }
     }
@@ -208,7 +209,7 @@ export const sendMessage = async (req, res) => {
       }
     }
 
-    const populatedMsg = await Message.findById(message._id).populate('sender', 'name profilePic isVerified');
+    const populatedMsg = await Message.findById(message._id).populate('sender', 'name isVerified updatedAt');
     res.status(201).json(populatedMsg);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -224,7 +225,7 @@ const findParticipantRoom = async (roomId, userId) => {
   return { room };
 };
 
-const populateMessage = (id) => Message.findById(id).populate('sender', 'name profilePic isVerified');
+const populateMessage = (id) => Message.findById(id).populate('sender', 'name isVerified updatedAt');
 
 export const updateMessage = async (req, res) => {
   const { text } = req.body;
@@ -360,7 +361,7 @@ export const addMember = async (req, res) => {
     
     await room.save();
 
-    const populatedRoom = await ChatRoom.findById(room._id).populate('participants', 'name profilePic university isVerified');
+    const populatedRoom = await ChatRoom.findById(room._id).populate('participants', 'name university isVerified updatedAt');
     res.json({ message: 'Member added successfully', room: populatedRoom });
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -9,7 +9,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Suspense, useCallback, useMemo } from "react";
 import { useApiQuery } from "@/utils/useApiQuery";
 import { useQueryClient } from "@tanstack/react-query";
-import VerifiedBadge from "@/components/VerifiedBadge";
 import { getAvatarSrc } from "@/utils/defaultAvatars";
 
 function MessagesContent() {
@@ -90,9 +89,40 @@ function MessagesContent() {
     }
   }, []);
 
+  const getEntityId = useCallback((entity) => String(entity?._id || entity?.id || entity || ""), []);
+  const getCurrentUserId = useCallback(() => getEntityId(user || readStoredUser()), [getEntityId, user, readStoredUser]);
+
   const isFormattedRoomCache = useCallback((rooms) => (
     Array.isArray(rooms) && rooms.length > 0 && !!rooms[0]?.id && !rooms[0]?._id
   ), []);
+
+  const getRoomPartner = useCallback((room) => {
+    const currentUserId = getCurrentUserId();
+    return room.participants?.find((p) => getEntityId(p) !== currentUserId);
+  }, [getCurrentUserId, getEntityId]);
+
+  const getPrivatePartnerId = useCallback((room) => {
+    if (room.type === "group" || room.isGroup) return "";
+    if (room.partner) return getEntityId(room.partner);
+    const currentUserId = getCurrentUserId();
+    return (room.participants || [])
+      .map(getEntityId)
+      .find((id) => id && id !== currentUserId) || "";
+  }, [getCurrentUserId, getEntityId]);
+
+  const dedupeChats = useCallback((roomList) => {
+    const byKey = new Map();
+    roomList.forEach((room) => {
+      if (!room?.id) return;
+      const partnerId = room.partnerId || getPrivatePartnerId(room);
+      const key = room.type === "private" && partnerId ? `private:${partnerId}` : `${room.type || "room"}:${room.id}`;
+      const existing = byKey.get(key);
+      if (!existing || (room.timestamp || 0) > (existing.timestamp || 0)) {
+        byKey.set(key, { ...room, partnerId });
+      }
+    });
+    return Array.from(byKey.values());
+  }, [getPrivatePartnerId]);
 
   const formatRooms = useCallback((data) => {
     const currentUser = user || readStoredUser();
@@ -100,24 +130,24 @@ function MessagesContent() {
 
     // Recover display from a previously poisoned UI-shaped cache (do not wipe)
     if (isFormattedRoomCache(data)) {
-      return data.map((room) => ({
+      return dedupeChats(data.map((room) => ({
         ...room,
+        participants: room.participants || [],
+        partnerId: room.partnerId || getPrivatePartnerId(room),
         avatar: room.type === "group"
-          ? (room.avatar || <Users size={24} className="text-white" />)
+          ? "group"
           : getAvatarSrc(
-              typeof room.avatar === "string" ? room.avatar : room.partner?.profilePic,
+              typeof room.avatar === "string" && room.avatar !== "group" ? room.avatar : room.partner?.profilePic,
               room.name || room.partner?.name || "Student",
               room.partner?._id || room.partner?.id || room.id
             ),
-      }));
+      })));
     }
 
     const myId = String(currentUser._id || currentUser.id);
     const unreadKey = currentUser._id || currentUser.id;
-    return data.map((room) => {
-      const partner = room.participants?.find(
-        (p) => String(p._id || p.id || p) !== myId
-      );
+    const formatted = data.map((room) => {
+      const partner = getRoomPartner(room);
       return {
         id: room._id,
         name: room.isGroup
@@ -125,7 +155,7 @@ function MessagesContent() {
           : (partner?.name || "Chat"),
         type: room.isGroup ? "group" : "private",
         avatar: room.isGroup
-          ? <Users size={24} className="text-white" />
+          ? "group"
           : getAvatarSrc(partner?.profilePic, partner?.name || "Student", partner?._id || partner?.id),
         lastMsg: getMessagePreview(room.lastMessage),
         time: room.lastMessage
@@ -136,10 +166,12 @@ function MessagesContent() {
           : new Date(room.updatedAt || room.createdAt || 0).getTime(),
         unreadCount: room.unreadCounts?.[unreadKey] || room.unreadCounts?.[String(unreadKey)] || 0,
         participants: room.participants?.map((p) => p._id || p.id) || [],
+        partnerId: getEntityId(partner),
         partner: room.isGroup ? null : partner,
       };
     });
-  }, [user, readStoredUser, isFormattedRoomCache, getMessagePreview]);
+    return dedupeChats(formatted);
+  }, [user, readStoredUser, isFormattedRoomCache, getMessagePreview, getRoomPartner, getPrivatePartnerId, getEntityId, dedupeChats]);
 
   const { data: rawRooms = [], isLoading: loadingChats } = useApiQuery(
     "chat-rooms",
@@ -165,10 +197,16 @@ function MessagesContent() {
         queueMicrotask(() => invalidateChatRooms());
         return old;
       }
-      return old.map((room) => {
+      let matched = false;
+      const next = old.map((room) => {
         if (String(room._id) !== String(roomId)) return room;
+        matched = true;
         return typeof updater === "function" ? updater(room) : { ...room, ...updater };
       });
+      if (!matched) {
+        queueMicrotask(() => invalidateChatRooms());
+      }
+      return next;
     });
   }, [queryClient, isFormattedRoomCache, invalidateChatRooms]);
 
@@ -256,6 +294,7 @@ function MessagesContent() {
   const outgoingTypingTimeoutRef = useRef(null);
   const seenSocketMessageIdsRef = useRef(new Set());
   const deepLinkHandledRef = useRef(false);
+  const creatingDirectRoomRef = useRef(null);
   const messageRefs = useRef({});
   const scrollRef = useRef(null);
 
@@ -366,19 +405,34 @@ function MessagesContent() {
 
     const chatParam = searchParams.get("chat");
     const userIdParam = searchParams.get("userId");
+    const interestParam = searchParams.get("interestProduct");
     if (!chatParam && !userIdParam) return;
+
+    const openDirectRoom = (room) => {
+      setActiveChat(room);
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        url.searchParams.set("chat", room.id);
+        url.searchParams.delete("userId");
+        url.searchParams.delete("interestProduct");
+        window.history.replaceState({}, document.title, `${url.pathname}${url.search}`);
+      }
+      if (interestParam) sendAutoInterestMessage(room.id, interestParam);
+    };
 
     if (chatParam) {
       const found = chats.find((c) => String(c.id) === String(chatParam));
       if (found) {
         deepLinkHandledRef.current = true;
-        setActiveChat(found);
+        openDirectRoom(found);
       }
       return;
     }
 
     // Always getOrCreate so empty DMs get a one-shot inbox surface bump
+    if (creatingDirectRoomRef.current === userIdParam) return;
     deepLinkHandledRef.current = true;
+    creatingDirectRoomRef.current = userIdParam;
     let cancelled = false;
 
     const openOrCreateDM = async () => {
@@ -401,16 +455,12 @@ function MessagesContent() {
         if (cancelled) return;
         await queryClient.invalidateQueries({ queryKey: ["chat-rooms"] });
         const formatted = formatRooms([room])[0];
-        if (formatted) {
-          setActiveChat(formatted);
-          const interestParam = searchParams.get("interestProduct");
-          if (interestParam) {
-            sendAutoInterestMessage(formatted.id, interestParam);
-          }
-        }
+        if (formatted) openDirectRoom(formatted);
       } catch (err) {
         console.error("Error opening DM room:", err);
         deepLinkHandledRef.current = false;
+      } finally {
+        creatingDirectRoomRef.current = null;
       }
     };
 
@@ -515,6 +565,9 @@ function MessagesContent() {
 
     }
     return () => {
+      if (activeChat?.id && socket) {
+        socket.emit('leave_room', activeChat.id);
+      }
       setActiveRoom(null);
     };
   }, [activeChat, socket, setActiveRoom, applyRoomMessagePreview]);
@@ -1170,7 +1223,7 @@ function MessagesContent() {
                     <div className="w-full h-full rounded-full bg-[#FAFAF8] flex items-center justify-center overflow-hidden">
                       {chat.type === "group" ? (
                         <div className="w-full h-full bg-[#7C3AED] flex items-center justify-center">
-                          {chat.avatar}
+                          <Users size={24} className="text-white" />
                         </div>
                       ) : (
                         <img 
@@ -1188,7 +1241,6 @@ function MessagesContent() {
                   <div className="flex justify-between items-center mb-1">
                     <div className="flex min-w-0 items-center">
                       <p className="font-bold text-[15px] text-[#1A1A1A] truncate leading-tight">{chat.name}</p>
-                      {chat.partner && <VerifiedBadge user={chat.partner} size={12} />}
                     </div>
                     <span className="text-[10px] text-[#6B6B6B] font-medium flex-shrink-0 ml-2">{chat.time}</span>
                   </div>
@@ -1250,7 +1302,6 @@ function MessagesContent() {
                 <div className="min-w-0">
                   <div className="flex items-center space-x-1.5 min-w-0">
                     <h2 className="font-bold text-[#1A1A1A] text-[14px] truncate max-w-[120px] xs:max-w-[150px] sm:max-w-none leading-tight">{activeChat.name}</h2>
-                    {activeChat.partner && <VerifiedBadge user={activeChat.partner} size={12} />}
                   </div>
                 </div>
               </div>

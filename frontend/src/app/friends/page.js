@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from "rea
 import { UserPlus, Search, Users, MessageCircle, Loader2, Heart, X, Sparkles, MapPin, Zap, Trophy, Star, Globe, Plus, CheckCircle2, Users2, ChevronRight, AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import VerifiedBadge from "../../components/VerifiedBadge";
+import VerifiedBadge from "@/components/VerifiedBadge";
+import NameWithTick from '../../components/NameWithTick';
 import clsx from "clsx";
 import { supabase } from "../../utils/supabase";
 import { getAuthenticatedSupabaseClient } from "../../utils/supabaseAuthUser";
@@ -14,6 +15,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { getAvatarSrc, getDefaultAvatar } from "@/utils/defaultAvatars";
 
 const LAST_SEEN_KEY = "collegeadda_followers_last_seen";
+const SQUAD_PROFILE_PHOTO_VERSION = "profile-pictures-v3";
 
 const ConfettiSparkles = ({ active }) => {
   const [pieces, setPieces] = useState([]);
@@ -365,11 +367,21 @@ export default function FriendsPage() {
   );
 
   const { data: suggestedData, isFetching: suggestedFetching } = useApiQuery(
-    ["squad-suggested", debouncedSearch, activeSquadTab, filter],
+    ["squad-suggested", SQUAD_PROFILE_PHOTO_VERSION, debouncedSearch, activeSquadTab, filter],
     buildSearchUrl(debouncedSearch).replace(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001', ''),
     {
       enabled: !!user,
-      staleTime: 5 * 60 * 1000
+      staleTime: 30 * 1000
+    }
+  );
+
+  const { data: serverLeaderboard, isFetching: leaderboardFetching } = useApiQuery(
+    ["squad-leaderboard", leaderboardTab],
+    `/api/users/squad/leaderboard?filter=${leaderboardTab}`,
+    {
+      enabled: !!user && activeSquadTab === "leaderboard",
+      staleTime: 0,
+      refetchInterval: 3000
     }
   );
 
@@ -377,11 +389,15 @@ export default function FriendsPage() {
 
   const normalizeUserAvatar = useCallback((person) => {
     if (!person) return person;
+    const userId = person._id || person.id;
+    const avatarUrl = userId
+      ? `${apiUrl}/api/users/${encodeURIComponent(userId)}/avatar?v=${SQUAD_PROFILE_PHOTO_VERSION}`
+      : person.profilePic;
     return {
       ...person,
-      profilePic: getAvatarSrc(person.profilePic, person.name, person._id || person.id),
+      profilePic: getAvatarSrc(avatarUrl, person.name, userId),
     };
-  }, []);
+  }, [apiUrl]);
 
   useEffect(() => {
     if (profileData) {
@@ -396,7 +412,42 @@ export default function FriendsPage() {
 
   useEffect(() => {
     if (suggestedData) {
-      const users = (Array.isArray(suggestedData) ? suggestedData : []).map(normalizeUserAvatar);
+      const usersList = Array.isArray(suggestedData) ? suggestedData : (suggestedData.users || []);
+      
+      const usersByUni = {};
+      usersList.forEach(u => {
+        if (!u.university) return;
+        if (!usersByUni[u.university]) usersByUni[u.university] = [];
+        usersByUni[u.university].push(u);
+      });
+
+      Object.values(usersByUni).forEach(uniGroup => {
+        uniGroup.sort((a, b) => {
+          const scoreA = (a.followersCount ?? (a.followers?.length || 0)) + (a.followingCount ?? (a.following?.length || 0));
+          const scoreB = (b.followersCount ?? (b.followers?.length || 0)) + (b.followingCount ?? (b.following?.length || 0));
+          return scoreB - scoreA;
+        });
+      });
+
+      const users = usersList.map(u => {
+        const normalized = normalizeUserAvatar(u);
+        let localRank = 1;
+        
+        if (u.university && usersByUni[u.university]) {
+          const myScore = (u.followersCount ?? (u.followers?.length || 0)) + (u.followingCount ?? (u.following?.length || 0));
+          for (const su of usersByUni[u.university]) {
+            const suScore = (su.followersCount ?? (su.followers?.length || 0)) + (su.followingCount ?? (su.following?.length || 0));
+            if (suScore > myScore) localRank++;
+            else break;
+          }
+        }
+        
+        return {
+          ...normalized,
+          localRank
+        };
+      });
+
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setSuggestedUsers(users);
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -416,7 +467,8 @@ export default function FriendsPage() {
       });
       if (res.ok) {
         const data = await res.json();
-        setGlobalUsers((Array.isArray(data) ? data : []).map(normalizeUserAvatar));
+        const usersList = data?.users || (Array.isArray(data) ? data : []);
+        setGlobalUsers(usersList.map(normalizeUserAvatar));
       }
     } catch (err) {
       console.error(err);
@@ -594,13 +646,46 @@ export default function FriendsPage() {
     }
     setFollowStatus(prev => ({ ...prev, [targetId]: isConnecting ? "connected" : null }));
 
-    const updateUsersList = (users) => users.map(u => {
-      if (u._id === targetId || u.id === targetId) {
-        const currentCount = u.followersCount ?? (Array.isArray(u.followers) ? u.followers.length : Number(u.followers || 0));
-        return { ...u, followersCount: isConnecting ? currentCount + 1 : Math.max(0, currentCount - 1) };
-      }
-      return u;
-    });
+    const updateUsersList = (users) => {
+      const updated = users.map(u => {
+        if (u._id === targetId || u.id === targetId) {
+          const currentCount = u.followersCount ?? (Array.isArray(u.followers) ? u.followers.length : Number(u.followers || 0));
+          return { 
+            ...u, 
+            followersCount: isConnecting ? currentCount + 1 : Math.max(0, currentCount - 1),
+            xp: isConnecting ? (u.xp || 0) + 10 : (u.xp || 0)
+          };
+        }
+        return u;
+      });
+
+      const usersByUni = {};
+      updated.forEach(u => {
+        if (!u.university) return;
+        if (!usersByUni[u.university]) usersByUni[u.university] = [];
+        usersByUni[u.university].push(u);
+      });
+
+      Object.values(usersByUni).forEach(uniGroup => {
+        uniGroup.sort((a, b) => {
+          const scoreA = (a.followersCount ?? (a.followers?.length || 0)) + (a.followingCount ?? (a.following?.length || 0));
+          const scoreB = (b.followersCount ?? (b.followers?.length || 0)) + (b.followingCount ?? (b.following?.length || 0));
+          return scoreB - scoreA;
+        });
+      });
+
+      return updated.map(u => {
+        if (!u.university || !usersByUni[u.university]) return u;
+        let localRank = 1;
+        const myScore = (u.followersCount ?? (u.followers?.length || 0)) + (u.followingCount ?? (u.following?.length || 0));
+        for (const su of usersByUni[u.university]) {
+          const suScore = (su.followersCount ?? (su.followers?.length || 0)) + (su.followingCount ?? (su.following?.length || 0));
+          if (suScore > myScore) localRank++;
+          else break;
+        }
+        return { ...u, localRank };
+      });
+    };
 
     setCampusUsers(prev => updateUsersList(prev));
     setSuggestedUsers(prev => updateUsersList(prev));
@@ -643,39 +728,17 @@ export default function FriendsPage() {
   };
 
   const leaderboardStudents = useMemo(() => {
-    const source = activeSquadTab === "leaderboard" && leaderboardTab === "global_pulse"
-      ? globalUsers
-      : (campusUsers.length ? campusUsers : suggestedUsers);
-    const unique = new Map();
-
-    // Always include current user in the leaderboard
-    if (user && (user._id || user.id)) {
-      const id = user._id || user.id || user.email || user.name;
-      unique.set(id, {
-        ...user,
-        followerCount: user.followersCount ?? getSocialCount(user.followers),
-        followingCount: user.followingCount ?? getSocialCount(user.following),
-      });
-    }
-
-    source.forEach((person) => {
-      const id = person._id || person.id || person.email || person.name;
-      if (!id || unique.has(id)) return;
-      unique.set(id, {
-        ...person,
-        followerCount: person.followersCount ?? getSocialCount(person.followers),
-        followingCount: person.followingCount ?? getSocialCount(person.following),
-      });
-    });
-
-    return Array.from(unique.values())
+    return (Array.isArray(serverLeaderboard) ? serverLeaderboard : [])
+      .map(normalizeUserAvatar)
       .map((person) => ({
         ...person,
-        influenceScore: person.followerCount + person.followingCount,
+        followerCount: person.followersCount ?? 0,
+        followingCount: person.followingCount ?? 0,
+        influenceScore: (person.followersCount ?? 0) + (person.followingCount ?? 0),
       }))
       .sort((a, b) => b.influenceScore - a.influenceScore)
-      .slice(0, 10);
-  }, [campusUsers, suggestedUsers, globalUsers, activeSquadTab, leaderboardTab, user]);
+      .map((person, index) => ({ ...person, rank: index + 1 }));
+  }, [serverLeaderboard, normalizeUserAvatar]);
 
   const topBadgeStyles = [
     { label: "Campus Star", className: "from-yellow-300 to-[#D4A843] text-black", icon: Trophy },
@@ -851,7 +914,7 @@ export default function FriendsPage() {
                             />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-[#1A1A1A] truncate">{follower.name}</p>
+                            <p className="text-sm font-bold text-[#1A1A1A] truncate"><NameWithTick name={follower.name} tick={follower.currentTick} user={follower} /></p>
                             <p className="text-[10px] text-[#6B6B6B] truncate flex items-center">
                               <MapPin size={8} className="mr-1" />
                               {follower.university}
@@ -1048,7 +1111,6 @@ export default function FriendsPage() {
                   <button
                     onClick={() => {
                       setLeaderboardTab("global_pulse");
-                      fetchGlobalUsers();
                     }}
                     className={clsx(
                       "rounded-[1.1rem] px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] transition-all",
@@ -1069,7 +1131,7 @@ export default function FriendsPage() {
                   </span>
                 </div>
 
-                {loading || (leaderboardTab === "global_pulse" && globalLoading) ? (
+                {loading || (!serverLeaderboard && leaderboardFetching) ? (
                   <div className="flex flex-col items-center justify-center py-20 space-y-4">
                     <div className="w-12 h-12 border-4 border-[#E8E6E0] border-t-yellow-400 rounded-full animate-spin" />
                     <p className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest">Building leaderboard...</p>
@@ -1090,6 +1152,7 @@ export default function FriendsPage() {
                       if (leaderboardTab === "global_pulse" && rank === 1) {
                         return (
                           <motion.div
+                            layout
                             key={person._id || person.id || person.name}
                             initial={{ opacity: 0, scale: 0.8, y: 30 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1116,7 +1179,15 @@ export default function FriendsPage() {
                                 {/* Pulse Ring Behind Avatar */}
                                 <div className="absolute inset-0 rounded-[2.2rem] bg-gradient-to-tr from-[#D4A843] to-[#D4A843] animate-ping opacity-30 blur-md" />
 
-                                <img src={avatar} className="relative w-28 h-28 rounded-[2.2rem] border-4 border-[#E8E6E0] object-cover shadow-2xl z-10 group-hover:scale-105 transition-transform duration-300" />
+                                <img
+                                  src={avatar}
+                                  className="relative w-28 h-28 rounded-[2.2rem] border-4 border-[#E8E6E0] object-cover shadow-2xl z-10 group-hover:scale-105 transition-transform duration-300"
+                                  alt={person.name}
+                                  onError={(e) => {
+                                    e.currentTarget.onerror = null;
+                                    e.currentTarget.src = getDefaultAvatar(person.name, person._id || person.id);
+                                  }}
+                                />
 
                                 <motion.div
                                   animate={{ y: [0, -10, 0], rotate: [0, 15, -10, 0] }}
@@ -1133,8 +1204,7 @@ export default function FriendsPage() {
 
                               <div className="mt-3">
                                 <div className="flex items-center justify-center gap-2">
-                                  <p className="text-2xl font-black text-[#1A1A1A] tracking-tight">{person.name}</p>
-                                  <VerifiedBadge user={person} size={20} />
+                                  <p className="text-2xl font-black text-[#1A1A1A] tracking-tight"><NameWithTick name={person.name} tick={person.currentTick} user={person} /></p>
                                 </div>
                                 <p className="text-xs font-bold text-[#6B6B6B] mt-1 flex items-center justify-center gap-1">
                                   <MapPin size={12} className="text-[#C8922A]" />
@@ -1173,10 +1243,11 @@ export default function FriendsPage() {
 
                       return (
                         <motion.div
+                          layout
                           key={person._id || person.id || person.name}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: idx * 0.03 }}
+                          transition={{ delay: idx * 0.03, layout: { type: "spring", stiffness: 300, damping: 30 } }}
                           onClick={() => handleProfileClick(person, rank, topBadge)}
                           className={clsx(
                             "app-panel flex items-center gap-3 rounded-[1.5rem] p-4 transition-all cursor-pointer",
@@ -1191,7 +1262,15 @@ export default function FriendsPage() {
                           </div>
 
                           <div className="relative shrink-0">
-                            <img src={avatar} className="h-14 w-14 rounded-2xl border border-[#E8E6E0] object-cover" />
+                            <img
+                              src={avatar}
+                              className="h-14 w-14 rounded-2xl border border-[#E8E6E0] object-cover"
+                              alt={person.name}
+                              onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = getDefaultAvatar(person.name, person._id || person.id);
+                              }}
+                            />
                             {rank <= 3 && (
                               <div className="absolute -bottom-2 -right-2 rounded-xl bg-[#FAFAF8] p-1">
                                 <div className={`flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br ${topBadge.className}`}>
@@ -1203,8 +1282,7 @@ export default function FriendsPage() {
 
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <p className="truncate text-sm font-black text-[#1A1A1A]">{person.name}</p>
-                              <VerifiedBadge user={person} size={14} />
+                              <p className="truncate text-sm font-black text-[#1A1A1A]"><NameWithTick name={person.name} tick={person.currentTick} user={person} /></p>
                             </div>
                             <p className="mt-1 truncate text-[11px] font-bold text-[#888888]">{person.university || "Campus Adda"}</p>
                             {rank <= 3 && (
@@ -1240,7 +1318,7 @@ export default function FriendsPage() {
                     )}
                   </h3>
                   <span className="text-[10px] bg-[#F9F8F5] border border-[#E8E6E0] px-3 py-1 rounded-full text-[#C8922A] font-bold border border-[#C8922A]/30">
-                    {suggestedUsers.length} peers
+                    {suggestedData?.totalCount ?? suggestedUsers.length} peers
                   </span>
                 </div>
 
@@ -1301,6 +1379,10 @@ export default function FriendsPage() {
                                   src={avatar}
                                   className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105 group-hover:rotate-[0.35deg]"
                                   alt={person.name}
+                                  onError={(e) => {
+                                    e.currentTarget.onerror = null;
+                                    e.currentTarget.src = getDefaultAvatar(person.name, person._id || person.id);
+                                  }}
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/18 via-transparent to-white/8 pointer-events-none" />
                                 {/* Glossy shine sweep effect */}
@@ -1312,7 +1394,7 @@ export default function FriendsPage() {
                                 {/* Name and Verified Badge */}
                                 <div className="space-y-0.5">
                                   <div className="flex items-center space-x-1.5">
-                                    <h4 className="font-black text-[18px] text-[#1A1A1A] truncate tracking-tight leading-tight">{person.name}</h4>
+                                    <h4 className="font-black text-[18px] text-[#1A1A1A] truncate tracking-tight leading-tight"><NameWithTick name={person.name} tick={person.currentTick} user={person} /></h4>
                                     <VerifiedBadge user={person} size={15} />
                                   </div>
                                   <p className="text-[9.5px] text-[#1A1A1A]/80 font-black uppercase tracking-widest flex items-center">
@@ -1344,22 +1426,22 @@ export default function FriendsPage() {
                                 {/* Stats Section (divided in 3) */}
                               <div className="grid grid-cols-3 gap-2 rounded-2xl border border-[#E8E6E0] bg-white/72 px-2 py-2.5 text-center items-center">
                                 <div>
-                                  <p className="text-base font-black text-[#1A1A1A] flex items-center justify-center gap-0.5">
-                                    {getDisplayStreak(person)} <span className="text-[12px]">🔥</span>
+                                  <p className="text-base font-black text-[#1A1A1A] flex items-center justify-center gap-1">
+                                    <span className="text-[14px]">🏆</span> {person.rank || person.campusRank || person.localRank || '-'}
                                   </p>
-                                  <p className="text-[9px] font-bold uppercase tracking-wider text-[#4A4A4A] mt-0.5">Streak</p>
+                                  <p className="text-[9px] font-bold uppercase tracking-wider text-[#4A4A4A] mt-0.5">Campus Rank</p>
                                 </div>
                                 <div className="border-l border-r border-[#D8D5CE]">
-                                  <p className="text-base font-black text-[#1A1A1A]">
-                                    {(person.followersCount ?? getSocialCount(person.followers)) + (person.followingCount ?? getSocialCount(person.following))}
+                                  <p className="text-base font-black text-[#1A1A1A] flex items-center justify-center gap-1">
+                                    <span className="text-[14px]">🫂</span> {(person.followersCount ?? getSocialCount(person.followers)) + (person.followingCount ?? getSocialCount(person.following))}
                                   </p>
-                                  <p className="text-[9px] font-bold uppercase tracking-wider text-[#4A4A4A] mt-0.5">Squad</p>
+                                  <p className="text-[9px] font-bold uppercase tracking-wider text-[#4A4A4A] mt-0.5">Network</p>
                                 </div>
                                 <div>
-                                  <p className="text-base font-black text-[#1A1A1A]">
-                                    {person.postsCount || 0}
+                                  <p className="text-base font-black text-[#1A1A1A] flex items-center justify-center gap-1">
+                                    <span className="text-[14px]">✨</span> {person.xp || 0}
                                   </p>
-                                  <p className="text-[9px] font-bold uppercase tracking-wider text-[#4A4A4A] mt-0.5">Post</p>
+                                  <p className="text-[9px] font-bold uppercase tracking-wider text-[#4A4A4A] mt-0.5">XP</p>
                                 </div>
                               </div>
 
@@ -1596,7 +1678,7 @@ export default function FriendsPage() {
                       {/* Name & Uni */}
                       <div className="text-center space-y-1.5">
                         <motion.div variants={modalVars.slideUp1} className="flex items-center justify-center gap-2">
-                          <h2 className="text-2xl font-black text-[#1A1A1A] tracking-tight">{selectedProfileData.name}</h2>
+                          <h2 className="text-2xl font-black text-[#1A1A1A] tracking-tight"><NameWithTick name={selectedProfileData.name} tick={selectedProfileData.currentTick} user={selectedProfileData} /></h2>
                           <VerifiedBadge user={selectedProfileData} size={20} />
                         </motion.div>
                         <motion.p variants={modalVars.slideUp2} className="text-xs font-bold text-[#6B6B6B] flex items-center justify-center gap-1">

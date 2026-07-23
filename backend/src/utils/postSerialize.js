@@ -13,7 +13,10 @@ export const slimAuthor = (author) => {
     name: author.name,
     university: author.university,
     isVerified: Boolean(author.isVerified),
-    profilePic: id ? `/api/users/${id}/avatar` : undefined
+    profilePic: id ? `/api/users/${id}/avatar` : undefined,
+    xp: author.xp,
+    points: author.points,
+    currentTick: author.currentTick,
   };
 };
 
