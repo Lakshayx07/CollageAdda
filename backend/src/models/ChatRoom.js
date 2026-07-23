@@ -10,7 +10,9 @@ const chatRoomSchema = mongoose.Schema({
     type: Map,
     of: Number,
     default: {}
-  }
+  },
+  // Users who already got a one-shot inbox "surface to top" for an empty DM
+  surfacedFor: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 }, { timestamps: true });
 
 // Compound index to optimize sorting chat rooms for a user

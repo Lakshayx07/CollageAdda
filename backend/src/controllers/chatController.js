@@ -115,9 +115,31 @@ export const getOrCreatePrivateRoom = async (req, res) => {
     if (!room) {
       room = await ChatRoom.create({
         participants: [req.user._id, target],
-        isGroup: false
+        isGroup: false,
+        surfacedFor: [req.user._id]
       });
       room = await ChatRoom.findById(room._id).populate('participants', 'name profilePic university isVerified');
+      return res.status(201).json(room);
+    }
+
+    // First open of an empty DM: bump to top of inbox once per user
+    if (!room.lastMessage) {
+      const alreadySurfaced = (room.surfacedFor || []).some(
+        (id) => String(id) === String(req.user._id)
+      );
+      if (!alreadySurfaced) {
+        await ChatRoom.updateOne(
+          { _id: room._id },
+          {
+            $addToSet: { surfacedFor: req.user._id },
+            $currentDate: { updatedAt: true }
+          }
+        );
+        room = await ChatRoom.findById(room._id).populate(
+          'participants',
+          'name profilePic university isVerified'
+        );
+      }
     }
 
     res.json(room);
