@@ -364,7 +364,7 @@ router.get('/search/query', protect, async (req, res) => {
     }
     
     const users = await User.find(query)
-      .select('name university profilePic bio interests year studyYear passOutBatch course branch isVerified xp points currentTick streak createdAt updatedAt')
+      .select('name university bio interests year studyYear passOutBatch course branch isVerified xp points currentTick streak createdAt updatedAt')
       .sort({ createdAt: -1 })
       .limit(30)
       .lean();
@@ -388,14 +388,37 @@ router.get('/search/query', protect, async (req, res) => {
     const countMap = new Map(postCounts.map(pc => [pc._id.toString(), pc.count]));
     const followMap = new Map(followCounts.map(fc => [fc._id.toString(), { followersCount: fc.followersCount, followingCount: fc.followingCount }]));
 
+    const universities = [...new Set(users.map(u => u.university))].filter(Boolean);
+    const uniScoresAgg = await User.aggregate([
+      { $match: { university: { $in: universities } } },
+      { $project: { university: 1, score: { $add: [{ $size: { $ifNull: ['$followers', []] } }, { $size: { $ifNull: ['$following', []] } }] } } }
+    ]);
+    const scoresByUni = {};
+    for (const doc of uniScoresAgg) {
+      if (!scoresByUni[doc.university]) scoresByUni[doc.university] = [];
+      scoresByUni[doc.university].push(doc.score);
+    }
+
     const usersWithPostsCount = users.map(u => {
       const fc = followMap.get(u._id.toString()) || {};
       const transformed = transformUser(u);
+      
+      const myScore = (fc.followersCount || 0) + (fc.followingCount || 0);
+      let campusRank = null;
+      if (u.university && scoresByUni[u.university]) {
+        let higherScoringUsers = 0;
+        for (const score of scoresByUni[u.university]) {
+          if (score > myScore) higherScoringUsers++;
+        }
+        campusRank = higherScoringUsers + 1;
+      }
+
       return {
         ...transformed,
         postsCount: countMap.get(u._id.toString()) || 0,
         followersCount: fc.followersCount || 0,
         followingCount: fc.followingCount || 0,
+        campusRank
       };
     });
 
@@ -739,7 +762,18 @@ router.get('/:id', protect, async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select('-password -email -phone -verificationToken -verificationTokenExpires -collegeEmail -idPhotoUrl -adminNotes');
     if (!user) return res.status(404).json({ message: 'User not found' });
-    res.json(user);
+    
+    const userObj = user.toObject();
+    const myScore = (userObj.followers?.length || 0) + (userObj.following?.length || 0);
+    const rankAgg = await User.aggregate([
+      { $match: { university: userObj.university } },
+      { $project: { score: { $add: [{ $size: { $ifNull: ['$followers', []] } }, { $size: { $ifNull: ['$following', []] } }] } } },
+      { $match: { score: { $gt: myScore } } },
+      { $count: "higherScoringUsers" }
+    ]);
+    userObj.campusRank = (rankAgg[0]?.higherScoringUsers || 0) + 1;
+
+    res.json(userObj);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

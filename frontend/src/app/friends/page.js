@@ -413,7 +413,41 @@ export default function FriendsPage() {
   useEffect(() => {
     if (suggestedData) {
       const usersList = Array.isArray(suggestedData) ? suggestedData : (suggestedData.users || []);
-      const users = usersList.map(normalizeUserAvatar);
+      
+      const usersByUni = {};
+      usersList.forEach(u => {
+        if (!u.university) return;
+        if (!usersByUni[u.university]) usersByUni[u.university] = [];
+        usersByUni[u.university].push(u);
+      });
+
+      Object.values(usersByUni).forEach(uniGroup => {
+        uniGroup.sort((a, b) => {
+          const scoreA = (a.followersCount ?? (a.followers?.length || 0)) + (a.followingCount ?? (a.following?.length || 0));
+          const scoreB = (b.followersCount ?? (b.followers?.length || 0)) + (b.followingCount ?? (b.following?.length || 0));
+          return scoreB - scoreA;
+        });
+      });
+
+      const users = usersList.map(u => {
+        const normalized = normalizeUserAvatar(u);
+        let localRank = 1;
+        
+        if (u.university && usersByUni[u.university]) {
+          const myScore = (u.followersCount ?? (u.followers?.length || 0)) + (u.followingCount ?? (u.following?.length || 0));
+          for (const su of usersByUni[u.university]) {
+            const suScore = (su.followersCount ?? (su.followers?.length || 0)) + (su.followingCount ?? (su.following?.length || 0));
+            if (suScore > myScore) localRank++;
+            else break;
+          }
+        }
+        
+        return {
+          ...normalized,
+          localRank
+        };
+      });
+
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setSuggestedUsers(users);
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -612,13 +646,46 @@ export default function FriendsPage() {
     }
     setFollowStatus(prev => ({ ...prev, [targetId]: isConnecting ? "connected" : null }));
 
-    const updateUsersList = (users) => users.map(u => {
-      if (u._id === targetId || u.id === targetId) {
-        const currentCount = u.followersCount ?? (Array.isArray(u.followers) ? u.followers.length : Number(u.followers || 0));
-        return { ...u, followersCount: isConnecting ? currentCount + 1 : Math.max(0, currentCount - 1) };
-      }
-      return u;
-    });
+    const updateUsersList = (users) => {
+      const updated = users.map(u => {
+        if (u._id === targetId || u.id === targetId) {
+          const currentCount = u.followersCount ?? (Array.isArray(u.followers) ? u.followers.length : Number(u.followers || 0));
+          return { 
+            ...u, 
+            followersCount: isConnecting ? currentCount + 1 : Math.max(0, currentCount - 1),
+            xp: isConnecting ? (u.xp || 0) + 10 : (u.xp || 0)
+          };
+        }
+        return u;
+      });
+
+      const usersByUni = {};
+      updated.forEach(u => {
+        if (!u.university) return;
+        if (!usersByUni[u.university]) usersByUni[u.university] = [];
+        usersByUni[u.university].push(u);
+      });
+
+      Object.values(usersByUni).forEach(uniGroup => {
+        uniGroup.sort((a, b) => {
+          const scoreA = (a.followersCount ?? (a.followers?.length || 0)) + (a.followingCount ?? (a.following?.length || 0));
+          const scoreB = (b.followersCount ?? (b.followers?.length || 0)) + (b.followingCount ?? (b.following?.length || 0));
+          return scoreB - scoreA;
+        });
+      });
+
+      return updated.map(u => {
+        if (!u.university || !usersByUni[u.university]) return u;
+        let localRank = 1;
+        const myScore = (u.followersCount ?? (u.followers?.length || 0)) + (u.followingCount ?? (u.following?.length || 0));
+        for (const su of usersByUni[u.university]) {
+          const suScore = (su.followersCount ?? (su.followers?.length || 0)) + (su.followingCount ?? (su.following?.length || 0));
+          if (suScore > myScore) localRank++;
+          else break;
+        }
+        return { ...u, localRank };
+      });
+    };
 
     setCampusUsers(prev => updateUsersList(prev));
     setSuggestedUsers(prev => updateUsersList(prev));
@@ -669,7 +736,8 @@ export default function FriendsPage() {
         followingCount: person.followingCount ?? 0,
         influenceScore: (person.followersCount ?? 0) + (person.followingCount ?? 0),
       }))
-      .sort((a, b) => b.influenceScore - a.influenceScore);
+      .sort((a, b) => b.influenceScore - a.influenceScore)
+      .map((person, index) => ({ ...person, rank: index + 1 }));
   }, [serverLeaderboard, normalizeUserAvatar]);
 
   const topBadgeStyles = [
@@ -1137,7 +1205,6 @@ export default function FriendsPage() {
                               <div className="mt-3">
                                 <div className="flex items-center justify-center gap-2">
                                   <p className="text-2xl font-black text-[#1A1A1A] tracking-tight"><NameWithTick name={person.name} tick={person.currentTick} user={person} /></p>
-                                  <VerifiedBadge user={person} size={20} />
                                 </div>
                                 <p className="text-xs font-bold text-[#6B6B6B] mt-1 flex items-center justify-center gap-1">
                                   <MapPin size={12} className="text-[#C8922A]" />
@@ -1216,7 +1283,6 @@ export default function FriendsPage() {
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
                               <p className="truncate text-sm font-black text-[#1A1A1A]"><NameWithTick name={person.name} tick={person.currentTick} user={person} /></p>
-                              <VerifiedBadge user={person} size={14} />
                             </div>
                             <p className="mt-1 truncate text-[11px] font-bold text-[#888888]">{person.university || "Campus Adda"}</p>
                             {rank <= 3 && (
@@ -1360,22 +1426,22 @@ export default function FriendsPage() {
                                 {/* Stats Section (divided in 3) */}
                               <div className="grid grid-cols-3 gap-2 rounded-2xl border border-[#E8E6E0] bg-white/72 px-2 py-2.5 text-center items-center">
                                 <div>
-                                  <p className="text-base font-black text-[#1A1A1A] flex items-center justify-center gap-0.5">
-                                    {getDisplayStreak(person)} <span className="text-[12px]">🔥</span>
+                                  <p className="text-base font-black text-[#1A1A1A] flex items-center justify-center gap-1">
+                                    <span className="text-[14px]">🏆</span> {person.rank || person.campusRank || person.localRank || '-'}
                                   </p>
-                                  <p className="text-[9px] font-bold uppercase tracking-wider text-[#4A4A4A] mt-0.5">Streak</p>
+                                  <p className="text-[9px] font-bold uppercase tracking-wider text-[#4A4A4A] mt-0.5">Campus Rank</p>
                                 </div>
                                 <div className="border-l border-r border-[#D8D5CE]">
-                                  <p className="text-base font-black text-[#1A1A1A]">
-                                    {(person.followersCount ?? getSocialCount(person.followers)) + (person.followingCount ?? getSocialCount(person.following))}
+                                  <p className="text-base font-black text-[#1A1A1A] flex items-center justify-center gap-1">
+                                    <span className="text-[14px]">🫂</span> {(person.followersCount ?? getSocialCount(person.followers)) + (person.followingCount ?? getSocialCount(person.following))}
                                   </p>
-                                  <p className="text-[9px] font-bold uppercase tracking-wider text-[#4A4A4A] mt-0.5">Squad</p>
+                                  <p className="text-[9px] font-bold uppercase tracking-wider text-[#4A4A4A] mt-0.5">Network</p>
                                 </div>
                                 <div>
-                                  <p className="text-base font-black text-[#1A1A1A]">
-                                    {person.postsCount || 0}
+                                  <p className="text-base font-black text-[#1A1A1A] flex items-center justify-center gap-1">
+                                    <span className="text-[14px]">✨</span> {person.xp || 0}
                                   </p>
-                                  <p className="text-[9px] font-bold uppercase tracking-wider text-[#4A4A4A] mt-0.5">Post</p>
+                                  <p className="text-[9px] font-bold uppercase tracking-wider text-[#4A4A4A] mt-0.5">XP</p>
                                 </div>
                               </div>
 
