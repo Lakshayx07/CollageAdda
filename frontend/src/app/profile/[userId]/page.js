@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft, ChevronRight, Grid, Heart, MessageCircle, Share2, MapPin,
   Zap, Code, Trophy, Ghost, Briefcase, Loader2, Image as ImageIcon, X,
-  Send, BookOpen
+  Send
 } from "lucide-react";
 
 import VerifiedBadge from "@/components/VerifiedBadge";
@@ -59,6 +59,9 @@ export default function UserProfilePage({ params }) {
   const [postLiking, setPostLiking] = useState(false);
   const [commentInput, setCommentInput] = useState("");
   const [commentSending, setCommentSending] = useState(false);
+
+  // Memories: photo posts only (skip text-only / book-icon placeholders)
+  const memoryPosts = userPosts.filter((p) => !!p.img);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
@@ -170,12 +173,12 @@ export default function UserProfilePage({ params }) {
     const onKey = (e) => {
       if (modal !== "post") return;
       if (e.key === "Escape") { setModal(null); setActivePostIndex(null); }
-      if (e.key === "ArrowRight") setActivePostIndex(i => Math.min(i + 1, userPosts.length - 1));
+      if (e.key === "ArrowRight") setActivePostIndex(i => Math.min(i + 1, memoryPosts.length - 1));
       if (e.key === "ArrowLeft")  setActivePostIndex(i => Math.max(i - 1, 0));
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [modal, userPosts.length]);
+  }, [modal, memoryPosts.length]);
 
   /* ────────────────────────── actions ────────────────────────── */
   const handleConnectAction = async () => {
@@ -210,12 +213,12 @@ export default function UserProfilePage({ params }) {
 
   const toggleLike = async () => {
     if (postLiking || activePostIndex === null) return;
-    const post = userPosts[activePostIndex];
-    const myId = currentUser?._id || currentUser?.id;
+    const post = memoryPosts[activePostIndex];
+    if (!post) return;
 
     // Optimistic update
-    setUserPosts(prev => prev.map((p, i) => {
-      if (i !== activePostIndex) return p;
+    setUserPosts(prev => prev.map((p) => {
+      if (p.id !== post.id) return p;
       const liked = p.isLiked;
       return { ...p, isLiked: !liked, likes: liked ? p.likes - 1 : p.likes + 1 };
     }));
@@ -229,8 +232,8 @@ export default function UserProfilePage({ params }) {
       });
     } catch (err) {
       // Revert on failure
-      setUserPosts(prev => prev.map((p, i) => {
-        if (i !== activePostIndex) return p;
+      setUserPosts(prev => prev.map((p) => {
+        if (p.id !== post.id) return p;
         const liked = p.isLiked;
         return { ...p, isLiked: !liked, likes: liked ? p.likes - 1 : p.likes + 1 };
       }));
@@ -241,7 +244,8 @@ export default function UserProfilePage({ params }) {
 
   const submitComment = async () => {
     if (!commentInput.trim() || commentSending || activePostIndex === null) return;
-    const post = userPosts[activePostIndex];
+    const post = memoryPosts[activePostIndex];
+    if (!post) return;
     const text = commentInput.trim();
     const tempComment = {
       id: Date.now().toString(),
@@ -251,8 +255,8 @@ export default function UserProfilePage({ params }) {
     };
 
     // Optimistic
-    setUserPosts(prev => prev.map((p, i) => {
-      if (i !== activePostIndex) return p;
+    setUserPosts(prev => prev.map((p) => {
+      if (p.id !== post.id) return p;
       return { ...p, comments: [...p.comments, tempComment] };
     }));
     setCommentInput("");
@@ -297,7 +301,7 @@ export default function UserProfilePage({ params }) {
   }
 
   const isSelf = connectStatus === "self";
-  const activePost = activePostIndex !== null ? userPosts[activePostIndex] : null;
+  const activePost = activePostIndex !== null ? memoryPosts[activePostIndex] : null;
 
   /* ──────────────────────────── render ─────────────────────────── */
   return (
@@ -544,26 +548,20 @@ export default function UserProfilePage({ params }) {
               [1, 2, 3].map((n) => (
                 <div key={n} className="aspect-square rounded-[1rem] bg-[#F3F2EE] animate-pulse border border-[#E8E6E0]" />
               ))
-            ) : userPosts.length === 0 ? (
+            ) : memoryPosts.length === 0 ? (
               <div className="col-span-3 py-14 bg-[#F9F8F5] border border-dashed border-[#E8E6E0] rounded-2xl text-center">
                 <ImageIcon size={30} className="mx-auto text-[#888888] mb-3" />
                 <p className="text-[13px] font-black text-[#6B6B6B]">No memories yet</p>
                 <p className="text-[10px] text-[#888888] font-bold uppercase tracking-widest mt-1">Check back later</p>
               </div>
             ) : (
-              userPosts.map((post, idx) => (
+              memoryPosts.map((post, idx) => (
                 <div
                   key={post.id}
                   onClick={() => { setActivePostIndex(idx); setModal("post"); setCommentInput(""); }}
                   className="aspect-square rounded-[1rem] overflow-hidden relative group cursor-pointer border border-[#E8E6E0] bg-[#F3F2EE]"
                 >
-                  {post.img ? (
-                    <img src={post.img} className="w-full h-full object-cover" alt="" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-[#888888]">
-                      <BookOpen size={24} />
-                    </div>
-                  )}
+                  <img src={post.img} className="w-full h-full object-cover" alt="" />
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center gap-3">
                     <span className="flex items-center text-white text-[11px] font-black"><Heart size={13} className="fill-white mr-1" /> {post.likes}</span>
                     <span className="flex items-center text-white text-[11px] font-black"><MessageCircle size={13} className="fill-white mr-1" /> {post.comments?.length || 0}</span>
@@ -629,7 +627,7 @@ export default function UserProfilePage({ params }) {
                 </button>
               )}
               {/* Arrow next */}
-              {activePostIndex < userPosts.length - 1 && (
+              {activePostIndex < memoryPosts.length - 1 && (
                 <button onClick={() => setActivePostIndex(i => i + 1)} className="absolute right-3 top-1/2 -translate-y-1/2 z-30 p-2 bg-black/60 backdrop-blur-sm rounded-full text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors">
                   <ChevronRight size={20} />
                 </button>
