@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { Bell, Heart, MessageSquare, UserPlus, Sparkles, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
@@ -8,6 +9,7 @@ import VerifiedBadge from './VerifiedBadge';
 import { getAvatarSrc } from '@/utils/defaultAvatars';
 
 export default function NotificationBell() {
+  const router = useRouter();
   const [notifications, setNotifications] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -15,6 +17,14 @@ export default function NotificationBell() {
   const dropdownRef = useRef(null);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+
+  const openSenderProfile = (event, sender) => {
+    event.stopPropagation();
+    const senderId = sender?._id || sender?.id;
+    if (!senderId) return;
+    setIsOpen(false);
+    router.push(`/profile/${senderId}`);
+  };
 
   const fetchNotifications = async () => {
     try {
@@ -180,7 +190,17 @@ export default function NotificationBell() {
                       <div className="flex-1 min-w-0">
                         <p className="text-[11px] text-[#4A4A4A] leading-tight">
                           <span className="inline-flex items-center font-black text-[#1A1A1A] mr-1">
-                            {notif.sender?.name}
+                            {(notif.sender?._id || notif.sender?.id) ? (
+                              <button
+                                type="button"
+                                onClick={(event) => openSenderProfile(event, notif.sender)}
+                                className="cursor-pointer hover:underline hover:text-[#C8922A] transition-colors"
+                              >
+                                {notif.sender?.name}
+                              </button>
+                            ) : (
+                              <span>{notif.sender?.name}</span>
+                            )}
                             <VerifiedBadge user={notif.sender} size={12} />
                           </span> 
                           {notif.text}
