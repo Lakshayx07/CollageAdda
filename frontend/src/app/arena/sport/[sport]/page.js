@@ -89,7 +89,7 @@ export default function SportTeamsPage() {
       );
       if (res.ok) {
         const data = await res.json();
-        setCollegeStudents(Array.isArray(data) ? data : []);
+        setCollegeStudents(data?.users || (Array.isArray(data) ? data : []));
       }
     } catch (e) { console.error(e); }
     finally { setLoadingStudents(false); }

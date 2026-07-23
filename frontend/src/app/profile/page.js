@@ -198,7 +198,8 @@ export default function ProfilePage() {
     "/api/users/profile",
     {
       enabled: !!getToken(),
-      staleTime: 5 * 60 * 1000,
+      staleTime: 0,
+      refetchInterval: 3000
     }
   );
 
@@ -297,15 +298,7 @@ export default function ProfilePage() {
     { staleTime: 30 * 60 * 1000 }
   );
 
-  // -- TanStack Query: Campus Users (for rank calc - same university only) --
-  const { data: campusUsersRaw = [] } = useApiQuery(
-    "profile-campus-users",
-    "/api/users/search/query?q=&filter=same_campus",
-    {
-      enabled: !!getToken(),
-      staleTime: 5 * 60 * 1000,
-    }
-  );
+
 
   // Fetch communities count from Supabase
   useEffect(() => {
@@ -342,18 +335,10 @@ export default function ProfilePage() {
     return match?.location || null;
   }, [colleges, user?.university]);
 
-  // Derived: campus rank (same formula as Squad leaderboard: followers + following)
+  // Derived: true campus rank from backend
   const campusRank = useMemo(() => {
-    if (!user) return null;
-    const getSocialCount = (val) => Array.isArray(val) ? val.length : Number(val || 0);
-    const myScore = getSocialCount(user.followers) + getSocialCount(user.following);
-
-    const allUsers = campusUsersRaw.length > 0 ? campusUsersRaw : [];
-    const scores = allUsers.map(u => getSocialCount(u.followers) + getSocialCount(u.following));
-    // Count how many have higher score
-    const rank = scores.filter(s => s > myScore).length + 1;
-    return rank;
-  }, [user, campusUsersRaw]);
+    return user?.campusRank || 1;
+  }, [user]);
 
   const profileActivityStats = useMemo(() => {
     const postCount = userPosts.length;

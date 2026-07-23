@@ -242,7 +242,7 @@ export default function ArenaPage() {
         );
         if (res.ok) {
           const data = await res.json();
-          const arr = Array.isArray(data) ? data : [];
+          const arr = data?.users || (Array.isArray(data) ? data : []);
           if (arr.length > 0) {
             playerList = arr.slice(0, 8);
             break;

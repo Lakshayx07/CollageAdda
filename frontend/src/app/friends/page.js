@@ -375,6 +375,16 @@ export default function FriendsPage() {
     }
   );
 
+  const { data: serverLeaderboard, isFetching: leaderboardFetching } = useApiQuery(
+    ["squad-leaderboard", leaderboardTab],
+    `/api/users/squad/leaderboard?filter=${leaderboardTab}`,
+    {
+      enabled: !!user && activeSquadTab === "leaderboard",
+      staleTime: 0,
+      refetchInterval: 3000
+    }
+  );
+
   const searching = search !== debouncedSearch || suggestedFetching;
 
   const normalizeUserAvatar = useCallback((person) => {
@@ -402,7 +412,8 @@ export default function FriendsPage() {
 
   useEffect(() => {
     if (suggestedData) {
-      const users = (Array.isArray(suggestedData) ? suggestedData : []).map(normalizeUserAvatar);
+      const usersList = Array.isArray(suggestedData) ? suggestedData : (suggestedData.users || []);
+      const users = usersList.map(normalizeUserAvatar);
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setSuggestedUsers(users);
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -422,7 +433,8 @@ export default function FriendsPage() {
       });
       if (res.ok) {
         const data = await res.json();
-        setGlobalUsers((Array.isArray(data) ? data : []).map(normalizeUserAvatar));
+        const usersList = data?.users || (Array.isArray(data) ? data : []);
+        setGlobalUsers(usersList.map(normalizeUserAvatar));
       }
     } catch (err) {
       console.error(err);
@@ -649,39 +661,16 @@ export default function FriendsPage() {
   };
 
   const leaderboardStudents = useMemo(() => {
-    const source = activeSquadTab === "leaderboard" && leaderboardTab === "global_pulse"
-      ? globalUsers
-      : (campusUsers.length ? campusUsers : suggestedUsers);
-    const unique = new Map();
-
-    // Always include current user in the leaderboard
-    if (user && (user._id || user.id)) {
-      const id = user._id || user.id || user.email || user.name;
-      unique.set(id, {
-        ...user,
-        followerCount: user.followersCount ?? getSocialCount(user.followers),
-        followingCount: user.followingCount ?? getSocialCount(user.following),
-      });
-    }
-
-    source.forEach((person) => {
-      const id = person._id || person.id || person.email || person.name;
-      if (!id || unique.has(id)) return;
-      unique.set(id, {
-        ...person,
-        followerCount: person.followersCount ?? getSocialCount(person.followers),
-        followingCount: person.followingCount ?? getSocialCount(person.following),
-      });
-    });
-
-    return Array.from(unique.values())
+    return (Array.isArray(serverLeaderboard) ? serverLeaderboard : [])
+      .map(normalizeUserAvatar)
       .map((person) => ({
         ...person,
-        influenceScore: person.followerCount + person.followingCount,
+        followerCount: person.followersCount ?? 0,
+        followingCount: person.followingCount ?? 0,
+        influenceScore: (person.followersCount ?? 0) + (person.followingCount ?? 0),
       }))
-      .sort((a, b) => b.influenceScore - a.influenceScore)
-      .slice(0, 10);
-  }, [campusUsers, suggestedUsers, globalUsers, activeSquadTab, leaderboardTab, user]);
+      .sort((a, b) => b.influenceScore - a.influenceScore);
+  }, [serverLeaderboard, normalizeUserAvatar]);
 
   const topBadgeStyles = [
     { label: "Campus Star", className: "from-yellow-300 to-[#D4A843] text-black", icon: Trophy },
@@ -1054,7 +1043,6 @@ export default function FriendsPage() {
                   <button
                     onClick={() => {
                       setLeaderboardTab("global_pulse");
-                      fetchGlobalUsers();
                     }}
                     className={clsx(
                       "rounded-[1.1rem] px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] transition-all",
@@ -1075,7 +1063,7 @@ export default function FriendsPage() {
                   </span>
                 </div>
 
-                {loading || (leaderboardTab === "global_pulse" && globalLoading) ? (
+                {loading || (!serverLeaderboard && leaderboardFetching) ? (
                   <div className="flex flex-col items-center justify-center py-20 space-y-4">
                     <div className="w-12 h-12 border-4 border-[#E8E6E0] border-t-yellow-400 rounded-full animate-spin" />
                     <p className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest">Building leaderboard...</p>
@@ -1096,6 +1084,7 @@ export default function FriendsPage() {
                       if (leaderboardTab === "global_pulse" && rank === 1) {
                         return (
                           <motion.div
+                            layout
                             key={person._id || person.id || person.name}
                             initial={{ opacity: 0, scale: 0.8, y: 30 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1187,10 +1176,11 @@ export default function FriendsPage() {
 
                       return (
                         <motion.div
+                          layout
                           key={person._id || person.id || person.name}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: idx * 0.03 }}
+                          transition={{ delay: idx * 0.03, layout: { type: "spring", stiffness: 300, damping: 30 } }}
                           onClick={() => handleProfileClick(person, rank, topBadge)}
                           className={clsx(
                             "app-panel flex items-center gap-3 rounded-[1.5rem] p-4 transition-all cursor-pointer",
@@ -1262,7 +1252,7 @@ export default function FriendsPage() {
                     )}
                   </h3>
                   <span className="text-[10px] bg-[#F9F8F5] border border-[#E8E6E0] px-3 py-1 rounded-full text-[#C8922A] font-bold border border-[#C8922A]/30">
-                    {suggestedUsers.length} peers
+                    {suggestedData?.totalCount ?? suggestedUsers.length} peers
                   </span>
                 </div>
 

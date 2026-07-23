@@ -3,7 +3,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import User from '../models/User.js';
 import College from '../models/College.js';
-import { generateDailyDrop } from '../utils/dropAlgorithm.js';
 import { awardXP } from '../services/xpService.js';
 import { BADGES } from '../config/xpConfig.js';
 import XpLog from '../models/XpLog.js';
@@ -23,6 +22,12 @@ const hasCustomProfilePic = (src = '') => {
 export const transformUser = (u) => {
   if (!u) return u;
   const originalProfilePic = u.profilePic;
+  
+  if (originalProfilePic === undefined) {
+    u.profilePic = `/api/users/${u._id}/avatar?v=${u.updatedAt ? new Date(u.updatedAt).getTime() : 'current'}`;
+    return u;
+  }
+
   u.profilePic = hasCustomProfilePic(originalProfilePic)
     ? `/api/users/${u._id}/avatar?v=${hashText(`${originalProfilePic}-${u.updatedAt || ''}`)}`
     : `/default-avatars/${defaultAvatarFileFor(u.name, u._id)}`;
@@ -176,6 +181,17 @@ router.get('/profile', protect, async (req, res) => {
     
     // Transform profile to avoid sending huge base64 string
     const userObj = user.toObject();
+
+    // Calculate dynamic campus rank
+    const myScore = (userObj.followers?.length || 0) + (userObj.following?.length || 0);
+    const rankAgg = await User.aggregate([
+      { $match: { university: userObj.university } },
+      { $project: { score: { $add: [{ $size: { $ifNull: ['$followers', []] } }, { $size: { $ifNull: ['$following', []] } }] } } },
+      { $match: { score: { $gt: myScore } } },
+      { $count: "higherScoringUsers" }
+    ]);
+    userObj.campusRank = (rankAgg[0]?.higherScoringUsers || 0) + 1;
+
     res.json(transformUser(userObj));
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -353,6 +369,8 @@ router.get('/search/query', protect, async (req, res) => {
       .limit(30)
       .lean();
 
+    const totalCount = await User.countDocuments(query);
+
     const userIds = users.map(u => u._id);
 
     // Batch post counts in a single aggregation instead of N queries
@@ -381,7 +399,7 @@ router.get('/search/query', protect, async (req, res) => {
       };
     });
 
-    res.json(usersWithPostsCount);
+    res.json({ users: usersWithPostsCount, totalCount });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -722,6 +740,44 @@ router.get('/:id', protect, async (req, res) => {
     const user = await User.findById(req.params.id).select('-password -email -phone -verificationToken -verificationTokenExpires -collegeEmail -idPhotoUrl -adminNotes');
     if (!user) return res.status(404).json({ message: 'User not found' });
     res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @route   GET /api/users/squad/leaderboard
+// @desc    Get top users by followers + following
+router.get('/squad/leaderboard', protect, async (req, res) => {
+  try {
+    const { filter } = req.query; // 'my_campus' or 'global'
+    
+    let matchStage = {};
+    if (filter === 'my_campus') {
+      matchStage.university = req.user.university;
+    }
+
+    const topUsers = await User.aggregate([
+      { $match: matchStage },
+      { $addFields: { 
+          score: { 
+            $add: [
+              { $size: { $ifNull: ['$followers', []] } }, 
+              { $size: { $ifNull: ['$following', []] } }
+            ] 
+          } 
+      } },
+      { $sort: { score: -1, createdAt: -1 } },
+      { $limit: 10 },
+      { $project: { 
+          name: 1, university: 1, bio: 1, interests: 1, year: 1, studyYear: 1, passOutBatch: 1, course: 1, branch: 1, isVerified: 1, xp: 1, points: 1, currentTick: 1, streak: 1, createdAt: 1, updatedAt: 1,
+          followersCount: { $size: { $ifNull: ['$followers', []] } },
+          followingCount: { $size: { $ifNull: ['$following', []] } }
+      } }
+    ]);
+
+    // Format with transformUser to add avatar API URLs
+    const formatted = topUsers.map(u => transformUser(u));
+    res.json(formatted);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
