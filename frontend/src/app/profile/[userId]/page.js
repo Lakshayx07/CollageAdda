@@ -216,26 +216,37 @@ export default function UserProfilePage({ params }) {
     const post = memoryPosts[activePostIndex];
     if (!post) return;
 
+    const prevLiked = post.isLiked;
+    const prevLikes = post.likes;
+
     // Optimistic update
     setUserPosts(prev => prev.map((p) => {
       if (p.id !== post.id) return p;
-      const liked = p.isLiked;
-      return { ...p, isLiked: !liked, likes: liked ? p.likes - 1 : p.likes + 1 };
+      return { ...p, isLiked: !prevLiked, likes: prevLiked ? prevLikes - 1 : prevLikes + 1 };
     }));
 
     setPostLiking(true);
     try {
       const token = localStorage.getItem("collegeadda_token");
-      await fetch(`${apiUrl}/api/posts/${post.id}/like`, {
+      const res = await fetch(`${apiUrl}/api/posts/${post.id}/like`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      if (!res.ok) throw new Error("Like failed");
+      const data = await res.json();
+      setUserPosts(prev => prev.map((p) => {
+        if (p.id !== post.id) return p;
+        return {
+          ...p,
+          isLiked: typeof data.liked === "boolean" ? data.liked : !prevLiked,
+          likes: typeof data.likes === "number" ? data.likes : (prevLiked ? prevLikes - 1 : prevLikes + 1),
+        };
+      }));
     } catch (err) {
       // Revert on failure
       setUserPosts(prev => prev.map((p) => {
         if (p.id !== post.id) return p;
-        const liked = p.isLiked;
-        return { ...p, isLiked: !liked, likes: liked ? p.likes - 1 : p.likes + 1 };
+        return { ...p, isLiked: prevLiked, likes: prevLikes };
       }));
     } finally {
       setPostLiking(false);
@@ -602,59 +613,75 @@ export default function UserProfilePage({ params }) {
           </motion.div>
         )}
 
-        {/* ── FIX 2: POST LIGHTBOX ── */}
+        {/* ── POST LIGHTBOX ── */}
         {modal === "post" && activePost && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 backdrop-blur-md"
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/55 backdrop-blur-md p-3 sm:p-4"
             onClick={() => { setModal(null); setActivePostIndex(null); }}
           >
             <motion.div
               initial={{ scale: 0.94, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.94, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="relative w-full max-w-lg mx-3 sm:mx-4 bg-[#0d0d1a] rounded-[2rem] overflow-hidden flex flex-col shadow-2xl border border-[#E8E6E0] max-h-[92vh]"
+              className="relative w-full max-w-lg bg-white rounded-[2rem] overflow-hidden flex flex-col shadow-2xl shadow-black/20 border border-[#E8E6E0] max-h-[92vh]"
               onClick={e => e.stopPropagation()}
             >
               {/* Close */}
-              <button onClick={() => { setModal(null); setActivePostIndex(null); }} className="absolute top-3 right-3 z-30 p-2 bg-black/60 backdrop-blur-sm rounded-full text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors">
+              <button
+                onClick={() => { setModal(null); setActivePostIndex(null); }}
+                aria-label="Close"
+                className="absolute top-3 right-3 z-30 p-2 bg-white border border-[#E8E6E0] rounded-full text-[#1A1A1A] shadow-md hover:bg-[#F9F8F5] transition-colors"
+              >
                 <X size={18} />
               </button>
 
               {/* Arrow prev */}
               {activePostIndex > 0 && (
-                <button onClick={() => setActivePostIndex(i => i - 1)} className="absolute left-3 top-1/2 -translate-y-1/2 z-30 p-2 bg-black/60 backdrop-blur-sm rounded-full text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors">
+                <button
+                  onClick={() => setActivePostIndex(i => i - 1)}
+                  aria-label="Previous post"
+                  className="absolute left-3 top-[22%] sm:top-[28%] -translate-y-1/2 z-30 p-2 bg-white border border-[#E8E6E0] rounded-full text-[#1A1A1A] shadow-md hover:bg-[#F9F8F5] transition-colors"
+                >
                   <ChevronLeft size={20} />
                 </button>
               )}
               {/* Arrow next */}
               {activePostIndex < memoryPosts.length - 1 && (
-                <button onClick={() => setActivePostIndex(i => i + 1)} className="absolute right-3 top-1/2 -translate-y-1/2 z-30 p-2 bg-black/60 backdrop-blur-sm rounded-full text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors">
+                <button
+                  onClick={() => setActivePostIndex(i => i + 1)}
+                  aria-label="Next post"
+                  className="absolute right-3 top-[22%] sm:top-[28%] -translate-y-1/2 z-30 p-2 bg-white border border-[#E8E6E0] rounded-full text-[#1A1A1A] shadow-md hover:bg-[#F9F8F5] transition-colors"
+                >
                   <ChevronRight size={20} />
                 </button>
               )}
 
               {/* Post image */}
               {activePost.img && (
-                <div className="w-full bg-black flex items-center justify-center" style={{ maxHeight: '55vw', minHeight: '180px' }}>
-                  <img src={activePost.img} alt="Post" style={{ maxHeight: '55vw', width: '100%', objectFit: 'contain', display: 'block' }} />
+                <div className="w-full bg-black flex items-center justify-center max-h-[42vh] min-h-[160px]">
+                  <img
+                    src={activePost.img}
+                    alt="Post"
+                    className="w-full max-h-[42vh] object-contain block"
+                  />
                 </div>
               )}
 
               {/* Scrollable lower section */}
-              <div className="flex flex-col overflow-y-auto custom-scrollbar" style={{ maxHeight: '55vh' }}>
+              <div className="flex flex-col overflow-y-auto custom-scrollbar bg-white" style={{ maxHeight: '48vh' }}>
                 {/* Author + caption */}
-                <div className="px-4 pt-4 pb-3 border-b border-[#E8E6E0]">
+                <div className="px-5 pt-4 pb-3 border-b border-[#E8E6E0]">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 border border-[#E8E6E0]">
+                    <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 border border-[#E8E6E0] bg-[#F3F2EE]">
                       <img
                         src={getAvatarSrc(profileUser.profilePic, profileUser.name, profileUser._id || profileUser.id)}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                        className="w-full h-full object-cover block"
                         alt={profileUser.name}
                       />
                     </div>
                     <div>
                       <p className="text-[13px] font-black text-[#1A1A1A] leading-none">{profileUser.name}</p>
-                      <p className="text-[10px] text-[#6B6B6B] mt-0.5">{profileUser.university} · {timeAgo(activePost.createdAt)}</p>
+                      <p className="text-[10px] text-[#6B6B6B] mt-0.5 font-medium">{profileUser.university} · {timeAgo(activePost.createdAt)}</p>
                     </div>
                   </div>
                   {activePost.content && (
@@ -662,63 +689,72 @@ export default function UserProfilePage({ params }) {
                   )}
                   {/* Counts */}
                   <div className="flex items-center gap-4 mt-3 text-[11px] text-[#6B6B6B] font-bold">
-                    <span>❤️ {activePost.likes} like{activePost.likes !== 1 ? 's' : ''}</span>
-                    <span>💬 {activePost.comments.length} comment{activePost.comments.length !== 1 ? 's' : ''}</span>
+                    <span>{activePost.likes} like{activePost.likes !== 1 ? 's' : ''}</span>
+                    <span>{activePost.comments.length} comment{activePost.comments.length !== 1 ? 's' : ''}</span>
                   </div>
                 </div>
 
-                {/* Like & Comment action row */}
-                <div className="flex items-center gap-3 px-4 py-3 border-b border-[#E8E6E0]">
+                {/* Like action row */}
+                <div className="flex items-center gap-3 px-5 py-3 border-b border-[#E8E6E0]">
                   <button
                     onClick={toggleLike}
                     disabled={postLiking}
+                    aria-label={activePost.isLiked ? "Unlike" : "Like"}
                     className={clsx(
-                      "flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all",
+                      "p-2.5 rounded-xl transition-all",
                       activePost.isLiked
-                        ? "bg-red-500/20 text-red-400 border border-red-500/30"
-                        : "bg-[#F3F2EE] text-[#6B6B6B] border border-[#E8E6E0] hover:bg-[#F3F2EE]"
+                        ? "bg-red-50 text-red-500 border border-red-200"
+                        : "bg-[#F9F8F5] text-[#6B6B6B] border border-[#E8E6E0] hover:bg-[#FFF8EC] hover:border-[#C8922A]/30 hover:text-red-500"
                     )}
                   >
-                    <Heart size={14} className={activePost.isLiked ? "fill-red-400 text-red-400" : ""} />
-                    {activePost.isLiked ? "Liked" : "Like"}
+                    <Heart size={18} className={activePost.isLiked ? "fill-red-500 text-red-500" : ""} />
                   </button>
                 </div>
 
                 {/* Comments list */}
-                <div className="px-4 py-3 space-y-4 flex-1">
+                <div className="px-5 py-3 space-y-4 flex-1">
                   {activePost.comments.length === 0 && (
-                    <p className="text-[11px] text-[#888888] text-center py-4 font-bold">No comments yet. Be first! 💬</p>
+                    <p className="text-[11px] text-[#888888] text-center py-4 font-bold">No comments yet. Be first!</p>
                   )}
                   {activePost.comments.map(c => (
                     <div key={c.id} className="flex gap-2.5">
                       <div className="w-7 h-7 rounded-full overflow-hidden shrink-0 border border-[#E8E6E0] bg-[#F3F2EE] mt-0.5">
-                        <img src={getAvatarSrc(c.user?.profilePic, c.user?.name, c.user?._id || c.user?.id)} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                        <img
+                          src={getAvatarSrc(c.user?.profilePic, c.user?.name, c.user?._id || c.user?.id)}
+                          className="w-full h-full object-cover block"
+                          alt={c.user?.name || "Student"}
+                        />
                       </div>
-                      <div className="flex-1">
-                        <p className="text-[11px] font-black text-[#4A4A4A]">{c.user?.name || "Student"}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] font-black text-[#1A1A1A]">{c.user?.name || "Student"}</p>
                         <p className="text-[12px] text-[#4A4A4A] mt-0.5 leading-snug">{c.text}</p>
-                        <p className="text-[9px] text-[#6B6B6B] mt-1">{timeAgo(c.createdAt)}</p>
+                        <p className="text-[9px] text-[#888888] mt-1 font-medium">{timeAgo(c.createdAt)}</p>
                       </div>
                     </div>
                   ))}
                 </div>
 
                 {/* Comment input */}
-                <div className="px-3 py-3 border-t border-[#E8E6E0] bg-[#0d0d1a] flex items-center gap-2.5 sticky bottom-0">
-                  <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-[#E8E6E0]">
-                    <img src={getAvatarSrc(currentUser?.profilePic, currentUser?.name, currentUser?._id || currentUser?.id)} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                <div className="px-3 py-3 border-t border-[#E8E6E0] bg-[#F9F8F5] flex items-center gap-2.5 sticky bottom-0">
+                  <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-[#E8E6E0] bg-[#F3F2EE]">
+                    <img
+                      src={getAvatarSrc(currentUser?.profilePic, currentUser?.name, currentUser?._id || currentUser?.id)}
+                      className="w-full h-full object-cover block"
+                      alt={currentUser?.name || "You"}
+                    />
                   </div>
                   <input
                     value={commentInput}
                     onChange={e => setCommentInput(e.target.value)}
                     onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitComment(); } }}
                     placeholder="Add a comment..."
-                    className="flex-1 bg-[#F3F2EE] border border-[#E8E6E0] rounded-2xl px-4 py-2 text-sm text-[#1A1A1A] placeholder-white/30 outline-none focus:border-[#C8922A] transition-colors"
+                    className="flex-1 bg-white border border-[#E8E6E0] rounded-2xl px-4 py-2 text-sm text-[#1A1A1A] placeholder:text-[#888888] outline-none focus:border-[#C8922A] transition-colors"
                   />
                   <button
                     onClick={submitComment}
                     disabled={!commentInput.trim() || commentSending}
-                    className="p-2.5 gradient-bg rounded-2xl text-[#1A1A1A] disabled:opacity-30 hover:scale-105 transition-transform"
+                    aria-label="Send comment"
+                    className="p-2.5 gradient-bg rounded-2xl text-white disabled:opacity-30 hover:scale-105 transition-transform"
                   >
                     <Send size={14} />
                   </button>

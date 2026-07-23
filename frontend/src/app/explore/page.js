@@ -258,28 +258,58 @@ function ExploreContent() {
   const toggleLike = async (postId) => {
     try {
       const token = localStorage.getItem("collegeadda_token");
-      const user = JSON.parse(localStorage.getItem('collegeadda_user') || '{}');
-      const userId = user._id || user.id;
 
-      // Optimistic update
+      // Optimistic update (supports slim likesCount/likedByMe and legacy likes[])
       setSelectedCollege(prev => ({
         ...prev,
-        postsData: prev.postsData.map(post => {
-          if (post._id === postId) {
-            const isLiked = post.likes?.includes(userId);
-            const newLikes = isLiked
-              ? post.likes.filter(id => id !== userId)
-              : [...(post.likes || []), userId];
-            return { ...post, likes: newLikes };
-          }
-          return post;
+        postsData: (prev.postsData || []).map(post => {
+          if (post._id !== postId) return post;
+          const wasLiked = typeof post.likedByMe === "boolean"
+            ? post.likedByMe
+            : !!(currentUserId && post.likes?.some((id) => String(id) === String(currentUserId)));
+          const prevCount = typeof post.likesCount === "number"
+            ? post.likesCount
+            : (post.likes?.length || 0);
+          return {
+            ...post,
+            likedByMe: !wasLiked,
+            likesCount: wasLiked ? Math.max(0, prevCount - 1) : prevCount + 1,
+          };
         })
       }));
 
-      await fetch(`${apiUrl}/api/posts/${postId}/like`, {
+      const res = await fetch(`${apiUrl}/api/posts/${postId}/like`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      if (res.ok) {
+        const data = await res.json();
+        setSelectedCollege(prev => ({
+          ...prev,
+          postsData: (prev.postsData || []).map(post => {
+            if (post._id !== postId) return post;
+            return {
+              ...post,
+              likedByMe: typeof data.liked === "boolean" ? data.liked : post.likedByMe,
+              likesCount: typeof data.likes === "number" ? data.likes : post.likesCount,
+            };
+          })
+        }));
+        queryClient.setQueryData(["college-detail", collegeIdParam], (old) => {
+          if (!old?.postsData) return old;
+          return {
+            ...old,
+            postsData: old.postsData.map((post) => {
+              if (post._id !== postId) return post;
+              return {
+                ...post,
+                likedByMe: typeof data.liked === "boolean" ? data.liked : post.likedByMe,
+                likesCount: typeof data.likes === "number" ? data.likes : post.likesCount,
+              };
+            }),
+          };
+        });
+      }
     } catch (err) {
       console.error("Error toggling like:", err);
     }
@@ -310,15 +340,19 @@ function ExploreContent() {
         // Actually, let's just update local state with what we know.
         setSelectedCollege(prev => ({
           ...prev,
-          postsData: prev.postsData.map(post => {
-            if (post._id === postId) {
-              const newComment = { _id: Date.now(), user: { name: user.name, profilePic: user.profilePic }, text };
-              return {
-                ...post,
-                comments: [...(post.comments || []), newComment]
-              };
-            }
-            return post;
+          postsData: (prev.postsData || []).map(post => {
+            if (post._id !== postId) return post;
+            const newComment = {
+              _id: Date.now(),
+              user: { name: user.name, profilePic: user.profilePic },
+              text,
+            };
+            const nextComments = [...(post.comments || []), newComment];
+            return {
+              ...post,
+              comments: nextComments,
+              commentsCount: (typeof post.commentsCount === "number" ? post.commentsCount : (post.comments?.length || 0)) + 1,
+            };
           })
         }));
         setCommentInputs(prev => ({ ...prev, [postId]: "" }));
@@ -340,68 +374,82 @@ function ExploreContent() {
     });
   }, [myFollowing]);
 
-  const fetchCollegeDetails = async (id, optimisticCollege = null) => {
-    const collegeId = typeof id === "string" ? id : (id?._id || id?.id);
-    if (!collegeId) return;
-
-    setLoadingCollegeId(collegeId);
-
-    // Optimistic shell only when opening a different college — never wipe loaded posts
-    setSelectedCollege((prev) => {
-      const prevId = prev?._id || prev?.id;
-      if (prevId && String(prevId) === String(collegeId)) {
-        return prev;
-      }
-      if (!optimisticCollege) return prev;
-      return {
-        ...optimisticCollege,
-        studentsData: optimisticCollege.studentsData || [],
-        postsData: optimisticCollege.postsData || [],
-      };
-    });
-    setActiveTab("posts");
-
-    try {
-      const token = localStorage.getItem("collegeadda_token");
-      const res = await fetch(`${apiUrl}/api/colleges/${collegeId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        data.studentsData = sortStudentsByFollowing(data.studentsData || []);
-        // Preserve students if they were lazy-loaded while posts were still fetching
-        setSelectedCollege((prev) => {
-          const sameCollege =
-            prev &&
-            String(prev._id || prev.id) === String(data._id || data.id);
-          if (sameCollege && prev.studentsData?.length && !data.studentsData?.length) {
-            return { ...data, studentsData: prev.studentsData };
-          }
-          return data;
-        });
-      }
-    } catch (err) {
-      console.error("Error fetching college details:", err);
-    } finally {
-      setLoadingCollegeId((current) =>
-        String(current) === String(collegeId) ? null : current
-      );
-    }
-  };
-
   const collegeIdParam = searchParams.get("collegeId");
 
-  useEffect(() => {
-    if (collegeIdParam) {
-      const listMatch =
-        colleges.find((c) => (c._id || c.id) === collegeIdParam) || null;
-      fetchCollegeDetails(collegeIdParam, listMatch);
-    } else {
-      setSelectedCollege(null);
+  // Cached college detail (slim posts) — avoids re-downloading on reopen
+  const {
+    data: collegeDetail,
+    isLoading: collegeDetailLoading,
+    isFetching: collegeDetailFetching,
+  } = useApiQuery(
+    ["college-detail", collegeIdParam],
+    collegeIdParam ? `/api/colleges/${collegeIdParam}` : null,
+    {
+      enabled: isMounted && !!getToken() && !!collegeIdParam,
+      staleTime: 3 * 60 * 1000,
     }
-    // Only re-fetch when the URL college changes — not when colleges list refetches
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [collegeIdParam, apiUrl]);
+  );
+
+  // Optimistic shell from colleges list while detail loads
+  useEffect(() => {
+    if (!collegeIdParam) {
+      setSelectedCollege(null);
+      setLoadingCollegeId(null);
+      return;
+    }
+
+    setActiveTab("posts");
+    const listMatch =
+      colleges.find((c) => String(c._id || c.id) === String(collegeIdParam)) || null;
+
+    setSelectedCollege((prev) => {
+      const prevId = prev?._id || prev?.id;
+      if (prevId && String(prevId) === String(collegeIdParam) && prev.postsData?.length) {
+        return prev;
+      }
+      if (!listMatch) return prev;
+      return {
+        ...listMatch,
+        studentsData: listMatch.studentsData || [],
+        postsData: listMatch.postsData || [],
+      };
+    });
+  }, [collegeIdParam, colleges]);
+
+  // Merge fetched detail into selected college (preserve lazy-loaded students)
+  useEffect(() => {
+    if (!collegeDetail || !collegeIdParam) return;
+    if (String(collegeDetail._id || collegeDetail.id) !== String(collegeIdParam)) return;
+
+    setSelectedCollege((prev) => {
+      const sameCollege =
+        prev &&
+        String(prev._id || prev.id) === String(collegeDetail._id || collegeDetail.id);
+      if (sameCollege && prev.studentsData?.length && !collegeDetail.studentsData?.length) {
+        return { ...collegeDetail, studentsData: prev.studentsData };
+      }
+      return collegeDetail;
+    });
+  }, [collegeDetail, collegeIdParam]);
+
+  useEffect(() => {
+    if (!collegeIdParam) {
+      setLoadingCollegeId(null);
+      return;
+    }
+    const waitingForPosts =
+      (collegeDetailLoading || collegeDetailFetching) &&
+      !(collegeDetail?.postsData?.length > 0) &&
+      !(selectedCollege?.postsData?.length > 0 &&
+        String(selectedCollege?._id || selectedCollege?.id) === String(collegeIdParam));
+    setLoadingCollegeId(waitingForPosts ? collegeIdParam : null);
+  }, [
+    collegeIdParam,
+    collegeDetailLoading,
+    collegeDetailFetching,
+    collegeDetail,
+    selectedCollege,
+  ]);
 
   // Lazy-load students only when the Students tab is opened (keeps Posts fast)
   useEffect(() => {
@@ -1249,9 +1297,17 @@ function ExploreContent() {
                       </div>
                     ) : (
                       selectedCollege.postsData.map(post => {
-                        const isLiked = currentUserId && post.likes?.some(
-                          (id) => String(id) === String(currentUserId)
-                        );
+                        const isLiked = typeof post.likedByMe === "boolean"
+                          ? post.likedByMe
+                          : !!(currentUserId && post.likes?.some(
+                              (id) => String(id) === String(currentUserId)
+                            ));
+                        const likeCount = typeof post.likesCount === "number"
+                          ? post.likesCount
+                          : (post.likes?.length || 0);
+                        const commentCount = typeof post.commentsCount === "number"
+                          ? post.commentsCount
+                          : (post.comments?.length || 0);
                         return (
                         <article
                           key={post._id}
@@ -1320,14 +1376,14 @@ function ExploreContent() {
                                       isLiked && "fill-[#C8922A]"
                                     )}
                                   />
-                                  <span className="text-sm text-[#888888]">{post.likes?.length || 0}</span>
+                                  <span className="text-sm text-[#888888]">{likeCount}</span>
                                 </button>
                                 <button
                                   onClick={() => setActiveCommentPost(activeCommentPost === post._id ? null : post._id)}
                                   className="flex items-center space-x-2 p-2 rounded-full text-[#888888] hover:text-[#C8922A] transition-colors group"
                                 >
                                   <MessageSquare size={22} className="transition-transform group-active:scale-75" />
-                                  <span className="text-sm text-[#888888]">{post.comments?.length || 0}</span>
+                                  <span className="text-sm text-[#888888]">{commentCount}</span>
                                 </button>
                               </div>
                               <button

@@ -3,6 +3,7 @@ import College from '../models/College.js';
 import User from '../models/User.js';
 import Post from '../models/Post.js';
 import { protect } from '../middleware/authMiddleware.js';
+import { slimPost } from '../utils/postSerialize.js';
 
 const router = express.Router();
 
@@ -158,22 +159,21 @@ router.get('/:id', protect, async (req, res) => {
     const universityNames = getUniversityNameVariants(college.name);
     const universityFilter = { university: { $in: universityNames } };
 
-    // Posts tab must not wait on heavy student documents
+    // Posts tab must not wait on heavy student documents.
+    // Slim posts like the home feed so base64 media is not embedded in JSON.
     const [posts, realStudentCount, realPostCount] = await Promise.all([
       Post.find(universityFilter)
         .select('content mediaUrl mediaType likes comments hashtags createdAt author university')
         .populate('author', 'name university isVerified')
+        .populate('comments.user', 'name')
         .sort({ createdAt: -1 })
-        .limit(20)
+        .limit(12)
         .lean(),
       User.countDocuments(universityFilter),
       Post.countDocuments(universityFilter),
     ]);
 
-    const postsData = posts.map((post) => ({
-      ...post,
-      author: withAvatarUrl(post.author),
-    }));
+    const postsData = posts.map((post) => slimPost(post, req.user._id));
 
     res.json({
       ...college.toObject(),
