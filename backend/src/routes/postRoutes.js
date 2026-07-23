@@ -5,23 +5,99 @@ import { protect, verified } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
+const toIdString = (value) => {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (value._id) return value._id.toString();
+  return value.toString();
+};
+
+const slimAuthor = (author) => {
+  if (!author) return author;
+  const id = toIdString(author._id || author.id);
+  return {
+    _id: author._id || author.id,
+    name: author.name,
+    university: author.university,
+    isVerified: Boolean(author.isVerified),
+    profilePic: id ? `/api/users/${id}/avatar` : undefined
+  };
+};
+
+const slimPoll = (poll, userId) => {
+  if (!poll) return undefined;
+  const uid = toIdString(userId);
+  return {
+    question: poll.question,
+    allowMultiple: Boolean(poll.allowMultiple),
+    options: (poll.options || []).map((option) => {
+      const votes = option.votes || [];
+      return {
+        text: option.text,
+        votesCount: votes.length,
+        votedByMe: votes.some((id) => toIdString(id) === uid)
+      };
+    })
+  };
+};
+
+const slimComments = (comments = []) => {
+  return comments.slice(-5).map((comment) => ({
+    _id: comment._id,
+    text: comment.text,
+    createdAt: comment.createdAt,
+    user: comment.user
+      ? {
+          _id: comment.user._id || comment.user,
+          name: comment.user.name || 'Student'
+        }
+      : null
+  }));
+};
+
+const slimPost = (post, userId) => {
+  if (!post) return post;
+  const uid = toIdString(userId);
+  const likes = post.likes || [];
+  const comments = post.comments || [];
+
+  return {
+    _id: post._id,
+    content: post.content,
+    mediaUrl: post.mediaUrl,
+    mediaType: post.mediaType,
+    hashtags: post.hashtags || [],
+    university: post.university,
+    createdAt: post.createdAt,
+    updatedAt: post.updatedAt,
+    author: slimAuthor(post.author),
+    likesCount: likes.length,
+    likedByMe: likes.some((id) => toIdString(id) === uid),
+    commentsCount: comments.length,
+    comments: slimComments(comments),
+    poll: slimPoll(post.poll, userId)
+  };
+};
+
 // @route   GET /api/posts
-// @desc    Get all posts (university feed) with pagination
+// @desc    Get university feed with pagination (lean payloads)
 router.get('/', protect, async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 30;
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const requestedLimit = parseInt(req.query.limit, 10) || 12;
+    const limit = Math.min(Math.max(requestedLimit, 1), 30);
     const skip = (page - 1) * limit;
 
     const posts = await Post.find({ university: req.user.university })
-      .populate('author', 'name profilePic university isVerified')
+      .select('content mediaUrl mediaType hashtags university createdAt updatedAt author likes comments poll')
+      .populate('author', 'name university isVerified')
+      .populate('comments.user', 'name')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit);
-    
-    // Optional: Return total count for infinite scroll if needed, 
-    // but for now returning just array is backwards compatible.
-    res.json(posts);
+      .limit(limit)
+      .lean();
+
+    res.json(posts.map((post) => slimPost(post, req.user._id)));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -49,7 +125,7 @@ router.get('/trending', protect, async (req, res) => {
 // @desc    Create a post
 router.post('/', protect, verified, async (req, res) => {
   const { content, mediaUrl, mediaType, poll } = req.body;
-  
+
   // Extract hashtags from content
   const hashtags = content ? (content.match(/#[\w\u0590-\u05ff]+/g) || []) : [];
 
@@ -60,12 +136,17 @@ router.post('/', protect, verified, async (req, res) => {
       content,
       mediaUrl,
       mediaType,
-      hashtags: hashtags.map(tag => tag.toLowerCase()),
-      poll: (poll && poll.options && poll.options.length > 0) ? poll : undefined
+      hashtags: hashtags.map((tag) => tag.toLowerCase()),
+      poll: poll && poll.options && poll.options.length > 0 ? poll : undefined
     });
-    
-    const populated = await post.populate('author', 'name profilePic university isVerified');
-    res.status(201).json(populated);
+
+    const populated = await Post.findById(post._id)
+      .select('content mediaUrl mediaType hashtags university createdAt updatedAt author likes comments poll')
+      .populate('author', 'name university isVerified')
+      .populate('comments.user', 'name')
+      .lean();
+
+    res.status(201).json(slimPost(populated, req.user._id));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -82,34 +163,30 @@ router.post('/:id/vote', protect, verified, async (req, res) => {
     const userId = req.user._id;
 
     if (post.poll.allowMultiple) {
-      // Toggle vote for this specific option
       const option = post.poll.options[optionIndex];
+      if (!option) return res.status(400).json({ message: 'Invalid option' });
       const hasVoted = option.votes.includes(userId);
-      
+
       if (hasVoted) {
-        option.votes = option.votes.filter(v => v.toString() !== userId.toString());
+        option.votes = option.votes.filter((v) => v.toString() !== userId.toString());
       } else {
         option.votes.push(userId);
       }
     } else {
-      // Single choice logic
-      const alreadyVotedAny = post.poll.options.some(opt => opt.votes.includes(userId));
-      
-      if (alreadyVotedAny) {
-        // If already voted, check if it's the same option to toggle/unvote
-        const currentlyVotedIdx = post.poll.options.findIndex(opt => opt.votes.includes(userId));
-        if (currentlyVotedIdx === optionIndex) {
-          post.poll.options[optionIndex].votes = post.poll.options[optionIndex].votes.filter(v => v.toString() !== userId.toString());
-        } else {
-          return res.status(400).json({ message: 'You can only vote for one option' });
-        }
+      const currentlyVotedIdx = post.poll.options.findIndex((opt) => opt.votes.includes(userId));
+      if (currentlyVotedIdx === optionIndex) {
+        post.poll.options[optionIndex].votes = post.poll.options[optionIndex].votes.filter(
+          (v) => v.toString() !== userId.toString()
+        );
+      } else if (currentlyVotedIdx >= 0) {
+        return res.status(400).json({ message: 'You can only vote for one option' });
       } else {
         post.poll.options[optionIndex].votes.push(userId);
       }
     }
 
     await post.save();
-    res.json(post.poll);
+    res.json(slimPoll(post.poll, userId));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -130,7 +207,6 @@ router.put('/:id/like', protect, verified, async (req, res) => {
     }
     await post.save();
 
-    // Notification for like
     if (!alreadyLiked && post.author.toString() !== req.user._id.toString()) {
       await Notification.create({
         recipient: post.author,
@@ -158,7 +234,6 @@ router.post('/:id/comment', protect, verified, async (req, res) => {
     post.comments.push({ user: req.user._id, text });
     await post.save();
 
-    // Notification for comment
     if (post.author.toString() !== req.user._id.toString()) {
       await Notification.create({
         recipient: post.author,
@@ -169,7 +244,8 @@ router.post('/:id/comment', protect, verified, async (req, res) => {
       });
     }
 
-    res.status(201).json(post.comments);
+    await post.populate('comments.user', 'name');
+    res.status(201).json(slimComments(post.comments));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -182,7 +258,6 @@ router.delete('/:id', protect, verified, async (req, res) => {
     const post = await Post.findById(req.params.id);
     if (!post) return res.status(404).json({ message: 'Post not found' });
 
-    // Check ownership
     if (post.author.toString() !== req.user._id.toString()) {
       return res.status(401).json({ message: 'User not authorized to delete this post' });
     }
