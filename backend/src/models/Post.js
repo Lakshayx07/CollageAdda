@@ -25,6 +25,8 @@ const postSchema = mongoose.Schema({
 
 // Compound index to optimize the university feed query (GET /api/posts)
 postSchema.index({ university: 1, createdAt: -1 });
+// Index to optimize the global feed query
+postSchema.index({ createdAt: -1 });
 
 const Post = mongoose.model('Post', postSchema);
 export default Post;

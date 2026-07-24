@@ -36,6 +36,10 @@ export default function Home() {
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [selectedMediaFile, setSelectedMediaFile] = useState(null);
   const [mediaType, setMediaType] = useState('none');
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   // Hydrate from localStorage on first paint so the posts query uses the right cache key immediately
   const [currentUser, setCurrentUser] = useState(() => {
     if (typeof window === "undefined") return null;
@@ -67,7 +71,7 @@ export default function Home() {
   // setConfessions is defined below as a custom updater for optimistic updates on cached queries
   const [confessionCommentInputs, setConfessionCommentInputs] = useState({});
   const [confessionScope, setConfessionScope] = useState('local'); // 'local' | 'global'
-  const FEED_PAGE_SIZE = 12;
+  const FEED_PAGE_SIZE = 20;
   const [feedPage, setFeedPage] = useState(1);
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [loadingMorePosts, setLoadingMorePosts] = useState(false);
@@ -107,7 +111,7 @@ export default function Home() {
         authorId: p.author?._id,
         university: p.university,
         avatar: getAvatarSrc(p.author?.profilePic, p.author?.name, p.author?._id),
-        time: new Date(p.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+        time: new Date(p.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' }),
         content: p.content,
         likes: likesCount,
         isLiked,
@@ -144,12 +148,12 @@ export default function Home() {
 
   const feedUserId = currentUser?._id || currentUser?.id;
   const { data: posts = [], isLoading: loadingPosts, refetch: refetchPosts } = useApiQuery(
-    ["posts", feedUserId],
-    `/api/posts?limit=${FEED_PAGE_SIZE}`,
+    ["posts", "v2", feedUserId],
+    `/api/posts?limit=${feedPage * FEED_PAGE_SIZE}`,
     {
       enabled: isAuthenticated && !!feedUserId,
       select: formatPosts,
-      staleTime: 5 * 60 * 1000, // keep feed warm when navigating away
+      staleTime: 0, // Force refresh to pick up cross-university posts
       gcTime: 24 * 60 * 60 * 1000,
       refetchOnMount: true, // background refresh if stale; cached posts still render
     }
@@ -162,8 +166,8 @@ export default function Home() {
   }, [currentUser?._id]);
 
   useEffect(() => {
-    if (!loadingPosts && feedPage === 1 && posts.length < FEED_PAGE_SIZE) {
-      setHasMorePosts(false);
+    if (!loadingPosts && feedPage === 1) {
+      setHasMorePosts(posts.length >= FEED_PAGE_SIZE);
     }
   }, [loadingPosts, posts.length, feedPage]);
 
@@ -182,7 +186,7 @@ export default function Home() {
         setHasMorePosts(false);
       }
       if (Array.isArray(data) && data.length > 0) {
-        queryClient.setQueryData(["posts", currentUser._id], (old) => {
+        queryClient.setQueryData(["posts", "v2", currentUser._id], (old) => {
           const existing = Array.isArray(old) ? old : [];
           const seen = new Set(existing.map((p) => String(p._id || p.id)));
           const fresh = data.filter((p) => !seen.has(String(p._id)));
@@ -280,7 +284,7 @@ export default function Home() {
   // ── Local state for UI interactions ──────────────────────────────────────
   // We use setPosts wrapper functions for optimistic updates on the cached data
   const setPosts = useCallback((updater) => {
-    queryClient.setQueryData(["posts", currentUser?._id], (oldRawData) => {
+    queryClient.setQueryData(["posts", "v2", currentUser?._id], (oldRawData) => {
       if (!oldRawData) return oldRawData;
       const currentFormatted = formatPosts(oldRawData);
       const updated = typeof updater === 'function' ? updater(currentFormatted) : updater;
@@ -561,7 +565,7 @@ export default function Home() {
       poll: null
     };
     
-    queryClient.setQueryData(["posts", currentUser?._id], (old) => {
+    queryClient.setQueryData(["posts", "v2", currentUser?._id], (old) => {
       return [optimisticRawPost, ...(old || [])];
     });
     
@@ -619,7 +623,7 @@ export default function Home() {
     } catch (err) {
       console.error("Error creating post:", err);
       // Rollback optimistic update
-      queryClient.setQueryData(["posts", currentUser?._id], (old) => {
+      queryClient.setQueryData(["posts", "v2", currentUser?._id], (old) => {
         return (old || []).filter(p => p._id !== tempId);
       });
       setNewPostContent(savedContent);
@@ -974,7 +978,7 @@ export default function Home() {
   const myStoriesGroup = stories.find(s => (s.author?._id || s.author?.id) === (currentUser?._id || currentUser?.id));
   const hasMyStory = myStoriesGroup && myStoriesGroup.stories && myStoriesGroup.stories.length > 0;
 
-  if (!isAuthenticated) return null;
+  if (!isMounted || !isAuthenticated) return null;
 
   return (
     <div className="relative flex min-h-screen flex-col overflow-x-hidden bg-transparent pb-[90px] lg:pb-0">
@@ -1315,7 +1319,7 @@ export default function Home() {
             <motion.article
               key={post.id} 
               variants={itemVariants}
-              className="relative min-w-0 border-b border-[#E8E6E0] bg-white p-4 group last:border-b-0 sm:p-6"
+              className="relative min-w-0 border-b-2 border-[#D1D1D1] bg-white p-4 group last:border-b-0 sm:p-6"
             >
               {/* Post Header */}
               <div className="flex items-center justify-between mb-5">
@@ -1334,21 +1338,19 @@ export default function Home() {
                     <h3 className="text-[#1A1A1A] font-semibold flex items-center gap-2">
                       <NameWithTick name={post.author} tick={post.authorTick} />
                     </h3>
-                    <p className="text-[#888888] text-sm">{post.university} • {post.time}</p>
+                    <p suppressHydrationWarning className="text-[#888888] text-sm">{post.university} • {post.time}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  {friendsList.some(f => f.id === post.authorId) ? (
-                    <span className="text-[10px] font-black uppercase tracking-widest text-[#C8922A] bg-[#C8922A]/10 px-3 py-1 rounded-full border border-[#C8922A]/20">
-                      Your Squad
-                    </span>
-                  ) : currentUser?._id !== post.authorId && currentUser?.id !== post.authorId ? (
+                  {friendsList.some(f => f.id === post.authorId) ? null : currentUser?._id !== post.authorId && currentUser?.id !== post.authorId ? (
                     <motion.button 
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      className="text-[11px] font-bold px-4 py-1.5 rounded-full border border-[#E8E6E0] hover:bg-[#FFF8EC] hover:border-[#C8922A]/30 transition-all text-[#4A4A4A]"
+                      onClick={() => handleConnectUser(post.authorId)}
+                      disabled={connectStatus[post.authorId] === 'pending' || connectStatus[post.authorId] === 'connected'}
+                      className="text-[11px] font-bold px-4 py-1.5 rounded-full border border-[#E8E6E0] hover:bg-[#FFF8EC] hover:border-[#C8922A]/30 transition-all text-[#4A4A4A] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Follow
+                      {connectStatus[post.authorId] === 'connected' ? 'Following' : connectStatus[post.authorId] === 'pending' ? '...' : 'Follow'}
                     </motion.button>
                   ) : null}
                   <div className="relative">

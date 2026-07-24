@@ -39,20 +39,6 @@ export default function RootLayout({ children }) {
       <head>
       </head>
       <body className="app-shell h-full bg-background text-foreground transition-colors duration-300">
-        <Script
-          id="theme-script"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  localStorage.setItem("campus_adda_theme", "light");
-                  document.documentElement.setAttribute("data-theme", "light");
-                } catch (e) {}
-              })();
-            `,
-          }}
-        />
         <ThemeProvider>
           <QueryProvider>
             <SocketProvider>

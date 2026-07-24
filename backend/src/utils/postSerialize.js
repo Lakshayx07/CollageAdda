@@ -51,14 +51,11 @@ export const slimComments = (comments = []) => {
   }));
 };
 
-/** Rewrite inline base64 media to a dedicated endpoint so feeds stay small. */
 export const resolveMediaUrl = (post) => {
-  const mediaUrl = post?.mediaUrl || '';
-  if (!mediaUrl) return '';
-  if (mediaUrl.startsWith('data:')) {
+  if (post && post.mediaType && post.mediaType !== 'none') {
     return `/api/posts/${toIdString(post._id)}/media`;
   }
-  return mediaUrl;
+  return '';
 };
 
 export const slimPost = (post, userId) => {

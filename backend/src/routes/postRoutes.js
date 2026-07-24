@@ -14,16 +14,16 @@ router.get('/', protect, async (req, res) => {
   try {
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
     const requestedLimit = parseInt(req.query.limit, 10) || 12;
-    const limit = Math.min(Math.max(requestedLimit, 1), 30);
+    const limit = Math.min(Math.max(requestedLimit, 1), 100);
     const skip = (page - 1) * limit;
 
-    const filter = { university: req.user.university };
+    const filter = {};
     if (req.query.author) {
       filter.author = req.query.author;
     }
 
     const posts = await Post.find(filter)
-      .select('content mediaUrl mediaType hashtags university createdAt updatedAt author likes comments poll')
+      .select('content mediaType hashtags university createdAt updatedAt author likes comments poll')
       .populate('author', 'name university isVerified xp points currentTick')
       .populate('comments.user', 'name isVerified')
       .sort({ createdAt: -1 })
