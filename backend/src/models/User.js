@@ -13,6 +13,7 @@ const userSchema = mongoose.Schema({
   linkedin: { type: String, default: '' },
   github: { type: String, default: '' },
   phone: { type: String, default: '' },
+  phonePrivacy: { type: String, enum: ['public', 'private'], default: 'private' },
   snapchat: { type: String, default: '' },
   interests: [{ type: String }],
   goals: [{ type: String }],
@@ -50,6 +51,7 @@ const userSchema = mongoose.Schema({
   verificationTokenExpires: { type: Date },
   idPhotoUrl: { type: String, default: '' },
   adminNotes: { type: String, default: '' },
+  lastCoreProfileEditDate: { type: Date },
 
   // Growth Hacking Fields
   referralCode: { type: String, unique: true, sparse: true },

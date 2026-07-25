@@ -298,7 +298,23 @@ router.put('/profile', protect, async (req, res) => {
       onboardingStep
     } = req.body;
 
-    if (name) user.name = name;
+    const coreFieldsChanged = (name !== undefined && name !== user.name) ||
+                              (passOutBatch !== undefined && passOutBatch !== user.passOutBatch) ||
+                              (studyYear !== undefined && studyYear !== user.studyYear) ||
+                              (course !== undefined && course !== user.course) ||
+                              (branch !== undefined && branch !== user.branch);
+
+    if (coreFieldsChanged && user.isVerified) {
+      if (user.lastCoreProfileEditDate) {
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        if (user.lastCoreProfileEditDate > thirtyDaysAgo) {
+          return res.status(400).json({ message: 'You can only change your core details (Name, Batch, Year, Course, Branch) once every 30 days.' });
+        }
+      }
+      user.lastCoreProfileEditDate = new Date();
+    }
+    
+    if (name !== undefined) user.name = name;
     if (bio !== undefined) user.bio = bio;
     if (profilePic !== undefined) {
       user.profilePic = profilePic;
@@ -308,6 +324,7 @@ router.put('/profile', protect, async (req, res) => {
     if (linkedin !== undefined) user.linkedin = linkedin;
     if (github !== undefined) user.github = github;
     if (phone !== undefined) user.phone = phone;
+    if (req.body.phonePrivacy !== undefined) user.phonePrivacy = req.body.phonePrivacy;
     if (snapchat !== undefined) user.snapchat = snapchat;
     if (university) user.university = normalizeUniversityName(university);
     if (interests !== undefined) user.interests = interests;
@@ -759,32 +776,6 @@ router.get('/me/xp-progress', protect, async (req, res) => {
   }
 });
 
-// @route   GET /api/users/:id
-// @desc    Get another user's public profile
-router.get('/:id', protect, async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id).select('-password -email -phone -verificationToken -verificationTokenExpires -collegeEmail -idPhotoUrl -adminNotes');
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    
-    const userObj = user.toObject();
-    const myScore = (userObj.followers?.length || 0) + (userObj.following?.length || 0);
-    const rankAgg = await User.aggregate([
-      { $match: { university: userObj.university } },
-      { $project: { score: { $add: [{ $size: { $ifNull: ['$followers', []] } }, { $size: { $ifNull: ['$following', []] } }] } } },
-      { $match: { score: { $gt: myScore } } },
-      { $count: "higherScoringUsers" }
-    ]);
-    userObj.campusRank = (rankAgg[0]?.higherScoringUsers || 0) + 1;
-    
-    // Get post count instantly for the profile stats
-    userObj.postsCount = await Post.countDocuments({ author: req.params.id });
-
-    res.json(userObj);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
 // @route   GET /api/users/network/leaderboard
 // @desc    Get top users by followers + following
 router.get('/network/leaderboard', protect, async (req, res) => {
@@ -818,6 +809,36 @@ router.get('/network/leaderboard', protect, async (req, res) => {
     // Format with transformUser to add avatar API URLs
     const formatted = topUsers.map(u => transformUser(u));
     res.json(formatted);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @route   GET /api/users/:id
+// @desc    Get another user's public profile
+router.get('/:id', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password -email -verificationToken -verificationTokenExpires -collegeEmail -idPhotoUrl -adminNotes');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    const userObj = user.toObject();
+    if (userObj.phonePrivacy === 'private' && req.user.id !== userObj._id.toString()) {
+      delete userObj.phone;
+    }
+    
+    const myScore = (userObj.followers?.length || 0) + (userObj.following?.length || 0);
+    const rankAgg = await User.aggregate([
+      { $match: { university: userObj.university } },
+      { $project: { score: { $add: [{ $size: { $ifNull: ['$followers', []] } }, { $size: { $ifNull: ['$following', []] } }] } } },
+      { $match: { score: { $gt: myScore } } },
+      { $count: "higherScoringUsers" }
+    ]);
+    userObj.campusRank = (rankAgg[0]?.higherScoringUsers || 0) + 1;
+    
+    // Get post count instantly for the profile stats
+    userObj.postsCount = await Post.countDocuments({ author: req.params.id });
+
+    res.json(userObj);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

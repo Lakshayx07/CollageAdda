@@ -162,6 +162,7 @@ export default function ProfilePage() {
     branch: "",
     studyYear: "",
     phone: "",
+    phonePrivacy: "private",
     linkedin: "",
     github: "",
     instaId: "",
@@ -230,6 +231,7 @@ export default function ProfilePage() {
         branch: profileData.branch || "",
         studyYear: profileData.studyYear || profileData.year || "",
         phone: profileData.phone || "",
+        phonePrivacy: profileData.phonePrivacy || "private",
         linkedin: profileData.linkedin || "",
         github: profileData.github || "",
         instaId: profileData.instagram || "", 
@@ -470,6 +472,21 @@ export default function ProfilePage() {
 
   const saveProfile = async () => {
     if (isSaving) return;
+
+    const finalCourse = editData.course === "Other" && editData.customCourse ? editData.customCourse : editData.course;
+
+    if (!user.isVerified) {
+      if (!editData.name?.trim()) return alert("Full Name is required for verification.");
+      if (!editData.profilePic?.trim()) return alert("Profile Photo is required for verification.");
+      if (!editData.passOutBatch) return alert("Pass Out Batch is required for verification.");
+      if (!editData.studyYear) return alert("Year of Study is required for verification.");
+      if (!finalCourse) return alert("Course is required for verification.");
+      if (!editData.branch?.trim()) return alert("Branch is required for verification.");
+      if (!editData.bio || editData.bio.trim().split(/\s+/).length < 10) {
+        return alert("Bio must be at least 10 words for verification.");
+      }
+    }
+
     setIsSaving(true);
     try {
       const token = localStorage.getItem("collegeadda_token");
@@ -484,10 +501,11 @@ export default function ProfilePage() {
           bio: editData.bio,
           profilePic: editData.profilePic,
           passOutBatch: editData.passOutBatch,
-          course: editData.course,
+          course: finalCourse,
           branch: editData.branch,
           studyYear: editData.studyYear,
           phone: editData.phone,
+          phonePrivacy: editData.phonePrivacy,
           linkedin: editData.linkedin,
           github: editData.github,
           instagram: editData.instaId,
@@ -688,9 +706,14 @@ export default function ProfilePage() {
               <div className="flex items-center gap-2 self-start sm:self-auto pt-1">
                 <button
                   onClick={() => setModal("edit")}
-                  className="px-5 py-2 bg-white border border-[#E8E6E0] rounded-xl text-xs font-bold text-[#1A1A1A] hover:bg-[#F9F8F5] transition-all shadow-sm"
+                  className={clsx(
+                    "px-5 py-2 border rounded-xl text-xs font-bold transition-all shadow-sm",
+                    !user.isVerified 
+                      ? "bg-green-500 border-green-600 text-white hover:bg-green-600" 
+                      : "bg-white border-[#E8E6E0] text-[#1A1A1A] hover:bg-[#F9F8F5]"
+                  )}
                 >
-                  Edit Profile
+                  {!user.isVerified ? "Verify Now" : "Edit Profile"}
                 </button>
                 <button
                   onClick={handleLogout}
@@ -775,11 +798,11 @@ export default function ProfilePage() {
         {/* ===== STATS ROW ===== */}
         <div className="grid grid-cols-5 gap-0 bg-white border-x border-b border-[#E8E6E0] shadow-sm md:rounded-b-[1.75rem] overflow-hidden">
           {[
-            { icon: <Grid size={18} className="text-emerald-500" />, iconBg: "bg-emerald-50", label: "Posts", value: userPosts.length > 0 ? userPosts.length : (user?.postsCount || 0) },
+            { icon: <Grid size={18} className="text-emerald-500" />, iconBg: "bg-emerald-50", label: "Posts", value: userPosts.length > 0 ? userPosts.length : (user?.postsCount || 0), action: () => { setActiveTab("posts"); window.scrollTo({ top: 500, behavior: "smooth" }); } },
             { icon: <Users size={18} className="text-blue-500" />, iconBg: "bg-blue-50", label: "Followers", value: user?.followers?.length ?? followers.length, action: () => setModal("followers") },
             { icon: <Users size={18} className="text-indigo-500" />, iconBg: "bg-indigo-50", label: "Following", value: user?.following?.length ?? following.length, action: () => setModal("following") },
-            { icon: <Crown size={18} className="text-purple-500" />, iconBg: "bg-purple-50", label: "Campus Rank", value: campusRank ? `#${campusRank}` : "—" },
-            { icon: <Zap size={18} className="text-amber-500" />, iconBg: "bg-amber-50", label: "XP", value: totalXp.toLocaleString() },
+            { icon: <Crown size={18} className="text-purple-500" />, iconBg: "bg-purple-50", label: "Campus Rank", value: campusRank ? `#${campusRank}` : "—", action: () => router.push("/friends?tab=leaderboard") },
+            { icon: <Zap size={18} className="text-amber-500" />, iconBg: "bg-amber-50", label: "XP", value: totalXp.toLocaleString(), action: () => { setActiveTab("badges"); window.scrollTo({ top: 500, behavior: "smooth" }); } },
           ].map((stat, i, arr) => (
             <button
               key={stat.label}
@@ -803,8 +826,8 @@ export default function ProfilePage() {
         {/* Tab Navigation + Content */}
         <div className="px-4 md:px-0 pt-6 pb-10 space-y-6">
         {/* Tab Navigation */}
-        <div className="flex border-b border-[#F3F2EE] gap-6 text-sm font-semibold">
-          {["about", "posts", "badges"].map((tab) => (
+        <div className="flex border-b border-[#F3F2EE] gap-8 text-sm font-semibold">
+          {["badges", "posts", "about"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -848,6 +871,16 @@ export default function ProfilePage() {
                   <span className="text-lg">📅</span>
                   <span>Joined {user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : "Recently"}</span>
                 </div>
+                {user.phone && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">📞</span>
+                    <span>
+                      {user.phonePrivacy === 'private' 
+                        ? `${user.phone.substring(0,3)}... (Private)`
+                        : user.phone}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -985,19 +1018,19 @@ export default function ProfilePage() {
 
         {activeTab === "badges" && (
           <div className="space-y-6 pb-10">
-            <section className="relative overflow-hidden rounded-[2rem] border border-[#F1D58F] bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.95)_0%,rgba(255,247,221,0.96)_34%,rgba(255,232,170,0.92)_100%)] p-5 shadow-[0_18px_45px_rgba(204,146,42,0.16)] sm:p-6">
-              <div className="pointer-events-none absolute -right-12 -top-20 h-44 w-44 rounded-full bg-[#FFD166]/35 blur-3xl" />
-              <div className="pointer-events-none absolute -bottom-24 left-1/3 h-48 w-48 rounded-full bg-[#7DD3FC]/20 blur-3xl" />
+            <section className="relative overflow-hidden rounded-[2rem] border border-[#E8E6E0] bg-white p-5 shadow-sm sm:p-6">
+              <div className="pointer-events-none absolute -right-12 -top-20 h-44 w-44 rounded-full bg-[#FFD166]/15 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-24 left-1/3 h-48 w-48 rounded-full bg-[#7DD3FC]/10 blur-3xl" />
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <div className="relative">
-                  <h3 className="text-sm font-black uppercase tracking-[0.18em] text-[#6F4B00]">Badges Earned</h3>
-                  <p className="mt-1 text-xs font-bold text-[#9A6A10]">
+                  <h3 className="text-sm font-black uppercase tracking-wider text-[#1A1A1A]">Badges Earned</h3>
+                  <p className="mt-1 text-[10px] font-semibold text-[#888888] uppercase tracking-wider">
                     {earnedBadges.filter(badge => badge.earned).length > 0
                       ? "Your unlocked achievement badges show here."
                       : "Earn an achievement to unlock badge artwork here."}
                   </p>
                 </div>
-                <span className="relative rounded-full border border-[#E2B84D] bg-white/70 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#6F4B00] shadow-sm">
+                <span className="relative rounded-full border border-[#E8E6E0] bg-[#F9F8F5] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#1A1A1A] shadow-sm">
                   {earnedBadges.filter(badge => badge.earned).length}/{earnedBadges.length} unlocked
                 </span>
               </div>
@@ -1005,20 +1038,23 @@ export default function ProfilePage() {
               {earnedBadges.filter(badge => badge.earned).length > 0 ? (
                 <div className="relative mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
                   {earnedBadges.filter(badge => badge.earned).map((badge) => (
-                    <div
+                    <motion.div
                       key={badge.id}
-                      className="group rounded-[1.35rem] border border-[#EBC668] bg-white/82 p-3 shadow-[0_14px_30px_rgba(154,106,16,0.14)] backdrop-blur"
-                      style={{ boxShadow: `0 14px 30px ${badge.glow}, 0 8px 20px rgba(154,106,16,0.12)` }}
+                      whileHover={{ y: -6, scale: 1.03 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                      className="group relative rounded-[1.35rem] border border-[#E8E6E0] bg-white p-3 shadow-sm hover:shadow-[0_12px_30px_rgba(200,146,42,0.12)] transition-shadow overflow-hidden"
                     >
-                      <div className="mx-auto aspect-[3/4] max-h-52 overflow-hidden rounded-[1rem] bg-[#FFF9EA] shadow-inner">
+                      <div className="absolute inset-0 bg-gradient-to-br from-transparent to-amber-100/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                      
+                      <div className="relative mx-auto aspect-[3/4] max-h-52 overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#F9F8F5] to-white shadow-inner border border-[#E8E6E0]/50">
                         <img
                           src={badge.image}
                           alt={badge.name}
-                          className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-105"
+                          className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-110"
                         />
                       </div>
-                      <p className="mt-3 truncate text-center text-xs font-black text-[#5E4208]">{badge.name}</p>
-                    </div>
+                      <p className="relative mt-3 truncate text-center text-xs font-black text-[#1A1A1A] group-hover:text-[#C8922A] transition-colors">{badge.name}</p>
+                    </motion.div>
                   ))}
                 </div>
               ) : (
@@ -1078,7 +1114,7 @@ export default function ProfilePage() {
                 </div>
                 <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-center transition-all hover:bg-blue-100 hover:shadow-[0_4px_12px_rgba(59,130,246,0.15)] hover:-translate-y-0.5">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-blue-500 mb-1.5">Network</p>
-                  <p className="text-2xl font-black text-blue-600 tracking-tight">🫂 {(followers.length + following.length).toLocaleString()}</p>
+                  <p className="text-2xl font-black text-blue-600 tracking-tight">🫂 {((user?.followers?.length ?? followers.length) + (user?.following?.length ?? following.length)).toLocaleString()}</p>
                 </div>
               </div>
             </section>
@@ -1363,6 +1399,35 @@ export default function ProfilePage() {
                 <button onClick={() => setModal(null)} className="p-2 bg-[#F9F8F5] border border-[#E8E6E0] rounded-full text-[#6B6B6B]"><X size={20} /></button>
               </div>
               <div className="max-h-[72dvh] space-y-6 overflow-y-auto p-5 custom-scrollbar sm:max-h-[70vh] sm:p-6">
+                
+                <div className="flex flex-col items-center justify-center space-y-4 mb-4 mt-2">
+                  <div className="relative w-24 h-24 rounded-full border-4 border-white shadow-lg overflow-hidden bg-[#F9F8F5]">
+                    {editData.profilePic ? (
+                      <img src={editData.profilePic} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-[#6B6B6B] bg-[#E8E6E0]/30">
+                        <User size={32} />
+                      </div>
+                    )}
+                  </div>
+                  <label className="cursor-pointer">
+                    <div className="px-5 py-2.5 bg-white border-2 border-[#E8E6E0] text-[#1A1A1A] rounded-xl text-xs font-black shadow-sm hover:border-[#C8922A] transition-all">
+                      {isAvatarUploading ? "UPLOADING..." : "ADD PROFILE PIC 👨🏻‍🎓"}
+                    </div>
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        setIsAvatarUploading(true);
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          setEditData({ ...editData, profilePic: ev.target.result });
+                          setIsAvatarUploading(false);
+                        };
+                        reader.readAsDataURL(e.target.files[0]);
+                      }
+                    }} />
+                  </label>
+                </div>
+
                 <div className="space-y-3">
                   <label className="text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest ml-2">Full Name</label>
                   <input
@@ -1373,7 +1438,7 @@ export default function ProfilePage() {
                   />
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-3 hidden">
                   <label className="text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest ml-2">Profile Photo URL</label>
                   <input
                     value={editData.profilePic}
@@ -1430,6 +1495,14 @@ export default function ProfilePage() {
                       <option value="" className="bg-[#0A0A0F]">Select course</option>
                       {["B.Tech", "BCA", "MCA", "MBA", "B.Sc", "M.Tech", "B.Com", "BA", "Other"].map(course => <option key={course} value={course} className="bg-[#0A0A0F]">{course}</option>)}
                     </select>
+                    {editData.course === "Other" && (
+                      <input
+                        value={editData.customCourse || ''}
+                        onChange={e => setEditData({ ...editData, customCourse: e.target.value })}
+                        className="w-full mt-2 rounded-2xl border border-[#E8E6E0] bg-black/30 px-4 py-3 text-sm font-semibold text-[#1A1A1A] outline-none focus:border-[#C8922A]"
+                        placeholder="Type your course"
+                      />
+                    )}
                   </div>
                   <div className="space-y-3">
                     <label className="text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest ml-2">Branch</label>
@@ -1444,15 +1517,32 @@ export default function ProfilePage() {
 
                 <div className="space-y-3">
                   <label className="text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest ml-2">Private Phone</label>
-                  <div className="flex rounded-2xl border border-[#E8E6E0] bg-black/30">
-                    <span className="border-r border-[#E8E6E0] px-4 py-3 text-sm font-black text-[#6B6B6B]">+91</span>
+                  <div className="flex rounded-2xl border border-[#E8E6E0] bg-white overflow-hidden">
+                    <span className="border-r border-[#E8E6E0] bg-[#F9F8F5] px-4 py-3 text-sm font-black text-[#6B6B6B]">+91</span>
                     <input
                       value={editData.phone}
                       onChange={e => setEditData({ ...editData, phone: e.target.value })}
                       className="min-w-0 flex-1 bg-transparent px-4 py-3 text-sm font-semibold text-[#1A1A1A] outline-none"
                       placeholder="Optional"
+                      maxLength={10}
                     />
                   </div>
+                  {editData.phone && editData.phone.length >= 10 && (
+                    <div className="flex justify-center gap-3 mt-3">
+                      <button 
+                        onClick={() => setEditData({...editData, phonePrivacy: 'public'})}
+                        className={`px-5 py-2 text-xs font-black rounded-xl border transition-all ${editData.phonePrivacy === 'public' ? 'bg-green-500 border-green-600 text-white shadow-md' : 'bg-white border-[#E8E6E0] text-[#1A1A1A] hover:bg-[#F9F8F5]'}`}
+                      >
+                        PUBLIC
+                      </button>
+                      <button 
+                        onClick={() => setEditData({...editData, phonePrivacy: 'private'})}
+                        className={`px-5 py-2 text-xs font-black rounded-xl border transition-all ${editData.phonePrivacy === 'private' ? 'bg-green-500 border-green-600 text-white shadow-md' : 'bg-white border-[#E8E6E0] text-[#1A1A1A] hover:bg-[#F9F8F5]'}`}
+                      >
+                        PRIVATE
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid gap-3">
@@ -1634,13 +1724,13 @@ export default function ProfilePage() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 80, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="w-full max-w-md space-y-4 rounded-[1.75rem] border border-[#E8E6E0] bg-[#111118] p-5 sm:rounded-[2.5rem] sm:p-6"
+              className="w-full max-w-md space-y-4 rounded-[1.75rem] border border-[#E8E6E0] bg-white p-5 sm:rounded-[2.5rem] sm:p-6"
               onClick={e => e.stopPropagation()}
             >
-              <h3 className="text-center text-lg font-black text-[#1A1A1A] tracking-tight mb-2">What do you want to add?</h3>
+              <h3 className="text-center text-lg font-black text-[#1A1A1A] tracking-tight mb-2">Update Profile Picture 📸</h3>
               <button
                 onClick={() => setModal("editPic")}
-                className="w-full flex items-center space-x-4 p-5 bg-white border border-[#E8E6E0] shadow-sm rounded-2xl border border-[#E8E6E0] hover:border-[#C8922A]/30 transition-all group"
+                className="w-full flex items-center space-x-4 p-5 bg-white border border-[#E8E6E0] shadow-sm rounded-2xl hover:border-[#C8922A]/30 transition-all group"
               >
                 <div className="w-12 h-12 gradient-bg rounded-2xl flex items-center justify-center text-[#1A1A1A] shadow-lg">
                   <Camera size={22} />
@@ -1648,22 +1738,6 @@ export default function ProfilePage() {
                 <div className="text-left">
                   <p className="font-black text-[#1A1A1A] text-sm">Profile Picture</p>
                   <p className="text-[11px] text-[#6B6B6B] font-medium mt-0.5">Visible to everyone, always</p>
-                </div>
-              </button>
-              <button
-                onClick={() => setModal("addStory")}
-                className="w-full flex items-center space-x-4 p-5 bg-white border border-[#E8E6E0] shadow-sm rounded-2xl border border-[#E8E6E0] hover:border-pink-500/40 transition-all group"
-              >
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-[#1A1A1A] shadow-lg"
-                  style={{ background: "linear-gradient(135deg, #f09433, #dc2743, #bc1888)" }}
-                >
-                  <ImageIcon size={22} />
-                </div>
-                <div className="text-left">
-                  <p className="font-black text-[#1A1A1A] text-sm">Add Story</p>
-                  <p className="text-[11px] text-[#6B6B6B] font-medium mt-0.5 flex items-center gap-1">
-                    <Clock size={10} /> Disappears after 24 hours
-                  </p>
                 </div>
               </button>
               <button onClick={() => setModal(null)} className="w-full py-3 text-[#6B6B6B] text-sm font-bold">Cancel</button>

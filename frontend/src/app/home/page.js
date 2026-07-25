@@ -342,10 +342,7 @@ export default function Home() {
           });
           if (res.ok) {
             const profileData = await res.json();
-            if (!profileData.onboardingComplete) {
-              router.push("/onboarding");
-              return;
-            }
+            // Onboarding redirect removed
             setCurrentUser(profileData);
             localStorage.setItem('collegeadda_user', JSON.stringify(profileData));
           } else if (res.status === 401) {
@@ -1485,10 +1482,10 @@ export default function Home() {
                       onClick={() => toggleLike(post.id)}
                       className={clsx(
                         "flex items-center space-x-2 transition-colors p-2 rounded-full",
-                        post.isLiked ? "text-[#C8922A]" : "text-[#888888] hover:text-[#C8922A]"
+                        post.isLiked ? "text-red-500" : "text-[#888888] hover:text-red-500"
                       )}
                     >
-                      <Heart size={22} className={clsx("transition-all", post.isLiked && "fill-[#C8922A]")} />
+                      <Heart size={22} className={clsx("transition-all", post.isLiked && "fill-red-500")} />
                       <span className="text-sm text-[#888888]">{post.likes}</span>
                     </motion.button>
                   </div>

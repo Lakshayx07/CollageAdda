@@ -7,9 +7,8 @@ export const hasCompletedRequiredProfile = (user) => {
   const hasCourse = Boolean(user.course?.trim());
   const hasBranch = Boolean(user.branch?.trim());
   const hasStudyYear = Boolean(user.studyYear?.trim() || user.year?.trim());
-  const hasInterests = Array.isArray(user.interests) && user.interests.length >= 3;
 
-  return hasName && hasPhoto && hasBatch && hasCourse && hasBranch && hasStudyYear && hasInterests;
+  return hasName && hasPhoto && hasBatch && hasCourse && hasBranch && hasStudyYear;
 };
 
 export const syncVerificationStatus = (user) => {

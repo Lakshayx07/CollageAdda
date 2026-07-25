@@ -198,7 +198,7 @@ export default function LoginPage() {
   const finishLogin = (data) => {
     localStorage.setItem("collegeadda_token", data.token);
     localStorage.setItem("collegeadda_user", JSON.stringify(data));
-    router.push(data.onboardingComplete ? "/home" : "/onboarding");
+    router.push("/home");
   };
 
   const handleAuth = async (event) => {

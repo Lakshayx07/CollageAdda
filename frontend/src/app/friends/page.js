@@ -138,6 +138,15 @@ export default function FriendsPage() {
   const [communities, setCommunities] = useState([]);
   const [membershipSet, setMembershipSet] = useState(new Set());
   const [joiningCommunityId, setJoiningCommunityId] = useState(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("tab") === "leaderboard") {
+        setActiveNetworkTab("leaderboard");
+      }
+    }
+  }, []);
   const [communityToast, setCommunityToast] = useState(null);
  // { type: 'success'|'error', msg }
 
