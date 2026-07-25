@@ -253,7 +253,7 @@ export const FindPeopleSection = () => {
             Connect with classmates, seniors, teammates, and future friends. Build your campus network effortlessly.
           </p>
           <div className="flex flex-wrap gap-3 pt-4">
-            {["Squad", "Connections", "Direct Messages", "Leaderboard"].map((tag, i) => (
+            {["Network", "Connections", "Direct Messages", "Leaderboard"].map((tag, i) => (
               <span key={i} className="px-4 py-2 rounded-full bg-[#F3F2EE] border border-[#E8E6E0] text-xs font-bold text-[#4A4A4A] uppercase tracking-widest">
                 {tag}
               </span>

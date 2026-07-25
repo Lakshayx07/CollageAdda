@@ -86,16 +86,15 @@ router.post('/register', async (req, res) => {
     // If user already exists (e.g. Google OAuth re-registration), 
     // update university if it was missing/Other, then return success
     if (existingUser) {
-      // Update university if the stored one is empty or "Other" and we have a better one
-      const shouldUpdateUniversity = 
-        university &&
-        university !== 'Other' &&
-        (!existingUser.university || existingUser.university === 'Other');
-      
-      if (shouldUpdateUniversity) {
-        existingUser.university = university.trim();
-        syncVerificationStatus(existingUser);
-        await existingUser.save();
+      const reqUniversity = normalizeUniversityName(university);
+      if (reqUniversity && reqUniversity !== 'Other') {
+        if (!existingUser.university || existingUser.university === 'Other') {
+          existingUser.university = reqUniversity;
+          syncVerificationStatus(existingUser);
+          await existingUser.save();
+        } else if (existingUser.university !== reqUniversity) {
+          return res.status(403).json({ message: `Email already registered with ${existingUser.university}. 1 mail - 1 campus.` });
+        }
       }
 
       // Always ensure this user is in the correct university group
@@ -143,7 +142,7 @@ router.post('/register', async (req, res) => {
 // @route   POST /api/auth/login
 // @desc    Login user & return token
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, university } = req.body;
   try {
     const normalizedEmail = email?.trim().toLowerCase();
     if (!normalizedEmail || !password) {
@@ -152,6 +151,12 @@ router.post('/login', async (req, res) => {
 
     const user = await User.findOne({ email: normalizedEmail });
     if (user && (await user.matchPassword(password))) {
+      
+      const reqUniversity = normalizeUniversityName(university);
+      if (reqUniversity && reqUniversity !== 'Other' && user.university && user.university !== 'Other' && user.university !== reqUniversity) {
+        return res.status(403).json({ message: `Email already registered with ${user.university}. 1 mail - 1 campus.` });
+      }
+
       // Update login streak — compare in IST (UTC+5:30) so Indian users get correct day boundaries
       const toISTDateString = (d) => {
         const ist = new Date(d.getTime() + 5.5 * 60 * 60 * 1000);
@@ -202,8 +207,13 @@ router.post('/google', async (req, res) => {
 
     if (user) {
       // Login existing user
-      if (university && university !== 'Other' && (!user.university || user.university === 'Other')) {
-        user.university = university.trim();
+      const reqUniversity = normalizeUniversityName(university);
+      if (reqUniversity && reqUniversity !== 'Other') {
+        if (!user.university || user.university === 'Other') {
+          user.university = reqUniversity;
+        } else if (user.university !== reqUniversity) {
+          return res.status(403).json({ message: `Email already registered with ${user.university}. 1 mail - 1 campus.` });
+        }
       }
       // Update login streak — compare in IST (UTC+5:30) so Indian users get correct day boundaries
       const toISTDateString = (d) => {

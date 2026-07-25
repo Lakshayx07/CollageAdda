@@ -18,7 +18,7 @@ async function run() {
   await measure("Stories", "/api/stories");
   await measure("Confessions", "/api/confessions");
   await measure("Chat Rooms", "/api/chat/rooms");
-  await measure("Users (Squad)", "/api/users?university=Rishihood%20University");
+  await measure("Users (Network)", "/api/users?university=Rishihood%20University");
 }
 
 run();

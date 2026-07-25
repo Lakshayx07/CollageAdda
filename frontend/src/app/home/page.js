@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Heart, MessageCircle, Share2, MoreHorizontal, Send, X, Check, Plus, Flame, TrendingUp, Search, Zap, BarChart2, Compass, ShieldCheck, Flag, Globe, GraduationCap, ChevronLeft, ChevronRight, Users, Trophy, Sun, Sunset, Moon, Pause, Play } from "lucide-react";
+import { Heart, MessageCircle, Share2, MoreVertical, Send, X, Check, Plus, Flame, TrendingUp, Search, Zap, BarChart2, Compass, ShieldCheck, Flag, Globe, GraduationCap, ChevronLeft, ChevronRight, Users, Trophy, Sun, Sunset, Moon, Pause, Play } from "lucide-react";
 import Image from "next/image";
 import NotificationBell from "../../components/NotificationBell";
 import NameWithTick from '../../components/NameWithTick';
@@ -364,7 +364,8 @@ export default function Home() {
   // are now handled by useApiQuery hooks at the top of this component.
 
   const handleConnectUser = async (userId) => {
-    setConnectStatus(prev => ({ ...prev, [userId]: 'pending' }));
+    // Optimistic UI Update: Instantly show as connected so the user doesn't wait
+    setConnectStatus(prev => ({ ...prev, [userId]: 'connected' }));
     try {
       const token = localStorage.getItem("collegeadda_token");
       const res = await fetch(`${apiUrl}/api/users/${userId}/follow`, {
@@ -372,19 +373,21 @@ export default function Home() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
-        setConnectStatus(prev => ({ ...prev, [userId]: 'connected' }));
-        queryClient.invalidateQueries({ queryKey: ["squad-profile"] });
+        // Fire invalidations asynchronously in the background
+        queryClient.invalidateQueries({ queryKey: ["network-profile"] });
         queryClient.invalidateQueries({ queryKey: ["user-profile"] });
         queryClient.invalidateQueries({ queryKey: ["explore-following"] });
         queryClient.invalidateQueries({ queryKey: ["user-following"] });
         queryClient.invalidateQueries({ queryKey: ["friends"] });
-        queryClient.invalidateQueries({ queryKey: ["squad-suggested"] });
+        queryClient.invalidateQueries({ queryKey: ["network-suggested"] });
         queryClient.invalidateQueries({ queryKey: ["suggested"] });
       } else {
+        // Revert optimistic update on failure
         setConnectStatus(prev => ({ ...prev, [userId]: null }));
       }
     } catch (err) {
       console.error(err);
+      // Revert optimistic update on error
       setConnectStatus(prev => ({ ...prev, [userId]: null }));
     }
   };
@@ -1074,7 +1077,7 @@ export default function Home() {
       >
         <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_280px]">
         <div className="min-w-0 space-y-7 sm:space-y-8">
-        <section className="app-panel min-w-0 max-w-full rounded-[1.6rem] border-2 border-[rgba(229,201,122,0.45)] p-4 transition-colors hover:border-[rgba(229,201,122,0.68)] sm:rounded-[2rem] sm:p-5 space-y-3">
+        <section className="app-panel min-w-0 max-w-full rounded-[1.6rem] border-2 border-[rgba(229,201,122,0.45)] px-4 py-2 sm:py-3 transition-colors hover:border-[rgba(229,201,122,0.68)] sm:rounded-[2rem] sm:px-5">
           <div className="no-scrollbar flex max-w-full space-x-4 overflow-x-auto py-2 sm:space-x-5">
             {/* Your Story */}
             <div 
@@ -1341,21 +1344,27 @@ export default function Home() {
                     <p suppressHydrationWarning className="text-[#888888] text-sm">{post.university} • {post.time}</p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  {friendsList.some(f => f.id === post.authorId) ? null : currentUser?._id !== post.authorId && currentUser?.id !== post.authorId ? (
-                    <motion.button 
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handleConnectUser(post.authorId)}
-                      disabled={connectStatus[post.authorId] === 'pending' || connectStatus[post.authorId] === 'connected'}
-                      className="text-[11px] font-bold px-4 py-1.5 rounded-full border border-[#E8E6E0] hover:bg-[#FFF8EC] hover:border-[#C8922A]/30 transition-all text-[#4A4A4A] disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {connectStatus[post.authorId] === 'connected' ? 'Following' : connectStatus[post.authorId] === 'pending' ? '...' : 'Follow'}
-                    </motion.button>
+                <div className="flex items-center space-x-0">
+                  {currentUser?._id !== post.authorId && currentUser?.id !== post.authorId ? (
+                    friendsList.some(f => String(f.id) === String(post.authorId)) || (currentUser?.following || []).some(id => String(id) === String(post.authorId)) || connectStatus[post.authorId] === 'connected' ? (
+                      <span className="inline-flex items-center justify-center rounded-full border border-[#0ea5e9]/40 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-wide shadow-sm" style={{ color: '#0ea5e9' }}>
+                        Network
+                      </span>
+                    ) : (
+                      <motion.button 
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => handleConnectUser(post.authorId)}
+                        disabled={connectStatus[post.authorId] === 'pending'}
+                        className="text-[11px] font-bold px-4 py-1.5 rounded-full border border-[#E8E6E0] hover:bg-[#FFF8EC] hover:border-[#C8922A]/30 transition-all text-[#4A4A4A] disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {connectStatus[post.authorId] === 'pending' ? '...' : 'Follow'}
+                      </motion.button>
+                    )
                   ) : null}
                   <div className="relative">
                     <button onClick={() => setPostMenu(postMenu === post.id ? null : post.id)} className="text-[#888888] hover:text-[#1A1A1A] p-1">
-                      <MoreHorizontal size={20} />
+                      <MoreVertical size={20} />
                     </button>
                     {postMenu === post.id && (
                       <div className="absolute right-0 top-full mt-2 w-40 bg-white border border-[#E8E6E0] rounded-xl shadow-lg py-1 z-50 overflow-hidden">
@@ -1574,12 +1583,20 @@ export default function Home() {
         <aside className="hidden xl:flex flex-col w-[280px] shrink-0 space-y-6 self-start sticky top-24">
           
           {/* College Leaderboard */}
-          <div className="bg-white border border-[#E8E6E0] rounded-2xl p-4 shadow-sm space-y-4">
-            <div className="flex items-center gap-2 pb-2 border-b border-[#F3F2EE]">
-              <Trophy size={18} className="text-[#C8922A]" />
-              <h3 className="text-xs font-black uppercase tracking-wider text-[#1A1A1A]">College Leaderboard</h3>
+          <div className="bg-white border border-[#E8E6E0] border-t-[3px] border-t-amber-400 rounded-2xl p-5 shadow-sm space-y-5 relative overflow-hidden">
+            <div className="flex items-center justify-between pb-4 mb-2 border-b border-[#F3F2EE]/60 relative z-10">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl leading-none drop-shadow-sm">🏆</span>
+                <h3 className="text-[13px] font-black uppercase tracking-[0.2em] bg-gradient-to-r from-amber-600 via-yellow-500 to-orange-500 bg-clip-text text-transparent drop-shadow-sm">
+                  Leaderboard
+                </h3>
+              </div>
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-red-50 border border-red-100 rounded-full shadow-sm">
+                <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_4px_rgba(239,68,68,0.8)]"></div>
+                <span className="text-[8px] font-black text-red-600 uppercase tracking-widest leading-none mt-[1px]">Live</span>
+              </div>
             </div>
-            <div className="space-y-3.5">
+            <div className="space-y-4">
               {loadingLeaderboard ? (
                 <div className="text-center py-4 text-xs text-[#888888]">Loading...</div>
               ) : leaderboard.length === 0 ? (
@@ -1591,22 +1608,64 @@ export default function Home() {
                   const points = item.points ?? item.score ?? 0;
                   
                   return (
-                    <div key={idx} className="flex items-center justify-between gap-3 text-xs">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className={clsx(
-                          "w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0",
-                          idx === 0 ? "bg-amber-100 text-amber-800" :
-                          idx === 1 ? "bg-slate-100 text-slate-700" :
-                          idx === 2 ? "bg-orange-100 text-orange-800" :
-                          "bg-[#F3F2EE] text-[#6B6B6B]"
+                    <div key={idx} className={clsx(
+                      "relative group flex items-center justify-between gap-2 text-xs p-2.5 -mx-2 rounded-2xl transition-all duration-200 cursor-default overflow-hidden",
+                      idx === 0 ? "bg-gradient-to-r from-[#FFD700]/15 to-[#FDB931]/10 border border-[#FFD700] shadow-sm" :
+                      idx === 1 ? "bg-gradient-to-r from-[#C0C0C0]/20 to-[#E8E8E8]/10 border border-[#C0C0C0] shadow-sm" :
+                      idx === 2 ? "bg-gradient-to-r from-[#CD7F32]/15 to-[#A0522D]/10 border border-[#CD7F32] shadow-sm" :
+                      "hover:bg-[#F9F8F5]"
+                    )}>
+                      {/* Particles for top 3 */}
+                      {idx < 3 && (
+                        <div className="absolute inset-0 pointer-events-none">
+                          <motion.div 
+                            animate={{ y: [0, -15, 0], opacity: [0, 0.8, 0] }} 
+                            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                            className={clsx("absolute top-1 left-8 w-1 h-1 rounded-full", idx === 0 ? "bg-amber-400" : idx === 1 ? "bg-slate-400" : "bg-orange-400")}
+                          />
+                          <motion.div 
+                            animate={{ y: [0, -20, 0], x: [0, 10, 0], opacity: [0, 0.8, 0] }} 
+                            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+                            className={clsx("absolute bottom-1 right-20 w-1.5 h-1.5 rounded-full", idx === 0 ? "bg-yellow-500" : idx === 1 ? "bg-slate-300" : "bg-orange-500")}
+                          />
+                          <motion.div 
+                            animate={{ y: [0, -10, 0], x: [0, -5, 0], opacity: [0, 0.8, 0] }} 
+                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                            className={clsx("absolute top-3 left-1/2 w-1 h-1 rounded-full", idx === 0 ? "bg-amber-400" : idx === 1 ? "bg-slate-400" : "bg-orange-400")}
+                          />
+                          <motion.div 
+                            animate={{ y: [0, -25, 0], x: [0, -10, 0], opacity: [0, 0.6, 0] }} 
+                            transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+                            className={clsx("absolute bottom-2 left-1/4 w-1 h-1 rounded-full", idx === 0 ? "bg-yellow-300" : idx === 1 ? "bg-slate-300" : "bg-orange-300")}
+                          />
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-3 min-w-0 relative z-10">
+                        <div className={clsx(
+                          "w-6 h-6 rounded-full flex items-center justify-center font-black text-[11px] shrink-0 shadow-sm",
+                          idx === 0 ? "bg-gradient-to-br from-yellow-300 to-amber-500 text-white border border-amber-400 shadow-amber-200/50" :
+                          idx === 1 ? "bg-gradient-to-br from-slate-200 to-slate-400 text-white border border-slate-300" :
+                          idx === 2 ? "bg-gradient-to-br from-orange-300 to-orange-500 text-white border border-orange-400 shadow-orange-200/50" :
+                          "bg-[#FAFAF8] border border-[#E8E6E0] text-[#888888]"
                         )}>
                           {idx + 1}
-                        </span>
-                        <span className="font-semibold text-[#1A1A1A] truncate max-w-[130px]" title={name}>{name}</span>
+                        </div>
+                        
+                        <div className="flex flex-col min-w-0 ml-1">
+                          <span className={clsx("font-bold truncate max-w-[125px]", idx === 0 ? "text-[#1A1A1A] text-[13px]" : "text-[#1A1A1A]")} title={name}>
+                            {name}
+                          </span>
+                          <span className="text-[9px] text-[#888888] font-medium tracking-wide">
+                            {count} VERIFIED STDS
+                          </span>
+                        </div>
                       </div>
-                      <div className="text-right shrink-0">
-                        <p className="font-bold text-[#1A1A1A]">{points} pts</p>
-                        <p className="text-[9px] text-[#888888]">{count} stds</p>
+                      <div className="text-right shrink-0 flex flex-col items-end relative z-10">
+                        <span className={clsx("font-black tracking-tight", idx === 0 ? "text-amber-600 text-sm" : idx === 1 ? "text-slate-600 text-sm" : idx === 2 ? "text-orange-700 text-sm" : "text-[#C8922A] text-xs")}>
+                          {points.toLocaleString()}
+                        </span>
+                        <span className="text-[9px] text-[#888888] uppercase font-bold tracking-wider leading-none">PTS</span>
                       </div>
                     </div>
                   );
@@ -1655,18 +1714,19 @@ export default function Home() {
                         </div>
                       </div>
                       
-                      <button
-                        onClick={() => handleConnectUser(user._id)}
-                        disabled={isPending || isConnected}
-                        className={clsx(
-                          "text-[10px] font-bold px-3 py-1.5 rounded-full border transition-all shrink-0",
-                          isConnected 
-                            ? "bg-[#F3F2EE] text-[#888888] border-transparent" 
-                            : "bg-white border-[#C8922A]/40 text-[#C8922A] hover:bg-[#FFF8EC]"
-                        )}
-                      >
-                        {isPending ? "Connecting..." : isConnected ? "Connected" : "Connect"}
-                      </button>
+                      {friendsList.some(f => String(f.id) === String(user._id) || String(f.id) === String(user.id)) || (currentUser?.following || []).some(id => String(id) === String(user._id) || String(id) === String(user.id)) || isConnected ? (
+                        <span className="inline-flex shrink-0 items-center justify-center rounded-full border border-[#0ea5e9]/40 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-wide shadow-sm" style={{ color: '#0ea5e9' }}>
+                          Network
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleConnectUser(user._id)}
+                          disabled={isPending}
+                          className="text-[10px] font-bold px-3 py-1.5 rounded-full border bg-white border-[#C8922A]/40 text-[#C8922A] hover:bg-[#FFF8EC] transition-all shrink-0"
+                        >
+                          {isPending ? "Connecting..." : "Connect"}
+                        </button>
+                      )}
                     </div>
                   );
                 })
@@ -1791,7 +1851,7 @@ export default function Home() {
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-[#1A1A1A] tracking-tight">Share with Squad</h2>
+              <h2 className="text-xl font-bold text-[#1A1A1A] tracking-tight">Share with Network</h2>
               <button onClick={() => setShareModal(null)} className="p-2 hover:bg-[#F3F2EE] rounded-full transition-colors text-[#888888]"><X size={20} /></button>
             </div>
             <div className="relative mb-6">
@@ -1808,7 +1868,7 @@ export default function Home() {
               {friendsList.length === 0 && (
                 <div className="text-center py-10 space-y-2">
                   <p className="text-[#888888] text-sm">No connections found yet.</p>
-                  <button onClick={() => router.push('/friends')} className="text-[#C8922A] text-xs font-bold hover:underline">Find Campus Squad</button>
+                  <button onClick={() => router.push('/friends')} className="text-[#C8922A] text-xs font-bold hover:underline">Find Campus Network</button>
                 </div>
               )}
               {friendsList.filter(f => f.name.toLowerCase().includes(shareSearchTerm.toLowerCase())).map(friend => (

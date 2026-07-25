@@ -15,7 +15,7 @@ export default function BottomNav() {
 
   const navItems = [
     { name: "Home", path: "/home", icon: Home },
-    { name: "Squad", path: "/friends", icon: Users },
+    { name: "Network", path: "/friends", icon: Users },
     { name: "Messages", path: "/messages", icon: MessageSquare },
     { name: "Hustle", path: "/hustle", icon: Compass },
     { name: "Community", path: "/community", icon: Users2 },
@@ -44,7 +44,7 @@ export default function BottomNav() {
       {navItems.map((item) => {
         const isActive = pathname === item.path;
         const Icon = item.icon;
-        const isFriends = item.name === "Squad";
+        const isFriends = item.name === "Network";
 
         return (
           <Link

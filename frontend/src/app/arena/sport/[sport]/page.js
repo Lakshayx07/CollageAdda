@@ -21,7 +21,7 @@ const SPORT_CONFIG = {
   cricket:     { limit: 15, icon: '🏏', tagline: 'Build your XI' },
   tennis:      { limit: 4,  icon: '🎾', tagline: 'Court challenge' },
   swimming:    { limit: 8,  icon: '🏊', tagline: 'Relay & freestyle' },
-  bgmi:        { limit: 5,  icon: '🎮', tagline: 'Squad up. Drop in.' },
+  bgmi:        { limit: 5,  icon: '🎮', tagline: 'Network up. Drop in.' },
   valorant:    { limit: 5,  icon: '🔫', tagline: '5v5 agent battles' },
   fifa:        { limit: 2,  icon: '⚽', tagline: '1v1 & co-op' },
   chess:       { limit: 2,  icon: '♟️', tagline: 'Mind games' },
@@ -194,7 +194,7 @@ export default function SportTeamsPage() {
                 No team yet for {userCollege}
               </h2>
               <p className="text-sm text-[#6B6B6B] mb-6 font-medium max-w-sm leading-relaxed">
-                Be the first to register a {sportName} squad. Invite campus players and start challenging other colleges.
+                Be the first to register a {sportName} network. Invite campus players and start challenging other colleges.
               </p>
               <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
                 <span className="rounded-full bg-[#F9F8F5] border border-[#E8E6E0] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#6B6B6B]">
@@ -219,7 +219,7 @@ export default function SportTeamsPage() {
           </motion.section>
         ) : (
           <div className="space-y-4">
-            <h3 className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest pl-1">Your Squad</h3>
+            <h3 className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest pl-1">Your Network</h3>
             <div className="relative overflow-hidden rounded-[1.5rem] border-2 border-[#E8E6E0] bg-white shadow-[0_6px_20px_rgba(0,0,0,0.05)]">
               <div
                 className="h-1.5 w-full"

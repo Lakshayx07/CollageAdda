@@ -156,11 +156,11 @@ export default function PlayerCard({ player }) {
                 <span className="text-[9px] font-black uppercase tracking-widest">Challenge</span>
               </button>
               <button 
-                onClick={(e) => { e.stopPropagation(); alert('Invited to Squad!'); }}
+                onClick={(e) => { e.stopPropagation(); alert('Invited to Network!'); }}
                 className={clsx("flex flex-col items-center justify-center py-2 rounded-lg border border-[#E8E6E0] hover:border-[#E8E6E0] transition shadow-lg", isEsports ? "bg-[#C8922A]/10 text-[#C8922A]" : "bg-orange-500/20 text-orange-300")}
               >
                 <Users size={16} className="mb-1" />
-                <span className="text-[9px] font-black uppercase tracking-widest">Add Squad</span>
+                <span className="text-[9px] font-black uppercase tracking-widest">Add to Network</span>
               </button>
               <button 
                 onClick={(e) => { e.stopPropagation(); alert('Added to Scout List!'); }}

@@ -64,7 +64,7 @@ if (fetchRoomsStart !== -1 && fetchRoomsEnd !== -1) {
         if (found) { setActiveChat(found); }
       }
 
-      // Handle ?userId=X (open/create DM from Squad page)
+      // Handle ?userId=X (open/create DM from Network page)
       const userIdParam = searchParams.get("userId");
       if (userIdParam && !activeChat) {
         // Check if a private room with this user already exists

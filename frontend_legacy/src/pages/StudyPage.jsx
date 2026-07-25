@@ -18,7 +18,7 @@ const FLASHCARDS = [
 ];
 
 const INITIAL_GROUPS = [
-  { id: 1, name: 'DSA Prep Squad', members: 12, subject: 'Computer Science', active: true, joined: false },
+  { id: 1, name: 'DSA Prep Network', members: 12, subject: 'Computer Science', active: true, joined: false },
   { id: 2, name: 'Econ Warriors', members: 8, subject: 'Economics', active: false, joined: false },
   { id: 3, name: 'Law Review Circle', members: 15, subject: 'Law', active: true, joined: false },
 ];

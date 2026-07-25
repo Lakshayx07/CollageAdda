@@ -25,8 +25,8 @@ function measure(name, path) {
 }
 
 async function run() {
-  await measure("Daily Drop (squad users)", "/api/users/daily-drop");
-  await measure("Search Query (squad all)", "/api/users/search/query");
+  await measure("Daily Drop (network users)", "/api/users/daily-drop");
+  await measure("Search Query (network all)", "/api/users/search/query");
   await measure("Chat Rooms (messages)", "/api/chat/rooms");
 }
 run();

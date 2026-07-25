@@ -222,7 +222,7 @@ export default function LoginPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
-          isSignUp ? { name, email, password, university } : { email, password }
+          isSignUp ? { name, email, password, university } : { email, password, university }
         )
       });
       const data = await response.json().catch(() => ({}));

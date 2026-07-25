@@ -191,6 +191,9 @@ router.get('/profile', protect, async (req, res) => {
       { $count: "higherScoringUsers" }
     ]);
     userObj.campusRank = (rankAgg[0]?.higherScoringUsers || 0) + 1;
+    
+    // Get post count instantly for the profile stats
+    userObj.postsCount = await Post.countDocuments({ author: req.user._id });
 
     res.json(transformUser(userObj));
   } catch (error) {
@@ -772,6 +775,9 @@ router.get('/:id', protect, async (req, res) => {
       { $count: "higherScoringUsers" }
     ]);
     userObj.campusRank = (rankAgg[0]?.higherScoringUsers || 0) + 1;
+    
+    // Get post count instantly for the profile stats
+    userObj.postsCount = await Post.countDocuments({ author: req.params.id });
 
     res.json(userObj);
   } catch (error) {
@@ -779,9 +785,9 @@ router.get('/:id', protect, async (req, res) => {
   }
 });
 
-// @route   GET /api/users/squad/leaderboard
+// @route   GET /api/users/network/leaderboard
 // @desc    Get top users by followers + following
-router.get('/squad/leaderboard', protect, async (req, res) => {
+router.get('/network/leaderboard', protect, async (req, res) => {
   try {
     const { filter } = req.query; // 'my_campus' or 'global'
     

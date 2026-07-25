@@ -1201,7 +1201,7 @@ function MessagesContent() {
             <div className="flex flex-col items-center justify-center h-full text-center p-6 text-[#888888]">
               <MessageSquare size={48} className="mb-4 text-[#E8E6E0]" />
               <p className="font-medium text-[#1A1A1A]">Your Inbox is Waiting</p>
-              <p className="text-sm mt-1">Start a conversation with a squad member.</p>
+              <p className="text-sm mt-1">Start a conversation with a network member.</p>
             </div>
           ) : (
             filteredChats.map(chat => (
@@ -1807,7 +1807,7 @@ function MessagesContent() {
             <div className="max-w-xs">
               <h3 className="text-xl font-black text-[#1A1A1A] mb-2 tracking-tight">Your Inbox is Waiting</h3>
               <p className="text-sm text-[#6B6B6B] font-medium leading-relaxed">
-                Connect with your campus squad or join university hubs to start vibrating.
+                Connect with your campus network or join university hubs to start vibrating.
               </p>
             </div>
             <button className="gradient-bg px-8 py-3 rounded-full text-sm font-bold text-[#1A1A1A] shadow-xl shadow-[0_4px_14px_rgba(200,146,42,0.15)]">
@@ -1904,7 +1904,7 @@ function MessagesContent() {
               onClick={e => e.stopPropagation()}
             >
               <div className="p-6 border-b border-[#E8E6E0] flex items-center justify-between shrink-0">
-                <h3 className="text-lg font-black text-[#1A1A1A]">Create Squad Group</h3>
+                <h3 className="text-lg font-black text-[#1A1A1A]">Create Network Group</h3>
                 <button onClick={() => setShowCreateGroup(false)} className="p-2 bg-[#F9F8F5] border border-[#E8E6E0] rounded-full text-[#6B6B6B]"><X size={20} /></button>
               </div>
               <div className="p-6 space-y-5 overflow-y-auto custom-scrollbar">

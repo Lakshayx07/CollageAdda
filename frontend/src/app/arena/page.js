@@ -474,7 +474,7 @@ export default function ArenaPage() {
             Join the Battle
           </h3>
           <p className="text-xs text-[#6B6B6B] mb-5 font-medium max-w-xs mx-auto">
-            Form your esports squad and dominate the campus leaderboard.
+            Form your esports network and dominate the campus leaderboard.
           </p>
           <div className="flex gap-3 justify-center flex-wrap">
             {cfg.sports.slice(0, 4).map(entry => (

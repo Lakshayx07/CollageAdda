@@ -23,7 +23,7 @@ export default function Sidebar() {
     { name: "Home", path: "/home", icon: Home },
     { name: "Explore", path: "/explore", icon: Search },
     { name: "Messages", path: "/messages", icon: MessageSquare },
-    { name: "Squad", path: "/friends", icon: Users },
+    { name: "Network", path: "/friends", icon: Users },
     { name: "Community", path: "/community", icon: Users2 },
     { name: "Hustle", path: "/hustle", icon: Compass },
     { name: "Collab", path: "/collab", icon: Zap },
@@ -137,7 +137,7 @@ export default function Sidebar() {
         {navItems.map((item) => {
           const isActive = pathname === item.path;
           const Icon = item.icon;
-          const isFriends = item.name === "Squad";
+          const isFriends = item.name === "Network";
 
           return (
             <Link

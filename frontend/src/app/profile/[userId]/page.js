@@ -194,12 +194,12 @@ export default function UserProfilePage({ params }) {
         setConnectStatus("connected");
         setFollowers(prev => [...prev, currentUser._id || currentUser.id]);
         
-        queryClient.invalidateQueries({ queryKey: ["squad-profile"] });
+        queryClient.invalidateQueries({ queryKey: ["network-profile"] });
         queryClient.invalidateQueries({ queryKey: ["user-profile"] });
         queryClient.invalidateQueries({ queryKey: ["explore-following"] });
         queryClient.invalidateQueries({ queryKey: ["user-following"] });
         queryClient.invalidateQueries({ queryKey: ["friends"] });
-        queryClient.invalidateQueries({ queryKey: ["squad-suggested"] });
+        queryClient.invalidateQueries({ queryKey: ["network-suggested"] });
         queryClient.invalidateQueries({ queryKey: ["suggested"] });
       } else {
         setConnectStatus("idle");
@@ -410,7 +410,7 @@ export default function UserProfilePage({ params }) {
           <div className="px-5 sm:px-6 mt-4">
             <div className="grid grid-cols-3 gap-2.5 w-full">
               <div className="bg-[#F9F8F5] border border-[#E8E6E0] p-3.5 rounded-2xl text-center cursor-default">
-                <p className="text-2xl font-black text-[#1A1A1A] tracking-tighter">{userPosts.length}</p>
+                <p className="text-2xl font-black text-[#1A1A1A] tracking-tighter">{userPosts.length > 0 ? userPosts.length : (profileUser.postsCount || 0)}</p>
                 <p className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest mt-1">Posts</p>
               </div>
               <button onClick={() => setModal("followers")} className="bg-[#F9F8F5] border border-[#E8E6E0] p-3.5 rounded-2xl text-center hover:bg-[#FFF8EC] hover:border-[#C8922A]/30 transition-colors">
@@ -441,7 +441,7 @@ export default function UserProfilePage({ params }) {
                   Chat Now
                 </button>
                 <div className="flex-1 bg-[#F9F8F5] border border-[#E8E6E0] py-3.5 rounded-2xl text-[11px] font-black text-[#6B6B6B] uppercase tracking-widest text-center flex items-center justify-center cursor-default">
-                  Squad ✓
+                  Network ✓
                 </div>
               </>
             ) : (

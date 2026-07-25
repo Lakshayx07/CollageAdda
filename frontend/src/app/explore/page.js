@@ -47,7 +47,7 @@ import { getExploreColleges, getExploreCollegePool } from "@/config/exploreColle
 const COLLEGE_BANNER_FALLBACK =
   "https://images.unsplash.com/photo-1562774053-701939374585?w=800&q=80";
 
-const ESPORTS_SQUADS = [
+const ESPORTS_NETWORKS = [
   { name: "BGMI", key: "bgmi", icon: Gamepad2, accent: "#39FF82" },
   { name: "Valorant", key: "valorant", icon: Crosshair, accent: "#FF4655" },
   { name: "FIFA", key: "fifa", icon: Trophy, accent: "#00A3FF" },
@@ -242,12 +242,12 @@ function ExploreContent() {
       setDiscoveryConnectStatus(prev => ({ ...prev, [uid]: 'connected' }));
       setMyFollowing(prev => [...prev, uid]);
       
-      queryClient.invalidateQueries({ queryKey: ["squad-profile"] });
+      queryClient.invalidateQueries({ queryKey: ["network-profile"] });
       queryClient.invalidateQueries({ queryKey: ["user-profile"] });
       queryClient.invalidateQueries({ queryKey: ["explore-following"] });
       queryClient.invalidateQueries({ queryKey: ["user-following"] });
       queryClient.invalidateQueries({ queryKey: ["friends"] });
-      queryClient.invalidateQueries({ queryKey: ["squad-suggested"] });
+      queryClient.invalidateQueries({ queryKey: ["network-suggested"] });
       queryClient.invalidateQueries({ queryKey: ["suggested"] });
     } catch (err) {
       console.error("Connect error:", err);
@@ -518,12 +518,12 @@ function ExploreContent() {
         // Optimistically update following list
         setMyFollowing(prev => [...prev, student._id || student.id]);
         
-        queryClient.invalidateQueries({ queryKey: ["squad-profile"] });
+        queryClient.invalidateQueries({ queryKey: ["network-profile"] });
         queryClient.invalidateQueries({ queryKey: ["user-profile"] });
         queryClient.invalidateQueries({ queryKey: ["explore-following"] });
         queryClient.invalidateQueries({ queryKey: ["user-following"] });
         queryClient.invalidateQueries({ queryKey: ["friends"] });
-        queryClient.invalidateQueries({ queryKey: ["squad-suggested"] });
+        queryClient.invalidateQueries({ queryKey: ["network-suggested"] });
         queryClient.invalidateQueries({ queryKey: ["suggested"] });
       } catch (err) {
         console.error("Error connecting with user:", err);
@@ -637,12 +637,12 @@ function ExploreContent() {
         setMyFollowing(prev => [...prev, userId]);
         setToastMessage("Connected! You can now chat.");
         
-        queryClient.invalidateQueries({ queryKey: ["squad-profile"] });
+        queryClient.invalidateQueries({ queryKey: ["network-profile"] });
         queryClient.invalidateQueries({ queryKey: ["user-profile"] });
         queryClient.invalidateQueries({ queryKey: ["explore-following"] });
         queryClient.invalidateQueries({ queryKey: ["user-following"] });
         queryClient.invalidateQueries({ queryKey: ["friends"] });
-        queryClient.invalidateQueries({ queryKey: ["squad-suggested"] });
+        queryClient.invalidateQueries({ queryKey: ["network-suggested"] });
         queryClient.invalidateQueries({ queryKey: ["suggested"] });
         
         setTimeout(() => setToastMessage(null), 2000);
@@ -705,7 +705,7 @@ function ExploreContent() {
                       <p className="text-[11px] font-semibold text-[#888888] mt-0.5">
                         {exploreMode === "colleges"
                           ? "Discover campuses near you"
-                          : "Esports squads & campus battles"}
+                          : "Esports networks & campus battles"}
                       </p>
                     </div>
                   </div>
@@ -1001,7 +1001,7 @@ function ExploreContent() {
                     <div className="flex items-end justify-between gap-3">
                       <div>
                         <h3 className="text-[#1A1A1A] font-black uppercase tracking-wider flex items-center text-sm">
-                          <Swords className="mr-2 text-[#C8922A]" size={16} /> Esports Squads
+                          <Swords className="mr-2 text-[#C8922A]" size={16} /> Esports Networks
                         </h3>
                         <p className="text-[11px] text-[#888888] font-medium mt-1">
                           Pick a game and jump into campus matchmaking
@@ -1019,7 +1019,7 @@ function ExploreContent() {
                     {/* Esports game cards */}
                     <section>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                        {ESPORTS_SQUADS.filter(
+                        {ESPORTS_NETWORKS.filter(
                           (game) =>
                             arenaSportFilter === "All" ||
                             arenaSportFilter === game.name

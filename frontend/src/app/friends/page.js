@@ -15,7 +15,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { getAvatarSrc, getDefaultAvatar } from "@/utils/defaultAvatars";
 
 const LAST_SEEN_KEY = "collegeadda_followers_last_seen";
-const SQUAD_PROFILE_PHOTO_VERSION = "profile-pictures-v3";
+const NETWORK_PROFILE_PHOTO_VERSION = "profile-pictures-v3";
 
 const ConfettiSparkles = ({ active }) => {
   const [pieces, setPieces] = useState([]);
@@ -116,7 +116,7 @@ export default function FriendsPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const queryClient = useQueryClient();
-  const [activeSquadTab, setActiveSquadTab] = useState("find");
+  const [activeNetworkTab, setActiveNetworkTab] = useState("find");
   const [leaderboardTab, setLeaderboardTab] = useState("my_campus");
   const [globalUsers, setGlobalUsers] = useState([]);
   const [globalLoading, setGlobalLoading] = useState(false);
@@ -358,7 +358,7 @@ export default function FriendsPage() {
   }, [apiUrl, filter]);
 
   const { data: profileData } = useApiQuery(
-    "squad-profile",
+    "network-profile",
     "/api/users/profile",
     {
       enabled: !!user,
@@ -367,7 +367,7 @@ export default function FriendsPage() {
   );
 
   const { data: suggestedData, isFetching: suggestedFetching } = useApiQuery(
-    ["squad-suggested", SQUAD_PROFILE_PHOTO_VERSION, debouncedSearch, activeSquadTab, filter],
+    ["network-suggested", NETWORK_PROFILE_PHOTO_VERSION, debouncedSearch, activeNetworkTab, filter],
     buildSearchUrl(debouncedSearch).replace(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001', ''),
     {
       enabled: !!user,
@@ -376,10 +376,10 @@ export default function FriendsPage() {
   );
 
   const { data: serverLeaderboard, isFetching: leaderboardFetching } = useApiQuery(
-    ["squad-leaderboard", leaderboardTab],
-    `/api/users/squad/leaderboard?filter=${leaderboardTab}`,
+    ["network-leaderboard", leaderboardTab],
+    `/api/users/network/leaderboard?filter=${leaderboardTab}`,
     {
-      enabled: !!user && activeSquadTab === "leaderboard",
+      enabled: !!user && activeNetworkTab === "leaderboard",
       staleTime: 0,
       refetchInterval: 3000
     }
@@ -391,7 +391,7 @@ export default function FriendsPage() {
     if (!person) return person;
     const userId = person._id || person.id;
     const avatarUrl = userId
-      ? `${apiUrl}/api/users/${encodeURIComponent(userId)}/avatar?v=${SQUAD_PROFILE_PHOTO_VERSION}`
+      ? `${apiUrl}/api/users/${encodeURIComponent(userId)}/avatar?v=${NETWORK_PROFILE_PHOTO_VERSION}`
       : person.profilePic;
     return {
       ...person,
@@ -621,12 +621,12 @@ export default function FriendsPage() {
         setFollowStatus(prev => ({ ...prev, [targetId]: "connected" }));
         
         // Invalidate queries so subsequent visits get fresh following states
-        queryClient.invalidateQueries({ queryKey: ["squad-profile"] });
+        queryClient.invalidateQueries({ queryKey: ["network-profile"] });
         queryClient.invalidateQueries({ queryKey: ["user-profile"] });
         queryClient.invalidateQueries({ queryKey: ["explore-following"] });
         queryClient.invalidateQueries({ queryKey: ["user-following"] });
         queryClient.invalidateQueries({ queryKey: ["friends"] });
-        queryClient.invalidateQueries({ queryKey: ["squad-suggested"] });
+        queryClient.invalidateQueries({ queryKey: ["network-suggested"] });
         queryClient.invalidateQueries({ queryKey: ["suggested"] });
       }
 
@@ -697,12 +697,12 @@ export default function FriendsPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      queryClient.invalidateQueries({ queryKey: ["squad-profile"] });
+      queryClient.invalidateQueries({ queryKey: ["network-profile"] });
       queryClient.invalidateQueries({ queryKey: ["user-profile"] });
       queryClient.invalidateQueries({ queryKey: ["explore-following"] });
       queryClient.invalidateQueries({ queryKey: ["user-following"] });
       queryClient.invalidateQueries({ queryKey: ["friends"] });
-      queryClient.invalidateQueries({ queryKey: ["squad-suggested"] });
+      queryClient.invalidateQueries({ queryKey: ["network-suggested"] });
       queryClient.invalidateQueries({ queryKey: ["suggested"] });
     } catch (err) {
       console.error(err);
@@ -743,7 +743,7 @@ export default function FriendsPage() {
   const topBadgeStyles = [
     { label: "Campus Star", className: "from-yellow-300 to-[#D4A843] text-black", icon: Trophy },
     { label: "Rising Icon", className: "from-slate-200 to-amber-300 text-slate-950", icon: Star },
-    { label: "Squad Magnet", className: "from-amber-600 to-[#D4A843] text-[#1A1A1A]", icon: Star },
+    { label: "Network Magnet", className: "from-amber-600 to-[#D4A843] text-[#1A1A1A]", icon: Star },
   ];
 
   const animSpring = [0.34, 1.56, 0.64, 1];
@@ -848,7 +848,7 @@ export default function FriendsPage() {
               <Zap size={20} className="text-[#1A1A1A] fill-white" />
             </div>
             <div>
-              <h1 className="text-xl font-black text-[#1A1A1A] tracking-tight">Squad</h1>
+              <h1 className="text-xl font-black text-[#1A1A1A] tracking-tight">Network</h1>
               <p className="text-[10px] text-[#C8922A] font-bold uppercase tracking-widest">Connect</p>
             </div>
           </motion.div>
@@ -946,34 +946,34 @@ export default function FriendsPage() {
               className="space-y-6"
             >
               <div className="space-y-2">
-                <h2 className="text-3xl sm:text-4xl font-black text-[#1A1A1A] tracking-tight">Find Your <span className="gradient-text">Campus Squad</span></h2>
+                <h2 className="text-3xl sm:text-4xl font-black text-[#1A1A1A] tracking-tight">Find Your <span className="gradient-text">Campus Network</span></h2>
                 <p className="text-[#6B6B6B] text-sm font-medium">Connect with the coolest minds in your university</p>
               </div>
 
               <div className="flex items-center gap-6 border-b border-[#E8E6E0]">
                 <button
-                  onClick={() => setActiveSquadTab("find")}
+                  onClick={() => setActiveNetworkTab("find")}
                   className={clsx(
                     "pb-3 text-[15px] font-black transition-colors relative",
-                    activeSquadTab === "find" ? "text-[#C8922A]" : "text-[#888888] hover:text-[#1A1A1A]"
+                    activeNetworkTab === "find" ? "text-[#C8922A]" : "text-[#888888] hover:text-[#1A1A1A]"
                   )}
                 >
                   Find Friends
-                  {activeSquadTab === "find" && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C8922A] rounded-t-full" />}
+                  {activeNetworkTab === "find" && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C8922A] rounded-t-full" />}
                 </button>
                 <button
-                  onClick={() => setActiveSquadTab("leaderboard")}
+                  onClick={() => setActiveNetworkTab("leaderboard")}
                   className={clsx(
                     "pb-3 text-[15px] font-black transition-colors relative",
-                    activeSquadTab === "leaderboard" ? "text-[#C8922A]" : "text-[#888888] hover:text-[#1A1A1A]"
+                    activeNetworkTab === "leaderboard" ? "text-[#C8922A]" : "text-[#888888] hover:text-[#1A1A1A]"
                   )}
                 >
                   Leaderboard
-                  {activeSquadTab === "leaderboard" && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C8922A] rounded-t-full" />}
+                  {activeNetworkTab === "leaderboard" && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C8922A] rounded-t-full" />}
                 </button>
               </div>
 
-              {activeSquadTab === "find" && (
+              {activeNetworkTab === "find" && (
                 <div className="flex gap-3">
                   <div className="relative flex-1 group">
                     <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[#888888] group-focus-within:text-[#C8922A] transition-colors" size={18} />
@@ -1095,7 +1095,7 @@ export default function FriendsPage() {
               )}
             </motion.div>
 
-            {activeSquadTab === "leaderboard" ? (
+            {activeNetworkTab === "leaderboard" ? (
               <div className="space-y-5">
                 {/* Inner Tabs for Leaderboard */}
                 <div className="app-panel grid grid-cols-2 gap-1 rounded-[1.35rem] p-1 mb-2">
@@ -1482,9 +1482,9 @@ export default function FriendsPage() {
             )}
           </div> {/* End Left Column */}
 
-          {/* Right Column (Build Your Squad + Community) */}
+          {/* Right Column (Build Your Network + Community) */}
           <div className="hidden w-full shrink-0 space-y-6 sticky top-24 md:flex md:w-[300px] md:flex-col xl:w-[320px]">
-            {/* Build Your Squad Card */}
+            {/* Build Your Network Card */}
             <div className="app-panel rounded-[1.6rem] p-6 text-center shadow-sm">
               <div className="flex justify-center -space-x-4 mb-5">
                 <img src={getDefaultAvatar("Priya", "p1")} className="w-16 h-16 rounded-full border-4 border-white z-10 object-cover" alt="Avatar" />
@@ -1492,7 +1492,7 @@ export default function FriendsPage() {
                 <img src={getDefaultAvatar("Aman", "a1")} className="w-16 h-16 rounded-full border-4 border-white z-10 object-cover" alt="Avatar" />
               </div>
 
-              <h3 className="text-xl font-black text-[#1A1A1A] tracking-tight mb-2">Build Your Squad</h3>
+              <h3 className="text-xl font-black text-[#1A1A1A] tracking-tight mb-2">Build Your Network</h3>
               <p className="text-sm text-[#6B6B6B] mb-6 font-medium px-4">
                 Connect with amazing people from your campus.
               </p>

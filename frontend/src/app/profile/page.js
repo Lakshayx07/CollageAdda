@@ -243,10 +243,10 @@ export default function ProfilePage() {
 
   // -- TanStack Query: My Posts --
   const { data: myPostsRaw = [] } = useApiQuery(
-    "user-posts",
-    "/api/posts",
+    ["user-posts", user?._id || user?.id],
+    `/api/posts?author=${user?._id || user?.id}&limit=100`,
     {
-      enabled: !!getToken(),
+      enabled: !!getToken() && !!(user?._id || user?.id),
       staleTime: 2 * 60 * 1000,
     }
   );
@@ -289,7 +289,7 @@ export default function ProfilePage() {
     }
   );
 
-  const squadsCount = followers.filter(f => following.some(fol => fol._id === f._id || fol.id === f._id)).length;
+  const networksCount = followers.filter(f => following.some(fol => fol._id === f._id || fol.id === f._id)).length;
 
   // -- TanStack Query: Colleges (for banner image) --
   const { data: colleges = [] } = useApiQuery(
@@ -450,12 +450,12 @@ export default function ProfilePage() {
         queryClient.setQueryData(["user-following"], (prev) => (prev || []).filter(f => f._id !== targetUserId));
         queryClient.setQueryData(["user-followers"], (prev) => (prev || []).filter(f => f._id !== targetUserId));
         
-        queryClient.invalidateQueries({ queryKey: ["squad-profile"] });
+        queryClient.invalidateQueries({ queryKey: ["network-profile"] });
         queryClient.invalidateQueries({ queryKey: ["user-profile"] });
         queryClient.invalidateQueries({ queryKey: ["explore-following"] });
         queryClient.invalidateQueries({ queryKey: ["user-following"] });
         queryClient.invalidateQueries({ queryKey: ["friends"] });
-        queryClient.invalidateQueries({ queryKey: ["squad-suggested"] });
+        queryClient.invalidateQueries({ queryKey: ["network-suggested"] });
         queryClient.invalidateQueries({ queryKey: ["suggested"] });
 
         setToastMsg("Unfollowed successfully");
@@ -508,11 +508,12 @@ export default function ProfilePage() {
         localStorage.setItem("collegeadda_user", JSON.stringify(updatedUser));
         queryClient.setQueryData(["user-profile"], updatedUser);
         [
+          ["user-posts"],
           ["posts", updatedUser._id || updatedUser.id],
           ["friends"],
           ["suggested"],
-          ["squad-suggested"],
-          ["squad-profile"],
+          ["network-suggested"],
+          ["network-profile"],
           ["user-followers"],
           ["user-following"],
           ["chat-rooms"],
@@ -774,9 +775,9 @@ export default function ProfilePage() {
         {/* ===== STATS ROW ===== */}
         <div className="grid grid-cols-5 gap-0 bg-white border-x border-b border-[#E8E6E0] shadow-sm md:rounded-b-[1.75rem] overflow-hidden">
           {[
-            { icon: <Grid size={18} className="text-emerald-500" />, iconBg: "bg-emerald-50", label: "Posts", value: userPosts.length },
-            { icon: <Users size={18} className="text-blue-500" />, iconBg: "bg-blue-50", label: "Followers", value: followers.length, action: () => setModal("followers") },
-            { icon: <Users size={18} className="text-indigo-500" />, iconBg: "bg-indigo-50", label: "Following", value: following.length, action: () => setModal("following") },
+            { icon: <Grid size={18} className="text-emerald-500" />, iconBg: "bg-emerald-50", label: "Posts", value: userPosts.length > 0 ? userPosts.length : (user?.postsCount || 0) },
+            { icon: <Users size={18} className="text-blue-500" />, iconBg: "bg-blue-50", label: "Followers", value: user?.followers?.length ?? followers.length, action: () => setModal("followers") },
+            { icon: <Users size={18} className="text-indigo-500" />, iconBg: "bg-indigo-50", label: "Following", value: user?.following?.length ?? following.length, action: () => setModal("following") },
             { icon: <Crown size={18} className="text-purple-500" />, iconBg: "bg-purple-50", label: "Campus Rank", value: campusRank ? `#${campusRank}` : "—" },
             { icon: <Zap size={18} className="text-amber-500" />, iconBg: "bg-amber-50", label: "XP", value: totalXp.toLocaleString() },
           ].map((stat, i, arr) => (

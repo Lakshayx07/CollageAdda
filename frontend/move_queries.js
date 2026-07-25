@@ -4,7 +4,7 @@ let content = fs.readFileSync(path, 'utf8');
 
 const queryBlock = `
   const { data: profileData } = useApiQuery(
-    "squad-profile",
+    "network-profile",
     "/api/users/profile",
     {
       enabled: !!user,
@@ -13,7 +13,7 @@ const queryBlock = `
   );
 
   const { data: suggestedData } = useApiQuery(
-    ["squad-suggested", search, activeSquadTab],
+    ["network-suggested", search, activeNetworkTab],
     () => buildSearchUrl().replace(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001', ''),
     {
       enabled: !!user,

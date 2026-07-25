@@ -33,11 +33,11 @@ const tabs = [
   },
   {
     number: "04",
-    label: "Squad",
+    label: "Network",
     tagline: "Meet students who matter.",
     description: "Connect with classmates, seniors, juniors and future teammates. Your campus network, finally in one place.",
     icon: "👥",
-    image: "/landing/feature-squad.png",
+    image: "/landing/feature-network.png",
     color: "blue"
   },
   {

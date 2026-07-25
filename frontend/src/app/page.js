@@ -58,10 +58,10 @@ const features = [
   },
   {
     number: '04',
-    tag: 'SQUAD',
+    tag: 'NETWORK',
     headlineParts: ['Find Your People.', 'Build Your', 'Circle.'],
     subheadline: 'Connect with classmates, seniors, juniors and future teammates.',
-    description: 'Squad is your campus social graph. Send connection requests and build your network. Message directly and discover people you actually want to know. Form your dream team right from day one.',
+    description: 'Network is your campus social graph. Send connection requests and build your network. Message directly and discover people you actually want to know. Form your dream team right from day one.',
     bullets: [
       { icon: '👥', title: 'Connect with students campus-wide', desc: 'Grow your network within your college.' },
       { icon: '💌', title: 'Direct messages & group chats', desc: 'Stay in touch with your friends and clubs.' },
@@ -69,7 +69,7 @@ const features = [
       { icon: '🔗', title: 'Build your campus network', desc: 'Create lasting connections for your future.' }
     ],
     tags: ['Connect', 'Messages', 'Network', 'Friends'],
-    image: '/landing/feature-squad.png',
+    image: '/landing/feature-network.png',
     color: '#F97316',
   },
   {
