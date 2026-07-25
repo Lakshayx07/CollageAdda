@@ -905,40 +905,57 @@ function ExploreContent() {
 
                 <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-4 p-4 sm:grid-cols-2 sm:gap-5 sm:p-5 xl:grid-cols-3">
               {loading && (
-                <div className="col-span-2 flex justify-center py-20">
+                <div className="col-span-full flex justify-center py-20">
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
                 </div>
               )}
 
-              {filteredColleges.map(college => (
+              {filteredColleges.map((college, index) => (
                 <motion.div
                   key={college._id || college.id}
-                  className="relative flex flex-col rounded-[1.5rem] overflow-hidden text-left group shadow-md hover:shadow-xl transition-all duration-300 cursor-default"
-                  style={{ height: '420px' }}
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35, delay: Math.min(index * 0.04, 0.24) }}
+                  whileHover={{ y: -4 }}
+                  className="explore-college-card relative flex flex-col rounded-[1.6rem] overflow-hidden text-left group shadow-[0_8px_28px_rgba(26,26,26,0.12)] hover:shadow-[0_14px_36px_rgba(26,26,26,0.18)] transition-shadow duration-300 cursor-default ring-1 ring-black/5"
+                  style={{ height: "420px" }}
                 >
                   {/* Full-bleed background image */}
                   <img
                     src={college.banner || COLLEGE_BANNER_FALLBACK}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.06]"
                     alt={college.name}
                     referrerPolicy="no-referrer"
                     onError={handleBannerError}
                   />
 
-                  {/* Dark gradient overlay — stronger at bottom */}
-                  <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.1) 100%)' }} />
+                  {/* Dark gradient overlay — richer depth at bottom */}
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      background:
+                        "linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.55) 42%, rgba(0,0,0,0.18) 70%, rgba(0,0,0,0.05) 100%)",
+                    }}
+                  />
+                  <div
+                    className="absolute inset-x-0 top-0 h-24 pointer-events-none"
+                    style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.28), transparent)" }}
+                  />
 
                   {/* Content overlaid on image */}
-                  <div className="absolute inset-0 flex flex-col justify-end p-5 space-y-3">
+                  <div className="absolute inset-0 flex flex-col justify-end p-5 space-y-3.5">
                     {/* College name + followers badge */}
                     <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-bold text-base leading-snug line-clamp-2 flex-1" style={{ color: 'white', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
+                      <h3
+                        className="font-black text-[1.05rem] leading-snug line-clamp-2 flex-1 tracking-tight"
+                        style={{ color: "white", textShadow: "0 2px 10px rgba(0,0,0,0.55)" }}
+                      >
                         {college.name}
                       </h3>
                       {(college.followersCount ?? 0) > 0 && (
-                        <div className="flex items-center gap-1 shrink-0 bg-black/40 rounded-full px-2 py-0.5">
+                        <div className="flex items-center gap-1 shrink-0 rounded-full border border-white/15 bg-black/45 px-2.5 py-1 backdrop-blur-md">
                           <Users size={10} color="white" />
-                          <span className="text-[10px] font-bold" style={{ color: 'white' }}>
+                          <span className="text-[10px] font-bold" style={{ color: "white" }}>
                             {college.followersCount}
                           </span>
                         </div>
@@ -947,31 +964,32 @@ function ExploreContent() {
 
                     {/* Location & students pills */}
                     <div className="flex items-center gap-2 flex-wrap">
-                      <div className="flex items-center gap-1 rounded-full px-3 py-1" style={{ backgroundColor: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }}>
-                        <MapPin size={11} color="white" />
-                        <span className="text-[11px] font-semibold truncate max-w-[120px]" style={{ color: 'white' }}>{college.location}</span>
+                      <div className="flex items-center gap-1.5 rounded-full border border-white/12 px-3 py-1.5 backdrop-blur-md" style={{ backgroundColor: "rgba(0,0,0,0.42)" }}>
+                        <MapPin size={11} color="#E8B84B" />
+                        <span className="text-[11px] font-semibold truncate max-w-[120px]" style={{ color: "white" }}>{college.location}</span>
                       </div>
-                      <div className="flex items-center gap-1 rounded-full px-3 py-1" style={{ backgroundColor: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }}>
-                        <Users size={11} color="white" />
-                        <span className="text-[11px] font-semibold" style={{ color: 'white' }}>{college.students} Students</span>
+                      <div className="flex items-center gap-1.5 rounded-full border border-white/12 px-3 py-1.5 backdrop-blur-md" style={{ backgroundColor: "rgba(0,0,0,0.42)" }}>
+                        <Users size={11} color="#E8B84B" />
+                        <span className="text-[11px] font-semibold" style={{ color: "white" }}>{college.students} Students</span>
                       </div>
                     </div>
 
                     {/* Explore Now button — only interactive hotspot on the card */}
-                    <button
+                    <motion.button
                       type="button"
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => {
                         router.push(`/explore?collegeId=${college._id || college.id}`);
                       }}
                       disabled={loadingCollegeId === (college._id || college.id)}
-                      className="w-full bg-white rounded-2xl py-3 flex items-center justify-center text-sm font-bold text-[#1A1A1A] shadow-lg hover:bg-[#FFF8EC] transition-colors disabled:opacity-80 cursor-pointer"
+                      className="explore-college-cta w-full rounded-2xl py-3.5 flex items-center justify-center text-sm font-black tracking-wide text-[#1A1A1A] shadow-[0_6px_18px_rgba(200,146,42,0.35)] transition-opacity hover:opacity-95 disabled:opacity-80 cursor-pointer"
                     >
                       {loadingCollegeId === (college._id || college.id) ? (
                         <Loader2 className="h-5 w-5 animate-spin" />
                       ) : (
                         "Explore Now"
                       )}
-                    </button>
+                    </motion.button>
                   </div>
                 </motion.div>
               ))}
@@ -980,15 +998,23 @@ function ExploreContent() {
 
             {!loading && filteredColleges.length === 0 && (
               <div className="flex-1 flex flex-col items-center justify-center py-16 px-6 text-center">
-                <div className="app-panel mx-auto max-w-sm rounded-[1.6rem] p-8 flex flex-col items-center gap-4">
-                  <span className="text-4xl">🔍</span>
+                <div className="explore-empty-panel app-panel mx-auto max-w-sm rounded-[1.75rem] p-9 flex flex-col items-center gap-4">
+                  <div className="relative h-14 w-14">
+                    <div
+                      className="absolute inset-0 rounded-2xl opacity-40 blur-md"
+                      style={{ background: "linear-gradient(135deg, #C8922A, #E8B84B)" }}
+                    />
+                    <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl brand-mark ring-1 ring-white/40 shadow-[0_6px_16px_rgba(200,146,42,0.28)]">
+                      <SearchX size={24} className="text-white" strokeWidth={2.25} />
+                    </div>
+                  </div>
                   <div>
-                    <p className="text-sm font-black text-[#4A4A4A] mb-1">
+                    <p className="text-sm font-black text-[#1A1A1A] mb-1.5">
                       {hasActiveFilters
                         ? "No colleges match these filters"
                         : `No colleges found matching "${search}"`}
                     </p>
-                    <p className="text-xs text-[#6B6B6B]">
+                    <p className="text-xs text-[#6B6B6B] leading-relaxed">
                       {hasActiveFilters
                         ? "Try adjusting or clearing your filters."
                         : "Try a different search term."}
@@ -996,8 +1022,9 @@ function ExploreContent() {
                   </div>
                   {hasActiveFilters && (
                     <button
+                      type="button"
                       onClick={clearFilters}
-                      className="mt-1 rounded-xl bg-gradient-to-r from-[#C8922A] to-[#C8922A] px-5 py-2.5 text-[11px] font-black uppercase tracking-widest text-[#1A1A1A] shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)] hover:opacity-90 active:scale-95 transition-all"
+                      className="mt-1 rounded-2xl bg-gradient-to-r from-[#C8922A] to-[#D4A843] px-5 py-2.5 text-[11px] font-black uppercase tracking-widest text-[#1A1A1A] shadow-[0_4px_14px_rgba(200,146,42,0.28)] hover:opacity-95 active:scale-95 transition-all"
                     >
                       Reset Filters
                     </button>

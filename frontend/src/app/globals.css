@@ -446,6 +446,23 @@ header, [class*="navbar"], [class*="topbar"], .page-header {
   box-shadow: 0 2px 12px rgba(26, 26, 26, 0.04);
 }
 
+/* Explore college cards — gold CTA (avoid global text color overrides) */
+.explore-college-cta {
+  background: linear-gradient(135deg, #c8922a, #d4a843);
+  color: #1a1a1a !important;
+}
+.explore-college-cta * {
+  color: #1a1a1a !important;
+}
+
+.explore-empty-panel {
+  border: 1px solid #ebe7dc;
+  box-shadow: 0 8px 28px rgba(26, 26, 26, 0.06);
+  background:
+    radial-gradient(circle at top center, rgba(200, 146, 42, 0.08), transparent 55%),
+    #ffffff;
+}
+
 /* Explore mode switch — global [class*="text"] was hiding label on dark buttons */
 .explore-mode-switch--arena,
 .explore-mode-switch--arena * {
