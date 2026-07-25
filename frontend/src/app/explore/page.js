@@ -796,17 +796,19 @@ function ExploreContent() {
 
                 {/* ── Filter Bar ────────────────────────────────────────────── */}
                 <section className="mx-auto w-full max-w-6xl px-4 pt-3 pb-1 sm:px-5">
-                  <div className="app-panel rounded-[1.4rem] px-4 py-4 sm:px-5">
-                    <div className="flex flex-wrap items-center gap-3">
+                  <div className="explore-filter-panel app-panel rounded-[1.5rem] px-4 py-4 sm:px-5">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-3.5">
                       {/* City filter */}
-                      <div className="flex-1 min-w-[140px]">
-                        <label className="block text-[9px] font-black uppercase tracking-[0.18em] text-[#6B6B6B] mb-1.5 pl-1">🌍 City</label>
+                      <div className="min-w-0">
+                        <label className="mb-2 flex items-center gap-1.5 pl-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#6B6B6B]">
+                          <Globe size={12} strokeWidth={2.4} className="text-[#C8922A]" />
+                          City
+                        </label>
                         <select
                           value={filterCity}
                           onChange={e => setFilterCity(e.target.value)}
                           aria-label="Filter by city"
-                          className="ca-input w-full py-2.5 px-3 text-xs appearance-none cursor-pointer"
-                          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
+                          className="explore-filter-select ca-input w-full py-2.5 pl-3.5 pr-9 text-xs font-semibold appearance-none cursor-pointer rounded-xl"
                         >
                           {cityOptions.map(city => (
                             <option key={city} value={city}>{city === "All" ? "All Cities" : city}</option>
@@ -815,14 +817,16 @@ function ExploreContent() {
                       </div>
 
                       {/* Category filter */}
-                      <div className="flex-1 min-w-[130px]">
-                        <label className="block text-[9px] font-black uppercase tracking-[0.18em] text-[#6B6B6B] mb-1.5 pl-1">🏛️ Category</label>
+                      <div className="min-w-0">
+                        <label className="mb-2 flex items-center gap-1.5 pl-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#6B6B6B]">
+                          <Landmark size={12} strokeWidth={2.4} className="text-[#C8922A]" />
+                          Category
+                        </label>
                         <select
                           value={filterCategory}
                           onChange={e => setFilterCategory(e.target.value)}
                           aria-label="Filter by category"
-                          className="ca-input w-full py-2.5 px-3 text-xs appearance-none cursor-pointer"
-                          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
+                          className="explore-filter-select ca-input w-full py-2.5 pl-3.5 pr-9 text-xs font-semibold appearance-none cursor-pointer rounded-xl"
                         >
                           {CATEGORY_OPTIONS.map(cat => (
                             <option key={cat} value={cat}>{cat === "All" ? "All Categories" : cat}</option>
@@ -831,62 +835,70 @@ function ExploreContent() {
                       </div>
 
                       {/* Stream filter */}
-                      <div className="flex-1 min-w-[150px]">
-                        <label className="block text-[9px] font-black uppercase tracking-[0.18em] text-[#6B6B6B] mb-1.5 pl-1">📚 Stream</label>
+                      <div className="min-w-0">
+                        <label className="mb-2 flex items-center gap-1.5 pl-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#6B6B6B]">
+                          <BookOpen size={12} strokeWidth={2.4} className="text-[#C8922A]" />
+                          Stream
+                        </label>
                         <select
                           value={filterStream}
                           onChange={e => setFilterStream(e.target.value)}
                           aria-label="Filter by stream"
-                          className="ca-input w-full py-2.5 px-3 text-xs appearance-none cursor-pointer"
-                          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
+                          className="explore-filter-select ca-input w-full py-2.5 pl-3.5 pr-9 text-xs font-semibold appearance-none cursor-pointer rounded-xl"
                         >
                           {STREAM_OPTIONS.map(s => (
-                            <option key={s} value={s}>{s === "All" ? "All Courses" : s}</option>
+                            <option key={s} value={s}>{s === "All" ? "All Streams" : s}</option>
                           ))}
                         </select>
                       </div>
-
-                      {/* Clear filters */}
-                      {hasActiveFilters && (
-                        <button
-                          onClick={clearFilters}
-                          className="shrink-0 self-end mb-0.5 flex items-center gap-1.5 rounded-full border border-[#E8E6E0] bg-[#F3F2EE] px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-[#6B6B6B] transition-all hover:bg-[#F3F2EE] hover:text-[#4A4A4A] hover:border-[#E8E6E0] active:scale-95"
-                          aria-label="Clear all filters"
-                        >
-                          ✕ Clear
-                        </button>
-                      )}
                     </div>
 
                     {/* Active filter summary + college count */}
-                    <div className="mt-3 flex items-center justify-between">
-                      <p className="text-[10px] text-[#888888] font-medium">
+                    <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-[#EFEDE6] pt-3">
+                      <p className="text-[11px] text-[#6B6B6B] font-medium">
                         {!loading && (
                           <>
-                            Showing <span className="text-[#6B6B6B] font-black">{filteredColleges.length}</span> college{filteredColleges.length !== 1 ? "s" : ""}
-                            {hasActiveFilters && <span className="text-[#888888]"> (filtered)</span>}
+                            Showing{" "}
+                            <span className="font-black text-[#1A1A1A] tabular-nums">{filteredColleges.length}</span>
+                            {" "}college{filteredColleges.length !== 1 ? "s" : ""}
+                            {hasActiveFilters && (
+                              <span className="ml-1.5 inline-flex items-center rounded-full bg-[#FFF8EC] px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-[#B07D20]">
+                                Filtered
+                              </span>
+                            )}
                           </>
                         )}
                       </p>
-                      {hasActiveFilters && (
-                        <div className="flex flex-wrap gap-1.5">
-                          {filterCategory !== "All" && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-[#C8922A]/20 to-[#C8922A]/20 border border-[#C8922A]/30 px-2.5 py-1 text-[9px] font-black text-[#C8922A] uppercase tracking-wider">
-                              {filterCategory}
-                            </span>
-                          )}
-                          {filterStream !== "All" && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-[#D4A843]/20 to-[#C8922A]/20 border border-cyan-500/30 px-2.5 py-1 text-[9px] font-black text-[#C8922A] uppercase tracking-wider">
-                              {filterStream}
-                            </span>
-                          )}
-                          {filterCity !== "All" && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 px-2.5 py-1 text-[9px] font-black text-emerald-300 uppercase tracking-wider">
-                              📍 {filterCity}
-                            </span>
-                          )}
-                        </div>
-                      )}
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {hasActiveFilters && (
+                          <>
+                            {filterCity !== "All" && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-[#FFF8EC] border border-[#E8D9B0] px-2.5 py-1 text-[9px] font-black text-[#B07D20] uppercase tracking-wider">
+                                <MapPin size={10} strokeWidth={2.5} />
+                                {filterCity}
+                              </span>
+                            )}
+                            {filterCategory !== "All" && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-[#FFF8EC] border border-[#E8D9B0] px-2.5 py-1 text-[9px] font-black text-[#B07D20] uppercase tracking-wider">
+                                {filterCategory}
+                              </span>
+                            )}
+                            {filterStream !== "All" && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-[#FFF8EC] border border-[#E8D9B0] px-2.5 py-1 text-[9px] font-black text-[#B07D20] uppercase tracking-wider">
+                                {filterStream}
+                              </span>
+                            )}
+                            <button
+                              type="button"
+                              onClick={clearFilters}
+                              className="shrink-0 flex items-center gap-1 rounded-full border border-[#E8E6E0] bg-white px-3 py-1 text-[9px] font-black uppercase tracking-widest text-[#6B6B6B] transition-all hover:border-[#C8922A]/45 hover:bg-[#FFF8EC] hover:text-[#1A1A1A] active:scale-95"
+                              aria-label="Clear all filters"
+                            >
+                              Clear
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </section>
