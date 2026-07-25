@@ -33,6 +33,10 @@ import {
   Play,
   Loader2,
   Gamepad2,
+  Globe,
+  Landmark,
+  BookOpen,
+  SearchX,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useApiQuery } from "../../utils/useApiQuery";
@@ -679,30 +683,28 @@ function ExploreContent() {
             exit={{ opacity: 0, x: -20 }}
             className="flex-1 flex flex-col"
           >
-            <header className="page-header sticky top-0 z-40 px-5 py-4">
+            <header className="page-header sticky top-0 z-40 px-5 py-4 backdrop-blur-md">
               <div className="mx-auto flex w-full max-w-6xl flex-col space-y-4">
                 <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    {exploreMode === "colleges" ? (
-                      <div className="h-11 w-11 shrink-0 rounded-2xl bg-[#FFF8EC] border border-[#E8D9B0] flex items-center justify-center">
-                        <Building2 size={20} className="text-[#C8922A]" />
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="relative h-12 w-12 shrink-0">
+                      <div
+                        className="absolute inset-0 rounded-2xl opacity-45 blur-md"
+                        style={{ background: "linear-gradient(135deg, #C8922A, #E8B84B)" }}
+                      />
+                      <div className="relative h-12 w-12 rounded-2xl brand-mark flex items-center justify-center shadow-[0_6px_18px_rgba(200,146,42,0.3)] ring-1 ring-white/45">
+                        {exploreMode === "colleges" ? (
+                          <Building2 size={21} className="text-white" strokeWidth={2.25} />
+                        ) : (
+                          <Swords size={21} className="text-white" strokeWidth={2.25} />
+                        )}
                       </div>
-                    ) : (
-                      <div className="relative h-11 w-11 shrink-0">
-                        <div
-                          className="absolute inset-0 rounded-2xl opacity-40 blur-md"
-                          style={{ background: "linear-gradient(135deg, #C8922A, #E8B84B)" }}
-                        />
-                        <div className="relative h-11 w-11 rounded-2xl brand-mark flex items-center justify-center shadow-[0_6px_16px_rgba(200,146,42,0.28)] ring-1 ring-white/40">
-                          <Swords size={20} className="text-white" strokeWidth={2.25} />
-                        </div>
-                      </div>
-                    )}
+                    </div>
                     <div className="min-w-0">
-                      <h1 className="text-xl font-black tracking-tight text-[#1A1A1A] truncate">
+                      <h1 className="text-[1.35rem] sm:text-2xl font-black tracking-tight text-[#1A1A1A] truncate leading-tight">
                         {exploreMode === "colleges" ? "Explore Colleges" : "Campus Arena"}
                       </h1>
-                      <p className="text-[11px] font-semibold text-[#888888] mt-0.5">
+                      <p className="text-[12px] font-medium text-[#6B6B6B] mt-0.5 tracking-wide">
                         {exploreMode === "colleges"
                           ? "Discover campuses near you"
                           : "Esports networks & campus battles"}
@@ -711,41 +713,46 @@ function ExploreContent() {
                   </div>
                 </div>
 
-                <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
-                  <div className="relative w-full sm:flex-1">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#888888]" size={16} />
+                <div className="explore-control-row flex w-full flex-col gap-2.5 sm:flex-row sm:items-stretch">
+                  <div className="relative w-full sm:flex-1 group">
+                    <Search
+                      className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#888888] transition-colors group-focus-within:text-[#C8922A]"
+                      size={17}
+                      strokeWidth={2.25}
+                    />
                     <input
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       type="text"
                       placeholder={exploreMode === "colleges" ? "Search college..." : "Search players..."}
-                      className="ca-input w-full py-3 pl-10 pr-4 text-sm rounded-2xl"
+                      className="explore-search-input ca-input w-full py-3.5 pl-11 pr-4 text-sm font-medium rounded-[1.15rem]"
                     />
                   </div>
                   <motion.button
                     type="button"
                     whileTap={{ scale: 0.97 }}
+                    whileHover={{ y: -1 }}
                     onClick={() => {
                       setExploreMode(exploreMode === "colleges" ? "arena" : "colleges");
                       setSearch("");
                       setArenaSportFilter("All");
                     }}
                     className={clsx(
-                      "explore-mode-switch flex w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-2xl border px-5 py-3 font-black transition-all cursor-pointer",
+                      "explore-mode-switch flex w-full sm:w-auto shrink-0 items-center justify-center gap-2.5 rounded-[1.15rem] border px-6 py-3.5 font-black transition-all cursor-pointer",
                       exploreMode === "colleges"
-                        ? "explore-mode-switch--arena bg-gradient-to-r from-[#C8922A] to-[#D4A843] border-transparent shadow-[0_4px_14px_rgba(200,146,42,0.25)] hover:opacity-95"
-                        : "explore-mode-switch--colleges bg-white border-[#E8E6E0] hover:border-[#C8922A]/50 hover:bg-[#FFF8EC]"
+                        ? "explore-mode-switch--arena bg-gradient-to-r from-[#C8922A] to-[#D4A843] border-transparent shadow-[0_6px_18px_rgba(200,146,42,0.32)] hover:shadow-[0_8px_22px_rgba(200,146,42,0.4)]"
+                        : "explore-mode-switch--colleges bg-white border-[#E8E6E0] shadow-sm hover:border-[#C8922A]/55 hover:bg-[#FFF8EC]"
                     )}
                   >
                     {exploreMode === "colleges" ? (
                       <>
-                        <Swords size={16} strokeWidth={2.25} />
-                        <span className="tracking-widest uppercase text-[10px] sm:text-xs">Arena</span>
+                        <Swords size={17} strokeWidth={2.4} />
+                        <span className="tracking-[0.16em] uppercase text-[11px] sm:text-xs">Arena</span>
                       </>
                     ) : (
                       <>
-                        <Building2 size={16} strokeWidth={2.25} />
-                        <span className="tracking-widest uppercase text-[10px] sm:text-xs">Colleges</span>
+                        <Building2 size={17} strokeWidth={2.4} />
+                        <span className="tracking-[0.16em] uppercase text-[11px] sm:text-xs">Colleges</span>
                       </>
                     )}
                   </motion.button>
