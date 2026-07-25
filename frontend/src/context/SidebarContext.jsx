@@ -1,21 +1,40 @@
 "use client";
-import React, { createContext, useContext, useState, useRef } from "react";
+import React, { createContext, useContext, useState, useRef, useEffect, useCallback } from "react";
 
 const SidebarContext = createContext();
 
 export function SidebarProvider({ children }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const hoverTimeoutRef = useRef(null);
+  const enterTimeoutRef = useRef(null);
+  const leaveTimeoutRef = useRef(null);
 
-  const handleMouseEnter = () => {
-    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-    hoverTimeoutRef.current = setTimeout(() => setIsExpanded(true), 100);
-  };
+  const clearTimers = useCallback(() => {
+    if (enterTimeoutRef.current) clearTimeout(enterTimeoutRef.current);
+    if (leaveTimeoutRef.current) clearTimeout(leaveTimeoutRef.current);
+    enterTimeoutRef.current = null;
+    leaveTimeoutRef.current = null;
+  }, []);
 
-  const handleMouseLeave = () => {
-    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-    setIsExpanded(false);
-  };
+  useEffect(() => () => clearTimers(), [clearTimers]);
+
+  const handleMouseEnter = useCallback(() => {
+    if (leaveTimeoutRef.current) {
+      clearTimeout(leaveTimeoutRef.current);
+      leaveTimeoutRef.current = null;
+    }
+    if (enterTimeoutRef.current) clearTimeout(enterTimeoutRef.current);
+    enterTimeoutRef.current = setTimeout(() => setIsExpanded(true), 60);
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    if (enterTimeoutRef.current) {
+      clearTimeout(enterTimeoutRef.current);
+      enterTimeoutRef.current = null;
+    }
+    if (leaveTimeoutRef.current) clearTimeout(leaveTimeoutRef.current);
+    // Small delay so the rail doesn't snap shut when the cursor briefly leaves
+    leaveTimeoutRef.current = setTimeout(() => setIsExpanded(false), 160);
+  }, []);
 
   return (
     <SidebarContext.Provider
