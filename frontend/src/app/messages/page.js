@@ -936,7 +936,7 @@ function MessagesContent() {
       setConnections(unique);
       setConnectionsLoaded(true);
     } catch (err) {
-      console.error("Error fetching connections:", err);
+      console.warn("Error fetching connections:", err);
     } finally {
       setLoadingConnections(false);
     }

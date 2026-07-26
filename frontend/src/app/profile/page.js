@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { LogOut, Edit3, X, Check, Plus, Grid, Heart, MessageCircle, Send, ChevronLeft, ChevronRight, Share2, Ghost, MapPin, Zap, Star, Camera, Clock, Image as ImageIcon, Music, Code, Palette, Plane, Gamepad2, Book, Dumbbell, Film, Utensils, Trophy, Briefcase, Users, Crown, CalendarDays, GraduationCap, Flame, Building2, TrendingUp, Award } from "lucide-react";
+import { LogOut, Edit3, X, Check, Plus, Grid, Heart, MessageCircle, Send, ChevronLeft, ChevronRight, Share2, Ghost, MapPin, Zap, Star, Camera, Clock, Image as ImageIcon, Music, Code, Palette, Plane, Gamepad2, Book, Dumbbell, Film, Utensils, Trophy, Briefcase, Users, Crown, CalendarDays, GraduationCap, Flame, Building2, TrendingUp, Award, User } from "lucide-react";
 import { getAuthenticatedSupabaseClient } from "@/utils/supabaseAuthUser";
 
 const InstagramIcon = ({ size = 20 }) => (
@@ -162,6 +162,12 @@ export default function ProfilePage() {
   const [storyInput, setStoryInput] = useState({ imageUrl: "", caption: "" });
   const [storyUploading, setStoryUploading] = useState(false);
   const [viewingStoryIndex, setViewingStoryIndex] = useState(0);
+  const [currentTime, setCurrentTime] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(Date.now()), 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   const [editData, setEditData] = useState({
     name: "",
@@ -197,7 +203,26 @@ export default function ProfilePage() {
   useEffect(() => {
     const stored = localStorage.getItem("collegeadda_user");
     if (stored) {
-      setUser(JSON.parse(stored));
+      const parsedUser = JSON.parse(stored);
+      setUser(parsedUser);
+      setEditData({
+        name: parsedUser.name || "",
+        bio: parsedUser.bio || "",
+        profilePic: parsedUser.profilePic || "",
+        passOutBatch: parsedUser.passOutBatch || "",
+        course: parsedUser.course || "",
+        branch: parsedUser.branch || "",
+        studyYear: parsedUser.studyYear || parsedUser.year || "",
+        phone: parsedUser.phone || "",
+        phonePrivacy: parsedUser.phonePrivacy || "private",
+        linkedin: parsedUser.linkedin || "",
+        github: parsedUser.github || "",
+        instaId: parsedUser.instagram || "", 
+        snapId: parsedUser.snapchat || "", 
+        interests: parsedUser.interests || [], 
+        sports: parsedUser.sports || [],
+        customCourse: ""
+      });
     } else {
       router.push("/login");
     }
@@ -232,26 +257,31 @@ export default function ProfilePage() {
       // Only update if something changed to prevent infinite loops, or just rely on Query
       setUser(mergedProfileData);
       localStorage.setItem("collegeadda_user", JSON.stringify(mergedProfileData));
-      setEditData({ 
-        name: profileData.name || "",
-        bio: profileData.bio || "",
-        profilePic: profileData.profilePic || "",
-        passOutBatch: profileData.passOutBatch || "",
-        course: profileData.course || "",
-        branch: profileData.branch || "",
-        studyYear: profileData.studyYear || profileData.year || "",
-        phone: profileData.phone || "",
-        phonePrivacy: profileData.phonePrivacy || "private",
-        linkedin: profileData.linkedin || "",
-        github: profileData.github || "",
-        instaId: profileData.instagram || "", 
-        snapId: profileData.snapchat || "", 
-        interests: profileData.interests || [], 
-        sports: profileData.sports || [] 
-      });
+      
+      // Prevent resetting editData if the user is currently editing (modal is open)
+      if (!modal) {
+        setEditData({ 
+          name: profileData.name || "",
+          bio: profileData.bio || "",
+          profilePic: profileData.profilePic || "",
+          passOutBatch: profileData.passOutBatch || "",
+          course: profileData.course || "",
+          branch: profileData.branch || "",
+          studyYear: profileData.studyYear || profileData.year || "",
+          phone: profileData.phone || "",
+          phonePrivacy: profileData.phonePrivacy || "private",
+          linkedin: profileData.linkedin || "",
+          github: profileData.github || "",
+          instaId: profileData.instagram || "", 
+          snapId: profileData.snapchat || "", 
+          interests: profileData.interests || [], 
+          sports: profileData.sports || [],
+          customCourse: ""
+        });
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profileData]);
+  }, [profileData, modal]);
 
   // -- TanStack Query: My Posts --
   const { data: myPostsRaw = [] } = useApiQuery(
@@ -1441,11 +1471,12 @@ export default function ProfilePage() {
 
                 <div className="space-y-3">
                   <label className="text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest ml-2">Bio</label>
-                  <input
-                    maxLength={100}
+                  <textarea
+                    maxLength={500}
+                    rows={3}
                     value={editData.bio}
                     onChange={e => setEditData({ ...editData, bio: e.target.value })}
-                    className="w-full rounded-2xl border border-[#E8E6E0] bg-black/30 px-4 py-3 text-sm font-semibold text-[#1A1A1A] outline-none focus:border-[#C8922A]"
+                    className="w-full rounded-2xl border border-[#E8E6E0] bg-black/30 px-4 py-3 text-sm font-semibold text-[#1A1A1A] outline-none focus:border-[#C8922A] resize-none"
                     placeholder="Final year CSE | Dev | CAT 2025 Aspirant"
                   />
                 </div>
@@ -1906,7 +1937,7 @@ export default function ProfilePage() {
                     <p className="text-[#1A1A1A] font-black text-sm"><NameWithTick name={user.name} tick={user.currentTick} user={user} /></p>
                     <p className="text-[#6B6B6B] text-[10px] flex items-center gap-1">
                       <Clock size={9} />
-                      {Math.round((Date.now() - activeStories[viewingStoryIndex]?.createdAt) / 60000)}m ago · expires in {Math.round((24 * 60 - (Date.now() - activeStories[viewingStoryIndex]?.createdAt) / 60000))}m
+                      {Math.round((currentTime - activeStories[viewingStoryIndex]?.createdAt) / 60000)}m ago · expires in {Math.round((24 * 60 - (currentTime - activeStories[viewingStoryIndex]?.createdAt) / 60000))}m
                     </p>
                   </div>
                 </div>

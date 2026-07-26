@@ -555,7 +555,7 @@ export default function FriendsPage() {
         setHeartSeen(newOnes.length === 0);
       }
     } catch (err) {
-      console.error("Error fetching follower notifications:", err);
+      console.warn("Error fetching follower notifications:", err);
     }
   }, [apiUrl]);
 
@@ -1553,7 +1553,7 @@ export default function FriendsPage() {
 
                 {/* Live community list */}
                 {communities.length > 0 && (
-                  <div className="flex flex-col gap-2 pt-1 border-t border-[#F3F2EE]">
+                  <div className="flex flex-col gap-5 pt-4 mt-2 border-t border-[#F3F2EE]">
                     <AnimatePresence>
                       {communities.map((comm, idx) => {
                         const isMember = membershipSet.has(comm.id);
@@ -1565,23 +1565,25 @@ export default function FriendsPage() {
                             initial={{ opacity: 0, y: 8 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: idx * 0.06 }}
-                            className="flex items-center gap-2.5 group"
+                            className="flex items-start gap-3.5 group"
                           >
                             {/* Avatar */}
                             <button
                               onClick={() => router.push(`/community/${comm.id}`)}
-                              className={`w-9 h-9 rounded-xl bg-gradient-to-br ${grad} flex items-center justify-center text-white font-black text-sm shrink-0 shadow-sm hover:scale-105 transition-transform cursor-pointer`}
+                              className={`w-10 h-10 rounded-xl bg-gradient-to-br ${grad} flex items-center justify-center text-white font-black text-lg shrink-0 shadow-sm hover:scale-105 transition-transform cursor-pointer mt-0.5`}
                             >
                               {comm.name.charAt(0).toUpperCase()}
                             </button>
                             {/* Info */}
-                            <button onClick={() => router.push(`/community/${comm.id}`)} className="flex-1 min-w-0 text-left cursor-pointer">
-                              <p className="text-[13px] font-bold text-[#1A1A1A] truncate leading-tight">{comm.name}</p>
-                              <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-                                <span className="text-[10px] text-[#888888]">{comm.member_count} member{comm.member_count !== 1 ? 's' : ''}</span>
-                                {(comm.tags || []).slice(0, 2).map(tag => (
-                                  <span key={tag} className="text-[9px] bg-amber-50 border border-amber-200 text-amber-700 px-1.5 py-0.5 rounded-full font-semibold">#{tag}</span>
-                                ))}
+                            <button onClick={() => router.push(`/community/${comm.id}`)} className="flex-1 min-w-0 text-left cursor-pointer flex flex-col justify-center">
+                              <p className="text-[14px] font-bold text-[#1A1A1A] truncate leading-tight">{comm.name}</p>
+                              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                <span className="text-[11px] text-[#888888] font-medium shrink-0">{comm.member_count} member{comm.member_count !== 1 ? 's' : ''}</span>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {(comm.tags || []).slice(0, 2).map(tag => (
+                                    <span key={tag} className="text-[10px] bg-[#FDF8F3] border border-[#F6E1CC] text-[#C8922A] px-2 py-0.5 rounded-md font-bold shadow-sm">#{tag}</span>
+                                  ))}
+                                </div>
                               </div>
                             </button>
                             {/* Join / Joined */}
@@ -1589,18 +1591,18 @@ export default function FriendsPage() {
                               <motion.div
                                 initial={{ scale: 0.8 }}
                                 animate={{ scale: 1 }}
-                                className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg shrink-0"
+                                className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl shrink-0 mt-0.5 shadow-sm"
                               >
-                                <CheckCircle2 size={11} />
+                                <CheckCircle2 size={13} />
                                 Joined
                               </motion.div>
                             ) : (
                               <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                onClick={() => handleJoinCommunity(comm)}
+                                onClick={() => handleJoinCommunity(comm.id)}
                                 disabled={isJoining}
-                                className="text-[10px] font-bold text-[#C8922A] border border-[#C8922A] hover:bg-amber-50 px-2.5 py-1 rounded-lg shrink-0 cursor-pointer transition-all disabled:opacity-50"
+                                className="flex items-center gap-1.5 text-[11px] font-bold text-[#1A1A1A] bg-[#F9F8F5] hover:bg-[#F3F2EE] border border-[#E8E6E0] px-3 py-1.5 rounded-xl shrink-0 mt-0.5 shadow-sm cursor-pointer transition-colors"
                               >
                                 {isJoining ? <Loader2 size={10} className="animate-spin" /> : (comm.privacy === 'invite_only' ? 'Request' : 'Join')}
                               </motion.button>
