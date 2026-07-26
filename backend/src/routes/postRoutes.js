@@ -17,13 +17,13 @@ router.get('/', protect, async (req, res) => {
     const limit = Math.min(Math.max(requestedLimit, 1), 100);
     const skip = (page - 1) * limit;
 
-    const filter = {};
+    const filter = { isMemoryOnly: { $ne: true } };
     if (req.query.author) {
       filter.author = req.query.author;
     }
 
     const posts = await Post.find(filter)
-      .select('content mediaType hashtags university createdAt updatedAt author likes comments poll')
+      .select('content mediaType hashtags university createdAt updatedAt author likes comments poll isMemoryOnly')
       .populate('author', 'name university isVerified xp points currentTick')
       .populate('comments.user', 'name isVerified')
       .sort({ createdAt: -1 })
@@ -88,7 +88,7 @@ router.get('/trending', protect, async (req, res) => {
 // @route   POST /api/posts
 // @desc    Create a post
 router.post('/', protect, verified, async (req, res) => {
-  const { content, mediaUrl, mediaType, poll } = req.body;
+  const { content, mediaUrl, mediaType, poll, isMemoryOnly } = req.body;
 
   // Extract hashtags from content
   const hashtags = content ? (content.match(/#[\w\u0590-\u05ff]+/g) || []) : [];
@@ -101,13 +101,18 @@ router.post('/', protect, verified, async (req, res) => {
       mediaUrl,
       mediaType,
       hashtags: hashtags.map((tag) => tag.toLowerCase()),
-      poll: poll && poll.options && poll.options.length > 0 ? poll : undefined
+      poll: poll && poll.options && poll.options.length > 0 ? poll : undefined,
+      isMemoryOnly: Boolean(isMemoryOnly)
     });
 
-    await awardXP(req.user._id, 'CREATE_POST', post._id.toString());
+    if (Boolean(isMemoryOnly)) {
+      await awardXP(req.user._id, 'EXPLORE_POST', post._id.toString());
+    } else {
+      await awardXP(req.user._id, 'CREATE_POST', post._id.toString());
+    }
 
     const populated = await Post.findById(post._id)
-      .select('content mediaUrl mediaType hashtags university createdAt updatedAt author likes comments poll')
+      .select('content mediaUrl mediaType hashtags university createdAt updatedAt author likes comments poll isMemoryOnly')
       .populate('author', 'name university isVerified xp points currentTick')
       .populate('comments.user', 'name')
       .lean();

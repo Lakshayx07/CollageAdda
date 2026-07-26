@@ -39,6 +39,7 @@ export const awardXP = async (userId, actionType, refId) => {
 
   const actionToBadgeType = {
     'CREATE_POST': 'posts',
+    'EXPLORE_POST': 'posts',
     'CREATE_STORY': 'stories',
     'COMMENT_POST': 'comments',
     'LIKE_POST': 'likes_received',

@@ -163,7 +163,7 @@ router.get('/:id', protect, async (req, res) => {
     // Slim posts like the home feed so base64 media is not embedded in JSON.
     const [posts, realStudentCount, realPostCount] = await Promise.all([
       Post.find(universityFilter)
-        .select('content mediaUrl mediaType likes comments hashtags createdAt author university')
+        .select('content mediaUrl mediaType likes comments hashtags createdAt author university isMemoryOnly')
         .populate('author', 'name university isVerified xp points currentTick')
         .populate('comments.user', 'name isVerified')
         .sort({ createdAt: -1 })

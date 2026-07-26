@@ -1462,7 +1462,7 @@ export default function FriendsPage() {
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
                                     onClick={(e) => { e.stopPropagation(); handleDirectMessage(person._id); }}
-                                    className="w-full bg-white hover:bg-[#FFF8EC] text-[#C8922A] border border-[#D4A843]/45 py-3 rounded-full text-[12px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-[0_10px_24px_rgba(200,146,42,0.14)] cursor-pointer"
+                                    className="w-full bg-white hover:bg-[#F8FAFC] text-[#374151] border border-[#D6D3D1] py-3 rounded-full text-[12px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer"
                                   >
                                     <MessageCircle size={13} />
                                     Chat Now
@@ -1473,7 +1473,7 @@ export default function FriendsPage() {
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
                                     onClick={(e) => { e.stopPropagation(); toggleFollow(person._id); }}
-                                    className="w-full bg-white hover:bg-[#FFF8EC] text-[#C8922A] border border-[#D4A843]/45 py-3 rounded-full text-[12px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-[0_10px_24px_rgba(200,146,42,0.14)] cursor-pointer"
+                                    className="w-full bg-blue-500 hover:bg-blue-600 !text-white border border-transparent py-3 rounded-full text-[12px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer"
                                   >
                                     <UserPlus size={13} />
                                     Connect +
@@ -1767,7 +1767,7 @@ export default function FriendsPage() {
                           </>
                         ) : followStatus[selectedProfileData._id] === "connected" ? (
                           <>
-                            <motion.button variants={modalVars.primaryButton} onClick={() => { handleDirectMessage(selectedProfileData._id); setSelectedProfileId(null); }} className="w-full py-4 bg-white border border-[#D4A843]/45 rounded-2xl text-xs font-black text-[#C8922A] uppercase tracking-widest shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)] hover:bg-[#FFF8EC] hover:scale-[1.02] transition-all">
+                            <motion.button variants={modalVars.primaryButton} onClick={() => { handleDirectMessage(selectedProfileData._id); setSelectedProfileId(null); }} className="w-full py-4 bg-white border border-[#D6D3D1] rounded-2xl text-xs font-black text-[#374151] uppercase tracking-widest shadow-sm hover:bg-[#F8FAFC] hover:scale-[1.02] transition-all">
                               💬 Chat Now
                             </motion.button>
                             <motion.button variants={modalVars.buttonItem} onClick={() => { router.push(`/profile/${selectedProfileData._id}`); setSelectedProfileId(null); }} className="w-full py-4 bg-[#F9F8F5] border border-[#E8E6E0] rounded-2xl text-xs font-black text-[#1A1A1A] uppercase tracking-widest shadow-xl border border-[#E8E6E0] hover:bg-[#F3F2EE] transition-colors hover:scale-[1.02]">
@@ -1789,9 +1789,8 @@ export default function FriendsPage() {
                               variants={modalVars.primaryButton}
                               onClick={() => handleConnectAction(selectedProfileData._id)}
                               disabled={connectStatus !== "idle"}
-                              className="relative w-full py-4 bg-white border border-[#D4A843]/45 rounded-2xl text-xs font-black text-[#C8922A] uppercase tracking-widest shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)] hover:scale-[1.02] transition-transform overflow-hidden group"
+                              className="relative w-full py-4 bg-blue-500 border border-transparent rounded-2xl text-xs font-black !text-white uppercase tracking-widest shadow-md hover:bg-blue-600 hover:scale-[1.02] transition-all overflow-hidden"
                             >
-                              <div className="absolute inset-0 bg-[#FFF8EC] opacity-0 group-hover:opacity-100 transition-opacity" />
                               {connectStatus === "idle" && <span className="relative z-10">⚡ Connect</span>}
                               {connectStatus === "connecting" && <span className="relative z-10 flex items-center justify-center gap-2"><Loader2 size={14} className="animate-spin" /> Connecting...</span>}
                               {connectStatus === "connected" && <span className="relative z-10">✓ Connected!</span>}

@@ -100,19 +100,25 @@ export const uploadPublicMedia = async ({ bucket, file, userId, kind }) => {
   return { path, publicUrl: data.publicUrl };
 };
 
+const toUUID = (id) => {
+  if (!id) return null;
+  const hex = String(id).replace(/-/g, '').padEnd(32, '0');
+  return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20,32)}`;
+};
+
 export const saveProfileAvatarUrl = async ({ userId, avatarUrl, name, university }) => {
   const client = requireSupabase();
   const { error } = await client
     .from("profiles")
     .upsert({
-      user_id: String(userId),
+      user_id: toUUID(userId),
       avatar_url: avatarUrl,
       full_name: name || null,
       university: university || null,
       updated_at: new Date().toISOString()
     }, { onConflict: "user_id" });
 
-  if (error) throw error;
+  if (error) console.warn("Supabase profiles sync error:", error);
 };
 
 export const savePostImageRecord = async ({
@@ -127,8 +133,8 @@ export const savePostImageRecord = async ({
   const { error } = await client
     .from("posts")
     .upsert({
-      id: String(postId),
-      user_id: String(userId),
+      id: toUUID(postId),
+      user_id: toUUID(userId),
       caption: caption || "",
       image_url: imageUrl,
       media_type: "image",
@@ -136,7 +142,7 @@ export const savePostImageRecord = async ({
       created_at: createdAt || new Date().toISOString()
     }, { onConflict: "id" });
 
-  if (error) throw error;
+  if (error) console.warn("Supabase posts sync error:", error);
 };
 
 export const removeUploadedImage = async (bucket, path) => {

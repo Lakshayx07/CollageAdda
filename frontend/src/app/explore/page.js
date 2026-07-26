@@ -1274,24 +1274,30 @@ function ExploreContent() {
                     exit={{ opacity: 0, y: -10 }}
                     className="space-y-4"
                   >
-                    {(!selectedCollege.postsData || selectedCollege.postsData.length === 0) &&
-                    loadingCollegeId === (selectedCollege._id || selectedCollege.id) ? (
-                      <div className="flex flex-col items-center justify-center py-16">
-                        <Loader2 className="h-8 w-8 animate-spin text-[#C8922A]" />
-                        <p className="text-xs text-[#888888] mt-3 font-semibold">Loading posts…</p>
-                      </div>
-                    ) : !selectedCollege.postsData || selectedCollege.postsData.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-                        <div className="w-14 h-14 rounded-2xl bg-[#F9F8F5] border border-[#E8E6E0] flex items-center justify-center mb-4">
-                          <MessageSquare size={24} className="text-[#C8922A]" />
-                        </div>
-                        <p className="text-sm font-semibold text-[#1A1A1A]">No posts yet</p>
-                        <p className="text-xs text-[#888888] mt-1 max-w-xs">
-                          Be the first to share something from {selectedCollege.name}.
-                        </p>
-                      </div>
-                    ) : (
-                      selectedCollege.postsData.map(post => {
+                    {(() => {
+                      const feedPosts = (selectedCollege.postsData || []).filter(p => !p.isMemoryOnly);
+                      if (feedPosts.length === 0 && loadingCollegeId === (selectedCollege._id || selectedCollege.id)) {
+                        return (
+                          <div className="flex flex-col items-center justify-center py-16">
+                            <Loader2 className="h-8 w-8 animate-spin text-[#C8922A]" />
+                            <p className="text-xs text-[#888888] mt-3 font-semibold">Loading posts…</p>
+                          </div>
+                        );
+                      }
+                      if (feedPosts.length === 0) {
+                        return (
+                          <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+                            <div className="w-14 h-14 rounded-2xl bg-[#F9F8F5] border border-[#E8E6E0] flex items-center justify-center mb-4">
+                              <MessageSquare size={24} className="text-[#C8922A]" />
+                            </div>
+                            <p className="text-sm font-semibold text-[#1A1A1A]">No posts yet</p>
+                            <p className="text-xs text-[#888888] mt-1 max-w-xs">
+                              Be the first to share something from {selectedCollege.name}.
+                            </p>
+                          </div>
+                        );
+                      }
+                      return feedPosts.map(post => {
                         const isLiked = typeof post.likedByMe === "boolean"
                           ? post.likedByMe
                           : !!(currentUserId && post.likes?.some(
@@ -1439,8 +1445,8 @@ function ExploreContent() {
                           </div>
                         </article>
                         );
-                      })
-                    )}
+                      });
+                    })()}
                   </motion.div>
                 )}
 
@@ -1724,8 +1730,7 @@ function ExploreContent() {
                     {(() => {
                       const memoryPosts = (selectedCollege.postsData || []).filter(
                         (p) =>
-                          (p.mediaUrl || p.image) &&
-                          p.mediaType !== "video"
+                          (p.mediaUrl || p.image)
                       );
                       if (memoryPosts.length === 0) {
                         return (
@@ -1747,11 +1752,22 @@ function ExploreContent() {
                               key={post._id || i}
                               className="aspect-square relative group overflow-hidden bg-[#F3F2EE] rounded-xl border border-[#E8E6E0] p-1.5"
                             >
-                              <img
-                                src={post.mediaUrl || post.image}
-                                className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
-                                alt=""
-                              />
+                              {post.mediaType === "video" ? (
+                                <video
+                                  src={post.mediaUrl}
+                                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                  autoPlay
+                                  loop
+                                  muted
+                                  playsInline
+                                />
+                              ) : (
+                                <img
+                                  src={post.mediaUrl || post.image}
+                                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                  alt=""
+                                />
+                              )}
                             </div>
                           ))}
                         </div>

@@ -36,6 +36,7 @@ export default function Home() {
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [selectedMediaFile, setSelectedMediaFile] = useState(null);
   const [mediaType, setMediaType] = useState('none');
+  const [isExploreMode, setIsExploreMode] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
     setIsMounted(true);
@@ -303,6 +304,7 @@ export default function Home() {
   
   const photoInputRef = useRef(null);
   const videoInputRef = useRef(null);
+  const exploreInputRef = useRef(null);
 
   const clearSessionAndLogin = () => {
     localStorage.removeItem("collegeadda_token");
@@ -545,35 +547,31 @@ export default function Home() {
     const token = localStorage.getItem("collegeadda_token");
     const userId = currentUser?._id || currentUser?.id;
     const tempId = `temp-${Date.now()}`;
-    
     const savedContent = newPostContent;
     const savedMedia = selectedMedia;
     const savedMediaFile = selectedMediaFile;
     const savedMediaType = mediaType;
+    const wasExploreMode = isExploreMode;
     
-    // 1. Optimistic UI Update
-    const optimisticRawPost = {
-      _id: tempId,
-      author: currentUser,
-      university: currentUser?.university,
-      createdAt: new Date().toISOString(),
-      content: savedContent,
-      likes: [],
-      comments: [],
-      mediaUrl: savedMedia || "",
-      mediaType: savedMediaType,
-      poll: null
-    };
-    
-    queryClient.setQueryData(["posts", "v2", currentUser?._id], (old) => {
-      return [optimisticRawPost, ...(old || [])];
-    });
-    
-    // 2. Instantly reset inputs
-    setNewPostContent("");
-    setSelectedMedia(null);
-    setSelectedMediaFile(null);
-    setMediaType('none');
+    // 1. Optimistic UI Update (only if NOT explore mode)
+    if (!wasExploreMode) {
+      const optimisticRawPost = {
+        _id: tempId,
+        author: currentUser,
+        university: currentUser?.university,
+        createdAt: new Date().toISOString(),
+        content: savedContent,
+        likes: [],
+        comments: [],
+        mediaUrl: savedMedia || "",
+        mediaType: savedMediaType,
+        poll: null
+      };
+      
+      queryClient.setQueryData(["posts", "v2", currentUser?._id], (old) => {
+        return [optimisticRawPost, ...(old || [])];
+      });
+    }
     
     try {
       let mediaUrl = savedMedia || "";
@@ -593,7 +591,8 @@ export default function Home() {
         body: JSON.stringify({ 
           content: savedContent,
           mediaUrl,
-          mediaType: savedMediaType
+          mediaType: savedMediaType,
+          isMemoryOnly: wasExploreMode
         })
       });
       
@@ -611,6 +610,13 @@ export default function Home() {
           });
         }
         
+        // Success: Reset UI states
+        setNewPostContent("");
+        setSelectedMedia(null);
+        setSelectedMediaFile(null);
+        setMediaType('none');
+        setIsExploreMode(false);
+
         setFeedPage(1);
         setHasMorePosts(true);
         refetchPosts();
@@ -623,13 +629,12 @@ export default function Home() {
     } catch (err) {
       console.error("Error creating post:", err);
       // Rollback optimistic update
-      queryClient.setQueryData(["posts", "v2", currentUser?._id], (old) => {
-        return (old || []).filter(p => p._id !== tempId);
-      });
-      setNewPostContent(savedContent);
-      setSelectedMedia(savedMedia);
-      setSelectedMediaFile(savedMediaFile);
-      setMediaType(savedMediaType);
+      if (!wasExploreMode) {
+        queryClient.setQueryData(["posts", "v2", currentUser?._id], (old) => {
+          return (old || []).filter(p => p._id !== tempId);
+        });
+      }
+      // Failed: Do NOT reset explore mode since they might want to retry
       alert(err.message || "Could not create post. Please try again.");
     } finally {
       setIsPosting(false);
@@ -1180,12 +1185,12 @@ export default function Home() {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
-                className="relative rounded-2xl overflow-hidden border border-white/10 max-h-72"
+                className="relative rounded-2xl overflow-hidden border border-[#E8E6E0] max-h-[400px] bg-[#F3F2EE] flex items-center justify-center"
               >
                 {mediaType === 'video' ? (
-                  <video src={selectedMedia} controls className="w-full h-full object-cover" />
+                  <video src={selectedMedia} controls className="w-full h-auto max-h-[400px] object-contain" />
                 ) : (
-                  <img src={selectedMedia} className="w-full h-full object-cover" alt="Preview" />
+                  <img src={selectedMedia} className="w-full h-auto max-h-[400px] object-contain" alt="Preview" />
                 )}
                 <button 
                   onClick={() => {
@@ -1204,8 +1209,16 @@ export default function Home() {
 
           <div className="flex flex-col gap-3 border-t border-[#E8E6E0] pt-4 sm:flex-row sm:items-center sm:justify-between">
              <div className="grid grid-cols-3 gap-2 sm:flex sm:space-x-5">
-               <input type="file" ref={photoInputRef} className="hidden" accept="image/*" onChange={(e) => handleMediaSelect(e, 'image')} />
-               <input type="file" ref={videoInputRef} className="hidden" accept="video/*" onChange={(e) => handleMediaSelect(e, 'video')} />
+               <input type="file" ref={photoInputRef} className="hidden" accept="image/*" onChange={(e) => { setIsExploreMode(false); handleMediaSelect(e, 'image'); }} />
+               <input type="file" ref={videoInputRef} className="hidden" accept="video/*" onChange={(e) => { setIsExploreMode(false); handleMediaSelect(e, 'video'); }} />
+               <input type="file" ref={exploreInputRef} className="hidden" accept="image/*,video/*" onChange={(e) => {
+                 const file = e.target.files?.[0];
+                 if (file) {
+                   const type = file.type.startsWith('video/') ? 'video' : 'image';
+                   setIsExploreMode(true);
+                   handleMediaSelect(e, type);
+                 }
+               }} />
                
                <button 
                  onClick={() => photoInputRef.current?.click()}
@@ -1235,19 +1248,44 @@ export default function Home() {
                  <span className="text-xs font-semibold">Poll</span>
                </button>
              </div>
-             <motion.button 
-               whileHover={{ scale: 1.05 }}
-               whileTap={{ scale: 0.95 }}
-               onClick={handleCreatePost} 
-               disabled={isPosting || isTextTooShort || (!newPostContent.trim() && !selectedMedia)}
-               className="ca-btn-primary flex w-full sm:w-auto sm:min-w-[120px] px-5 py-3 sm:px-7 sm:py-2.5 items-center justify-center disabled:opacity-50 cursor-pointer"
-             >
-               {isPosting ? (
-                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-               ) : (
-                 "Post to Feed"
+             <div className="flex gap-2 w-full sm:w-auto mt-3 sm:mt-0">
+               {(!selectedMedia || isExploreMode) && (
+                 <motion.button 
+                   whileHover={{ scale: 1.05 }}
+                   whileTap={{ scale: 0.95 }}
+                   onClick={() => {
+                     if (!selectedMedia) {
+                       exploreInputRef.current?.click();
+                     } else {
+                       handleCreatePost();
+                     }
+                   }} 
+                   disabled={isPosting}
+                   className="flex w-full sm:w-auto sm:min-w-[140px] px-5 py-3 sm:px-7 sm:py-2.5 items-center justify-center disabled:opacity-50 cursor-pointer border-2 border-[#C8922A] text-[#C8922A] rounded-full font-bold text-sm bg-white hover:bg-[#FFF8EC] transition-colors"
+                 >
+                   {isPosting ? (
+                     <div className="w-5 h-5 border-2 border-[#C8922A]/30 border-t-[#C8922A] rounded-full animate-spin" />
+                   ) : (
+                     "Post to Explore"
+                   )}
+                 </motion.button>
                )}
-             </motion.button>
+               {(!selectedMedia || !isExploreMode) && (
+                 <motion.button 
+                   whileHover={{ scale: 1.05 }}
+                   whileTap={{ scale: 0.95 }}
+                   onClick={handleCreatePost} 
+                   disabled={isPosting || isTextTooShort || (!newPostContent.trim() && !selectedMedia)}
+                   className="ca-btn-primary flex w-full sm:w-auto sm:min-w-[120px] px-5 py-3 sm:px-7 sm:py-2.5 items-center justify-center disabled:opacity-50 cursor-pointer"
+                 >
+                   {isPosting ? (
+                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                   ) : (
+                     "Post to Feed"
+                   )}
+                 </motion.button>
+               )}
+             </div>
           </div>
         </motion.div>
 
