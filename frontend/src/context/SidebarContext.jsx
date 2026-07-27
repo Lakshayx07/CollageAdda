@@ -23,7 +23,7 @@ export function SidebarProvider({ children }) {
       leaveTimeoutRef.current = null;
     }
     if (enterTimeoutRef.current) clearTimeout(enterTimeoutRef.current);
-    enterTimeoutRef.current = setTimeout(() => setIsExpanded(true), 60);
+    enterTimeoutRef.current = setTimeout(() => setIsExpanded(true), 350);
   }, []);
 
   const handleMouseLeave = useCallback(() => {

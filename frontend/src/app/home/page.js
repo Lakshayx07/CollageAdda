@@ -1015,13 +1015,15 @@ export default function Home() {
               const firstName = currentUser?.name ? currentUser.name.split(' ')[0] : 'Champ';
               return (
                 <div className="flex items-center gap-3">
-                  <motion.div 
-                    animate={{ rotate: [0, 15, 0] }}
-                    transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-                    className={clsx("p-2 rounded-xl bg-amber-50/80 border border-amber-100 shadow-sm shrink-0", greeting.color)}
-                  >
-                    <Icon size={20} />
-                  </motion.div>
+                  <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-[#FFF8EC] to-[#FFEAD0] border border-[#FAD6A5]/60 shadow-[0_4px_12px_rgba(200,146,42,0.08)] shrink-0">
+                    <motion.div 
+                      animate={{ rotate: [0, 15, 0] }}
+                      transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+                      className={greeting.color}
+                    >
+                      <Icon size={24} strokeWidth={2.5} />
+                    </motion.div>
+                  </div>
                   <div>
                     <motion.p 
                       initial={{ opacity: 0, y: -5 }}

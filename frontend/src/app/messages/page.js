@@ -1515,15 +1515,15 @@ function MessagesContent() {
                               </div>
                             )}
                             {msg.mediaUrl && (
-                              <div className="mb-2 rounded-xl overflow-hidden border border-[#E8E6E0]">
+                              <div className="mb-2 rounded-xl overflow-hidden border border-[#E8E6E0] bg-black/5 flex items-center justify-center">
                                 {msg.mediaType === 'video' ? (
-                                  <video src={msg.mediaUrl} controls className="max-w-full h-auto max-h-48 object-cover" />
+                                  <video src={msg.mediaUrl} controls className="max-w-full h-auto max-h-[350px] object-contain" />
                                 ) : msg.mediaType === 'file' ? (
                                   <a href={msg.mediaUrl} download className="flex items-center gap-2 bg-white/30 px-3 py-2 text-sm font-black">
                                     <FileText size={18} /> Document
                                   </a>
                                 ) : (
-                                  <img src={msg.mediaUrl} alt="" className="max-w-full h-auto max-h-48 object-cover" />
+                                  <img src={msg.mediaUrl} alt="" className="max-w-full h-auto max-h-[350px] object-contain" />
                                 )}
                               </div>
                             )}
