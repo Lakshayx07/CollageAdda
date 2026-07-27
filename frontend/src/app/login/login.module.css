@@ -8,8 +8,8 @@
   height: 100dvh;
   min-height: 100dvh;
   box-sizing: border-box;
-  /* Space between the screen edges and the login card (outside the card) */
-  padding: 24px 0 40px;
+  /* Keep the card clear of the screen edges */
+  padding: 20px 0 36px;
   overflow: hidden;
   overscroll-behavior: none;
   background: #FFFDF8;
@@ -329,18 +329,23 @@
   position: relative;
   width: 100%;
   max-width: 445px;
-  min-height: 0;
-  max-height: 100%;
   justify-self: end;
   align-self: center;
-  padding: 60px 40px 35px;
-  overflow-x: hidden;
-  overflow-y: auto;
+  padding: 52px 40px 40px;
+  overflow: hidden;
   border: 1px solid rgba(0, 0, 0, .1);
   border-radius: 22px;
   background: #fff;
   box-shadow: 0 35px 90px rgba(0, 0, 0, .1), inset 0 1px rgba(0, 0, 0, .025);
   backdrop-filter: blur(22px);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.authPanel::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .authPanel::after {
@@ -357,7 +362,7 @@
 }
 
 .welcome {
-  margin: 33px 0 53px;
+  margin: 28px 0 40px;
   text-align: center;
 }
 
@@ -714,9 +719,39 @@
   align-items: center;
   justify-content: center;
   gap: 11px;
-  margin-top: 72px;
+  margin-top: 48px;
   color: #6B6B6B;
   font-size: 13px;
+}
+
+@media (max-height: 860px) {
+  .page {
+    padding: 16px 0 28px;
+  }
+
+  .authPanel {
+    padding: 40px 36px 32px;
+  }
+
+  .welcome {
+    margin: 20px 0 32px;
+  }
+
+  .welcome h2 {
+    font-size: 26px;
+  }
+
+  .security {
+    margin-top: 36px;
+  }
+
+  .divider {
+    margin: 24px 0;
+  }
+
+  .selectWrap {
+    margin-bottom: 24px;
+  }
 }
 
 .security svg {
@@ -883,10 +918,8 @@
 
   .authPanel {
     max-width: none;
-    min-height: 0;
-    max-height: none;
     justify-self: stretch;
-    padding: 45px 28px 32px;
+    padding: 45px 28px 36px;
   }
 }
 
@@ -900,7 +933,7 @@
   }
 
   .authPanel {
-    padding: 34px 20px 28px;
+    padding: 34px 20px 32px;
     border-radius: 18px;
   }
 
@@ -913,7 +946,7 @@
   }
 
   .security {
-    margin-top: 56px;
+    margin-top: 40px;
   }
 }
 
