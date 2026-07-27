@@ -1395,7 +1395,7 @@ export default function Home() {
               </div>
               
               {post.content && (
-                <p className="text-[#1A1A1A] text-[15px] mb-5 leading-relaxed">
+                <p className="text-[#1A1A1A] text-[15px] mb-5 leading-relaxed whitespace-pre-wrap">
                   {post.content}
                 </p>
               )}

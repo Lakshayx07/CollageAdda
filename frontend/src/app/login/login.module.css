@@ -489,28 +489,29 @@
   background: #fff;
   border: 1.5px solid #FDBA74;
   box-shadow: none;
+  cursor: pointer;
+  font: inherit;
 }
 
-.googleWrap:hover {
+.googleWrap:hover:not(:disabled) {
   background: #FFF7ED;
   border-color: #FCD34D;
 }
 
+.googleWrap:disabled {
+  cursor: wait;
+  opacity: .72;
+}
+
 .googleButtonFace {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  border-radius: 12px;
-  background: transparent;
   color: #1A1A1A;
   font-size: 14px;
   font-weight: 600;
   letter-spacing: -.01em;
-  pointer-events: none;
 }
 
 .googleButtonFace span {
@@ -532,20 +533,16 @@
   height: 18px;
 }
 
-.googleAuthControl {
+.googleFallbackHost {
   position: absolute;
-  inset: 0;
-  z-index: 2;
+  width: 1px;
+  height: 1px;
   overflow: hidden;
-  border-radius: 12px;
-  opacity: .001;
-}
-
-.googleAuthControl>div,
-.googleAuthControl iframe {
-  width: 100% !important;
-  height: 50px !important;
-  border-radius: 12px !important;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .divider {

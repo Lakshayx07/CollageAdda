@@ -685,7 +685,7 @@ export default function UserProfilePage({ params }) {
                     </div>
                   </div>
                   {activePost.content && (
-                    <p className="text-sm text-[#4A4A4A] leading-relaxed">{activePost.content}</p>
+                    <p className="text-sm text-[#4A4A4A] leading-relaxed whitespace-pre-wrap">{activePost.content}</p>
                   )}
                   {/* Counts */}
                   <div className="flex items-center gap-4 mt-3 text-[11px] text-[#6B6B6B] font-bold">
