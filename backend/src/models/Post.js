@@ -20,7 +20,8 @@ const postSchema = mongoose.Schema({
       votes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
     }],
     allowMultiple: { type: Boolean, default: false }
-  }
+  },
+  isMemoryOnly: { type: Boolean, default: false }
 }, { timestamps: true });
 
 // Compound index to optimize the university feed query (GET /api/posts)

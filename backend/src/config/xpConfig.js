@@ -1,4 +1,5 @@
 export const XP_ACTIONS = {
+  EXPLORE_POST: 15,
   CONNECT_USER: 5,
   CREATE_POST: 10,
   CREATE_STORY: 3,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { LogOut, Edit3, X, Check, Plus, Grid, Heart, MessageCircle, Send, ChevronLeft, ChevronRight, Share2, Ghost, MapPin, Zap, Star, Camera, Clock, Image as ImageIcon, Music, Code, Palette, Plane, Gamepad2, Book, Dumbbell, Film, Utensils, Trophy, Briefcase, Users, Crown, CalendarDays, GraduationCap, Flame, Building2, TrendingUp, Award } from "lucide-react";
+import { LogOut, Edit3, X, Check, Plus, Grid, Heart, MessageCircle, Send, ChevronLeft, ChevronRight, Share2, Ghost, MapPin, Zap, Star, Camera, Clock, Image as ImageIcon, Music, Code, Palette, Plane, Gamepad2, Book, Dumbbell, Film, Utensils, Trophy, Briefcase, Users, Crown, CalendarDays, GraduationCap, Flame, Building2, TrendingUp, Award, User } from "lucide-react";
 import { getAuthenticatedSupabaseClient } from "@/utils/supabaseAuthUser";
 
 const InstagramIcon = ({ size = 20 }) => (
@@ -34,6 +34,7 @@ import { saveProfileAvatarUrl, uploadAvatar } from "@/utils/supabaseUploads";
 import { getAvatarSrc } from "@/utils/defaultAvatars";
 import { useApiQuery } from "../../utils/useApiQuery";
 import { useQueryClient } from "@tanstack/react-query";
+import { indiaStatesDistricts } from "@/utils/indiaStatesDistricts";
 
 const INTEREST_OPTIONS = [
   { name: "Hackathons", icon: <Trophy size={12} /> },
@@ -71,15 +72,15 @@ const XP_TIERS = [
 
 const XP_ACTIONS = [
   { 
-    action: "Connect with another user", 
-    xp: "+5 XP", 
-    icon: <Users size={16} />,
-    iconBg: "bg-blue-50 group-hover:bg-blue-100",
-    iconColor: "text-blue-500 group-hover:text-blue-600",
-    xpBg: "bg-blue-50 border-blue-100",
-    xpText: "text-blue-600",
-    borderHover: "hover:border-blue-200",
-    shadowHover: "hover:shadow-[0_8px_24px_rgba(59,130,246,0.12)]"
+    action: "Post a picture on explore", 
+    xp: "+15 XP", 
+    icon: <ImageIcon size={16} />,
+    iconBg: "bg-amber-50 group-hover:bg-amber-100",
+    iconColor: "text-amber-500 group-hover:text-amber-600",
+    xpBg: "bg-amber-50 border-amber-100",
+    xpText: "text-amber-600",
+    borderHover: "hover:border-amber-200",
+    shadowHover: "hover:shadow-[0_8px_24px_rgba(245,158,11,0.12)]"
   },
   { 
     action: "Create a post on the home page", 
@@ -93,6 +94,17 @@ const XP_ACTIONS = [
     shadowHover: "hover:shadow-[0_8px_24px_rgba(168,85,247,0.12)]"
   },
   { 
+    action: "Connect with another user", 
+    xp: "+5 XP", 
+    icon: <Users size={16} />,
+    iconBg: "bg-blue-50 group-hover:bg-blue-100",
+    iconColor: "text-blue-500 group-hover:text-blue-600",
+    xpBg: "bg-blue-50 border-blue-100",
+    xpText: "text-blue-600",
+    borderHover: "hover:border-blue-200",
+    shadowHover: "hover:shadow-[0_8px_24px_rgba(59,130,246,0.12)]"
+  },
+  { 
     action: "Join a community", 
     xp: "+5 XP", 
     icon: <Building2 size={16} />,
@@ -102,17 +114,6 @@ const XP_ACTIONS = [
     xpText: "text-orange-600",
     borderHover: "hover:border-orange-200",
     shadowHover: "hover:shadow-[0_8px_24px_rgba(249,115,22,0.12)]"
-  },
-  { 
-    action: "Like a post", 
-    xp: "+1 XP", 
-    icon: <Heart size={16} />,
-    iconBg: "bg-pink-50 group-hover:bg-pink-100",
-    iconColor: "text-pink-500 group-hover:text-pink-600",
-    xpBg: "bg-pink-50 border-pink-100",
-    xpText: "text-pink-600",
-    borderHover: "hover:border-pink-200",
-    shadowHover: "hover:shadow-[0_8px_24px_rgba(236,72,153,0.12)]"
   },
   { 
     action: "Comment on a post", 
@@ -125,8 +126,18 @@ const XP_ACTIONS = [
     borderHover: "hover:border-emerald-200",
     shadowHover: "hover:shadow-[0_8px_24px_rgba(16,185,129,0.12)]"
   },
+  { 
+    action: "Like a post", 
+    xp: "+1 XP", 
+    icon: <Heart size={16} />,
+    iconBg: "bg-pink-50 group-hover:bg-pink-100",
+    iconColor: "text-pink-500 group-hover:text-pink-600",
+    xpBg: "bg-pink-50 border-pink-100",
+    xpText: "text-pink-600",
+    borderHover: "hover:border-pink-200",
+    shadowHover: "hover:shadow-[0_8px_24px_rgba(236,72,153,0.12)]"
+  },
 ];
-
 const ACHIEVEMENT_BADGES = [
   { id: "weekly-poster", name: "Weekly Poster", condition: "15 posts in a week", icon: "📝", image: "/badges/posts-week.png", stat: "postsThisWeek", target: 15, glow: "rgba(37, 139, 255, 0.18)" },
   { id: "story-streak", name: "Story Streak", condition: "15 stories in a week", icon: "🖼️", image: "/badges/stories-week.png", stat: "storiesThisWeek", target: 15, glow: "rgba(185, 78, 255, 0.18)" },
@@ -152,6 +163,12 @@ export default function ProfilePage() {
   const [storyInput, setStoryInput] = useState({ imageUrl: "", caption: "" });
   const [storyUploading, setStoryUploading] = useState(false);
   const [viewingStoryIndex, setViewingStoryIndex] = useState(0);
+  const [currentTime, setCurrentTime] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(Date.now()), 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   const [editData, setEditData] = useState({
     name: "",
@@ -161,6 +178,8 @@ export default function ProfilePage() {
     course: "",
     branch: "",
     studyYear: "",
+    hometownState: "",
+    hometownDistrict: "",
     phone: "",
     phonePrivacy: "private",
     linkedin: "",
@@ -174,7 +193,7 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isAvatarUploading, setIsAvatarUploading] = useState(false);
   const [unfollowingId, setUnfollowingId] = useState(null);
-  const [activeTab, setActiveTab] = useState("about");
+  const [activeTab, setActiveTab] = useState("badges");
   const [communitiesCount, setCommunitiesCount] = useState(0);
   const [campusUsers, setCampusUsers] = useState([]);
 
@@ -187,7 +206,28 @@ export default function ProfilePage() {
   useEffect(() => {
     const stored = localStorage.getItem("collegeadda_user");
     if (stored) {
-      setUser(JSON.parse(stored));
+      const parsedUser = JSON.parse(stored);
+      setUser(parsedUser);
+      setEditData({
+        name: parsedUser.name || "",
+        bio: parsedUser.bio || "",
+        profilePic: parsedUser.profilePic || "",
+        passOutBatch: parsedUser.passOutBatch || "",
+        course: parsedUser.course || "",
+        branch: parsedUser.branch || "",
+        studyYear: parsedUser.studyYear || parsedUser.year || "",
+        hometownState: parsedUser.hometownState || "",
+        hometownDistrict: parsedUser.hometownDistrict || "",
+        phone: parsedUser.phone || "",
+        phonePrivacy: parsedUser.phonePrivacy || "private",
+        linkedin: parsedUser.linkedin || "",
+        github: parsedUser.github || "",
+        instaId: parsedUser.instagram || "", 
+        snapId: parsedUser.snapchat || "", 
+        interests: parsedUser.interests || [], 
+        sports: parsedUser.sports || [],
+        customCourse: ""
+      });
     } else {
       router.push("/login");
     }
@@ -222,26 +262,33 @@ export default function ProfilePage() {
       // Only update if something changed to prevent infinite loops, or just rely on Query
       setUser(mergedProfileData);
       localStorage.setItem("collegeadda_user", JSON.stringify(mergedProfileData));
-      setEditData({ 
-        name: profileData.name || "",
-        bio: profileData.bio || "",
-        profilePic: profileData.profilePic || "",
-        passOutBatch: profileData.passOutBatch || "",
-        course: profileData.course || "",
-        branch: profileData.branch || "",
-        studyYear: profileData.studyYear || profileData.year || "",
-        phone: profileData.phone || "",
-        phonePrivacy: profileData.phonePrivacy || "private",
-        linkedin: profileData.linkedin || "",
-        github: profileData.github || "",
-        instaId: profileData.instagram || "", 
-        snapId: profileData.snapchat || "", 
-        interests: profileData.interests || [], 
-        sports: profileData.sports || [] 
-      });
+      
+      // Prevent resetting editData if the user is currently editing (modal is open)
+      if (!modal) {
+        setEditData({ 
+          name: profileData.name || "",
+          bio: profileData.bio || "",
+          profilePic: profileData.profilePic || "",
+          passOutBatch: profileData.passOutBatch || "",
+          course: profileData.course || "",
+          branch: profileData.branch || "",
+          studyYear: profileData.studyYear || profileData.year || "",
+          hometownState: profileData.hometownState || "",
+          hometownDistrict: profileData.hometownDistrict || "",
+          phone: profileData.phone || "",
+          phonePrivacy: profileData.phonePrivacy || "private",
+          linkedin: profileData.linkedin || "",
+          github: profileData.github || "",
+          instaId: profileData.instagram || "", 
+          snapId: profileData.snapchat || "", 
+          interests: profileData.interests || [], 
+          sports: profileData.sports || [],
+          customCourse: ""
+        });
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profileData]);
+  }, [profileData, modal]);
 
   // -- TanStack Query: My Posts --
   const { data: myPostsRaw = [] } = useApiQuery(
@@ -504,6 +551,8 @@ export default function ProfilePage() {
           course: finalCourse,
           branch: editData.branch,
           studyYear: editData.studyYear,
+          hometownState: editData.hometownState,
+          hometownDistrict: editData.hometownDistrict,
           phone: editData.phone,
           phonePrivacy: editData.phonePrivacy,
           linkedin: editData.linkedin,
@@ -539,6 +588,9 @@ export default function ProfilePage() {
         ].forEach(queryKey => queryClient.invalidateQueries({ queryKey }));
         setSaved(true);
         setTimeout(() => { setSaved(false); setModal(null); }, 1200);
+        if (updatedUser.warning) {
+          setTimeout(() => alert(updatedUser.warning), 100);
+        }
       } else {
         const errorData = await res.json().catch(() => ({}));
         alert(`Failed to update profile: ${errorData.message || res.statusText}`);
@@ -577,18 +629,18 @@ export default function ProfilePage() {
   const toggleInterest = (interestName) => {
     setEditData(prev => ({
       ...prev,
-      interests: prev.interests.includes(interestName)
-        ? prev.interests.filter(i => i !== interestName)
-        : [...prev.interests, interestName]
+      interests: (prev.interests || []).includes(interestName)
+        ? (prev.interests || []).filter(i => i !== interestName)
+        : [...(prev.interests || []), interestName]
     }));
   };
 
   const toggleSport = (sportName) => {
     setEditData(prev => ({
       ...prev,
-      sports: prev.sports.includes(sportName)
-        ? prev.sports.filter(s => s !== sportName)
-        : [...prev.sports, sportName]
+      sports: (prev.sports || []).includes(sportName)
+        ? (prev.sports || []).filter(s => s !== sportName)
+        : [...(prev.sports || []), sportName]
     }));
   };
 
@@ -757,10 +809,10 @@ export default function ProfilePage() {
                     Class of {user.passOutBatch}
                   </span>
                 )}
-                {(collegeLocation || user.studyYear) && (
+                {(user.hometownState || collegeLocation || user.studyYear) && (
                   <span className="flex items-center gap-1.5">
                     <MapPin size={13} className="text-[#C8922A] shrink-0" />
-                    {collegeLocation || user.studyYear}
+                    {user.hometownState ? `${user.hometownState}${user.hometownDistrict ? `, ${user.hometownDistrict}` : ''}` : collegeLocation || user.studyYear}
                   </span>
                 )}
               </div>
@@ -769,16 +821,16 @@ export default function ProfilePage() {
               <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
                 <div className="flex flex-wrap items-center gap-2">
                   {/* Streak pill */}
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black bg-orange-50 border border-orange-200 text-orange-600">
-                    <Flame size={13} className="text-orange-500" />
-                    {getDisplayStreak(user)} Day Streak
+                  <span className="group inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-black bg-gradient-to-r from-orange-50 to-rose-50 border border-orange-200 shadow-sm hover:shadow-[0_4px_12px_rgba(249,115,22,0.15)] hover:-translate-y-0.5 transition-all cursor-default">
+                    <span className="text-sm drop-shadow-sm group-hover:scale-110 transition-transform">🔥</span>
+                    <span className="bg-gradient-to-r from-orange-600 to-rose-600 bg-clip-text text-transparent">{getDisplayStreak(user)} Day Streak</span>
                   </span>
 
                   {/* Campus Rank pill */}
                   {campusRank && (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black bg-yellow-50 border border-yellow-200 text-yellow-700">
-                      <Trophy size={13} className="text-yellow-500" />
-                      Campus Rank #{campusRank}
+                    <span className="group inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-black bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 shadow-sm hover:shadow-[0_4px_12px_rgba(245,158,11,0.15)] hover:-translate-y-0.5 transition-all cursor-default">
+                      <span className="text-sm drop-shadow-sm group-hover:scale-110 transition-transform">🏆</span>
+                      <span className="bg-gradient-to-r from-amber-700 to-yellow-600 bg-clip-text text-transparent">Campus Rank #{campusRank}</span>
                     </span>
                   )}
                 </div>
@@ -1036,13 +1088,13 @@ export default function ProfilePage() {
               </div>
 
               {earnedBadges.filter(badge => badge.earned).length > 0 ? (
-                <div className="relative mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+                <div className="relative mt-5 flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 hide-scrollbar">
                   {earnedBadges.filter(badge => badge.earned).map((badge) => (
                     <motion.div
                       key={badge.id}
                       whileHover={{ y: -6, scale: 1.03 }}
                       transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                      className="group relative rounded-[1.35rem] border border-[#E8E6E0] bg-white p-3 shadow-sm hover:shadow-[0_12px_30px_rgba(200,146,42,0.12)] transition-shadow overflow-hidden"
+                      className="group relative w-36 shrink-0 snap-start rounded-[1.35rem] border border-[#E8E6E0] bg-white p-3 shadow-sm hover:shadow-[0_12px_30px_rgba(200,146,42,0.12)] transition-shadow overflow-hidden"
                     >
                       <div className="absolute inset-0 bg-gradient-to-br from-transparent to-amber-100/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                       
@@ -1064,31 +1116,6 @@ export default function ProfilePage() {
               )}
             </section>
 
-            <section className="rounded-[2rem] border border-[#E8E6E0] bg-white p-5 shadow-sm sm:p-6">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-[#888888]">Total XP</p>
-                  <div className="mt-2 flex flex-wrap items-center gap-3">
-                    <p className="text-4xl font-black tracking-tight text-[#1A1A1A]">{totalXp.toLocaleString()}</p>
-                    <span className="inline-flex items-center rounded-full border border-[#E8E6E0] bg-[#F9F8F5] px-3 py-1 text-xs font-black text-[#4A4A4A]">
-                      {currentTick ? `${currentTick.icon} ${currentTick.label}` : "No tick yet"}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black bg-orange-50 border border-orange-200 text-orange-600">
-                    <Flame size={13} className="text-orange-500" />
-                    {getDisplayStreak(user)} Day Streak
-                  </span>
-                  {nextTick && (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black bg-[#FFF8EC] border border-[#C8922A]/20 text-[#9A6A10]">
-                      <Star size={13} className="text-[#C8922A]" />
-                      Next: {nextTick.icon} {nextTick.label}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </section>
 
             {/* Performance Stats Placeholder */}
             <section className="rounded-[2rem] border border-[#E8E6E0] bg-white p-5 shadow-sm sm:p-6">
@@ -1097,10 +1124,16 @@ export default function ProfilePage() {
                   <h3 className="text-sm font-black uppercase tracking-wider text-[#1A1A1A] flex items-center gap-2">
                     <TrendingUp size={16} className="text-emerald-500" /> Performance Stats
                   </h3>
-                  <p className="mt-1 text-[10px] font-semibold text-[#888888] uppercase tracking-wider">Weekly / Monthly totals (Pending Backend Support)</p>
+                  <p className="mt-1 text-[10px] font-semibold text-[#888888] uppercase tracking-wider">Weekly / Monthly totals</p>
                 </div>
                 <div className="flex items-center gap-1 rounded-full bg-[#F9F8F5] p-1 border border-[#E8E6E0]">
-                  <span className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#1A1A1A] shadow-sm">Current</span>
+                  <span className="flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-red-600 shadow-sm border border-red-200 hover:bg-red-100 transition-colors cursor-default">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]"></span>
+                    </span>
+                    Live
+                  </span>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-3">
@@ -1450,13 +1483,47 @@ export default function ProfilePage() {
 
                 <div className="space-y-3">
                   <label className="text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest ml-2">Bio</label>
-                  <input
-                    maxLength={100}
+                  <textarea
+                    maxLength={500}
+                    rows={3}
                     value={editData.bio}
                     onChange={e => setEditData({ ...editData, bio: e.target.value })}
-                    className="w-full rounded-2xl border border-[#E8E6E0] bg-black/30 px-4 py-3 text-sm font-semibold text-[#1A1A1A] outline-none focus:border-[#C8922A]"
+                    className="w-full rounded-2xl border border-[#E8E6E0] bg-black/30 px-4 py-3 text-sm font-semibold text-[#1A1A1A] outline-none focus:border-[#C8922A] resize-none"
                     placeholder="Final year CSE | Dev | CAT 2025 Aspirant"
                   />
+                </div>
+
+                <div className="space-y-4 pt-2">
+                  <label className="text-sm font-black text-[#1A1A1A] flex items-center gap-2">
+                    <MapPin size={16} className="text-[#C8922A]" />
+                    Where are you from? (Hometown)
+                  </label>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <select
+                      value={editData.hometownState}
+                      onChange={e => setEditData({ ...editData, hometownState: e.target.value, hometownDistrict: "" })}
+                      className="w-full rounded-2xl border border-[#E8E6E0] bg-black/30 px-4 py-3 text-sm font-semibold text-[#1A1A1A] outline-none focus:border-[#C8922A]"
+                    >
+                      <option value="" className="bg-[#0A0A0F]">Select State</option>
+                      {Object.keys(indiaStatesDistricts).sort().map(state => (
+                        <option key={state} value={state} className="bg-[#0A0A0F]">{state}</option>
+                      ))}
+                    </select>
+                    
+                    <select
+                      value={editData.hometownDistrict}
+                      onChange={e => setEditData({ ...editData, hometownDistrict: e.target.value })}
+                      disabled={!editData.hometownState}
+                      className="w-full rounded-2xl border border-[#E8E6E0] bg-black/30 px-4 py-3 text-sm font-semibold text-[#1A1A1A] outline-none focus:border-[#C8922A] disabled:opacity-50"
+                    >
+                      <option value="" className="bg-[#0A0A0F]">Select District</option>
+                      {editData.hometownState && indiaStatesDistricts[editData.hometownState]
+                        ? indiaStatesDistricts[editData.hometownState].sort().map(dist => (
+                            <option key={dist} value={dist} className="bg-[#0A0A0F]">{dist}</option>
+                          ))
+                        : null}
+                    </select>
+                  </div>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -1576,7 +1643,7 @@ export default function ProfilePage() {
                         onClick={() => toggleInterest(i.name)}
                         className={clsx(
                           "px-4 py-2 rounded-full text-[10px] font-bold transition-all border flex items-center space-x-2",
-                          editData.interests.includes(i.name) ? "gradient-bg text-[#1A1A1A] border-transparent" : "bg-[#F9F8F5] border border-[#E8E6E0] text-[#6B6B6B] border-[#E8E6E0]"
+                          (editData.interests || []).includes(i.name) ? "gradient-bg text-[#1A1A1A] border-transparent" : "bg-[#F9F8F5] border border-[#E8E6E0] text-[#6B6B6B] border-[#E8E6E0]"
                         )}
                       >
                         {i.icon}
@@ -1596,7 +1663,7 @@ export default function ProfilePage() {
                         onClick={() => toggleSport(s.name)}
                         className={clsx(
                           "px-4 py-2 rounded-full text-[10px] font-bold transition-all border flex items-center space-x-2",
-                          editData.sports.includes(s.name) ? "bg-yellow-500 text-black border-transparent font-black" : "bg-[#F9F8F5] border border-[#E8E6E0] text-[#6B6B6B] border-[#E8E6E0]"
+                          (editData.sports || []).includes(s.name) ? "bg-yellow-500 text-black border-transparent font-black" : "bg-[#F9F8F5] border border-[#E8E6E0] text-[#6B6B6B] border-[#E8E6E0]"
                         )}
                       >
                         {s.icon}
@@ -1915,7 +1982,7 @@ export default function ProfilePage() {
                     <p className="text-[#1A1A1A] font-black text-sm"><NameWithTick name={user.name} tick={user.currentTick} user={user} /></p>
                     <p className="text-[#6B6B6B] text-[10px] flex items-center gap-1">
                       <Clock size={9} />
-                      {Math.round((Date.now() - activeStories[viewingStoryIndex]?.createdAt) / 60000)}m ago · expires in {Math.round((24 * 60 - (Date.now() - activeStories[viewingStoryIndex]?.createdAt) / 60000))}m
+                      {Math.round((currentTime - activeStories[viewingStoryIndex]?.createdAt) / 60000)}m ago · expires in {Math.round((24 * 60 - (currentTime - activeStories[viewingStoryIndex]?.createdAt) / 60000))}m
                     </p>
                   </div>
                 </div>

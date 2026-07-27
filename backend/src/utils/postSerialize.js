@@ -78,6 +78,7 @@ export const slimPost = (post, userId) => {
     likedByMe: likes.some((id) => toIdString(id) === uid),
     commentsCount: comments.length,
     comments: slimComments(comments),
-    poll: slimPoll(post.poll, userId)
+    poll: slimPoll(post.poll, userId),
+    isMemoryOnly: post.isMemoryOnly || false
   };
 };

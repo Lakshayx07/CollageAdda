@@ -131,17 +131,30 @@ router.get('/:id/students', protect, async (req, res) => {
     };
 
     // Do NOT select profilePic — base64 blobs make this query multi-second
-    const [students, realStudentCount] = await Promise.all([
+    const [students, realStudentCount, allUsersForRank] = await Promise.all([
       User.find(universityFilter)
-        .select('name bio university interests year studyYear isVerified createdAt')
+        .select('name bio university interests year studyYear isVerified createdAt xp points unlockedBadges followers following')
         .sort({ createdAt: -1 })
         .limit(40)
         .lean(),
       User.countDocuments(universityFilter),
+      User.find(universityFilter).select('followers following').lean()
     ]);
 
+    const scores = allUsersForRank.map(u => (u.followers?.length || 0) + (u.following?.length || 0));
+
+    const studentsWithRank = students.map((student) => {
+      const myScore = (student.followers?.length || 0) + (student.following?.length || 0);
+      let higherScoringUsers = 0;
+      for (const score of scores) {
+        if (score > myScore) higherScoringUsers++;
+      }
+      student.campusRank = higherScoringUsers + 1;
+      return student;
+    });
+
     res.json({
-      studentsData: students.map(withAvatarUrl),
+      studentsData: studentsWithRank.map(withAvatarUrl),
       realStudentCount,
     });
   } catch (error) {
@@ -163,7 +176,7 @@ router.get('/:id', protect, async (req, res) => {
     // Slim posts like the home feed so base64 media is not embedded in JSON.
     const [posts, realStudentCount, realPostCount] = await Promise.all([
       Post.find(universityFilter)
-        .select('content mediaUrl mediaType likes comments hashtags createdAt author university')
+        .select('content mediaUrl mediaType likes comments hashtags createdAt author university isMemoryOnly')
         .populate('author', 'name university isVerified xp points currentTick')
         .populate('comments.user', 'name isVerified')
         .sort({ createdAt: -1 })
