@@ -37,6 +37,7 @@ import {
   Landmark,
   BookOpen,
   SearchX,
+  X,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useApiQuery } from "../../utils/useApiQuery";
@@ -114,6 +115,7 @@ function ExploreContent() {
   const [toastMessage, setToastMessage] = useState(null);
   const [dragX, setDragX] = useState(0);
   const [viewMode, setViewMode] = useState("cards"); // 'cards' or 'list'
+  const [selectedMemoryPhoto, setSelectedMemoryPhoto] = useState(null);
 
   // ── Filter bar state ────────────────────────────────────────────────────────
   const [filterCity, setFilterCity] = useState("All");
@@ -1791,7 +1793,8 @@ function ExploreContent() {
                           {memoryPosts.map((post, i) => (
                             <div
                               key={post._id || i}
-                              className="aspect-square relative group overflow-hidden bg-[#F3F2EE] rounded-xl border border-[#E8E6E0] p-1.5"
+                              onClick={() => setSelectedMemoryPhoto(post.mediaUrl || post.image)}
+                              className="aspect-square relative group overflow-hidden bg-[#F3F2EE] rounded-xl border border-[#E8E6E0] p-1.5 cursor-pointer"
                             >
                               <img
                                 src={post.mediaUrl || post.image}
@@ -1910,6 +1913,35 @@ function ExploreContent() {
               </div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {selectedMemoryPhoto && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4"
+            onClick={() => setSelectedMemoryPhoto(null)}
+          >
+            <button
+              onClick={() => setSelectedMemoryPhoto(null)}
+              className="absolute top-6 right-6 text-white/80 hover:text-white p-2 z-10 transition-colors"
+            >
+              <X size={32} strokeWidth={2.5} />
+            </button>
+            <motion.img
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              src={selectedMemoryPhoto}
+              className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl"
+              alt="Memory"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
