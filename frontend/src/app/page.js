@@ -434,29 +434,31 @@ export default function WelcomeTourPage() {
                   >
                     {/* CTA at top — above 01 HOME FEED for easy access */}
                     {index === 0 && (
-                      <Link href="/login" style={{ textDecoration: 'none', display: 'inline-block', marginBottom: '28px' }}>
-                        <motion.div
-                          initial={{ opacity: 0, y: 8 }}
-                          whileInView={{ opacity: 1, y: 0 }}
-                          viewport={{ once: true }}
-                          transition={{ duration: 0.4 }}
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.98 }}
-                          style={{
-                            display: 'inline-block',
-                            padding: '12px 32px',
-                            borderRadius: '100px',
-                            background: 'linear-gradient(135deg, #F97316, #FB923C)',
-                            color: 'white',
-                            fontSize: '15px', fontWeight: '700',
-                            textDecoration: 'none',
-                            boxShadow: '0 0 40px rgba(249,115,22,0.45)',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          {"Let's Go to CampusAdda 🚀"}
-                        </motion.div>
-                      </Link>
+                      <div style={{ display: 'flex', justifyContent: 'center', width: '100%', marginBottom: '28px' }}>
+                        <Link href="/login" style={{ textDecoration: 'none', display: 'inline-block' }}>
+                          <motion.div
+                            initial={{ opacity: 0, y: 8 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.4 }}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.98 }}
+                            style={{
+                              display: 'inline-block',
+                              padding: '12px 32px',
+                              borderRadius: '100px',
+                              background: 'linear-gradient(135deg, #F97316, #FB923C)',
+                              color: 'white',
+                              fontSize: '15px', fontWeight: '700',
+                              textDecoration: 'none',
+                              boxShadow: '0 0 40px rgba(249,115,22,0.45)',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {"Let's Go to CampusAdda 🚀"}
+                          </motion.div>
+                        </Link>
+                      </div>
                     )}
 
                     {/* Number + tag */}
