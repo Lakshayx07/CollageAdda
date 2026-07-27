@@ -275,7 +275,7 @@ router.put('/profile', protect, async (req, res) => {
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    const {
+    let {
       name,
       bio,
       profilePic,
@@ -285,6 +285,8 @@ router.put('/profile', protect, async (req, res) => {
       phone,
       snapchat,
       university,
+      hometownState,
+      hometownDistrict,
       password,
       interests,
       goals,
@@ -304,14 +306,25 @@ router.put('/profile', protect, async (req, res) => {
                               (course !== undefined && course !== user.course) ||
                               (branch !== undefined && branch !== user.branch);
 
+    let coreRestricted = false;
+
     if (coreFieldsChanged && user.isVerified) {
       if (user.lastCoreProfileEditDate) {
         const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
         if (user.lastCoreProfileEditDate > thirtyDaysAgo) {
-          return res.status(400).json({ message: 'You can only change your core details (Name, Batch, Year, Course, Branch) once every 30 days.' });
+          coreRestricted = true;
+          // Revert core fields to undefined so they are ignored below
+          name = undefined;
+          passOutBatch = undefined;
+          studyYear = undefined;
+          year = undefined;
+          course = undefined;
+          branch = undefined;
         }
       }
-      user.lastCoreProfileEditDate = new Date();
+      if (!coreRestricted) {
+        user.lastCoreProfileEditDate = new Date();
+      }
     }
     
     if (name !== undefined) user.name = name;
@@ -327,6 +340,8 @@ router.put('/profile', protect, async (req, res) => {
     if (req.body.phonePrivacy !== undefined) user.phonePrivacy = req.body.phonePrivacy;
     if (snapchat !== undefined) user.snapchat = snapchat;
     if (university) user.university = normalizeUniversityName(university);
+    if (hometownState !== undefined) user.hometownState = hometownState;
+    if (hometownDistrict !== undefined) user.hometownDistrict = hometownDistrict;
     if (interests !== undefined) user.interests = interests;
     if (goals !== undefined) user.goals = goals;
     if (sports !== undefined) user.sports = sports;
@@ -351,7 +366,12 @@ router.put('/profile', protect, async (req, res) => {
       await ensureUniversityGroup(updated);
     }
 
-    res.json(publicUserPayload(updated));
+    const payload = publicUserPayload(updated);
+    if (coreRestricted) {
+      payload.warning = 'Other details were updated successfully, but your core details (Name, Batch, Year, Course, Branch) cannot be changed before 30 days.';
+    }
+
+    res.json(payload);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

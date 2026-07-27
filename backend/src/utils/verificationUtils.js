@@ -25,6 +25,8 @@ export const publicUserPayload = (user, token) => {
     name: user.name,
     email: user.email,
     university: user.university,
+    hometownState: user.hometownState,
+    hometownDistrict: user.hometownDistrict,
     bio: user.bio,
     profilePic: user.profilePic,
     instagram: user.instagram,

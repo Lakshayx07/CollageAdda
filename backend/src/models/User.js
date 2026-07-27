@@ -7,6 +7,8 @@ const userSchema = mongoose.Schema({
   password: { type: String, required: true },
   university: { type: String, required: true },
   bio: { type: String, default: '' },
+  hometownState: { type: String, default: '' },
+  hometownDistrict: { type: String, default: '' },
   isPremium: { type: Boolean, default: false },
   profilePic: { type: String, default: '' },
   instagram: { type: String, default: '' },

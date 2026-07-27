@@ -34,6 +34,7 @@ import { saveProfileAvatarUrl, uploadAvatar } from "@/utils/supabaseUploads";
 import { getAvatarSrc } from "@/utils/defaultAvatars";
 import { useApiQuery } from "../../utils/useApiQuery";
 import { useQueryClient } from "@tanstack/react-query";
+import { indiaStatesDistricts } from "@/utils/indiaStatesDistricts";
 
 const INTEREST_OPTIONS = [
   { name: "Hackathons", icon: <Trophy size={12} /> },
@@ -177,6 +178,8 @@ export default function ProfilePage() {
     course: "",
     branch: "",
     studyYear: "",
+    hometownState: "",
+    hometownDistrict: "",
     phone: "",
     phonePrivacy: "private",
     linkedin: "",
@@ -213,6 +216,8 @@ export default function ProfilePage() {
         course: parsedUser.course || "",
         branch: parsedUser.branch || "",
         studyYear: parsedUser.studyYear || parsedUser.year || "",
+        hometownState: parsedUser.hometownState || "",
+        hometownDistrict: parsedUser.hometownDistrict || "",
         phone: parsedUser.phone || "",
         phonePrivacy: parsedUser.phonePrivacy || "private",
         linkedin: parsedUser.linkedin || "",
@@ -268,6 +273,8 @@ export default function ProfilePage() {
           course: profileData.course || "",
           branch: profileData.branch || "",
           studyYear: profileData.studyYear || profileData.year || "",
+          hometownState: profileData.hometownState || "",
+          hometownDistrict: profileData.hometownDistrict || "",
           phone: profileData.phone || "",
           phonePrivacy: profileData.phonePrivacy || "private",
           linkedin: profileData.linkedin || "",
@@ -544,6 +551,8 @@ export default function ProfilePage() {
           course: finalCourse,
           branch: editData.branch,
           studyYear: editData.studyYear,
+          hometownState: editData.hometownState,
+          hometownDistrict: editData.hometownDistrict,
           phone: editData.phone,
           phonePrivacy: editData.phonePrivacy,
           linkedin: editData.linkedin,
@@ -579,6 +588,9 @@ export default function ProfilePage() {
         ].forEach(queryKey => queryClient.invalidateQueries({ queryKey }));
         setSaved(true);
         setTimeout(() => { setSaved(false); setModal(null); }, 1200);
+        if (updatedUser.warning) {
+          setTimeout(() => alert(updatedUser.warning), 100);
+        }
       } else {
         const errorData = await res.json().catch(() => ({}));
         alert(`Failed to update profile: ${errorData.message || res.statusText}`);
@@ -797,10 +809,10 @@ export default function ProfilePage() {
                     Class of {user.passOutBatch}
                   </span>
                 )}
-                {(collegeLocation || user.studyYear) && (
+                {(user.hometownState || collegeLocation || user.studyYear) && (
                   <span className="flex items-center gap-1.5">
                     <MapPin size={13} className="text-[#C8922A] shrink-0" />
-                    {collegeLocation || user.studyYear}
+                    {user.hometownState ? `${user.hometownState}${user.hometownDistrict ? `, ${user.hometownDistrict}` : ''}` : collegeLocation || user.studyYear}
                   </span>
                 )}
               </div>
@@ -1479,6 +1491,39 @@ export default function ProfilePage() {
                     className="w-full rounded-2xl border border-[#E8E6E0] bg-black/30 px-4 py-3 text-sm font-semibold text-[#1A1A1A] outline-none focus:border-[#C8922A] resize-none"
                     placeholder="Final year CSE | Dev | CAT 2025 Aspirant"
                   />
+                </div>
+
+                <div className="space-y-4 pt-2">
+                  <label className="text-sm font-black text-[#1A1A1A] flex items-center gap-2">
+                    <MapPin size={16} className="text-[#C8922A]" />
+                    Where are you from? (Hometown)
+                  </label>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <select
+                      value={editData.hometownState}
+                      onChange={e => setEditData({ ...editData, hometownState: e.target.value, hometownDistrict: "" })}
+                      className="w-full rounded-2xl border border-[#E8E6E0] bg-black/30 px-4 py-3 text-sm font-semibold text-[#1A1A1A] outline-none focus:border-[#C8922A]"
+                    >
+                      <option value="" className="bg-[#0A0A0F]">Select State</option>
+                      {Object.keys(indiaStatesDistricts).sort().map(state => (
+                        <option key={state} value={state} className="bg-[#0A0A0F]">{state}</option>
+                      ))}
+                    </select>
+                    
+                    <select
+                      value={editData.hometownDistrict}
+                      onChange={e => setEditData({ ...editData, hometownDistrict: e.target.value })}
+                      disabled={!editData.hometownState}
+                      className="w-full rounded-2xl border border-[#E8E6E0] bg-black/30 px-4 py-3 text-sm font-semibold text-[#1A1A1A] outline-none focus:border-[#C8922A] disabled:opacity-50"
+                    >
+                      <option value="" className="bg-[#0A0A0F]">Select District</option>
+                      {editData.hometownState && indiaStatesDistricts[editData.hometownState]
+                        ? indiaStatesDistricts[editData.hometownState].sort().map(dist => (
+                            <option key={dist} value={dist} className="bg-[#0A0A0F]">{dist}</option>
+                          ))
+                        : null}
+                    </select>
+                  </div>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">

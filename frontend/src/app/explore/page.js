@@ -33,6 +33,7 @@ import {
   Play,
   Loader2,
   Gamepad2,
+  Calendar,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useApiQuery } from "../../utils/useApiQuery";
@@ -124,7 +125,7 @@ function ExploreContent() {
   const [activeCommentPost, setActiveCommentPost] = useState(null);
   const [refreshCountdown, setRefreshCountdown] = useState("Auto-refreshes daily");
   const [discoveryConnectStatus, setDiscoveryConnectStatus] = useState({});
-
+  const [spinRotation, setSpinRotation] = useState(0);
   // ── TanStack Query: Colleges ──────────────────────────────────────────────
   const { data: colleges = [], isLoading: collegesLoading } = useApiQuery(
     "explore-colleges",
@@ -241,7 +242,7 @@ function ExploreContent() {
       });
       setDiscoveryConnectStatus(prev => ({ ...prev, [uid]: 'connected' }));
       setMyFollowing(prev => [...prev, uid]);
-      
+
       queryClient.invalidateQueries({ queryKey: ["network-profile"] });
       queryClient.invalidateQueries({ queryKey: ["user-profile"] });
       queryClient.invalidateQueries({ queryKey: ["explore-following"] });
@@ -517,7 +518,7 @@ function ExploreContent() {
 
         // Optimistically update following list
         setMyFollowing(prev => [...prev, student._id || student.id]);
-        
+
         queryClient.invalidateQueries({ queryKey: ["network-profile"] });
         queryClient.invalidateQueries({ queryKey: ["user-profile"] });
         queryClient.invalidateQueries({ queryKey: ["explore-following"] });
@@ -526,7 +527,7 @@ function ExploreContent() {
         queryClient.invalidateQueries({ queryKey: ["network-suggested"] });
         queryClient.invalidateQueries({ queryKey: ["suggested"] });
       } catch (err) {
-        console.error("Error connecting with user:", err);
+        console.log("Error connecting with user:", err.message);
       }
       setTimeout(() => setToastMessage(null), 3000);
     } else {
@@ -534,14 +535,14 @@ function ExploreContent() {
       setTimeout(() => setToastMessage(null), 2000);
     }
 
-    setTimeout(() => {
-      setCurrentStudentIndices(prev => ({
-        ...prev,
-        [collegeId]: (prev[collegeId] || 0) + 1
-      }));
-      setSwipeDirection(null);
-      setDragX(0);
-    }, 300);
+    // Instantly increment index and trigger 1 full smooth clockwise spin (+360 deg)
+    setSpinRotation(prev => prev + 360);
+    setCurrentStudentIndices(prev => ({
+      ...prev,
+      [collegeId]: (prev[collegeId] || 0) + 1
+    }));
+    setSwipeDirection(null);
+    setDragX(0);
   };
 
   // ── Category → Stream mapping ────────────────────────────────────────────
@@ -636,7 +637,7 @@ function ExploreContent() {
         });
         setMyFollowing(prev => [...prev, userId]);
         setToastMessage("Connected! You can now chat.");
-        
+
         queryClient.invalidateQueries({ queryKey: ["network-profile"] });
         queryClient.invalidateQueries({ queryKey: ["user-profile"] });
         queryClient.invalidateQueries({ queryKey: ["explore-following"] });
@@ -644,7 +645,7 @@ function ExploreContent() {
         queryClient.invalidateQueries({ queryKey: ["friends"] });
         queryClient.invalidateQueries({ queryKey: ["network-suggested"] });
         queryClient.invalidateQueries({ queryKey: ["suggested"] });
-        
+
         setTimeout(() => setToastMessage(null), 2000);
       }
     } catch (err) {
@@ -885,107 +886,107 @@ function ExploreContent() {
                 </section>
 
                 <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-4 p-4 sm:grid-cols-2 sm:gap-5 sm:p-5 xl:grid-cols-3">
-              {loading && (
-                <div className="col-span-2 flex justify-center py-20">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
-                </div>
-              )}
-
-              {filteredColleges.map(college => (
-                <motion.div
-                  key={college._id || college.id}
-                  className="relative flex flex-col rounded-[1.5rem] overflow-hidden text-left group shadow-md hover:shadow-xl transition-all duration-300 cursor-default"
-                  style={{ height: '420px' }}
-                >
-                  {/* Full-bleed background image */}
-                  <img
-                    src={college.banner || COLLEGE_BANNER_FALLBACK}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    alt={college.name}
-                    referrerPolicy="no-referrer"
-                    onError={handleBannerError}
-                  />
-
-                  {/* Dark gradient overlay — stronger at bottom */}
-                  <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.1) 100%)' }} />
-
-                  {/* Content overlaid on image */}
-                  <div className="absolute inset-0 flex flex-col justify-end p-5 space-y-3">
-                    {/* College name + followers badge */}
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-bold text-base leading-snug line-clamp-2 flex-1" style={{ color: 'white', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
-                        {college.name}
-                      </h3>
-                      {(college.followersCount ?? 0) > 0 && (
-                        <div className="flex items-center gap-1 shrink-0 bg-black/40 rounded-full px-2 py-0.5">
-                          <Users size={10} color="white" />
-                          <span className="text-[10px] font-bold" style={{ color: 'white' }}>
-                            {college.followersCount}
-                          </span>
-                        </div>
-                      )}
+                  {loading && (
+                    <div className="col-span-2 flex justify-center py-20">
+                      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
                     </div>
-
-                    {/* Location & students pills */}
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <div className="flex items-center gap-1 rounded-full px-3 py-1" style={{ backgroundColor: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }}>
-                        <MapPin size={11} color="white" />
-                        <span className="text-[11px] font-semibold truncate max-w-[120px]" style={{ color: 'white' }}>{college.location}</span>
-                      </div>
-                      <div className="flex items-center gap-1 rounded-full px-3 py-1" style={{ backgroundColor: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }}>
-                        <Users size={11} color="white" />
-                        <span className="text-[11px] font-semibold" style={{ color: 'white' }}>{college.students} Students</span>
-                      </div>
-                    </div>
-
-                    {/* Explore Now button — only interactive hotspot on the card */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        router.push(`/explore?collegeId=${college._id || college.id}`);
-                      }}
-                      disabled={loadingCollegeId === (college._id || college.id)}
-                      className="w-full bg-white rounded-2xl py-3 flex items-center justify-center text-sm font-bold text-[#1A1A1A] shadow-lg hover:bg-[#FFF8EC] transition-colors disabled:opacity-80 cursor-pointer"
-                    >
-                      {loadingCollegeId === (college._id || college.id) ? (
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                      ) : (
-                        "Explore Now"
-                      )}
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
-
-            </div>
-
-            {!loading && filteredColleges.length === 0 && (
-              <div className="flex-1 flex flex-col items-center justify-center py-16 px-6 text-center">
-                <div className="app-panel mx-auto max-w-sm rounded-[1.6rem] p-8 flex flex-col items-center gap-4">
-                  <span className="text-4xl">🔍</span>
-                  <div>
-                    <p className="text-sm font-black text-[#4A4A4A] mb-1">
-                      {hasActiveFilters
-                        ? "No colleges match these filters"
-                        : `No colleges found matching "${search}"`}
-                    </p>
-                    <p className="text-xs text-[#6B6B6B]">
-                      {hasActiveFilters
-                        ? "Try adjusting or clearing your filters."
-                        : "Try a different search term."}
-                    </p>
-                  </div>
-                  {hasActiveFilters && (
-                    <button
-                      onClick={clearFilters}
-                      className="mt-1 rounded-xl bg-gradient-to-r from-[#C8922A] to-[#C8922A] px-5 py-2.5 text-[11px] font-black uppercase tracking-widest text-[#1A1A1A] shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)] hover:opacity-90 active:scale-95 transition-all"
-                    >
-                      Reset Filters
-                    </button>
                   )}
+
+                  {filteredColleges.map(college => (
+                    <motion.div
+                      key={college._id || college.id}
+                      className="relative flex flex-col rounded-[1.5rem] overflow-hidden text-left group shadow-md hover:shadow-xl transition-all duration-300 cursor-default"
+                      style={{ height: '420px' }}
+                    >
+                      {/* Full-bleed background image */}
+                      <img
+                        src={college.banner || COLLEGE_BANNER_FALLBACK}
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        alt={college.name}
+                        referrerPolicy="no-referrer"
+                        onError={handleBannerError}
+                      />
+
+                      {/* Dark gradient overlay — stronger at bottom */}
+                      <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.1) 100%)' }} />
+
+                      {/* Content overlaid on image */}
+                      <div className="absolute inset-0 flex flex-col justify-end p-5 space-y-3">
+                        {/* College name + followers badge */}
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="font-bold text-base leading-snug line-clamp-2 flex-1" style={{ color: 'white', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
+                            {college.name}
+                          </h3>
+                          {(college.followersCount ?? 0) > 0 && (
+                            <div className="flex items-center gap-1 shrink-0 bg-black/40 rounded-full px-2 py-0.5">
+                              <Users size={10} color="white" />
+                              <span className="text-[10px] font-bold" style={{ color: 'white' }}>
+                                {college.followersCount}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Location & students pills */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <div className="flex items-center gap-1 rounded-full px-3 py-1" style={{ backgroundColor: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }}>
+                            <MapPin size={11} color="white" />
+                            <span className="text-[11px] font-semibold truncate max-w-[120px]" style={{ color: 'white' }}>{college.location}</span>
+                          </div>
+                          <div className="flex items-center gap-1 rounded-full px-3 py-1" style={{ backgroundColor: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }}>
+                            <Users size={11} color="white" />
+                            <span className="text-[11px] font-semibold" style={{ color: 'white' }}>{college.students} Students</span>
+                          </div>
+                        </div>
+
+                        {/* Explore Now button — only interactive hotspot on the card */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            router.push(`/explore?collegeId=${college._id || college.id}`);
+                          }}
+                          disabled={loadingCollegeId === (college._id || college.id)}
+                          className="w-full bg-white rounded-2xl py-3 flex items-center justify-center text-sm font-bold text-[#1A1A1A] shadow-lg hover:bg-[#FFF8EC] transition-colors disabled:opacity-80 cursor-pointer"
+                        >
+                          {loadingCollegeId === (college._id || college.id) ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                          ) : (
+                            "Explore Now"
+                          )}
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))}
+
                 </div>
-              </div>
-            )}
+
+                {!loading && filteredColleges.length === 0 && (
+                  <div className="flex-1 flex flex-col items-center justify-center py-16 px-6 text-center">
+                    <div className="app-panel mx-auto max-w-sm rounded-[1.6rem] p-8 flex flex-col items-center gap-4">
+                      <span className="text-4xl">🔍</span>
+                      <div>
+                        <p className="text-sm font-black text-[#4A4A4A] mb-1">
+                          {hasActiveFilters
+                            ? "No colleges match these filters"
+                            : `No colleges found matching "${search}"`}
+                        </p>
+                        <p className="text-xs text-[#6B6B6B]">
+                          {hasActiveFilters
+                            ? "Try adjusting or clearing your filters."
+                            : "Try a different search term."}
+                        </p>
+                      </div>
+                      {hasActiveFilters && (
+                        <button
+                          onClick={clearFilters}
+                          className="mt-1 rounded-xl bg-gradient-to-r from-[#C8922A] to-[#C8922A] px-5 py-2.5 text-[11px] font-black uppercase tracking-widest text-[#1A1A1A] shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)] hover:opacity-90 active:scale-95 transition-all"
+                        >
+                          Reset Filters
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
               </>
             ) : (
               /* --- ARENA VIEW (Esports only) --- */
@@ -1224,9 +1225,9 @@ function ExploreContent() {
                   style={
                     !followed[selectedCollege._id || selectedCollege.id]
                       ? {
-                          backgroundColor: selectedCollege.accent || "#C8922A",
-                          boxShadow: `0 8px 18px -4px ${selectedCollege.accent || "#C8922A"}40`,
-                        }
+                        backgroundColor: selectedCollege.accent || "#C8922A",
+                        boxShadow: `0 8px 18px -4px ${selectedCollege.accent || "#C8922A"}40`,
+                      }
                       : {}
                   }
                 >
@@ -1301,8 +1302,8 @@ function ExploreContent() {
                         const isLiked = typeof post.likedByMe === "boolean"
                           ? post.likedByMe
                           : !!(currentUserId && post.likes?.some(
-                              (id) => String(id) === String(currentUserId)
-                            ));
+                            (id) => String(id) === String(currentUserId)
+                          ));
                         const likeCount = typeof post.likesCount === "number"
                           ? post.likesCount
                           : (post.likes?.length || 0);
@@ -1310,140 +1311,140 @@ function ExploreContent() {
                           ? post.commentsCount
                           : (post.comments?.length || 0);
                         return (
-                        <article
-                          key={post._id}
-                          className="bg-white border border-[#E8E6E0] rounded-3xl p-5 shadow-sm space-y-4"
-                        >
-                          <div className="flex items-center space-x-4">
-                            <div className="w-12 h-12 rounded-full p-[2px] bg-[#F3F2EE] overflow-hidden shrink-0">
-                              <img
-                                src={getAvatarSrc(post.author?.profilePic, post.author?.name, post.author?._id || post.author?.id)}
-                                className="w-full h-full object-cover rounded-full bg-white"
-                                alt=""
-                              />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[15px] font-semibold text-[#1A1A1A] leading-none flex items-center gap-1.5">
-                                {post.author?.name || "Student"}
-                                <VerifiedBadge user={post.author} size={16} />
-                              </p>
-                              <p className="text-sm text-[#888888] mt-1 truncate">
-                                {post.author?.university || selectedCollege.name}
-                                {post.createdAt ? ` • ${timeAgo(post.createdAt)}` : ""}
-                              </p>
-                            </div>
-                          </div>
-
-                          {post.content ? (
-                            <p className="text-[15px] text-[#1A1A1A] leading-relaxed whitespace-pre-wrap">
-                              {post.content}
-                            </p>
-                          ) : null}
-
-                          {post.mediaUrl && (
-                            <div className="rounded-2xl overflow-hidden border border-[#E8E6E0] bg-[#F3F2EE]">
-                              {post.mediaType === "video" ? (
-                                <video
-                                  src={post.mediaUrl}
-                                  controls
-                                  className="w-full h-auto max-h-[420px] object-contain"
-                                />
-                              ) : (
+                          <article
+                            key={post._id}
+                            className="bg-white border border-[#E8E6E0] rounded-3xl p-5 shadow-sm space-y-4"
+                          >
+                            <div className="flex items-center space-x-4">
+                              <div className="w-12 h-12 rounded-full p-[2px] bg-[#F3F2EE] overflow-hidden shrink-0">
                                 <img
-                                  src={post.mediaUrl}
-                                  className="w-full h-auto max-h-[420px] object-contain mx-auto"
+                                  src={getAvatarSrc(post.author?.profilePic, post.author?.name, post.author?._id || post.author?.id)}
+                                  className="w-full h-full object-cover rounded-full bg-white"
                                   alt=""
                                 />
-                              )}
-                            </div>
-                          )}
-
-                          <div className="flex flex-col space-y-3">
-                            <div className="flex items-center justify-between border-t border-[#EBEBEB] pt-4">
-                              <div className="flex items-center space-x-4">
-                                <button
-                                  onClick={() => toggleLike(post._id)}
-                                  className={clsx(
-                                    "flex items-center space-x-2 p-2 rounded-full transition-colors group",
-                                    isLiked
-                                      ? "text-[#C8922A]"
-                                      : "text-[#888888] hover:text-[#C8922A]"
-                                  )}
-                                >
-                                  <Heart
-                                    size={22}
-                                    className={clsx(
-                                      "transition-transform group-active:scale-75",
-                                      isLiked && "fill-[#C8922A]"
-                                    )}
-                                  />
-                                  <span className="text-sm text-[#888888]">{likeCount}</span>
-                                </button>
-                                <button
-                                  onClick={() => setActiveCommentPost(activeCommentPost === post._id ? null : post._id)}
-                                  className="flex items-center space-x-2 p-2 rounded-full text-[#888888] hover:text-[#C8922A] transition-colors group"
-                                >
-                                  <MessageSquare size={22} className="transition-transform group-active:scale-75" />
-                                  <span className="text-sm text-[#888888]">{commentCount}</span>
-                                </button>
                               </div>
-                              <button
-                                onClick={() => window.open(`https://wa.me/?text=Check out this post from ${selectedCollege.name} on CollageAdda: ${encodeURIComponent(post.content || "")}`, "_blank")}
-                                className="p-2 rounded-full text-[#888888] hover:text-[#C8922A] transition-colors"
-                              >
-                                <Share2 size={20} />
-                              </button>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[15px] font-semibold text-[#1A1A1A] leading-none flex items-center gap-1.5">
+                                  {post.author?.name || "Student"}
+                                  <VerifiedBadge user={post.author} size={16} />
+                                </p>
+                                <p className="text-sm text-[#888888] mt-1 truncate">
+                                  {post.author?.university || selectedCollege.name}
+                                  {post.createdAt ? ` • ${timeAgo(post.createdAt)}` : ""}
+                                </p>
+                              </div>
                             </div>
 
-                            {activeCommentPost === post._id && (
-                              <div className="space-y-3 border-t border-[#EBEBEB] pt-4">
-                                {post.comments?.length > 0 && (
-                                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                                    {post.comments.map((comment, i) => (
-                                      <div
-                                        key={comment._id || i}
-                                        className="flex items-start space-x-3 text-sm bg-[#F9F8F5] p-3 rounded-2xl"
-                                      >
-                                        <div className="h-8 w-8 rounded-full gradient-bg p-[1px] shrink-0">
-                                          <img
-                                            src={getAvatarSrc(comment.user?.profilePic, comment.user?.name, comment.user?._id || comment.user?.id || comment._id)}
-                                            alt={comment.user?.name || "Student"}
-                                            className="h-full w-full rounded-full object-cover bg-white"
-                                            onError={(e) => {
-                                              e.currentTarget.onerror = null;
-                                              e.currentTarget.src = getDefaultAvatar(comment.user?.name || "Student", comment.user?._id || comment.user?.id || comment._id);
-                                            }}
-                                          />
-                                        </div>
-                                        <div className="min-w-0">
-                                          <p className="font-semibold text-[#1A1A1A] leading-tight">
-                                            {comment.user?.name || "Student"}
-                                          </p>
-                                          <p className="text-[#6B6B6B] mt-0.5">{comment.text}</p>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                                <div className="flex items-center space-x-2">
-                                  <input
-                                    value={commentInputs[post._id] || ""}
-                                    onChange={e => setCommentInputs(prev => ({ ...prev, [post._id]: e.target.value }))}
-                                    onKeyPress={e => e.key === "Enter" && handleComment(post._id)}
-                                    placeholder="Add a comment..."
-                                    className="flex-1 bg-[#F9F8F5] border border-[#E8E6E0] rounded-full px-4 py-2.5 text-sm text-[#1A1A1A] placeholder:text-[#888888] focus:outline-none focus:border-[#C8922A]/50 transition-colors"
+                            {post.content ? (
+                              <p className="text-[15px] text-[#1A1A1A] leading-relaxed whitespace-pre-wrap">
+                                {post.content}
+                              </p>
+                            ) : null}
+
+                            {post.mediaUrl && (
+                              <div className="rounded-2xl overflow-hidden border border-[#E8E6E0] bg-[#F3F2EE]">
+                                {post.mediaType === "video" ? (
+                                  <video
+                                    src={post.mediaUrl}
+                                    controls
+                                    className="w-full h-auto max-h-[420px] object-contain"
                                   />
-                                  <button
-                                    onClick={() => handleComment(post._id)}
-                                    className="bg-[#C8922A] text-white p-2.5 rounded-full hover:scale-105 active:scale-95 transition-all shadow-md shadow-[#C8922A]/20"
-                                  >
-                                    <Send size={14} />
-                                  </button>
-                                </div>
+                                ) : (
+                                  <img
+                                    src={post.mediaUrl}
+                                    className="w-full h-auto max-h-[420px] object-contain mx-auto"
+                                    alt=""
+                                  />
+                                )}
                               </div>
                             )}
-                          </div>
-                        </article>
+
+                            <div className="flex flex-col space-y-3">
+                              <div className="flex items-center justify-between border-t border-[#EBEBEB] pt-4">
+                                <div className="flex items-center space-x-4">
+                                  <button
+                                    onClick={() => toggleLike(post._id)}
+                                    className={clsx(
+                                      "flex items-center space-x-2 p-2 rounded-full transition-colors group",
+                                      isLiked
+                                        ? "text-[#C8922A]"
+                                        : "text-[#888888] hover:text-[#C8922A]"
+                                    )}
+                                  >
+                                    <Heart
+                                      size={22}
+                                      className={clsx(
+                                        "transition-transform group-active:scale-75",
+                                        isLiked && "fill-[#C8922A]"
+                                      )}
+                                    />
+                                    <span className="text-sm text-[#888888]">{likeCount}</span>
+                                  </button>
+                                  <button
+                                    onClick={() => setActiveCommentPost(activeCommentPost === post._id ? null : post._id)}
+                                    className="flex items-center space-x-2 p-2 rounded-full text-[#888888] hover:text-[#C8922A] transition-colors group"
+                                  >
+                                    <MessageSquare size={22} className="transition-transform group-active:scale-75" />
+                                    <span className="text-sm text-[#888888]">{commentCount}</span>
+                                  </button>
+                                </div>
+                                <button
+                                  onClick={() => window.open(`https://wa.me/?text=Check out this post from ${selectedCollege.name} on CollageAdda: ${encodeURIComponent(post.content || "")}`, "_blank")}
+                                  className="p-2 rounded-full text-[#888888] hover:text-[#C8922A] transition-colors"
+                                >
+                                  <Share2 size={20} />
+                                </button>
+                              </div>
+
+                              {activeCommentPost === post._id && (
+                                <div className="space-y-3 border-t border-[#EBEBEB] pt-4">
+                                  {post.comments?.length > 0 && (
+                                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                                      {post.comments.map((comment, i) => (
+                                        <div
+                                          key={comment._id || i}
+                                          className="flex items-start space-x-3 text-sm bg-[#F9F8F5] p-3 rounded-2xl"
+                                        >
+                                          <div className="h-8 w-8 rounded-full gradient-bg p-[1px] shrink-0">
+                                            <img
+                                              src={getAvatarSrc(comment.user?.profilePic, comment.user?.name, comment.user?._id || comment.user?.id || comment._id)}
+                                              alt={comment.user?.name || "Student"}
+                                              className="h-full w-full rounded-full object-cover bg-white"
+                                              onError={(e) => {
+                                                e.currentTarget.onerror = null;
+                                                e.currentTarget.src = getDefaultAvatar(comment.user?.name || "Student", comment.user?._id || comment.user?.id || comment._id);
+                                              }}
+                                            />
+                                          </div>
+                                          <div className="min-w-0">
+                                            <p className="font-semibold text-[#1A1A1A] leading-tight">
+                                              {comment.user?.name || "Student"}
+                                            </p>
+                                            <p className="text-[#6B6B6B] mt-0.5">{comment.text}</p>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                  <div className="flex items-center space-x-2">
+                                    <input
+                                      value={commentInputs[post._id] || ""}
+                                      onChange={e => setCommentInputs(prev => ({ ...prev, [post._id]: e.target.value }))}
+                                      onKeyPress={e => e.key === "Enter" && handleComment(post._id)}
+                                      placeholder="Add a comment..."
+                                      className="flex-1 bg-[#F9F8F5] border border-[#E8E6E0] rounded-full px-4 py-2.5 text-sm text-[#1A1A1A] placeholder:text-[#888888] focus:outline-none focus:border-[#C8922A]/50 transition-colors"
+                                    />
+                                    <button
+                                      onClick={() => handleComment(post._id)}
+                                      className="bg-[#C8922A] text-white p-2.5 rounded-full hover:scale-105 active:scale-95 transition-all shadow-md shadow-[#C8922A]/20"
+                                    >
+                                      <Send size={14} />
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </article>
                         );
                       });
                     })()}
@@ -1464,257 +1465,300 @@ function ExploreContent() {
                         <p className="text-xs text-[#888888] mt-3 font-semibold">Loading students…</p>
                       </div>
                     ) : (
-                    <>
-                    {/* Top Bar */}
-                    <div className="w-full flex items-center justify-between mb-6">
-                      <div className="flex flex-col">
-                        <h4 className="text-sm font-bold text-foreground">
-                          {viewMode === 'cards' ? 'Discover Students' : 'Student Directory'}
-                        </h4>
-                        <p className="text-[10px] text-muted font-medium mt-0.5">
-                          {(selectedCollege.studentsData?.length || 0)} students found
-                        </p>
-                      </div>
-                      <div className="flex bg-surface-hover p-1 rounded-xl border border-border/50">
-                        <button
-                          onClick={() => setViewMode('cards')}
-                          className={clsx(
-                            "px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all",
-                            viewMode === 'cards' ? "bg-primary text-[#1A1A1A] shadow-sm" : "text-muted hover:text-foreground"
-                          )}
-                        >
-                          Cards
-                        </button>
-                        <button
-                          onClick={() => setViewMode('list')}
-                          className={clsx(
-                            "px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all",
-                            viewMode === 'list' ? "bg-primary text-[#1A1A1A] shadow-sm" : "text-muted hover:text-foreground"
-                          )}
-                        >
-                          List
-                        </button>
-                      </div>
-                    </div>
+                      <>
+                        {/* Top Bar */}
+                        <div className="w-full flex items-center justify-between mb-6">
+                          <div className="flex flex-col">
+                            <h4 className="text-sm font-bold text-foreground">
+                              {viewMode === 'cards' ? 'Discover Students' : 'Student Directory'}
+                            </h4>
+                            <p className="text-[10px] text-muted font-medium mt-0.5">
+                              {(selectedCollege.studentsData?.length || 0)} students found
+                            </p>
+                          </div>
+                          <div className="flex bg-surface-hover p-1 rounded-xl border border-border/50">
+                            <button
+                              onClick={() => setViewMode('cards')}
+                              className={clsx(
+                                "px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all",
+                                viewMode === 'cards' ? "bg-primary text-[#1A1A1A] shadow-sm" : "text-muted hover:text-foreground"
+                              )}
+                            >
+                              Cards
+                            </button>
+                            <button
+                              onClick={() => setViewMode('list')}
+                              className={clsx(
+                                "px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all",
+                                viewMode === 'list' ? "bg-primary text-[#1A1A1A] shadow-sm" : "text-muted hover:text-foreground"
+                              )}
+                            >
+                              List
+                            </button>
+                          </div>
+                        </div>
 
-                    {viewMode === 'list' && (
-                      <div className="w-full mb-6 relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={14} />
-                        <input
-                          value={studentSearch}
-                          onChange={(e) => setStudentSearch(e.target.value)}
-                          placeholder="Search students by name or interest..."
-                          className="w-full bg-surface-hover border border-border/50 rounded-xl py-2 pl-9 pr-4 text-xs text-foreground focus:outline-none focus:border-primary transition-all"
-                        />
-                      </div>
-                    )}
-
-                    {/* Toast Notification */}
-                    <AnimatePresence>
-                      {toastMessage && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -20, scale: 0.9 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: -20, scale: 0.9 }}
-                          className="app-panel fixed top-24 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-full text-sm font-bold flex items-center text-foreground"
-                        >
-                          {toastMessage}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
-                    {/* Tinder Card Stack */}
-                    {viewMode === 'cards' ? (
-                      <div className="relative w-full max-w-[340px] aspect-[4/5] flex items-center justify-center overflow-hidden mb-10">
-                        {/* Empty State */}
-                        {(currentStudentIndices[selectedCollege.id] || 0) >= selectedCollege.studentsData.length && (
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="flex flex-col items-center justify-center text-center p-6 space-y-5 bg-surface rounded-[32px] w-full h-full border border-border/50 shadow-lg"
-                          >
-                            <div className="bg-primary/10 p-5 rounded-full mb-2">
-                              <GraduationCap size={48} className="text-primary" />
-                            </div>
-                            <h3 className="font-bold text-foreground text-xl">You've seen everyone at {selectedCollege.name}!</h3>
-                            <div className="space-y-3 w-full mt-4">
-                              <button onClick={() => setViewMode('list')} className="w-full py-3 bg-primary/10 text-primary font-bold rounded-xl text-sm hover:bg-primary/20 transition-colors shadow-sm flex items-center justify-center space-x-2">
-                                <span>Switch to List View</span>
-                                <Users size={16} />
-                              </button>
-                            </div>
-                          </motion.div>
+                        {viewMode === 'list' && (
+                          <div className="w-full mb-6 relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={14} />
+                            <input
+                              value={studentSearch}
+                              onChange={(e) => setStudentSearch(e.target.value)}
+                              placeholder="Search students by name or interest..."
+                              className="w-full bg-surface-hover border border-border/50 rounded-xl py-2 pl-9 pr-4 text-xs text-foreground focus:outline-none focus:border-primary transition-all"
+                            />
+                          </div>
                         )}
 
-                        {/* Cards */}
+                        {/* Toast Notification */}
                         <AnimatePresence>
-                          {selectedCollege.studentsData.map((student, idx) => {
-                            const currentIndex = currentStudentIndices[selectedCollege.id] || 0;
-                            if (idx < currentIndex) return null;
-                            if (idx > currentIndex + 2) return null; // Only render top 3 cards
+                          {toastMessage && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -20, scale: 0.9 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: -20, scale: 0.9 }}
+                              className="app-panel fixed top-24 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-full text-sm font-bold flex items-center text-foreground"
+                            >
+                              {toastMessage}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
 
-                            const isTop = idx === currentIndex;
-                            const offset = idx - currentIndex;
-
-                            return (
+                        {/* 3D Roulette Cylinder Stack */}
+                        {viewMode === 'cards' ? (
+                          <div className="relative w-full max-w-[900px] flex flex-col items-center justify-center mb-10 mx-auto overflow-visible" style={{ perspective: "1200px" }}>
+                            
+                            {/* The Static Wheel Container */}
+                            <div 
+                              className="relative w-[320px] sm:w-[350px] h-[580px] flex items-center justify-center" 
+                              style={{ transformStyle: "preserve-3d" }}
+                            >
+                              {/* Empty State */}
+                            {(currentStudentIndices[selectedCollege?._id || selectedCollege?.id] || 0) >= selectedCollege.studentsData.length && (
                               <motion.div
-                                key={student._id || student.id}
-                                drag={isTop ? "x" : false}
-                                dragConstraints={{ left: 0, right: 0 }}
-                                onDrag={(e, info) => isTop && setDragX(info.offset.x)}
-                                onDragEnd={(e, info) => {
-                                  if (!isTop) return;
-                                  setDragX(0);
-                                  if (info.offset.x > 100) handleSwipe(selectedCollege.id, 'right', student);
-                                  else if (info.offset.x < -100) handleSwipe(selectedCollege.id, 'left', student);
-                                }}
-                                initial={false}
-                                animate={{
-                                  scale: isTop ? 1 : 1 - offset * 0.06,
-                                  y: isTop ? 0 : offset * 25,
-                                  zIndex: 10 - offset,
-                                  rotate: isTop && swipeDirection === 'right' ? 15 : isTop && swipeDirection === 'left' ? -15 : isTop ? dragX * 0.05 : 0,
-                                  x: isTop && swipeDirection === 'right' ? 400 : isTop && swipeDirection === 'left' ? -400 : isTop ? dragX : 0,
-                                  opacity: isTop && swipeDirection ? 0 : 1
-                                }}
-                                transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                                className="absolute w-full h-full bg-surface border border-border/50 rounded-[32px] overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] flex flex-col cursor-grab active:cursor-grabbing"
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="flex flex-col items-center justify-center text-center p-6 space-y-5 bg-surface rounded-[32px] w-full h-full border border-border/50 shadow-lg absolute"
                               >
-                                {/* Student Profile Photo Area - always shown */}
-                                <div className="relative w-full bg-muted pointer-events-none" style={{ height: isTop ? '50%' : '100%' }}>
-                                  <img src={getAvatarSrc(student.profilePic, student.name, student._id || student.id)} alt={student.name} className="w-full h-full object-cover" />
-                                  {!isTop && <div className="absolute inset-0 bg-black/30" />}
+                                <div className="bg-primary/10 p-5 rounded-full mb-2">
+                                  <GraduationCap size={48} className="text-primary" />
                                 </div>
+                                <h3 className="font-bold text-foreground text-xl">You've seen everyone at {selectedCollege.name}!</h3>
+                                <div className="space-y-3 w-full mt-4">
+                                  <button onClick={() => setViewMode('list')} className="w-full py-3 bg-primary/10 text-primary font-bold rounded-xl text-sm hover:bg-primary/20 transition-colors shadow-sm flex items-center justify-center space-x-2">
+                                    <span>Switch to List View</span>
+                                    <Users size={16} />
+                                  </button>
+                                </div>
+                              </motion.div>
+                            )}
 
-                                {/* Details Area - only for top card */}
-                                {isTop && (
-                                  <div className="flex-1 p-5 space-y-4 bg-[#FAFAF8]/70 overflow-y-auto custom-scrollbar flex flex-col relative z-10">
-                                    <div>
-                                      <h2 className="text-2xl font-black text-foreground flex items-center gap-2 tracking-tight line-clamp-1">
-                                        {student.name}
-                                        <VerifiedBadge user={student} size={20} />
-                                      </h2>
-                                      <div className="flex flex-col mt-2 space-y-1.5">
-                                        <div className="flex items-center text-foreground/80 text-[12px] font-medium">
-                                          <Building2 size={12} className="mr-2 text-secondary" /> {student.university || selectedCollege.name}
+                            {/* Cards */}
+                            <AnimatePresence>
+                              {selectedCollege.studentsData.map((student, idx) => {
+                                const currentIndex = currentStudentIndices[selectedCollege?._id || selectedCollege?.id] || 0;
+                                // Render up to 8 cards around the cylinder for a continuous wheel look
+                                if (Math.abs(idx - currentIndex) > 4) return null;
+
+                                const isTop = idx === currentIndex;
+                                const absOffset = Math.abs(idx - currentIndex);
+                                
+                                // Cards physically orbit the center point!
+                                const targetRotateY = ((idx - currentIndex) * -45) + spinRotation; 
+                                
+                                return (
+                                  <motion.div
+                                    key={student._id || student.id}
+                                    drag={isTop ? "x" : false}
+                                    dragConstraints={{ left: 0, right: 0 }}
+                                    onDrag={(e, info) => isTop && setDragX(info.offset.x)}
+                                    onDragEnd={(e, info) => {
+                                      if (!isTop) return;
+                                      setDragX(0);
+                                      if (info.offset.x > 80) handleSwipe(selectedCollege?._id || selectedCollege?.id, 'right', student);
+                                      else if (info.offset.x < -80) handleSwipe(selectedCollege?._id || selectedCollege?.id, 'left', student);
+                                    }}
+                                    initial={false}
+                                    animate={{
+                                      rotateY: targetRotateY + (isTop ? dragX * 0.1 : 0),
+                                      x: isTop ? dragX : 0,
+                                      scale: isTop ? 1.05 : 0.85,
+                                      opacity: absOffset <= 3 ? 1 : 0 
+                                    }}
+                                    transition={{ type: "spring", bounce: 0, duration: 1.2 }} // Ultra-smooth natural physics deceleration
+                                    className={`absolute w-full h-[95%] bg-surface border border-border/50 rounded-[32px] overflow-hidden flex flex-col ${isTop ? 'cursor-grab active:cursor-grabbing shadow-[0_20px_60px_-10px_rgba(var(--primary),0.4)]' : 'shadow-none pointer-events-none'}`}
+                                    style={{ transformOrigin: "50% 50% -450px" }} // Large radius prevents intersection!
+                                  >
+                                    {/* Student Profile Photo Area - Top Banner */}
+                                    <div className="relative w-full h-[28%] bg-[#F3F2EE] shrink-0 pointer-events-none">
+                                      <img src={selectedCollege.banner || COLLEGE_BANNER_FALLBACK} alt="Banner" className="w-full h-full object-cover opacity-60 mix-blend-multiply" />
+
+                                      {/* Verified Badge */}
+                                      {student.isVerified && (
+                                        <div className="absolute top-4 left-4 bg-white px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm border border-green-100 z-20">
+                                          <div className="bg-green-500 rounded-full p-0.5"><Check size={10} className="text-white" strokeWidth={3} /></div>
+                                          <span className="text-[10px] font-black text-green-700 tracking-wider">VERIFIED</span>
                                         </div>
-                                        {myFollowing.includes(student._id || student.id) && (
-                                          <div className="mt-1 inline-flex bg-green-500/20 text-green-500 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider self-start items-center gap-2 shadow-sm">
-                                            <Users size={12} /> Already Friends
+                                      )}
+                                    </div>
+
+                                    {/* Details Area */}
+                                    <div className="flex-1 flex flex-col items-center px-4 pt-14 pb-4 text-center bg-white relative">
+                                      {/* Circular Profile Picture */}
+                                      <div className="absolute -top-14 left-1/2 -translate-x-1/2">
+                                        <div className="relative w-[110px] h-[110px] rounded-full border-[5px] border-white shadow-sm bg-muted z-20">
+                                          <img
+                                            src={getAvatarSrc(student.profilePic, student.name, student._id || student.id)}
+                                            alt=""
+                                            className="w-full h-full object-cover rounded-full bg-white text-transparent"
+                                            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getDefaultAvatar(student.name, student._id || student.id); }}
+                                          />
+                                        </div>
+                                      </div>
+
+                                      {/* Name & Contributor Badge */}
+                                      <div className="mt-1 w-full">
+                                        <h2 className="text-2xl font-black text-[#1A1A1A] tracking-tight truncate px-2">
+                                          {student.name}
+                                        </h2>
+                                        {((student.postsCount || student.posts?.length || 0) > 10) && (
+                                          <div className="mt-1.5 flex justify-center">
+                                            <span className="inline-flex items-center gap-1.5 bg-[#FFF8EC] text-[#C8922A] px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border border-[#F3E8D3]">
+                                              <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                                              Campus Contributor
+                                            </span>
                                           </div>
                                         )}
                                       </div>
+
+                                      {/* Bio Block */}
+                                      <div className="mt-4 w-full bg-[#FFF8EC] border border-[#F3E8D3] rounded-2xl p-3.5 flex gap-2.5 text-left">
+                                        <div className="text-[#C8922A] shrink-0 font-serif text-3xl leading-none pt-1.5">“</div>
+                                        <p className="text-xs text-[#4A4A4A] font-medium italic leading-relaxed line-clamp-3">
+                                          {student.bio || "No bio yet."}
+                                        </p>
+                                      </div>
+
+                                      {/* Education Details Block */}
+                                      <div className="mt-3 w-full bg-[#FAFAF8] border border-[#E8E6E0] rounded-2xl p-3.5 flex flex-col gap-2.5 text-left">
+                                        <div className="flex justify-between items-center text-[11px] font-bold text-[#4A4A4A]">
+                                          <span className="truncate pr-2">🏫 {student.university || selectedCollege.name}</span>
+                                          <span className="shrink-0">👨🏻‍🎓 {student.course || "B.Tech"}, {student.branch || "CSE"}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-[11px] font-bold text-[#4A4A4A]">
+                                          <span>📚 {student.studyYear || "1st Year"}</span>
+                                          <span>🏛️ Class of {student.passOutBatch || "2028"}</span>
+                                        </div>
+                                      </div>
+
+                                      {/* Rank & Badge Pills */}
+                                      <div className="mt-2.5 w-full flex flex-wrap items-center gap-2 justify-center">
+                                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FFF8EC] border border-[#F3E8D3] rounded-full text-[10px] font-bold text-[#1A1A1A]">
+                                          <span>🏆</span>
+                                          <span>Campus Rank #{student.campusRank || student.rank || Math.max(1, 100 - Math.floor((student.xp || 0) / 10))}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FFF8EC] border border-[#F3E8D3] rounded-full text-[10px] font-bold text-[#1A1A1A] uppercase tracking-wider">
+                                          <span>🏅</span>
+                                          <span>{student.unlockedBadges && student.unlockedBadges.length > 0 ? student.unlockedBadges[0].badgeId : "Networker"}</span>
+                                        </div>
+                                      </div>
+
+                                      {/* Footer Badges */}
+                                      <div className="mt-auto pt-3 w-full flex flex-wrap justify-center items-center gap-x-2 gap-y-1.5 bg-[#F9F8F5] border border-[#E8E6E0] rounded-xl py-2 px-1 text-[9px] font-bold text-[#6B6B6B] uppercase tracking-wider">
+                                        <span className="flex items-center gap-1 shrink-0">📌 <span className="truncate max-w-[80px]">{student.hometownDistrict || student.hometownState || "Delhi, India"}</span></span>
+                                        <div className="w-[1px] h-2.5 bg-[#D4D4D4] shrink-0" />
+                                        <span className="flex items-center gap-1 shrink-0">📅 Joined {new Date(student.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
+                                        {((student.xp || 0) > 150) && (
+                                          <>
+                                            <div className="w-[1px] h-2.5 bg-[#D4D4D4] shrink-0" />
+                                            <span className="flex items-center gap-1 shrink-0 text-[#1A1A1A]">🤝 Active Member</span>
+                                          </>
+                                        )}
+                                      </div>
                                     </div>
-                                    <p className="text-[13px] text-foreground/80 italic leading-relaxed font-medium bg-surface-hover p-3 rounded-xl border border-border/50">
-                                      "{student.bio || "No bio yet."}"
-                                    </p>
-                                    <div className="pt-2 mt-auto">
-                                      {myFollowing.includes(student._id || student.id) ? (
-                                        <motion.button
-                                          whileTap={{ scale: 0.98 }}
-                                          onClick={() => handleDirectMessage(student)}
-                                          className="w-full py-4 gradient-bg rounded-2xl text-xs font-black text-[#1A1A1A] uppercase tracking-widest shadow-xl flex items-center justify-center space-x-2"
-                                        >
-                                          <MessageSquare size={16} />
-                                          <span>Chat Now</span>
-                                        </motion.button>
-                                      ) : (
-                                        <motion.button
-                                          whileTap={{ scale: 0.98 }}
-                                          onClick={() => handleConnect(student)}
-                                          className="w-full py-4 bg-[#F3F2EE] hover:bg-[#F3F2EE] border border-[#E8E6E0] rounded-2xl text-xs font-black text-[#1A1A1A] uppercase tracking-widest flex items-center justify-center space-x-2"
-                                        >
-                                          <Plus size={16} />
-                                          <span>Connect</span>
-                                        </motion.button>
-                                      )}
+                                  </motion.div>
+                                );
+                              }).reverse()}
+                            </AnimatePresence>
+                            </div>
+
+
+                          </div>
+                        ) : (
+                          /* --- LIST VIEW --- */
+                          <div className="w-full space-y-3 pb-10">
+                            {selectedCollege.studentsData
+                              .filter(s =>
+                                s.name.toLowerCase().includes(studentSearch.toLowerCase()) ||
+                                s.interests?.some(i => i.toLowerCase().includes(studentSearch.toLowerCase()))
+                              )
+                              .map((student) => (
+                                <motion.div
+                                  key={student._id || student.id}
+                                  initial={{ opacity: 0, y: 10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  className="bg-surface border border-border/50 p-4 rounded-2xl flex items-center justify-between group hover:border-primary/30 transition-all shadow-sm"
+                                >
+                                  <div className="flex items-center space-x-4">
+                                    <div className="w-14 h-14 rounded-2xl overflow-hidden bg-muted flex-shrink-0">
+                                      <img src={getAvatarSrc(student.profilePic, student.name, student._id || student.id)} className="w-full h-full object-cover" alt="" />
+                                    </div>
+                                    <div className="min-w-0">
+                                      <h4 className="font-bold text-foreground text-sm flex items-center gap-1.5 truncate">
+                                        {student.name}
+                                        <VerifiedBadge user={student} size={14} />
+                                      </h4>
+                                      <p className="text-[11px] text-muted truncate mt-0.5">{student.university || selectedCollege.name}</p>
+                                      <p className="text-[11px] text-muted/60 truncate mt-0.5 italic">"{student.bio?.substring(0, 30) || "Campus student"}..."</p>
                                     </div>
                                   </div>
-                                )}
-                              </motion.div>
-                            );
-                          }).reverse()}
-                        </AnimatePresence>
-                      </div>
-                    ) : (
-                      /* --- LIST VIEW --- */
-                      <div className="w-full space-y-3 pb-10">
-                        {selectedCollege.studentsData
-                          .filter(s =>
-                            s.name.toLowerCase().includes(studentSearch.toLowerCase()) ||
-                            s.interests?.some(i => i.toLowerCase().includes(studentSearch.toLowerCase()))
-                          )
-                          .map((student) => (
-                          <motion.div
-                            key={student._id || student.id}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="bg-surface border border-border/50 p-4 rounded-2xl flex items-center justify-between group hover:border-primary/30 transition-all shadow-sm"
-                          >
-                            <div className="flex items-center space-x-4">
-                              <div className="w-14 h-14 rounded-2xl overflow-hidden bg-muted flex-shrink-0">
-                                <img src={getAvatarSrc(student.profilePic, student.name, student._id || student.id)} className="w-full h-full object-cover" alt="" />
-                              </div>
-                              <div className="min-w-0">
-                                <h4 className="font-bold text-foreground text-sm flex items-center gap-1.5 truncate">
-                                  {student.name}
-                                  <VerifiedBadge user={student} size={14} />
-                                </h4>
-                                <p className="text-[11px] text-muted truncate mt-0.5">{student.university || selectedCollege.name}</p>
-                                <p className="text-[11px] text-muted/60 truncate mt-0.5 italic">"{student.bio?.substring(0, 30) || "Campus student"}..."</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              {myFollowing.includes(student._id || student.id) ? (
-                                <button
-                                  onClick={() => handleDirectMessage(student)}
-                                  className="p-2.5 bg-primary/10 text-primary rounded-xl hover:bg-primary hover:text-[#1A1A1A] transition-all shadow-sm"
-                                  title="Message"
-                                >
-                                  <MessageSquare size={18} />
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={() => handleConnect(student)}
-                                  className="p-2.5 bg-surface-hover text-muted hover:text-primary hover:bg-primary/10 rounded-xl transition-all border border-border/30"
-                                  title="Connect"
-                                >
-                                  <Plus size={18} />
-                                </button>
-                              )}
-                            </div>
-                          </motion.div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Action Buttons - Only show in Card View and if not finished */}
-                    {viewMode === 'cards' && (currentStudentIndices[selectedCollege?._id || selectedCollege?.id] || 0) < (selectedCollege?.studentsData?.length || 0) && (
-                      <div className="flex items-center justify-center space-x-8 mt-8 w-full">
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => handleSwipe(selectedCollege?._id || selectedCollege?.id, 'left', selectedCollege.studentsData[currentStudentIndices[selectedCollege?._id || selectedCollege?.id] || 0])}
-                          className="w-[70px] h-[70px] rounded-full bg-surface border-2 border-orange-500/20 flex items-center justify-center text-3xl shadow-[0_0_20px_rgba(249,115,22,0.15)] hover:shadow-[0_0_30px_rgba(249,115,22,0.3)] transition-shadow"
-                        >
-                          <div className="text-orange-500 hover:text-orange-600 transition-colors">
-                            <Smile size={40} strokeWidth={2.5} />
+                                  <div className="flex items-center space-x-2">
+                                    {myFollowing.includes(student._id || student.id) ? (
+                                      <button
+                                        onClick={() => handleDirectMessage(student)}
+                                        className="p-2.5 bg-primary/10 text-primary rounded-xl hover:bg-primary hover:text-[#1A1A1A] transition-all shadow-sm"
+                                        title="Message"
+                                      >
+                                        <MessageSquare size={18} />
+                                      </button>
+                                    ) : (
+                                      <button
+                                        onClick={() => handleConnect(student)}
+                                        className="p-2.5 bg-surface-hover text-muted hover:text-primary hover:bg-primary/10 rounded-xl transition-all border border-border/30"
+                                        title="Connect"
+                                      >
+                                        <Plus size={18} />
+                                      </button>
+                                    )}
+                                  </div>
+                                </motion.div>
+                              ))}
                           </div>
-                        </motion.button>
+                        )}
 
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => handleSwipe(selectedCollege?._id || selectedCollege?.id, 'right', selectedCollege.studentsData[currentStudentIndices[selectedCollege?._id || selectedCollege?.id] || 0])}
-                          className="w-[84px] h-[84px] rounded-full bg-surface border-2 border-pink-500/20 flex items-center justify-center text-4xl shadow-[0_0_25px_rgba(236,72,153,0.2)] hover:shadow-[0_0_40px_rgba(236,72,153,0.4)] transition-shadow"
-                        >
-                          <div className="text-pink-500 hover:text-pink-600 transition-colors">
-                            <Heart size={44} fill="currentColor" strokeWidth={0} />
+                        {/* Action Buttons - Only show in Card View and if not finished */}
+                        {viewMode === 'cards' && (currentStudentIndices[selectedCollege?._id || selectedCollege?.id] || 0) < (selectedCollege?.studentsData?.length || 0) && (
+                          <div className="flex items-center justify-center space-x-8 mt-8 w-full">
+                            <motion.button
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => handleSwipe(selectedCollege?._id || selectedCollege?.id, 'left', selectedCollege.studentsData[currentStudentIndices[selectedCollege?._id || selectedCollege?.id] || 0])}
+                              className="w-[76px] h-[76px] rounded-full bg-white border-2 border-orange-500/20 flex items-center justify-center shadow-[0_0_20px_rgba(249,115,22,0.15)] hover:shadow-[0_0_30px_rgba(249,115,22,0.3)] transition-shadow leading-none pb-1"
+                            >
+                              <span className="text-[40px]">🤪</span>
+                            </motion.button>
+
+                            <motion.button
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => handleSwipe(selectedCollege?._id || selectedCollege?.id, 'right', selectedCollege.studentsData[currentStudentIndices[selectedCollege?._id || selectedCollege?.id] || 0])}
+                              className="w-[76px] h-[76px] rounded-full bg-white border-2 border-pink-500/20 flex items-center justify-center shadow-[0_0_25px_rgba(236,72,153,0.2)] hover:shadow-[0_0_40px_rgba(236,72,153,0.4)] transition-shadow leading-none pb-1"
+                            >
+                              <span className="text-[40px]">😍</span>
+                            </motion.button>
                           </div>
-                        </motion.button>
-                      </div>
-                    )}
-                    </>
+                        )}
+                      </>
                     )}
                   </motion.div>
                 )}
