@@ -420,7 +420,7 @@
 .selectWrap select,
 .selectWrap input {
   width: 100%;
-  height: 60px;
+  height: 50px;
   padding: 0 46px 0 51px;
   appearance: none;
   border: 1px solid rgba(0, 0, 0, .1) !important;
@@ -433,8 +433,8 @@
 
 .selectWrap select:focus,
 .selectWrap input:focus {
-  border-color: #F97316 !important;
-  box-shadow: 0 0 0 3px rgba(249, 115, 22, .12);
+  border-color: #FDBA74 !important;
+  box-shadow: 0 0 0 3px rgba(253, 186, 116, .22);
 }
 
 .customDropdown {
@@ -463,8 +463,8 @@
 }
 
 .customDropdown li:hover {
-  background: rgba(249, 115, 22, .08);
-  color: #F97316;
+  background: rgba(253, 186, 116, .18);
+  color: #EA580C;
 }
 
 .noResult {
@@ -478,35 +478,37 @@
 .googleWrap {
   position: relative;
   display: flex;
-  width: min(100%, 280px);
-  height: 46px;
-  margin: 0 auto;
+  width: 100%;
+  height: 50px;
+  margin: 0;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: 12px;
   padding: 0;
-  background: linear-gradient(135deg, #D4A843 0%, #F97316 55%, #FB923C 100%);
-  border: 1px solid rgba(249, 115, 22, .72);
-  box-shadow:
-    0 10px 22px rgba(0, 0, 0, .08),
-    0 0 14px rgba(249, 115, 22, .28);
-  animation: googlePulse 2.8s ease-in-out infinite;
+  background: #fff;
+  border: 1.5px solid #FDBA74;
+  box-shadow: none;
+}
+
+.googleWrap:hover {
+  background: #FFF7ED;
+  border-color: #FCD34D;
 }
 
 .googleButtonFace {
   position: absolute;
-  inset: 3px;
+  inset: 0;
   z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  border-radius: 999px;
-  background: #fff;
+  border-radius: 12px;
+  background: transparent;
   color: #1A1A1A;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 600;
   letter-spacing: -.01em;
   pointer-events: none;
 }
@@ -517,17 +519,17 @@
 
 .googleLogo {
   display: grid;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   place-items: center;
   border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, .16);
+  background: transparent;
+  box-shadow: none;
 }
 
 .googleLogo svg {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
 }
 
 .googleAuthControl {
@@ -535,15 +537,15 @@
   inset: 0;
   z-index: 2;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: 12px;
   opacity: .001;
 }
 
 .googleAuthControl>div,
 .googleAuthControl iframe {
   width: 100% !important;
-  height: 46px !important;
-  border-radius: 999px !important;
+  height: 50px !important;
+  border-radius: 12px !important;
 }
 
 .divider {
@@ -576,26 +578,28 @@
 .submitButton {
   display: flex;
   width: 100%;
-  height: 59px;
+  height: 50px;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  border: 1px solid rgba(0, 0, 0, .1);
-  border-radius: 11px;
+  gap: 10px;
+  border: 1.5px solid rgba(0, 0, 0, .1);
+  border-radius: 12px;
   background: #fff;
   color: #1A1A1A;
   font: inherit;
   font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
+  transition: background .2s ease, border-color .2s ease;
 }
 
 .emailTrigger:hover {
-  border-color: #F97316;
-  background: rgba(249, 115, 22, .09);
+  border-color: #FDBA74;
+  background: #FFF7ED;
 }
 
 .emailTrigger svg {
-  width: 20px;
+  width: 18px;
 }
 
 .emailForm {
@@ -608,10 +612,10 @@
   width: 100%;
   height: 50px;
   padding: 0 16px;
-  border: 1px solid rgba(0, 0, 0, .12) !important;
-  border-radius: 10px;
+  border: 1.5px solid rgba(0, 0, 0, .1) !important;
+  border-radius: 12px;
   outline: none;
-  background: rgba(0, 0, 0, .05) !important;
+  background: rgba(0, 0, 0, .03) !important;
   color: #1A1A1A !important;
   font-size: 14px;
 }
@@ -659,12 +663,17 @@
 }
 
 .submitButton {
-  height: 51px;
-  border: none;
-  background: linear-gradient(135deg, #D4A843 0%, #F97316 55%, #FB923C 100%);
-  color: #fff;
-  font-weight: 750;
-  box-shadow: 0 13px 30px rgba(249, 115, 22, .24);
+  height: 50px;
+  border: 1.5px solid #FDBA74;
+  background: #FFF7ED;
+  color: #9A3412;
+  font-weight: 650;
+  box-shadow: none;
+}
+
+.submitButton:hover {
+  background: #FFEDD5;
+  border-color: #FCD34D;
 }
 
 .submitButton:disabled {
@@ -846,18 +855,13 @@
 }
 
 @keyframes googlePulse {
-
   0%,
   100% {
-    box-shadow:
-      0 15px 35px rgba(0, 0, 0, .1),
-      0 0 16px rgba(249, 115, 22, .15);
+    box-shadow: none;
   }
 
   50% {
-    box-shadow:
-      0 15px 35px rgba(0, 0, 0, .15),
-      0 0 34px rgba(249, 115, 22, .4);
+    box-shadow: none;
   }
 }
 
