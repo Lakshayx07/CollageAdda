@@ -2000,7 +2000,14 @@ function MessagesContent() {
                   <div className="py-10 text-center text-[#888888] font-bold uppercase tracking-widest text-[10px]">No friends found</div>
                 ) : (
                   connections
-                    .filter(f => !(activeChat.participants || []).includes(f._id || f.id))
+                    .filter(f => {
+                      if ((activeChat.participants || []).includes(f._id || f.id)) return false;
+                      if (activeChat.name && activeChat.name.includes("Common Group")) {
+                        const expectedUni = activeChat.name.replace(" Common Group", "").trim();
+                        if (f.university !== expectedUni) return false;
+                      }
+                      return true;
+                    })
                     .map((f, i) => (
                       <div key={i} className="flex items-center justify-between p-3 hover:bg-[#F3F2EE] rounded-2xl transition-all border border-transparent hover:border-[#E8E6E0] group">
                         <div className="flex items-center space-x-4">
