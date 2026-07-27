@@ -390,9 +390,9 @@ export default function LoginPage() {
                     onError={() => setMessage("Google sign-in was cancelled or could not start.")}
                     theme="filled_black"
                     shape="pill"
-                    size="large"
+                    size="medium"
                     text="continue_with"
-                    width="400"
+                    width="280"
                     useOneTap={false}
                   />
                 </div>

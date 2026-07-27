@@ -478,7 +478,9 @@
 .googleWrap {
   position: relative;
   display: flex;
-  height: 60px;
+  width: min(100%, 280px);
+  height: 46px;
+  margin: 0 auto;
   align-items: center;
   justify-content: center;
   overflow: hidden;
@@ -487,24 +489,24 @@
   background: linear-gradient(135deg, #D4A843 0%, #F97316 55%, #FB923C 100%);
   border: 1px solid rgba(249, 115, 22, .72);
   box-shadow:
-    0 15px 35px rgba(0, 0, 0, .1),
-    0 0 22px rgba(249, 115, 22, .34);
+    0 10px 22px rgba(0, 0, 0, .08),
+    0 0 14px rgba(249, 115, 22, .28);
   animation: googlePulse 2.8s ease-in-out infinite;
 }
 
 .googleButtonFace {
   position: absolute;
-  inset: 4px;
+  inset: 3px;
   z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 13px;
+  gap: 10px;
   border-radius: 999px;
   background: #fff;
   color: #1A1A1A;
-  font-size: 15px;
-  font-weight: 750;
+  font-size: 13px;
+  font-weight: 700;
   letter-spacing: -.01em;
   pointer-events: none;
 }
@@ -515,17 +517,17 @@
 
 .googleLogo {
   display: grid;
-  width: 31px;
-  height: 31px;
+  width: 24px;
+  height: 24px;
   place-items: center;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, .2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .16);
 }
 
 .googleLogo svg {
-  width: 21px;
-  height: 21px;
+  width: 16px;
+  height: 16px;
 }
 
 .googleAuthControl {
@@ -540,7 +542,7 @@
 .googleAuthControl>div,
 .googleAuthControl iframe {
   width: 100% !important;
-  height: 60px !important;
+  height: 46px !important;
   border-radius: 999px !important;
 }
 
