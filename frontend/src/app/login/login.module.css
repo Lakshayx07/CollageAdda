@@ -621,8 +621,8 @@
 }
 
 .emailForm input:focus {
-  border-color: #F97316 !important;
-  box-shadow: 0 0 0 3px rgba(249, 115, 22, .1);
+  border-color: #FDBA74 !important;
+  box-shadow: 0 0 0 3px rgba(253, 186, 116, .22);
 }
 
 .passwordField {
