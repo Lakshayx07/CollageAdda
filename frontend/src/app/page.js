@@ -432,6 +432,33 @@ export default function WelcomeTourPage() {
                     viewport={{ once: false, amount: isMobile ? 0.2 : 0.4 }}
                     transition={{ duration: 0.5, ease: 'easeOut' }}
                   >
+                    {/* CTA at top — above 01 HOME FEED for easy access */}
+                    {index === 0 && (
+                      <Link href="/login" style={{ textDecoration: 'none', display: 'inline-block', marginBottom: '28px' }}>
+                        <motion.div
+                          initial={{ opacity: 0, y: 8 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ duration: 0.4 }}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.98 }}
+                          style={{
+                            display: 'inline-block',
+                            padding: '12px 32px',
+                            borderRadius: '100px',
+                            background: 'linear-gradient(135deg, #F97316, #FB923C)',
+                            color: 'white',
+                            fontSize: '15px', fontWeight: '700',
+                            textDecoration: 'none',
+                            boxShadow: '0 0 40px rgba(249,115,22,0.45)',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {"Let's Go to CampusAdda 🚀"}
+                        </motion.div>
+                      </Link>
+                    )}
+
                     {/* Number + tag */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '22px' }}>
                       <div style={{
