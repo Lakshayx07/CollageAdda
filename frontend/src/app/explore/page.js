@@ -33,6 +33,11 @@ import {
   Play,
   Loader2,
   Gamepad2,
+  Globe,
+  Landmark,
+  BookOpen,
+  SearchX,
+  X,
   Calendar,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -111,6 +116,7 @@ function ExploreContent() {
   const [toastMessage, setToastMessage] = useState(null);
   const [dragX, setDragX] = useState(0);
   const [viewMode, setViewMode] = useState("cards"); // 'cards' or 'list'
+  const [selectedMemoryPhoto, setSelectedMemoryPhoto] = useState(null);
 
   // ── Filter bar state ────────────────────────────────────────────────────────
   const [filterCity, setFilterCity] = useState("All");
@@ -680,30 +686,28 @@ function ExploreContent() {
             exit={{ opacity: 0, x: -20 }}
             className="flex-1 flex flex-col"
           >
-            <header className="page-header sticky top-0 z-40 px-5 py-4">
+            <header className="page-header sticky top-0 z-40 px-5 py-4 backdrop-blur-md">
               <div className="mx-auto flex w-full max-w-6xl flex-col space-y-4">
                 <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    {exploreMode === "colleges" ? (
-                      <div className="h-11 w-11 shrink-0 rounded-2xl bg-[#FFF8EC] border border-[#E8D9B0] flex items-center justify-center">
-                        <Building2 size={20} className="text-[#C8922A]" />
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="relative h-12 w-12 shrink-0">
+                      <div
+                        className="absolute inset-0 rounded-2xl opacity-45 blur-md"
+                        style={{ background: "linear-gradient(135deg, #C8922A, #E8B84B)" }}
+                      />
+                      <div className="relative h-12 w-12 rounded-2xl brand-mark flex items-center justify-center shadow-[0_6px_18px_rgba(200,146,42,0.3)] ring-1 ring-white/45">
+                        {exploreMode === "colleges" ? (
+                          <Building2 size={21} className="text-white" strokeWidth={2.25} />
+                        ) : (
+                          <Swords size={21} className="text-white" strokeWidth={2.25} />
+                        )}
                       </div>
-                    ) : (
-                      <div className="relative h-11 w-11 shrink-0">
-                        <div
-                          className="absolute inset-0 rounded-2xl opacity-40 blur-md"
-                          style={{ background: "linear-gradient(135deg, #C8922A, #E8B84B)" }}
-                        />
-                        <div className="relative h-11 w-11 rounded-2xl brand-mark flex items-center justify-center shadow-[0_6px_16px_rgba(200,146,42,0.28)] ring-1 ring-white/40">
-                          <Swords size={20} className="text-white" strokeWidth={2.25} />
-                        </div>
-                      </div>
-                    )}
+                    </div>
                     <div className="min-w-0">
-                      <h1 className="text-xl font-black tracking-tight text-[#1A1A1A] truncate">
+                      <h1 className="text-[1.35rem] sm:text-2xl font-black tracking-tight text-[#1A1A1A] truncate leading-tight">
                         {exploreMode === "colleges" ? "Explore Colleges" : "Campus Arena"}
                       </h1>
-                      <p className="text-[11px] font-semibold text-[#888888] mt-0.5">
+                      <p className="text-[12px] font-medium text-[#6B6B6B] mt-0.5 tracking-wide">
                         {exploreMode === "colleges"
                           ? "Discover campuses near you"
                           : "Esports networks & campus battles"}
@@ -712,41 +716,46 @@ function ExploreContent() {
                   </div>
                 </div>
 
-                <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
-                  <div className="relative w-full sm:flex-1">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#888888]" size={16} />
+                <div className="explore-control-row flex w-full flex-col gap-2.5 sm:flex-row sm:items-stretch">
+                  <div className="relative w-full sm:flex-1 group">
+                    <Search
+                      className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#888888] transition-colors group-focus-within:text-[#C8922A]"
+                      size={17}
+                      strokeWidth={2.25}
+                    />
                     <input
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       type="text"
                       placeholder={exploreMode === "colleges" ? "Search college..." : "Search players..."}
-                      className="ca-input w-full py-3 pl-10 pr-4 text-sm rounded-2xl"
+                      className="explore-search-input ca-input w-full py-3.5 pl-11 pr-4 text-sm font-medium rounded-[1.15rem]"
                     />
                   </div>
                   <motion.button
                     type="button"
                     whileTap={{ scale: 0.97 }}
+                    whileHover={{ y: -1 }}
                     onClick={() => {
                       setExploreMode(exploreMode === "colleges" ? "arena" : "colleges");
                       setSearch("");
                       setArenaSportFilter("All");
                     }}
                     className={clsx(
-                      "explore-mode-switch flex w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-2xl border px-5 py-3 font-black transition-all cursor-pointer",
+                      "explore-mode-switch flex w-full sm:w-auto shrink-0 items-center justify-center gap-2.5 rounded-[1.15rem] border px-6 py-3.5 font-black transition-all cursor-pointer",
                       exploreMode === "colleges"
-                        ? "explore-mode-switch--arena bg-gradient-to-r from-[#C8922A] to-[#D4A843] border-transparent shadow-[0_4px_14px_rgba(200,146,42,0.25)] hover:opacity-95"
-                        : "explore-mode-switch--colleges bg-white border-[#E8E6E0] hover:border-[#C8922A]/50 hover:bg-[#FFF8EC]"
+                        ? "explore-mode-switch--arena bg-gradient-to-r from-[#C8922A] to-[#D4A843] border-transparent shadow-[0_6px_18px_rgba(200,146,42,0.32)] hover:shadow-[0_8px_22px_rgba(200,146,42,0.4)]"
+                        : "explore-mode-switch--colleges bg-white border-[#E8E6E0] shadow-sm hover:border-[#C8922A]/55 hover:bg-[#FFF8EC]"
                     )}
                   >
                     {exploreMode === "colleges" ? (
                       <>
-                        <Swords size={16} strokeWidth={2.25} />
-                        <span className="tracking-widest uppercase text-[10px] sm:text-xs">Arena</span>
+                        <Swords size={17} strokeWidth={2.4} />
+                        <span className="tracking-[0.16em] uppercase text-[11px] sm:text-xs">Arena</span>
                       </>
                     ) : (
                       <>
-                        <Building2 size={16} strokeWidth={2.25} />
-                        <span className="tracking-widest uppercase text-[10px] sm:text-xs">Colleges</span>
+                        <Building2 size={17} strokeWidth={2.4} />
+                        <span className="tracking-[0.16em] uppercase text-[11px] sm:text-xs">Colleges</span>
                       </>
                     )}
                   </motion.button>
@@ -790,17 +799,19 @@ function ExploreContent() {
 
                 {/* ── Filter Bar ────────────────────────────────────────────── */}
                 <section className="mx-auto w-full max-w-6xl px-4 pt-3 pb-1 sm:px-5">
-                  <div className="app-panel rounded-[1.4rem] px-4 py-4 sm:px-5">
-                    <div className="flex flex-wrap items-center gap-3">
+                  <div className="explore-filter-panel app-panel rounded-[1.5rem] px-4 py-4 sm:px-5">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-3.5">
                       {/* City filter */}
-                      <div className="flex-1 min-w-[140px]">
-                        <label className="block text-[9px] font-black uppercase tracking-[0.18em] text-[#6B6B6B] mb-1.5 pl-1">🌍 City</label>
+                      <div className="min-w-0">
+                        <label className="mb-2 flex items-center gap-1.5 pl-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#6B6B6B]">
+                          <Globe size={12} strokeWidth={2.4} className="text-[#C8922A]" />
+                          City
+                        </label>
                         <select
                           value={filterCity}
                           onChange={e => setFilterCity(e.target.value)}
                           aria-label="Filter by city"
-                          className="ca-input w-full py-2.5 px-3 text-xs appearance-none cursor-pointer"
-                          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
+                          className="explore-filter-select ca-input w-full py-2.5 pl-3.5 pr-9 text-xs font-semibold appearance-none cursor-pointer rounded-xl"
                         >
                           {cityOptions.map(city => (
                             <option key={city} value={city}>{city === "All" ? "All Cities" : city}</option>
@@ -809,14 +820,16 @@ function ExploreContent() {
                       </div>
 
                       {/* Category filter */}
-                      <div className="flex-1 min-w-[130px]">
-                        <label className="block text-[9px] font-black uppercase tracking-[0.18em] text-[#6B6B6B] mb-1.5 pl-1">🏛️ Category</label>
+                      <div className="min-w-0">
+                        <label className="mb-2 flex items-center gap-1.5 pl-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#6B6B6B]">
+                          <Landmark size={12} strokeWidth={2.4} className="text-[#C8922A]" />
+                          Category
+                        </label>
                         <select
                           value={filterCategory}
                           onChange={e => setFilterCategory(e.target.value)}
                           aria-label="Filter by category"
-                          className="ca-input w-full py-2.5 px-3 text-xs appearance-none cursor-pointer"
-                          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
+                          className="explore-filter-select ca-input w-full py-2.5 pl-3.5 pr-9 text-xs font-semibold appearance-none cursor-pointer rounded-xl"
                         >
                           {CATEGORY_OPTIONS.map(cat => (
                             <option key={cat} value={cat}>{cat === "All" ? "All Categories" : cat}</option>
@@ -825,67 +838,129 @@ function ExploreContent() {
                       </div>
 
                       {/* Stream filter */}
-                      <div className="flex-1 min-w-[150px]">
-                        <label className="block text-[9px] font-black uppercase tracking-[0.18em] text-[#6B6B6B] mb-1.5 pl-1">📚 Stream</label>
+                      <div className="min-w-0">
+                        <label className="mb-2 flex items-center gap-1.5 pl-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#6B6B6B]">
+                          <BookOpen size={12} strokeWidth={2.4} className="text-[#C8922A]" />
+                          Stream
+                        </label>
                         <select
                           value={filterStream}
                           onChange={e => setFilterStream(e.target.value)}
                           aria-label="Filter by stream"
-                          className="ca-input w-full py-2.5 px-3 text-xs appearance-none cursor-pointer"
-                          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
+                          className="explore-filter-select ca-input w-full py-2.5 pl-3.5 pr-9 text-xs font-semibold appearance-none cursor-pointer rounded-xl"
                         >
                           {STREAM_OPTIONS.map(s => (
-                            <option key={s} value={s}>{s === "All" ? "All Courses" : s}</option>
+                            <option key={s} value={s}>{s === "All" ? "All Streams" : s}</option>
                           ))}
                         </select>
                       </div>
-
-                      {/* Clear filters */}
-                      {hasActiveFilters && (
-                        <button
-                          onClick={clearFilters}
-                          className="shrink-0 self-end mb-0.5 flex items-center gap-1.5 rounded-full border border-[#E8E6E0] bg-[#F3F2EE] px-3.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-[#6B6B6B] transition-all hover:bg-[#F3F2EE] hover:text-[#4A4A4A] hover:border-[#E8E6E0] active:scale-95"
-                          aria-label="Clear all filters"
-                        >
-                          ✕ Clear
-                        </button>
-                      )}
                     </div>
 
                     {/* Active filter summary + college count */}
-                    <div className="mt-3 flex items-center justify-between">
-                      <p className="text-[10px] text-[#888888] font-medium">
+                    <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-[#EFEDE6] pt-3">
+                      <p className="text-[11px] text-[#6B6B6B] font-medium">
                         {!loading && (
                           <>
-                            Showing <span className="text-[#6B6B6B] font-black">{filteredColleges.length}</span> college{filteredColleges.length !== 1 ? "s" : ""}
-                            {hasActiveFilters && <span className="text-[#888888]"> (filtered)</span>}
+                            Showing{" "}
+                            <span className="font-black text-[#1A1A1A] tabular-nums">{filteredColleges.length}</span>
+                            {" "}college{filteredColleges.length !== 1 ? "s" : ""}
+                            {hasActiveFilters && (
+                              <span className="ml-1.5 inline-flex items-center rounded-full bg-[#FFF8EC] px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-[#B07D20]">
+                                Filtered
+                              </span>
+                            )}
                           </>
                         )}
                       </p>
-                      {hasActiveFilters && (
-                        <div className="flex flex-wrap gap-1.5">
-                          {filterCategory !== "All" && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-[#C8922A]/20 to-[#C8922A]/20 border border-[#C8922A]/30 px-2.5 py-1 text-[9px] font-black text-[#C8922A] uppercase tracking-wider">
-                              {filterCategory}
-                            </span>
-                          )}
-                          {filterStream !== "All" && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-[#D4A843]/20 to-[#C8922A]/20 border border-cyan-500/30 px-2.5 py-1 text-[9px] font-black text-[#C8922A] uppercase tracking-wider">
-                              {filterStream}
-                            </span>
-                          )}
-                          {filterCity !== "All" && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 px-2.5 py-1 text-[9px] font-black text-emerald-300 uppercase tracking-wider">
-                              📍 {filterCity}
-                            </span>
-                          )}
-                        </div>
-                      )}
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {hasActiveFilters && (
+                          <>
+                            {filterCity !== "All" && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-[#FFF8EC] border border-[#E8D9B0] px-2.5 py-1 text-[9px] font-black text-[#B07D20] uppercase tracking-wider">
+                                <MapPin size={10} strokeWidth={2.5} />
+                                {filterCity}
+                              </span>
+                            )}
+                            {filterCategory !== "All" && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-[#FFF8EC] border border-[#E8D9B0] px-2.5 py-1 text-[9px] font-black text-[#B07D20] uppercase tracking-wider">
+                                {filterCategory}
+                              </span>
+                            )}
+                            {filterStream !== "All" && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-[#FFF8EC] border border-[#E8D9B0] px-2.5 py-1 text-[9px] font-black text-[#B07D20] uppercase tracking-wider">
+                                {filterStream}
+                              </span>
+                            )}
+                            <button
+                              type="button"
+                              onClick={clearFilters}
+                              className="shrink-0 flex items-center gap-1 rounded-full border border-[#E8E6E0] bg-white px-3 py-1 text-[9px] font-black uppercase tracking-widest text-[#6B6B6B] transition-all hover:border-[#C8922A]/45 hover:bg-[#FFF8EC] hover:text-[#1A1A1A] active:scale-95"
+                              aria-label="Clear all filters"
+                            >
+                              Clear
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </section>
 
                 <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-4 p-4 sm:grid-cols-2 sm:gap-5 sm:p-5 xl:grid-cols-3">
+              {loading && (
+                <div className="col-span-full flex justify-center py-20">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
+                </div>
+              )}
+
+              {filteredColleges.map((college, index) => (
+                <motion.div
+                  key={college._id || college.id}
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35, delay: Math.min(index * 0.04, 0.24) }}
+                  whileHover={{ y: -4 }}
+                  className="explore-college-card relative flex flex-col rounded-[1.6rem] overflow-hidden text-left group shadow-[0_8px_28px_rgba(26,26,26,0.12)] hover:shadow-[0_14px_36px_rgba(26,26,26,0.18)] transition-shadow duration-300 cursor-default ring-1 ring-black/5"
+                  style={{ height: "420px" }}
+                >
+                  {/* Full-bleed background image */}
+                  <img
+                    src={college.banner || COLLEGE_BANNER_FALLBACK}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.06]"
+                    alt={college.name}
+                    referrerPolicy="no-referrer"
+                    onError={handleBannerError}
+                  />
+
+                  {/* Dark gradient overlay — richer depth at bottom */}
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      background:
+                        "linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.55) 42%, rgba(0,0,0,0.18) 70%, rgba(0,0,0,0.05) 100%)",
+                    }}
+                  />
+                  <div
+                    className="absolute inset-x-0 top-0 h-24 pointer-events-none"
+                    style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.28), transparent)" }}
+                  />
+
+                  {/* Content overlaid on image */}
+                  <div className="absolute inset-0 flex flex-col justify-end p-5 space-y-3.5">
+                    {/* College name + followers badge */}
+                    <div className="flex items-start justify-between gap-2">
+                      <h3
+                        className="font-black text-[1.05rem] leading-snug line-clamp-2 flex-1 tracking-tight"
+                        style={{ color: "white", textShadow: "0 2px 10px rgba(0,0,0,0.55)" }}
+                      >
+                        {college.name}
+                      </h3>
+                      {(college.followersCount ?? 0) > 0 && (
+                        <div className="flex items-center gap-1 shrink-0 rounded-full border border-white/15 bg-black/45 px-2.5 py-1 backdrop-blur-md">
+                          <Users size={10} color="white" />
+                          <span className="text-[10px] font-bold" style={{ color: "white" }}>
+                            {college.followersCount}
+                          </span>
                   {loading && (
                     <div className="col-span-2 flex justify-center py-20">
                       <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
@@ -939,6 +1014,37 @@ function ExploreContent() {
                           </div>
                         </div>
 
+                    {/* Location & students pills */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex items-center gap-1.5 rounded-full border border-white/12 px-3 py-1.5 backdrop-blur-md" style={{ backgroundColor: "rgba(0,0,0,0.42)" }}>
+                        <MapPin size={11} color="#E8B84B" />
+                        <span className="text-[11px] font-semibold truncate max-w-[120px]" style={{ color: "white" }}>{college.location}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 rounded-full border border-white/12 px-3 py-1.5 backdrop-blur-md" style={{ backgroundColor: "rgba(0,0,0,0.42)" }}>
+                        <Users size={11} color="#E8B84B" />
+                        <span className="text-[11px] font-semibold" style={{ color: "white" }}>{college.students} Students</span>
+                      </div>
+                    </div>
+
+                    {/* Explore Now button — only interactive hotspot on the card */}
+                    <motion.button
+                      type="button"
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => {
+                        router.push(`/explore?collegeId=${college._id || college.id}`);
+                      }}
+                      disabled={loadingCollegeId === (college._id || college.id)}
+                      className="explore-college-cta w-full rounded-2xl py-3.5 flex items-center justify-center text-sm font-black tracking-wide text-[#1A1A1A] shadow-[0_6px_18px_rgba(200,146,42,0.35)] transition-opacity hover:opacity-95 disabled:opacity-80 cursor-pointer"
+                    >
+                      {loadingCollegeId === (college._id || college.id) ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        "Explore Now"
+                      )}
+                    </motion.button>
+                  </div>
+                </motion.div>
+              ))}
                         {/* Explore Now button — only interactive hotspot on the card */}
                         <button
                           type="button"
@@ -960,6 +1066,42 @@ function ExploreContent() {
 
                 </div>
 
+            {!loading && filteredColleges.length === 0 && (
+              <div className="flex-1 flex flex-col items-center justify-center py-16 px-6 text-center">
+                <div className="explore-empty-panel app-panel mx-auto max-w-sm rounded-[1.75rem] p-9 flex flex-col items-center gap-4">
+                  <div className="relative h-14 w-14">
+                    <div
+                      className="absolute inset-0 rounded-2xl opacity-40 blur-md"
+                      style={{ background: "linear-gradient(135deg, #C8922A, #E8B84B)" }}
+                    />
+                    <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl brand-mark ring-1 ring-white/40 shadow-[0_6px_16px_rgba(200,146,42,0.28)]">
+                      <SearchX size={24} className="text-white" strokeWidth={2.25} />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-[#1A1A1A] mb-1.5">
+                      {hasActiveFilters
+                        ? "No colleges match these filters"
+                        : `No colleges found matching "${search}"`}
+                    </p>
+                    <p className="text-xs text-[#6B6B6B] leading-relaxed">
+                      {hasActiveFilters
+                        ? "Try adjusting or clearing your filters."
+                        : "Try a different search term."}
+                    </p>
+                  </div>
+                  {hasActiveFilters && (
+                    <button
+                      type="button"
+                      onClick={clearFilters}
+                      className="mt-1 rounded-2xl bg-gradient-to-r from-[#C8922A] to-[#D4A843] px-5 py-2.5 text-[11px] font-black uppercase tracking-widest text-[#1A1A1A] shadow-[0_4px_14px_rgba(200,146,42,0.28)] hover:opacity-95 active:scale-95 transition-all"
+                    >
+                      Reset Filters
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
                 {!loading && filteredColleges.length === 0 && (
                   <div className="flex-1 flex flex-col items-center justify-center py-16 px-6 text-center">
                     <div className="app-panel mx-auto max-w-sm rounded-[1.6rem] p-8 flex flex-col items-center gap-4">
@@ -1794,7 +1936,8 @@ function ExploreContent() {
                           {memoryPosts.map((post, i) => (
                             <div
                               key={post._id || i}
-                              className="aspect-square relative group overflow-hidden bg-[#F3F2EE] rounded-xl border border-[#E8E6E0] p-1.5"
+                              onClick={() => setSelectedMemoryPhoto(post.mediaUrl || post.image)}
+                              className="aspect-square relative group overflow-hidden bg-[#F3F2EE] rounded-xl border border-[#E8E6E0] p-1.5 cursor-pointer"
                             >
                               {post.mediaType === "video" ? (
                                 <video
@@ -1924,6 +2067,35 @@ function ExploreContent() {
               </div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {selectedMemoryPhoto && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4"
+            onClick={() => setSelectedMemoryPhoto(null)}
+          >
+            <button
+              onClick={() => setSelectedMemoryPhoto(null)}
+              className="absolute top-6 right-6 text-white/80 hover:text-white p-2 z-10 transition-colors"
+            >
+              <X size={32} strokeWidth={2.5} />
+            </button>
+            <motion.img
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              src={selectedMemoryPhoto}
+              className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl"
+              alt="Memory"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

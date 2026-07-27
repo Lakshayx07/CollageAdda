@@ -1515,15 +1515,15 @@ function MessagesContent() {
                               </div>
                             )}
                             {msg.mediaUrl && (
-                              <div className="mb-2 rounded-xl overflow-hidden border border-[#E8E6E0]">
+                              <div className="mb-2 rounded-xl overflow-hidden border border-[#E8E6E0] bg-black/5 flex items-center justify-center">
                                 {msg.mediaType === 'video' ? (
-                                  <video src={msg.mediaUrl} controls className="max-w-full h-auto max-h-48 object-cover" />
+                                  <video src={msg.mediaUrl} controls className="max-w-full h-auto max-h-[350px] object-contain" />
                                 ) : msg.mediaType === 'file' ? (
                                   <a href={msg.mediaUrl} download className="flex items-center gap-2 bg-white/30 px-3 py-2 text-sm font-black">
                                     <FileText size={18} /> Document
                                   </a>
                                 ) : (
-                                  <img src={msg.mediaUrl} alt="" className="max-w-full h-auto max-h-48 object-cover" />
+                                  <img src={msg.mediaUrl} alt="" className="max-w-full h-auto max-h-[350px] object-contain" />
                                 )}
                               </div>
                             )}
@@ -2000,7 +2000,14 @@ function MessagesContent() {
                   <div className="py-10 text-center text-[#888888] font-bold uppercase tracking-widest text-[10px]">No friends found</div>
                 ) : (
                   connections
-                    .filter(f => !(activeChat.participants || []).includes(f._id || f.id))
+                    .filter(f => {
+                      if ((activeChat.participants || []).includes(f._id || f.id)) return false;
+                      if (activeChat.name && activeChat.name.includes("Common Group")) {
+                        const expectedUni = activeChat.name.replace(" Common Group", "").trim();
+                        if (f.university !== expectedUni) return false;
+                      }
+                      return true;
+                    })
                     .map((f, i) => (
                       <div key={i} className="flex items-center justify-between p-3 hover:bg-[#F3F2EE] rounded-2xl transition-all border border-transparent hover:border-[#E8E6E0] group">
                         <div className="flex items-center space-x-4">

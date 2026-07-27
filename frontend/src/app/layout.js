@@ -37,6 +37,9 @@ export default function RootLayout({ children }) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
+        <link rel="preconnect" href="https://accounts.google.com" />
+        <link rel="preconnect" href="https://www.gstatic.com" crossOrigin="" />
+        <link rel="dns-prefetch" href="https://accounts.google.com" />
       </head>
       <body className="app-shell h-full bg-background text-foreground transition-colors duration-300">
         <ThemeProvider>

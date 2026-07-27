@@ -1,14 +1,17 @@
 "use client";
-import { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { Home, Compass, User, LogOut, Users, MessageSquare, Zap, Search, Users2 } from "lucide-react";
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { Home, Compass, User, Users, MessageSquare, Zap, Search, Users2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import clsx from "clsx";
 import { getAuthenticatedSupabaseClient } from "@/utils/supabaseAuthUser";
 import { syncLoginStreakForUser, getDisplayStreak, LOGIN_STREAK_UPDATED_EVENT } from "@/utils/loginStreak";
 import { useSocket } from "@/context/SocketProvider";
 import { useSidebar } from "@/context/SidebarContext";
+
+const SIDEBAR_EASE = [0.22, 1, 0.36, 1];
+const SIDEBAR_DURATION = 0.4;
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -100,36 +103,41 @@ export default function Sidebar() {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onFocus={handleMouseEnter}
-      onBlur={handleMouseLeave}
+      onBlur={(e) => {
+        // Ignore blur when focus moves between items inside the rail
+        if (!e.currentTarget.contains(e.relatedTarget)) {
+          handleMouseLeave();
+        }
+      }}
       initial={false}
       animate={{ width: isExpanded ? 288 : 80 }}
-      transition={{ type: "spring", bounce: 0, duration: 0.22 }}
-      className="nav-rail hidden lg:flex fixed left-0 top-0 z-50 h-full flex-col bg-white border-r border-[#E8E6E0] overflow-hidden"
+      transition={{ duration: SIDEBAR_DURATION, ease: SIDEBAR_EASE }}
+      className="nav-rail hidden lg:flex fixed left-0 top-0 z-50 h-full flex-col bg-white border-r border-[#E8E6E0] overflow-hidden will-change-[width]"
     >
       <div className="mb-8 space-y-5 px-6 pt-7 min-w-[288px]">
         <div className="flex items-center gap-3 h-10">
           <div className="brand-mark flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white">
             <Zap size={20} fill="currentColor" />
           </div>
-          <AnimatePresence>
-            {isExpanded && (
-              <motion.div
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                transition={{ duration: 0.15 }}
-                className="whitespace-nowrap"
-              >
-                <h1 className="text-[1.2rem] tracking-tight">
-                  <span className="text-[#1A1A1A] font-extrabold">Campus</span>
-                  <span className="text-[#C8922A] font-extrabold">Adda</span>
-                </h1>
-                <p className="text-[9px] font-bold tracking-[0.1em] text-[#888888] uppercase">
-                  Student Social Network
-                </p>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <motion.div
+            initial={false}
+            animate={{ opacity: isExpanded ? 1 : 0, x: isExpanded ? 0 : -8 }}
+            transition={{
+              duration: 0.22,
+              delay: isExpanded ? 0.12 : 0,
+              ease: SIDEBAR_EASE,
+            }}
+            className="whitespace-nowrap pointer-events-none"
+            aria-hidden={!isExpanded}
+          >
+            <h1 className="text-[1.2rem] tracking-tight">
+              <span className="text-[#1A1A1A] font-extrabold">Campus</span>
+              <span className="text-[#C8922A] font-extrabold">Adda</span>
+            </h1>
+            <p className="text-[9px] font-bold tracking-[0.1em] text-[#888888] uppercase">
+              Student Social Network
+            </p>
+          </motion.div>
         </div>
       </div>
 
@@ -149,8 +157,7 @@ export default function Sidebar() {
             >
               <div
                 className={clsx(
-                  "relative z-10 flex items-center h-12 rounded-[1rem] transition-all duration-200 overflow-hidden w-full",
-                  isExpanded ? "px-4" : "px-[12px]",
+                  "relative z-10 flex items-center h-12 rounded-[1rem] overflow-hidden w-full px-3 transition-colors duration-200",
                   isActive 
                     ? "bg-[#FCF5E5] text-[#9A6A10]" 
                     : "text-[#4A4A4A] hover:text-[#1A1A1A] hover:bg-[#F9F8F5]"
@@ -168,24 +175,24 @@ export default function Sidebar() {
                   )}
                 </div>
 
-                <AnimatePresence>
-                  {isExpanded && (
-                    <motion.div
-                      initial={{ opacity: 0, x: -5 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -5 }}
-                      transition={{ duration: 0.15 }}
-                      className="ml-4 whitespace-nowrap"
-                    >
-                      <p className={clsx(
-                        "text-[15px] font-bold tracking-tight transition-colors duration-300",
-                        isActive ? "text-[#9A6A10]" : "text-[#4A4A4A]"
-                      )}>
-                        {item.name}
-                      </p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                <motion.div
+                  initial={false}
+                  animate={{ opacity: isExpanded ? 1 : 0, x: isExpanded ? 0 : -6 }}
+                  transition={{
+                    duration: 0.22,
+                    delay: isExpanded ? 0.1 : 0,
+                    ease: SIDEBAR_EASE,
+                  }}
+                  className="ml-3.5 whitespace-nowrap"
+                  aria-hidden={!isExpanded}
+                >
+                  <p className={clsx(
+                    "text-[15px] font-bold tracking-tight transition-colors duration-300",
+                    isActive ? "text-[#9A6A10]" : "text-[#4A4A4A]"
+                  )}>
+                    {item.name}
+                  </p>
+                </motion.div>
               </div>
             </Link>
           );
@@ -203,64 +210,69 @@ export default function Sidebar() {
           }}
           aria-label="Create Post"
           className={clsx(
-            "mt-6 flex items-center justify-center gradient-bg font-bold text-white shadow-lg shadow-[#C8922A]/20 transition-all hover:scale-[1.02]",
-            isExpanded ? "w-[240px] rounded-xl px-4 py-3.5 h-12 gap-2" : "w-12 h-12 rounded-full shrink-0 ml-[2px]"
+            "mt-6 flex items-center justify-center gradient-bg font-bold text-white shadow-lg shadow-[#C8922A]/20 h-12 shrink-0 overflow-hidden transition-[width,border-radius,padding,gap] duration-[400ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-[1.02]",
+            isExpanded ? "w-[240px] rounded-xl px-4 gap-2 ml-0" : "w-12 rounded-full px-0 gap-0 ml-[2px]"
           )}
         >
           <span className="text-xl leading-none flex items-center justify-center shrink-0">+</span>
-          <AnimatePresence>
-            {isExpanded && (
-              <motion.span
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: "auto" }}
-                exit={{ opacity: 0, width: 0 }}
-                className="whitespace-nowrap overflow-hidden text-[15px]"
-              >
-                Create Post
-              </motion.span>
-            )}
-          </AnimatePresence>
+          <motion.span
+            initial={false}
+            animate={{ opacity: isExpanded ? 1 : 0, maxWidth: isExpanded ? 120 : 0 }}
+            transition={{
+              duration: 0.22,
+              delay: isExpanded ? 0.1 : 0,
+              ease: SIDEBAR_EASE,
+            }}
+            className="whitespace-nowrap overflow-hidden text-[15px]"
+            aria-hidden={!isExpanded}
+          >
+            Create Post
+          </motion.span>
         </button>
       </nav>
 
       <div className="mt-auto flex flex-col gap-4 pb-4 pt-10 min-w-[288px]">
         {/* Streak Card */}
         <div className={clsx(
-          "bg-[#FAFAF8] border border-[#E8E6E0] shadow-sm relative overflow-hidden transition-all duration-200",
-          isExpanded ? "rounded-[1.25rem] p-4 mx-4" : "rounded-full w-12 h-12 flex items-center justify-center p-0 ml-4"
+          "bg-[#FAFAF8] border border-[#E8E6E0] shadow-sm relative overflow-hidden transition-[width,height,border-radius,padding,margin] duration-[400ms] ease-[cubic-bezier(0.22,1,0.36,1)]",
+          isExpanded
+            ? "rounded-[1.25rem] p-4 mx-4 h-auto w-auto"
+            : "rounded-full w-12 h-12 flex items-center justify-center p-0 ml-4"
         )}>
-          {isExpanded ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col w-full h-full"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-[12px] font-bold text-[#1A1A1A]">Your Streak</span>
-                <div className="w-4 h-4 rounded-full bg-[#E8E6E0] flex items-center justify-center text-[8px] text-[#888888] font-bold">?</div>
+          <motion.div
+            initial={false}
+            animate={{ opacity: isExpanded ? 1 : 0 }}
+            transition={{ duration: 0.2, delay: isExpanded ? 0.12 : 0, ease: SIDEBAR_EASE }}
+            className={clsx("flex flex-col w-full h-full", !isExpanded && "pointer-events-none absolute inset-0")}
+            aria-hidden={!isExpanded}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-[12px] font-bold text-[#1A1A1A]">Your Streak</span>
+              <div className="w-4 h-4 rounded-full bg-[#E8E6E0] flex items-center justify-center text-[8px] text-[#888888] font-bold">?</div>
+            </div>
+            <div className="flex items-end justify-between">
+              <div>
+                <p className="text-xl font-extrabold text-[#1A1A1A]">{streak} Days</p>
+                <p className="text-[11px] font-semibold text-[#888888]">Keep going!</p>
               </div>
-              <div className="flex items-end justify-between">
-                <div>
-                  <p className="text-xl font-extrabold text-[#1A1A1A]">{streak} Days</p>
-                  <p className="text-[11px] font-semibold text-[#888888]">Keep going!</p>
-                </div>
-                <span className="text-2xl drop-shadow-md">🔥</span>
-              </div>
-            </motion.div>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="relative flex items-center justify-center w-full h-full"
-            >
-              <span className="text-xl drop-shadow-md">🔥</span>
-              <div className="absolute -bottom-1 -right-1 bg-white border border-[#E8E6E0] text-[9px] font-bold rounded-full px-1.5 py-0.5 shadow-sm text-[#1A1A1A]">
-                {streak}
-              </div>
-            </motion.div>
-          )}
+              <span className="text-2xl drop-shadow-md">🔥</span>
+            </div>
+          </motion.div>
+          <motion.div
+            initial={false}
+            animate={{ opacity: isExpanded ? 0 : 1 }}
+            transition={{ duration: 0.18, delay: isExpanded ? 0 : 0.08, ease: SIDEBAR_EASE }}
+            className={clsx(
+              "relative flex items-center justify-center w-full h-full",
+              isExpanded && "pointer-events-none absolute inset-0"
+            )}
+            aria-hidden={isExpanded}
+          >
+            <span className="text-xl drop-shadow-md">🔥</span>
+            <div className="absolute -bottom-1 -right-1 bg-white border border-[#E8E6E0] text-[9px] font-bold rounded-full px-1.5 py-0.5 shadow-sm text-[#1A1A1A]">
+              {streak}
+            </div>
+          </motion.div>
         </div>
       </div>
     </motion.aside>

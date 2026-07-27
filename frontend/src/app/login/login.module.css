@@ -7,6 +7,9 @@
   width: 100%;
   height: 100dvh;
   min-height: 100dvh;
+  box-sizing: border-box;
+  /* Keep the card clear of the screen edges */
+  padding: 20px 0 36px;
   overflow: hidden;
   overscroll-behavior: none;
   background: #FFFDF8;
@@ -43,13 +46,15 @@
   position: relative;
   z-index: 2;
   width: min(1340px, calc(100% - 56px));
-  min-height: 100dvh;
+  height: 100%;
+  min-height: 0;
   margin: 0 auto;
   display: grid;
   grid-template-columns: minmax(0, 1.55fr) minmax(380px, .8fr);
   gap: clamp(44px, 6vw, 92px);
   align-items: center;
-  padding: 32px 0 8px;
+  box-sizing: border-box;
+  padding: 0;
 }
 
 .storyPanel {
@@ -148,7 +153,12 @@
   color: #1A1A1A !important;
 }
 
-.heroCopy h1 span {
+.heroCopy h1 .headlineLine {
+  display: block;
+  white-space: nowrap;
+}
+
+.heroCopy h1 .headlineLine > span {
   color: transparent !important;
   background: linear-gradient(135deg, #D4A843 0%, #F97316 55%, #FB923C 100%);
   background-clip: text;
@@ -319,15 +329,23 @@
   position: relative;
   width: 100%;
   max-width: 445px;
-  min-height: 730px;
   justify-self: end;
-  padding: 60px 40px 35px;
+  align-self: center;
+  padding: 52px 40px 40px;
   overflow: hidden;
   border: 1px solid rgba(0, 0, 0, .1);
   border-radius: 22px;
   background: #fff;
   box-shadow: 0 35px 90px rgba(0, 0, 0, .1), inset 0 1px rgba(0, 0, 0, .025);
   backdrop-filter: blur(22px);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.authPanel::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .authPanel::after {
@@ -344,7 +362,7 @@
 }
 
 .welcome {
-  margin: 33px 0 53px;
+  margin: 28px 0 40px;
   text-align: center;
 }
 
@@ -402,7 +420,7 @@
 .selectWrap select,
 .selectWrap input {
   width: 100%;
-  height: 60px;
+  height: 50px;
   padding: 0 46px 0 51px;
   appearance: none;
   border: 1px solid rgba(0, 0, 0, .1) !important;
@@ -415,8 +433,8 @@
 
 .selectWrap select:focus,
 .selectWrap input:focus {
-  border-color: #F97316 !important;
-  box-shadow: 0 0 0 3px rgba(249, 115, 22, .12);
+  border-color: #FDBA74 !important;
+  box-shadow: 0 0 0 3px rgba(253, 186, 116, .22);
 }
 
 .customDropdown {
@@ -445,8 +463,8 @@
 }
 
 .customDropdown li:hover {
-  background: rgba(249, 115, 22, .08);
-  color: #F97316;
+  background: rgba(253, 186, 116, .18);
+  color: #EA580C;
 }
 
 .noResult {
@@ -460,35 +478,40 @@
 .googleWrap {
   position: relative;
   display: flex;
-  height: 60px;
+  width: 100%;
+  height: 50px;
+  margin: 0;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: 12px;
   padding: 0;
-  background: linear-gradient(135deg, #D4A843 0%, #F97316 55%, #FB923C 100%);
-  border: 1px solid rgba(249, 115, 22, .72);
-  box-shadow:
-    0 15px 35px rgba(0, 0, 0, .1),
-    0 0 22px rgba(249, 115, 22, .34);
-  animation: googlePulse 2.8s ease-in-out infinite;
+  background: #fff;
+  border: 1.5px solid #FDBA74;
+  box-shadow: none;
+  cursor: pointer;
+  font: inherit;
+}
+
+.googleWrap:hover:not(:disabled) {
+  background: #FFF7ED;
+  border-color: #FCD34D;
+}
+
+.googleWrap:disabled {
+  cursor: wait;
+  opacity: .72;
 }
 
 .googleButtonFace {
-  position: absolute;
-  inset: 4px;
-  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 13px;
-  border-radius: 999px;
-  background: #fff;
+  gap: 10px;
   color: #1A1A1A;
-  font-size: 15px;
-  font-weight: 750;
+  font-size: 14px;
+  font-weight: 600;
   letter-spacing: -.01em;
-  pointer-events: none;
 }
 
 .googleButtonFace span {
@@ -497,33 +520,29 @@
 
 .googleLogo {
   display: grid;
-  width: 31px;
-  height: 31px;
+  width: 22px;
+  height: 22px;
   place-items: center;
   border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, .2);
+  background: transparent;
+  box-shadow: none;
 }
 
 .googleLogo svg {
-  width: 21px;
-  height: 21px;
+  width: 18px;
+  height: 18px;
 }
 
-.googleAuthControl {
+.googleFallbackHost {
   position: absolute;
-  inset: 0;
-  z-index: 2;
+  width: 1px;
+  height: 1px;
   overflow: hidden;
-  border-radius: 999px;
-  opacity: .001;
-}
-
-.googleAuthControl>div,
-.googleAuthControl iframe {
-  width: 100% !important;
-  height: 60px !important;
-  border-radius: 999px !important;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .divider {
@@ -556,26 +575,28 @@
 .submitButton {
   display: flex;
   width: 100%;
-  height: 59px;
+  height: 50px;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  border: 1px solid rgba(0, 0, 0, .1);
-  border-radius: 11px;
+  gap: 10px;
+  border: 1.5px solid rgba(0, 0, 0, .1);
+  border-radius: 12px;
   background: #fff;
   color: #1A1A1A;
   font: inherit;
   font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
+  transition: background .2s ease, border-color .2s ease;
 }
 
 .emailTrigger:hover {
-  border-color: #F97316;
-  background: rgba(249, 115, 22, .09);
+  border-color: #FDBA74;
+  background: #FFF7ED;
 }
 
 .emailTrigger svg {
-  width: 20px;
+  width: 18px;
 }
 
 .emailForm {
@@ -588,17 +609,17 @@
   width: 100%;
   height: 50px;
   padding: 0 16px;
-  border: 1px solid rgba(0, 0, 0, .12) !important;
-  border-radius: 10px;
+  border: 1.5px solid rgba(0, 0, 0, .1) !important;
+  border-radius: 12px;
   outline: none;
-  background: rgba(0, 0, 0, .05) !important;
+  background: rgba(0, 0, 0, .03) !important;
   color: #1A1A1A !important;
   font-size: 14px;
 }
 
 .emailForm input:focus {
-  border-color: #F97316 !important;
-  box-shadow: 0 0 0 3px rgba(249, 115, 22, .1);
+  border-color: #FDBA74 !important;
+  box-shadow: 0 0 0 3px rgba(253, 186, 116, .22);
 }
 
 .passwordField {
@@ -639,12 +660,17 @@
 }
 
 .submitButton {
-  height: 51px;
-  border: none;
-  background: linear-gradient(135deg, #D4A843 0%, #F97316 55%, #FB923C 100%);
-  color: #fff;
-  font-weight: 750;
-  box-shadow: 0 13px 30px rgba(249, 115, 22, .24);
+  height: 50px;
+  border: 1.5px solid #FDBA74;
+  background: #FFF7ED;
+  color: #9A3412;
+  font-weight: 650;
+  box-shadow: none;
+}
+
+.submitButton:hover {
+  background: #FFEDD5;
+  border-color: #FCD34D;
 }
 
 .submitButton:disabled {
@@ -701,9 +727,39 @@
   align-items: center;
   justify-content: center;
   gap: 11px;
-  margin-top: 72px;
+  margin-top: 48px;
   color: #6B6B6B;
   font-size: 13px;
+}
+
+@media (max-height: 860px) {
+  .page {
+    padding: 16px 0 28px;
+  }
+
+  .authPanel {
+    padding: 40px 36px 32px;
+  }
+
+  .welcome {
+    margin: 20px 0 32px;
+  }
+
+  .welcome h2 {
+    font-size: 26px;
+  }
+
+  .security {
+    margin-top: 36px;
+  }
+
+  .divider {
+    margin: 24px 0;
+  }
+
+  .selectWrap {
+    margin-bottom: 24px;
+  }
 }
 
 .security svg {
@@ -796,18 +852,13 @@
 }
 
 @keyframes googlePulse {
-
   0%,
   100% {
-    box-shadow:
-      0 15px 35px rgba(0, 0, 0, .1),
-      0 0 16px rgba(249, 115, 22, .15);
+    box-shadow: none;
   }
 
   50% {
-    box-shadow:
-      0 15px 35px rgba(0, 0, 0, .15),
-      0 0 34px rgba(249, 115, 22, .4);
+    box-shadow: none;
   }
 }
 
@@ -848,6 +899,7 @@
 
 @media (max-width: 840px) {
   .page {
+    padding: 20px 0 32px;
     overflow-y: auto;
     overflow-x: hidden;
   }
@@ -855,7 +907,8 @@
   .content {
     width: min(100% - 28px, 520px);
     grid-template-columns: 1fr;
-    padding: 28px 0 55px;
+    height: auto;
+    min-height: 100%;
   }
 
   .storyPanel>.brand,
@@ -868,21 +921,22 @@
 
   .authPanel {
     max-width: none;
-    min-height: 720px;
     justify-self: stretch;
-    padding: 45px 28px 32px;
+    padding: 45px 28px 36px;
   }
 }
 
 @media (max-width: 480px) {
+  .page {
+    padding: 12px 0 28px;
+  }
+
   .content {
     width: min(100% - 20px, 440px);
-    padding-top: 10px;
   }
 
   .authPanel {
-    min-height: calc(100dvh - 20px);
-    padding: 34px 20px 28px;
+    padding: 34px 20px 32px;
     border-radius: 18px;
   }
 
@@ -895,7 +949,7 @@
   }
 
   .security {
-    margin-top: 56px;
+    margin-top: 40px;
   }
 }
 

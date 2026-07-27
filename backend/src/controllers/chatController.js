@@ -357,6 +357,19 @@ export const addMember = async (req, res) => {
       return res.status(400).json({ message: 'User already in room' });
     }
 
+    // Common Group Validation: Only same university students
+    if (room.name && room.name.includes('Common Group')) {
+      const participant = await User.findById(participantId);
+      if (!participant) {
+        return res.status(404).json({ message: 'Participant not found' });
+      }
+      
+      const expectedUniversity = room.name.replace(' Common Group', '').trim();
+      if (participant.university !== expectedUniversity) {
+        return res.status(403).json({ message: 'Cannot add students from other universities to this common group' });
+      }
+    }
+
     room.participants.push(participantId);
     
     await room.save();
