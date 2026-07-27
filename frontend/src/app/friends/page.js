@@ -1383,19 +1383,20 @@ export default function FriendsPage() {
                               style={{ transformStyle: "preserve-3d", perspective: 1000 }}
                               className="rounded-[2rem] border border-white/70 bg-white/62 p-4 shadow-[0_18px_48px_rgba(26,26,26,0.12),inset_0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-xl hover:border-white hover:shadow-[0_24px_58px_rgba(124,58,237,0.16),inset_0_1px_0_rgba(255,255,255,0.8)] transition-all group cursor-default relative overflow-hidden"
                             >
-                              <div className="relative h-[220px] overflow-hidden rounded-[1.5rem] border border-white/55 shadow-[0_12px_28px_rgba(0,0,0,0.12)]">
-                                <img
-                                  src={avatar}
-                                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105 group-hover:rotate-[0.35deg]"
-                                  alt={person.name}
-                                  onError={(e) => {
-                                    e.currentTarget.onerror = null;
-                                    e.currentTarget.src = getDefaultAvatar(person.name, person._id || person.id);
-                                  }}
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/18 via-transparent to-white/8 pointer-events-none" />
-                                {/* Glossy shine sweep effect */}
-                                <div className="absolute inset-0 w-[200%] h-full bg-gradient-to-r from-transparent via-white/35 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-[850ms] ease-out pointer-events-none" />
+                              <div className="flex flex-col items-center pt-4 pb-2 relative">
+                                <div className="relative h-28 w-28 overflow-hidden rounded-full border-4 border-white shadow-xl z-10">
+                                  <img
+                                    src={avatar}
+                                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                    alt={person.name}
+                                    onError={(e) => {
+                                      e.currentTarget.onerror = null;
+                                      e.currentTarget.src = getDefaultAvatar(person.name, person._id || person.id);
+                                    }}
+                                  />
+                                </div>
+                                {/* Decorative background element */}
+                                <div className="absolute top-1/2 left-0 right-0 h-1/2 bg-gradient-to-t from-white/40 to-transparent rounded-xl pointer-events-none" />
                               </div>
 
                               {/* Top section: Profile pic and Details */}
