@@ -291,9 +291,12 @@ export default function LoginPage() {
                   Built for Students. By Students.
                 </div>
                 <h1>
-                  Your <span>Campus.</span>
-                  <br />
-                  Your <span>Community.</span>
+                  <span className={styles.headlineLine}>
+                    Your <span>Campus.</span>
+                  </span>
+                  <span className={styles.headlineLine}>
+                    Your <span>Community.</span>
+                  </span>
                 </h1>
                 <p>
                   Connect, share, discuss and discover everything happening in your college community.

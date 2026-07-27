@@ -49,7 +49,7 @@
   grid-template-columns: minmax(0, 1.55fr) minmax(380px, .8fr);
   gap: clamp(44px, 6vw, 92px);
   align-items: center;
-  padding: 32px 0 8px;
+  padding: 32px 0 48px;
 }
 
 .storyPanel {
@@ -148,7 +148,12 @@
   color: #1A1A1A !important;
 }
 
-.heroCopy h1 span {
+.heroCopy h1 .headlineLine {
+  display: block;
+  white-space: nowrap;
+}
+
+.heroCopy h1 .headlineLine > span {
   color: transparent !important;
   background: linear-gradient(135deg, #D4A843 0%, #F97316 55%, #FB923C 100%);
   background-clip: text;
@@ -321,13 +326,14 @@
   max-width: 445px;
   min-height: 730px;
   justify-self: end;
-  padding: 60px 40px 35px;
+  padding: 60px 40px 48px;
   overflow: hidden;
   border: 1px solid rgba(0, 0, 0, .1);
   border-radius: 22px;
   background: #fff;
   box-shadow: 0 35px 90px rgba(0, 0, 0, .1), inset 0 1px rgba(0, 0, 0, .025);
   backdrop-filter: blur(22px);
+  margin-bottom: 8px;
 }
 
 .authPanel::after {
@@ -701,7 +707,8 @@
   align-items: center;
   justify-content: center;
   gap: 11px;
-  margin-top: 72px;
+  margin-top: 56px;
+  padding-bottom: 4px;
   color: #6B6B6B;
   font-size: 13px;
 }
@@ -870,7 +877,8 @@
     max-width: none;
     min-height: 720px;
     justify-self: stretch;
-    padding: 45px 28px 32px;
+    padding: 45px 28px 44px;
+    margin-bottom: 12px;
   }
 }
 
