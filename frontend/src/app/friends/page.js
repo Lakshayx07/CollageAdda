@@ -1381,26 +1381,27 @@ export default function FriendsPage() {
                                 transition: { duration: 0.25, ease: "easeOut" }
                               }}
                               style={{ transformStyle: "preserve-3d", perspective: 1000 }}
-                              className="rounded-[2rem] border border-white/70 bg-white/62 p-4 shadow-[0_18px_48px_rgba(26,26,26,0.12),inset_0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-xl hover:border-white hover:shadow-[0_24px_58px_rgba(124,58,237,0.16),inset_0_1px_0_rgba(255,255,255,0.8)] transition-all group cursor-default relative overflow-hidden"
+                              className="rounded-[2rem] border border-[#E8E6E0] bg-white p-3.5 sm:p-4 shadow-[0_12px_36px_rgba(0,0,0,0.08)] hover:shadow-[0_18px_48px_rgba(0,0,0,0.12)] transition-all group cursor-default relative overflow-hidden"
                             >
-                              <div className="flex flex-col items-center pt-4 pb-2 relative">
-                                <div className="relative h-28 w-28 overflow-hidden rounded-full border-4 border-white shadow-xl z-10">
-                                  <img
-                                    src={avatar}
-                                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                    alt={person.name}
-                                    onError={(e) => {
-                                      e.currentTarget.onerror = null;
-                                      e.currentTarget.src = getDefaultAvatar(person.name, person._id || person.id);
-                                    }}
-                                  />
-                                </div>
-                                {/* Decorative background element */}
-                                <div className="absolute top-1/2 left-0 right-0 h-1/2 bg-gradient-to-t from-white/40 to-transparent rounded-xl pointer-events-none" />
+                              {/* Top Banner Image — crystal clear full resolution block */}
+                              <div 
+                                className="relative w-full h-52 sm:h-60 overflow-hidden rounded-[1.5rem] bg-[#F5F4F0] border border-black/5 shrink-0"
+                                style={{ transform: "translateZ(0)", backfaceVisibility: "hidden" }}
+                              >
+                                <img
+                                  src={avatar}
+                                  className="h-full w-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                                  style={{ imageRendering: "auto" }}
+                                  alt={person.name}
+                                  onError={(e) => {
+                                    e.currentTarget.onerror = null;
+                                    e.currentTarget.src = getDefaultAvatar(person.name, person._id || person.id);
+                                  }}
+                                />
                               </div>
 
-                              {/* Top section: Profile pic and Details */}
-                              <div className="mt-4 rounded-[1.45rem] border border-white/70 bg-white/82 p-4 shadow-[0_12px_35px_rgba(0,0,0,0.12)] backdrop-blur-xl space-y-2.5">
+                              {/* Details section below image */}
+                              <div className="mt-3.5 rounded-[1.45rem] border border-white/70 bg-white/82 p-4 shadow-[0_12px_35px_rgba(0,0,0,0.12)] backdrop-blur-xl space-y-2.5">
                                 {/* Name and Verified Badge */}
                                 <div className="space-y-0.5">
                                   <div className="flex items-center space-x-1.5">
