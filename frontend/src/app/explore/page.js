@@ -686,41 +686,33 @@ function ExploreContent() {
             exit={{ opacity: 0, x: -20 }}
             className="flex-1 flex flex-col"
           >
-            <header className="page-header sticky top-0 z-40 px-5 py-4 backdrop-blur-md">
-              <div className="mx-auto flex w-full max-w-6xl flex-col space-y-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="relative h-12 w-12 shrink-0">
-                      <div
-                        className="absolute inset-0 rounded-2xl opacity-45 blur-md"
-                        style={{ background: "linear-gradient(135deg, #C8922A, #E8B84B)" }}
-                      />
-                      <div className="relative h-12 w-12 rounded-2xl brand-mark flex items-center justify-center shadow-[0_6px_18px_rgba(200,146,42,0.3)] ring-1 ring-white/45">
-                        {exploreMode === "colleges" ? (
-                          <Building2 size={21} className="text-white" strokeWidth={2.25} />
-                        ) : (
-                          <Swords size={21} className="text-white" strokeWidth={2.25} />
-                        )}
-                      </div>
-                    </div>
-                    <div className="min-w-0">
-                      <h1 className="text-[1.35rem] sm:text-2xl font-black tracking-tight text-[#1A1A1A] truncate leading-tight">
-                        {exploreMode === "colleges" ? "Explore Colleges" : "Campus Arena"}
-                      </h1>
-                      <p className="text-[12px] font-medium text-[#6B6B6B] mt-0.5 tracking-wide">
-                        {exploreMode === "colleges"
-                          ? "Discover campuses near you"
-                          : "Esports networks & campus battles"}
-                      </p>
-                    </div>
+            <header className="page-header sticky top-0 z-40 py-4 backdrop-blur-md">
+              <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="h-11 w-11 rounded-2xl brand-mark flex items-center justify-center shrink-0 shadow-sm">
+                    {exploreMode === "colleges" ? (
+                      <Building2 size={20} className="text-white" strokeWidth={2.25} />
+                    ) : (
+                      <Swords size={20} className="text-white" strokeWidth={2.25} />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <h1 className="text-[1.35rem] sm:text-2xl font-black tracking-tight text-[#1A1A1A] truncate leading-tight">
+                      {exploreMode === "colleges" ? "Explore Colleges" : "Campus Arena"}
+                    </h1>
+                    <p className="text-[12px] font-medium text-[#6B6B6B] mt-0.5 tracking-wide">
+                      {exploreMode === "colleges"
+                        ? "Discover campuses near you"
+                        : "Esports networks & campus battles"}
+                    </p>
                   </div>
                 </div>
 
-                <div className="explore-control-row flex w-full flex-col gap-2.5 sm:flex-row sm:items-stretch">
-                  <div className="relative w-full sm:flex-1 group">
+                <div className="explore-control-row flex items-center gap-2.5 w-full sm:w-auto">
+                  <div className="relative w-full sm:w-72 md:w-80 group">
                     <Search
-                      className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#888888] transition-colors group-focus-within:text-[#C8922A]"
-                      size={17}
+                      className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#888888] transition-colors group-focus-within:text-[#C8922A]"
+                      size={16}
                       strokeWidth={2.25}
                     />
                     <input
@@ -728,7 +720,7 @@ function ExploreContent() {
                       onChange={(e) => setSearch(e.target.value)}
                       type="text"
                       placeholder={exploreMode === "colleges" ? "Search college..." : "Search players..."}
-                      className="explore-search-input ca-input w-full py-3.5 pl-11 pr-4 text-sm font-medium rounded-[1.15rem]"
+                      className="explore-search-input ca-input w-full py-2.5 pl-10 pr-3.5 text-sm font-medium rounded-xl"
                     />
                   </div>
                   <motion.button
@@ -741,66 +733,66 @@ function ExploreContent() {
                       setArenaSportFilter("All");
                     }}
                     className={clsx(
-                      "explore-mode-switch flex w-full sm:w-auto shrink-0 items-center justify-center gap-2.5 rounded-[1.15rem] border px-6 py-3.5 font-black transition-all cursor-pointer",
+                      "explore-mode-switch flex shrink-0 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 font-bold transition-all cursor-pointer",
                       exploreMode === "colleges"
-                        ? "explore-mode-switch--arena bg-gradient-to-r from-[#C8922A] to-[#D4A843] border-transparent shadow-[0_6px_18px_rgba(200,146,42,0.32)] hover:shadow-[0_8px_22px_rgba(200,146,42,0.4)]"
+                        ? "explore-mode-switch--arena bg-gradient-to-r from-[#C8922A] to-[#D4A843] border-transparent shadow-sm"
                         : "explore-mode-switch--colleges bg-white border-[#E8E6E0] shadow-sm hover:border-[#C8922A]/55 hover:bg-[#FFF8EC]"
                     )}
                   >
                     {exploreMode === "colleges" ? (
                       <>
-                        <Swords size={17} strokeWidth={2.4} />
-                        <span className="tracking-[0.16em] uppercase text-[11px] sm:text-xs">Arena</span>
+                        <Swords size={16} strokeWidth={2.4} />
+                        <span className="tracking-wider uppercase text-[11px]">Arena</span>
                       </>
                     ) : (
                       <>
-                        <Building2 size={17} strokeWidth={2.4} />
-                        <span className="tracking-[0.16em] uppercase text-[11px] sm:text-xs">Colleges</span>
+                        <Building2 size={16} strokeWidth={2.4} />
+                        <span className="tracking-wider uppercase text-[11px]">Colleges</span>
                       </>
                     )}
                   </motion.button>
                 </div>
-
-                {exploreMode === "arena" && (
-                  <div className="flex overflow-x-auto gap-2 pb-1 no-scrollbar -mx-1 px-1">
-                    {[
-                      { id: "All", label: "All Games" },
-                      { id: "BGMI", label: "BGMI" },
-                      { id: "Valorant", label: "Valorant" },
-                      { id: "FIFA", label: "FIFA" },
-                      { id: "Chess", label: "Chess" },
-                    ].map((game) => {
-                      const active = arenaSportFilter === game.id;
-                      return (
-                        <button
-                          key={game.id}
-                          type="button"
-                          onClick={() => setArenaSportFilter(game.id)}
-                          className={clsx(
-                            "explore-arena-chip shrink-0 px-3.5 py-1.5 rounded-full font-bold tracking-wide transition-all cursor-pointer border",
-                            active
-                              ? "explore-arena-chip--active bg-gradient-to-r from-[#C8922A] to-[#D4A843] border-transparent shadow-sm"
-                              : "explore-arena-chip--idle bg-[#F9F8F5] border-[#E8E6E0] hover:border-[#C8922A]/40"
-                          )}
-                        >
-                          <span className="uppercase" style={{ fontSize: 11 }}>
-                            {game.label}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
               </div>
+
+              {exploreMode === "arena" && (
+                <div className="mx-auto w-full max-w-6xl mt-3 flex overflow-x-auto gap-2 pb-1 no-scrollbar px-4 sm:px-5">
+                  {[
+                    { id: "All", label: "All Games" },
+                    { id: "BGMI", label: "BGMI" },
+                    { id: "Valorant", label: "Valorant" },
+                    { id: "FIFA", label: "FIFA" },
+                    { id: "Chess", label: "Chess" },
+                  ].map((game) => {
+                    const active = arenaSportFilter === game.id;
+                    return (
+                      <button
+                        key={game.id}
+                        type="button"
+                        onClick={() => setArenaSportFilter(game.id)}
+                        className={clsx(
+                          "explore-arena-chip shrink-0 px-3.5 py-1.5 rounded-full font-bold tracking-wide transition-all cursor-pointer border",
+                          active
+                            ? "explore-arena-chip--active bg-gradient-to-r from-[#C8922A] to-[#D4A843] border-transparent shadow-sm"
+                            : "explore-arena-chip--idle bg-[#F9F8F5] border-[#E8E6E0] hover:border-[#C8922A]/40"
+                        )}
+                      >
+                        <span className="uppercase" style={{ fontSize: 11 }}>
+                          {game.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </header>
 
             {exploreMode === "colleges" ? (
               <>
 
                 {/* ── Filter Bar ────────────────────────────────────────────── */}
-                <section className="mx-auto w-full max-w-6xl px-4 pt-3 pb-1 sm:px-5">
-                  <div className="explore-filter-panel app-panel rounded-[1.5rem] px-4 py-4 sm:px-5">
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-3.5">
+                <section className="mx-auto w-full max-w-6xl px-4 pt-6 pb-4 sm:px-5 sm:pt-8 sm:pb-6">
+                  <div className="explore-filter-panel app-panel rounded-[1.5rem] p-5 sm:p-6 shadow-sm">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5">
                       {/* City filter */}
                       <div className="min-w-0">
                         <label className="mb-2 flex items-center gap-1.5 pl-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#6B6B6B]">
@@ -857,7 +849,7 @@ function ExploreContent() {
                     </div>
 
                     {/* Active filter summary + college count */}
-                    <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-[#EFEDE6] pt-3">
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-2.5 border-t border-[#EFEDE6] pt-3.5">
                       <p className="text-[11px] text-[#6B6B6B] font-medium">
                         {!loading && (
                           <>
@@ -906,7 +898,7 @@ function ExploreContent() {
                   </div>
                 </section>
 
-                <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-4 p-4 sm:grid-cols-2 sm:gap-5 sm:p-5 xl:grid-cols-3">
+                <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-5 px-4 pb-12 sm:grid-cols-2 sm:gap-6 sm:px-5 xl:grid-cols-3">
               {loading && (
                 <div className="col-span-full flex justify-center py-20">
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
@@ -967,11 +959,11 @@ function ExploreContent() {
                         {/* Location & students pills */}
                         <div className="flex items-center gap-2 flex-wrap">
                           <div className="flex items-center gap-1.5 rounded-full border border-white/12 px-3 py-1.5 backdrop-blur-md" style={{ backgroundColor: "rgba(0,0,0,0.42)" }}>
-                            <MapPin size={11} color="#E8B84B" />
+                            <MapPin size={11} color="white" />
                             <span className="text-[11px] font-semibold truncate max-w-[120px]" style={{ color: "white" }}>{college.location}</span>
                           </div>
                           <div className="flex items-center gap-1.5 rounded-full border border-white/12 px-3 py-1.5 backdrop-blur-md" style={{ backgroundColor: "rgba(0,0,0,0.42)" }}>
-                            <Users size={11} color="#E8B84B" />
+                            <Users size={11} color="white" />
                             <span className="text-[11px] font-semibold" style={{ color: "white" }}>{college.students} Students</span>
                           </div>
                         </div>
@@ -1001,14 +993,8 @@ function ExploreContent() {
             {!loading && filteredColleges.length === 0 && (
               <div className="flex-1 flex flex-col items-center justify-center py-16 px-6 text-center">
                 <div className="explore-empty-panel app-panel mx-auto max-w-sm rounded-[1.75rem] p-9 flex flex-col items-center gap-4">
-                  <div className="relative h-14 w-14">
-                    <div
-                      className="absolute inset-0 rounded-2xl opacity-40 blur-md"
-                      style={{ background: "linear-gradient(135deg, #C8922A, #E8B84B)" }}
-                    />
-                    <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl brand-mark ring-1 ring-white/40 shadow-[0_6px_16px_rgba(200,146,42,0.28)]">
-                      <SearchX size={24} className="text-white" strokeWidth={2.25} />
-                    </div>
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl brand-mark shadow-sm">
+                    <SearchX size={24} className="text-white" strokeWidth={2.25} />
                   </div>
                   <div>
                     <p className="text-sm font-black text-[#1A1A1A] mb-1.5">
