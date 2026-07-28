@@ -961,105 +961,37 @@ function ExploreContent() {
                           <span className="text-[10px] font-bold" style={{ color: "white" }}>
                             {college.followersCount}
                           </span>
-                  {loading && (
-                    <div className="col-span-2 flex justify-center py-20">
-                      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
-                    </div>
-                  )}
-
-                  {filteredColleges.map(college => (
-                    <motion.div
-                      key={college._id || college.id}
-                      className="relative flex flex-col rounded-[1.5rem] overflow-hidden text-left group shadow-md hover:shadow-xl transition-all duration-300 cursor-default"
-                      style={{ height: '420px' }}
-                    >
-                      {/* Full-bleed background image */}
-                      <img
-                        src={college.banner || COLLEGE_BANNER_FALLBACK}
-                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        alt={college.name}
-                        referrerPolicy="no-referrer"
-                        onError={handleBannerError}
-                      />
-
-                      {/* Dark gradient overlay — stronger at bottom */}
-                      <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.1) 100%)' }} />
-
-                      {/* Content overlaid on image */}
-                      <div className="absolute inset-0 flex flex-col justify-end p-5 space-y-3">
-                        {/* College name + followers badge */}
-                        <div className="flex items-start justify-between gap-2">
-                          <h3 className="font-bold text-base leading-snug line-clamp-2 flex-1" style={{ color: 'white', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
-                            {college.name}
-                          </h3>
-                          {(college.followersCount ?? 0) > 0 && (
-                            <div className="flex items-center gap-1 shrink-0 bg-black/40 rounded-full px-2 py-0.5">
-                              <Users size={10} color="white" />
-                              <span className="text-[10px] font-bold" style={{ color: 'white' }}>
-                                {college.followersCount}
-                              </span>
-                            </div>
-                          )}
                         </div>
-
+                      )}
+                    </div>
                         {/* Location & students pills */}
                         <div className="flex items-center gap-2 flex-wrap">
-                          <div className="flex items-center gap-1 rounded-full px-3 py-1" style={{ backgroundColor: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }}>
-                            <MapPin size={11} color="white" />
-                            <span className="text-[11px] font-semibold truncate max-w-[120px]" style={{ color: 'white' }}>{college.location}</span>
+                          <div className="flex items-center gap-1.5 rounded-full border border-white/12 px-3 py-1.5 backdrop-blur-md" style={{ backgroundColor: "rgba(0,0,0,0.42)" }}>
+                            <MapPin size={11} color="#E8B84B" />
+                            <span className="text-[11px] font-semibold truncate max-w-[120px]" style={{ color: "white" }}>{college.location}</span>
                           </div>
-                          <div className="flex items-center gap-1 rounded-full px-3 py-1" style={{ backgroundColor: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }}>
-                            <Users size={11} color="white" />
-                            <span className="text-[11px] font-semibold" style={{ color: 'white' }}>{college.students} Students</span>
+                          <div className="flex items-center gap-1.5 rounded-full border border-white/12 px-3 py-1.5 backdrop-blur-md" style={{ backgroundColor: "rgba(0,0,0,0.42)" }}>
+                            <Users size={11} color="#E8B84B" />
+                            <span className="text-[11px] font-semibold" style={{ color: "white" }}>{college.students} Students</span>
                           </div>
                         </div>
 
-                    {/* Location & students pills */}
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <div className="flex items-center gap-1.5 rounded-full border border-white/12 px-3 py-1.5 backdrop-blur-md" style={{ backgroundColor: "rgba(0,0,0,0.42)" }}>
-                        <MapPin size={11} color="#E8B84B" />
-                        <span className="text-[11px] font-semibold truncate max-w-[120px]" style={{ color: "white" }}>{college.location}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 rounded-full border border-white/12 px-3 py-1.5 backdrop-blur-md" style={{ backgroundColor: "rgba(0,0,0,0.42)" }}>
-                        <Users size={11} color="#E8B84B" />
-                        <span className="text-[11px] font-semibold" style={{ color: "white" }}>{college.students} Students</span>
-                      </div>
-                    </div>
-
-                    {/* Explore Now button — only interactive hotspot on the card */}
-                    <motion.button
-                      type="button"
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => {
-                        router.push(`/explore?collegeId=${college._id || college.id}`);
-                      }}
-                      disabled={loadingCollegeId === (college._id || college.id)}
-                      className="explore-college-cta w-full rounded-2xl py-3.5 flex items-center justify-center text-sm font-black tracking-wide text-[#1A1A1A] shadow-[0_6px_18px_rgba(200,146,42,0.35)] transition-opacity hover:opacity-95 disabled:opacity-80 cursor-pointer"
-                    >
-                      {loadingCollegeId === (college._id || college.id) ? (
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                      ) : (
-                        "Explore Now"
-                      )}
-                    </motion.button>
-                  </div>
-                </motion.div>
-              ))}
                         {/* Explore Now button — only interactive hotspot on the card */}
-                        <button
+                        <motion.button
                           type="button"
+                          whileTap={{ scale: 0.98 }}
                           onClick={() => {
                             router.push(`/explore?collegeId=${college._id || college.id}`);
                           }}
                           disabled={loadingCollegeId === (college._id || college.id)}
-                          className="w-full bg-white rounded-2xl py-3 flex items-center justify-center text-sm font-bold text-[#1A1A1A] shadow-lg hover:bg-[#FFF8EC] transition-colors disabled:opacity-80 cursor-pointer"
+                          className="explore-college-cta w-full rounded-2xl py-3.5 flex items-center justify-center text-sm font-black tracking-wide text-[#1A1A1A] shadow-[0_6px_18px_rgba(200,146,42,0.35)] transition-opacity hover:opacity-95 disabled:opacity-80 cursor-pointer"
                         >
                           {loadingCollegeId === (college._id || college.id) ? (
                             <Loader2 className="h-5 w-5 animate-spin" />
                           ) : (
                             "Explore Now"
                           )}
-                        </button>
+                        </motion.button>
                       </div>
                     </motion.div>
                   ))}
