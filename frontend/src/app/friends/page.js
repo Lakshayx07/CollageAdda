@@ -662,7 +662,7 @@ export default function FriendsPage() {
           return { 
             ...u, 
             followersCount: isConnecting ? currentCount + 1 : Math.max(0, currentCount - 1),
-            xp: isConnecting ? (u.xp || 0) + 10 : (u.xp || 0)
+            xp: isConnecting ? (u.xp || 0) + 5 : (u.xp || 0)
           };
         }
         return u;
@@ -945,9 +945,9 @@ export default function FriendsPage() {
           </div>
         </header>
 
-        <div className="mx-auto flex max-w-[1180px] flex-col items-start gap-8 px-4 py-6 relative z-10 sm:px-6 sm:py-8 md:flex-row md:justify-center lg:gap-10">
+        <div className="mx-auto flex max-w-[1180px] flex-col items-start gap-8 px-4 py-6 relative z-10 sm:px-6 sm:py-8 md:flex-row md:justify-between lg:gap-16 xl:gap-24">
           {/* Left Column (Search & Lists) */}
-          <div className="w-full max-w-[760px] space-y-6 sm:space-y-8">
+          <div className="w-full max-w-[720px] space-y-6 sm:space-y-8">
             {/* Search Section */}
             <motion.div
               initial={{ y: 20, opacity: 0 }}
