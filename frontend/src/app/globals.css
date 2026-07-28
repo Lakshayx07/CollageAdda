@@ -446,9 +446,15 @@ header, [class*="navbar"], [class*="topbar"], .page-header {
   box-shadow: 0 2px 12px rgba(26, 26, 26, 0.04);
 }
 
-/* Explore college cards — gold CTA (avoid global text color overrides) */
+/* Explore college cards — solid white CTA for high contrast & visibility */
 .explore-college-cta {
-  background: linear-gradient(135deg, #c8922a, #d4a843);
+  background: #ffffff !important;
+  color: #1a1a1a !important;
+  font-weight: 800 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+.explore-college-cta:hover {
+  background: #f5f5f5 !important;
   color: #1a1a1a !important;
 }
 .explore-college-cta * {

@@ -984,10 +984,10 @@ function ExploreContent() {
                             router.push(`/explore?collegeId=${college._id || college.id}`);
                           }}
                           disabled={loadingCollegeId === (college._id || college.id)}
-                          className="explore-college-cta w-full rounded-2xl py-3.5 flex items-center justify-center text-sm font-black tracking-wide text-[#1A1A1A] shadow-[0_6px_18px_rgba(200,146,42,0.35)] transition-opacity hover:opacity-95 disabled:opacity-80 cursor-pointer"
+                          className="explore-college-cta w-full bg-white rounded-2xl py-3.5 flex items-center justify-center text-sm font-extrabold tracking-wide text-[#1A1A1A] shadow-md transition-all hover:bg-neutral-100 disabled:opacity-80 cursor-pointer"
                         >
                           {loadingCollegeId === (college._id || college.id) ? (
-                            <Loader2 className="h-5 w-5 animate-spin" />
+                            <Loader2 className="h-5 w-5 animate-spin text-[#1A1A1A]" />
                           ) : (
                             "Explore Now"
                           )}
