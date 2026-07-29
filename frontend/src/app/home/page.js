@@ -27,6 +27,7 @@ export default function Home() {
   const [connectStatus, setConnectStatus] = useState({});
   const [activeCommentPost, setActiveCommentPost] = useState(null);
   const [commentInputs, setCommentInputs] = useState({});
+  const [commentLikes, setCommentLikes] = useState({});
   const [followedUsers, setFollowedUsers] = useState({});
   const [shareModal, setShareModal] = useState(null);
   const [postMenu, setPostMenu] = useState(null);
@@ -999,7 +1000,7 @@ export default function Home() {
           animation: shimmer-bg 6s ease infinite;
         }
       `}</style>
-      <header className="sticky top-0 z-40 border-b border-[#E8E6E0] header-shimmer px-4 py-4 backdrop-blur-xl sm:px-6">
+      <header className="sticky top-0 z-40 w-full border-b border-[#E8E6E0] header-shimmer px-4 py-4 backdrop-blur-xl sm:px-6">
         <div className="mx-auto flex max-w-[1440px] w-full px-2 items-center justify-between">
           <div className="relative overflow-hidden py-1">
             {(() => {
@@ -1029,22 +1030,22 @@ export default function Home() {
                       <Icon size={24} strokeWidth={2.5} />
                     </motion.div>
                   </div>
-                  <div>
+                  <div className="flex flex-col justify-center">
                     <motion.p 
                       initial={{ opacity: 0, y: -5 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.1 }}
-                      className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#C8922A] leading-none"
+                      className="text-sm font-semibold capitalize text-[#6B6B6B] leading-none mb-1"
                     >
-                      {greeting.text}
+                      {greeting.text?.toLowerCase()}
                     </motion.p>
                     <motion.h1 
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.25, type: "spring", stiffness: 100 }}
-                      className="mt-0.5 text-xl font-black tracking-tight text-[#1A1A1A] leading-tight flex items-center gap-1"
+                      transition={{ delay: 0.1, type: "spring", stiffness: 100 }}
+                      className="text-xl font-black tracking-tight text-[#1A1A1A] leading-tight flex items-center gap-1"
                     >
-                      Hey, {firstName} <span className="inline-block hover:animate-bounce cursor-default">👋</span>
+                      {firstName} <span className="inline-block hover:animate-bounce cursor-default">👋</span>
                     </motion.h1>
                   </div>
                 </div>
@@ -1151,7 +1152,7 @@ export default function Home() {
         {/* Create Post Prompt */}
         <motion.div 
           variants={itemVariants}
-          className="relative flex min-w-0 max-w-full flex-col space-y-4 overflow-hidden bg-white border border-[#E8E6E0] rounded-xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)] group sm:p-5"
+          className="relative flex min-w-0 max-w-full flex-col space-y-4 overflow-hidden bg-white border-2 border-black rounded-xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)] group sm:p-5"
         >
           <div className="absolute top-0 left-0 w-full h-1 gradient-bg opacity-30 group-focus-within:opacity-100 transition-opacity" />
           <div className="flex min-w-0 items-start space-x-3 sm:space-x-4">
@@ -1209,7 +1210,7 @@ export default function Home() {
             )}
           </AnimatePresence>
 
-          <div className="flex flex-col gap-3 border-t border-[#E8E6E0] pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 border-t border-black pt-4 sm:flex-row sm:items-center sm:justify-between">
              <div className="grid grid-cols-3 gap-2 sm:flex sm:space-x-5">
                <input type="file" ref={photoInputRef} className="hidden" accept="image/*" onChange={(e) => { setIsExploreMode(false); handleMediaSelect(e, 'image'); }} />
                <input type="file" ref={videoInputRef} className="hidden" accept="video/*" onChange={(e) => { setIsExploreMode(false); handleMediaSelect(e, 'video'); }} />
@@ -1292,7 +1293,7 @@ export default function Home() {
         </motion.div>
 
         {/* Posts List */}
-        <div className="overflow-hidden rounded-[1.25rem] border border-[#E8E6E0] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+        <div className="overflow-hidden rounded-[1.25rem] border-2 border-black bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
           {showFeedSkeleton && (
             <div className="divide-y divide-[#E8E6E0]">
               {[1, 2, 3].map((n) => (
@@ -1359,7 +1360,7 @@ export default function Home() {
             <motion.article
               key={post.id} 
               variants={itemVariants}
-              className="relative min-w-0 border-b-2 border-[#D1D1D1] bg-white p-4 group last:border-b-0 sm:p-6"
+              className="relative min-w-0 border-b-2 border-black bg-white p-4 group last:border-b-0 sm:p-6"
             >
               {/* Post Header */}
               <div className="flex items-center justify-between mb-5">
@@ -1574,6 +1575,29 @@ export default function Home() {
                             <p className="text-xs font-bold text-[#1A1A1A]"><NameWithTick name={comment.author} tick={comment.authorTick} /></p>
                             <p className="text-xs text-[#6B6B6B] mt-0.5">{comment.text}</p>
                           </div>
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              setCommentLikes(prev => ({
+                                ...prev,
+                                [comment.id]: {
+                                  liked: !prev[comment.id]?.liked,
+                                  count: (prev[comment.id]?.count || comment.likesCount || 0) + (prev[comment.id]?.liked ? -1 : 1)
+                                }
+                              }));
+                            }}
+                            className={`flex items-center gap-1.5 flex-shrink-0 self-center p-1.5 rounded-full transition-colors group/like cursor-pointer ${
+                              commentLikes[comment.id]?.liked ? 'text-red-500' : 'text-[#AAAAAA] hover:text-red-500 hover:bg-white'
+                            }`}
+                            title="Like comment"
+                          >
+                            <Heart size={16} className={`group-active/like:scale-75 transition-transform ${commentLikes[comment.id]?.liked ? 'fill-red-500 text-red-500' : ''}`} />
+                            {((commentLikes[comment.id]?.count || comment.likesCount || 0) > 0) && (
+                              <span className="text-[11px] font-bold">
+                                {commentLikes[comment.id]?.count || comment.likesCount || 0}
+                              </span>
+                            )}
+                          </button>
                         </div>
                       ))}
                     </div>
@@ -1602,7 +1626,7 @@ export default function Home() {
           ))}
 
           {!showFeedSkeleton && posts.length > 0 && hasMorePosts && !selectedTopic && (
-            <div className="p-4 bg-white border-t border-[#E8E6E0]">
+            <div className="p-4 bg-white border-t border-black">
               <button
                 type="button"
                 onClick={loadMorePosts}

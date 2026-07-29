@@ -1174,15 +1174,17 @@ function MessagesContent() {
             </motion.button>
           </div>
 
-          <div className="inbox-search relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6B6B6B] group-focus-within:text-[#C8922A] transition-colors" size={20} />
-            <input
-              type="text"
-              value={chatSearch}
-              onChange={e => setChatSearch(e.target.value)}
-              placeholder="Search conversations..."
-              className="input-surface w-full rounded-[1.25rem] py-3.5 pl-12 pr-4 text-sm placeholder:text-[#888888]"
-            />
+          <div className="inbox-search group">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6B6B6B] group-focus-within:text-[#C8922A] transition-colors" size={20} />
+              <input
+                type="text"
+                value={chatSearch}
+                onChange={e => setChatSearch(e.target.value)}
+                placeholder="Search conversations..."
+                className="input-surface w-full rounded-[1.25rem] py-3.5 pl-12 pr-4 text-sm placeholder:text-[#888888]"
+              />
+            </div>
           </div>
         </header>
 

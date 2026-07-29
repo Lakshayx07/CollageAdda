@@ -28,7 +28,6 @@ export default function Sidebar() {
     { name: "Messages", path: "/messages", icon: MessageSquare },
     { name: "Network", path: "/friends", icon: Users },
     { name: "Community", path: "/community", icon: Users2 },
-    { name: "Hustle", path: "/hustle", icon: Compass },
     { name: "Collab", path: "/collab", icon: Zap },
     { name: "Profile", path: "/profile", icon: User },
   ], []);

@@ -17,7 +17,6 @@ export default function BottomNav() {
     { name: "Home", path: "/home", icon: Home },
     { name: "Network", path: "/friends", icon: Users },
     { name: "Messages", path: "/messages", icon: MessageSquare },
-    { name: "Hustle", path: "/hustle", icon: Compass },
     { name: "Community", path: "/community", icon: Users2 },
   ];
 

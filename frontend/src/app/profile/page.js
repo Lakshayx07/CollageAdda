@@ -848,7 +848,7 @@ export default function ProfilePage() {
       <div className="max-w-5xl mx-auto relative z-10 space-y-0 pb-20 lg:pt-6">
 
         {/* ===== BANNER + PROFILE HEADER CARD ===== */}
-        <div className="relative rounded-none md:rounded-[1.75rem] overflow-hidden bg-white border border-[#E8E6E0] shadow-sm">
+        <div className="relative z-10 rounded-none md:rounded-t-[1.75rem] overflow-hidden bg-white border border-[#E8E6E0] border-b-0">
 
           {/* Banner Image */}
           <div className="relative w-full h-44 md:h-52 bg-gradient-to-br from-[#D4A843]/20 to-[#F9F8F5] overflow-hidden">
@@ -995,7 +995,7 @@ export default function ProfilePage() {
         </div>
 
         {/* ===== STATS ROW ===== */}
-        <div className="grid grid-cols-5 gap-0 bg-white border-x border-b border-[#E8E6E0] shadow-sm md:rounded-b-[1.75rem] overflow-hidden">
+        <div className="grid grid-cols-5 gap-0 bg-white border border-[#E8E6E0] border-t shadow-sm md:rounded-b-[1.75rem] overflow-hidden relative z-0">
           {[
             { icon: <Grid size={18} className="text-emerald-500" />, iconBg: "bg-emerald-50", label: "Posts", value: userPosts.length > 0 ? userPosts.length : (user?.postsCount || 0), action: () => { setActiveTab("posts"); window.scrollTo({ top: 500, behavior: "smooth" }); } },
             { icon: <Users size={18} className="text-blue-500" />, iconBg: "bg-blue-50", label: "Followers", value: user?.followers?.length ?? followers.length, action: () => setModal("followers") },
