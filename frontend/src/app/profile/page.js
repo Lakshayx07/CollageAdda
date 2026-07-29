@@ -1315,13 +1315,14 @@ export default function ProfilePage() {
                 <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-blue-300/10 blur-[60px]" />
 
                 <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
-                  <div>
-                    <h2 className="text-[17px] font-black text-[#1A1A1A] flex items-center gap-2 mb-1.5">
-                      <span className="text-xl">🎖️</span> Badges Overview
-                    </h2>
-                    <p className="text-[12px] font-semibold text-slate-500">
-                      Your achievements that make you stand out.
-                    </p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-sm border border-black/10">
+                      <span className="text-xl">🎖️</span>
+                    </div>
+                    <div>
+                      <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Badges Overview</h2>
+                      <p className="text-[12px] font-bold text-slate-500">Your achievements that make you stand out.</p>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2 rounded-full border border-amber-200/50 bg-white/80 backdrop-blur-md px-4 py-2 shadow-sm transition-transform hover:scale-105">
                     <Trophy size={16} className="text-amber-500 fill-amber-500" />
@@ -1406,13 +1407,14 @@ export default function ProfilePage() {
               {/* 2. Performance Snapshot */}
               <section className="space-y-6">
                 <div className="flex items-center justify-between px-2">
-                  <div>
-                    <h3 className="text-[17px] font-black text-[#1A1A1A] flex items-center gap-2 mb-1">
-                      <TrendingUp size={18} className="text-amber-500" /> Performance Snapshot
-                    </h3>
-                    <p className="text-[12px] font-semibold text-slate-500">
-                      Your recent activity highlights.
-                    </p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-sm border border-black/10">
+                      <TrendingUp size={20} strokeWidth={2.5} />
+                    </div>
+                    <div>
+                      <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Performance Snapshot</h3>
+                      <p className="text-[12px] font-bold text-slate-500">Your recent activity highlights.</p>
+                    </div>
                   </div>
                   <span className="flex items-center gap-1.5 rounded-full border border-red-200 bg-gradient-to-r from-white to-red-50 px-4 py-1.5 text-[11px] font-black uppercase tracking-widest text-red-600 shadow-sm transition-transform hover:scale-105">
                     <span className="relative flex h-2.5 w-2.5">
@@ -1462,13 +1464,14 @@ export default function ProfilePage() {
               {/* 3. How XP Works */}
               <section className="space-y-6">
                 <div className="flex items-center justify-between px-2">
-                  <div>
-                    <h3 className="text-[17px] font-black text-[#1A1A1A] flex items-center gap-2 mb-1">
-                      <span className="text-xl">⚡️</span> How XP Works
-                    </h3>
-                    <p className="text-[12px] font-semibold text-slate-500">
-                      Complete actions and earn XP to level up faster.
-                    </p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-yellow-400 to-amber-500 text-slate-950 shadow-sm border border-black/10">
+                      <span className="text-xl">⚡️</span>
+                    </div>
+                    <div>
+                      <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">How XP Works</h3>
+                      <p className="text-[12px] font-bold text-slate-500">Complete actions and earn XP to level up faster.</p>
+                    </div>
                   </div>
                   <button
                     onClick={() => setShowAllXpActions(!showAllXpActions)}
@@ -1547,13 +1550,14 @@ export default function ProfilePage() {
               {/* 4. Achievements & Badges */}
               <section id="achievements-section" className="space-y-6 scroll-mt-24">
                 <div className="flex items-center justify-between px-2">
-                  <div>
-                    <h3 className="text-[17px] font-black text-[#1A1A1A] flex items-center gap-2 mb-1">
-                      <span className="text-xl">🏆</span> Achievements & Badges
-                    </h3>
-                    <p className="text-[12px] font-semibold text-slate-500">
-                      Unlock exclusive profile badges by participating in the community.
-                    </p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-sm border border-black/10">
+                      <span className="text-xl">🏆</span>
+                    </div>
+                    <div>
+                      <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Achievements & Badges</h3>
+                      <p className="text-[12px] font-bold text-slate-500">Unlock exclusive profile badges by participating in the community.</p>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2 rounded-full border border-amber-200/50 bg-white px-4 py-2 shadow-sm transition-transform hover:scale-105">
                     <span className="text-[11px] font-black uppercase tracking-widest text-slate-800 flex items-center gap-2">
@@ -1628,13 +1632,14 @@ export default function ProfilePage() {
               {/* 5. XP Tiers */}
               <section className="space-y-6">
                 <div className="flex items-center justify-between px-2">
-                  <div>
-                    <h3 className="text-[17px] font-black text-[#1A1A1A] flex items-center gap-2 mb-1">
-                      <span className="text-xl">👑</span> XP Tiers
-                    </h3>
-                    <p className="text-[12px] font-semibold text-slate-500">
-                      Climb the tiers and unlock new rewards.
-                    </p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-300 to-yellow-500 text-slate-950 shadow-sm border border-black/10">
+                      <span className="text-xl">👑</span>
+                    </div>
+                    <div>
+                      <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">XP Tiers</h3>
+                      <p className="text-[12px] font-bold text-slate-500">Climb the tiers and unlock new rewards.</p>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2 rounded-full border border-amber-200/50 bg-gradient-to-r from-amber-50 to-orange-50/50 px-4 py-1.5 shadow-sm transition-transform hover:scale-105">
                     <span className="text-[11px] font-black text-amber-700">
