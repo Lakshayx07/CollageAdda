@@ -66,6 +66,11 @@ router.post('/', protect, async (req, res) => {
     });
 
     await awardXP(req.user._id, 'CREATE_STORY', story._id.toString());
+    
+    const storyCount = await Story.countDocuments({ author: req.user._id });
+    if (storyCount === 1) {
+      await awardXP(req.user._id, 'FIRST_STORY', story._id.toString());
+    }
 
     const populatedStory = await Story.findById(story._id).populate('author', 'name profilePic isVerified xp points currentTick');
     res.status(201).json(populatedStory);

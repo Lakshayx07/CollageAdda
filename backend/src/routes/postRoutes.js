@@ -3,7 +3,7 @@ import Post from '../models/Post.js';
 import Notification from '../models/Notification.js';
 import { protect, verified } from '../middleware/authMiddleware.js';
 import { slimPost, slimComments } from '../utils/postSerialize.js';
-import { awardXP } from '../services/xpService.js';
+import { awardXP, revokeXP } from '../services/xpService.js';
 
 const router = express.Router();
 
@@ -109,6 +109,11 @@ router.post('/', protect, verified, async (req, res) => {
       await awardXP(req.user._id, 'EXPLORE_POST', post._id.toString());
     } else {
       await awardXP(req.user._id, 'CREATE_POST', post._id.toString());
+    }
+
+    const postCount = await Post.countDocuments({ author: req.user._id });
+    if (postCount === 1) {
+      await awardXP(req.user._id, 'FIRST_POST', post._id.toString());
     }
 
     const populated = await Post.findById(post._id)
@@ -236,6 +241,7 @@ router.delete('/:id', protect, verified, async (req, res) => {
       return res.status(401).json({ message: 'User not authorized to delete this post' });
     }
 
+    await revokeXP(req.user._id, 'CREATE_POST', post._id.toString());
     await post.deleteOne();
     res.json({ message: 'Post removed' });
   } catch (error) {

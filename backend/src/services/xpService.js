@@ -83,3 +83,37 @@ export const awardXP = async (userId, actionType, refId) => {
     newlyUnlockedBadges
   };
 };
+
+export const revokeXP = async (userId, actionType, refId) => {
+  const log = await XpLog.findOne({ user: userId, actionType, refId });
+  if (!log) return null;
+
+  const xpRevoked = log.xpAwarded;
+
+  await XpLog.deleteOne({ _id: log._id });
+
+  const user = await User.findById(userId);
+  if (!user) return null;
+
+  user.xp = Math.max(0, (user.xp || 0) - xpRevoked);
+
+  const totalXp = user.xp + (user.points || 0);
+  let currentTick = null;
+  
+  for (let i = XP_TIERS.length - 1; i >= 0; i--) {
+    if (totalXp >= XP_TIERS[i].xpRequired) {
+      currentTick = XP_TIERS[i].id;
+      break;
+    }
+  }
+  user.currentTick = currentTick;
+
+  // Note: We don't revoke already unlocked badges to avoid confusing UX.
+  
+  await user.save();
+  
+  return {
+    xp: user.xp,
+    currentTick: user.currentTick
+  };
+};

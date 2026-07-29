@@ -3,7 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import User from '../models/User.js';
 import College from '../models/College.js';
-import { awardXP } from '../services/xpService.js';
+import { awardXP, revokeXP } from '../services/xpService.js';
 import { BADGES } from '../config/xpConfig.js';
 import XpLog from '../models/XpLog.js';
 import Notification from '../models/Notification.js';
@@ -730,7 +730,8 @@ router.put('/:id/follow', protect, async (req, res) => {
     if (isFollowing) {
       currentUser.following = currentUser.following.filter(id => id.toString() !== req.params.id);
       targetUser.followers = targetUser.followers.filter(id => id.toString() !== req.user._id.toString());
-      // We don't remove XP on unfollow in this architecture, to avoid complex rollback
+      await revokeXP(targetUser._id, 'CONNECT_USER', `follow_${req.user._id}_${targetUser._id}`);
+      await revokeXP(req.user._id, 'CONNECT_USER', `follow_${req.user._id}_${targetUser._id}`);
     } else {
       currentUser.following.push(req.params.id);
       targetUser.followers.push(req.user._id);

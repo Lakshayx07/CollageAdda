@@ -1,18 +1,19 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { LogOut, Edit3, X, Check, Plus, Grid, Heart, MessageCircle, Send, ChevronLeft, ChevronRight, Share2, Ghost, MapPin, Zap, Star, Camera, Clock, Image as ImageIcon, Music, Code, Palette, Plane, Gamepad2, Book, Dumbbell, Film, Utensils, Trophy, Briefcase, Users, Crown, CalendarDays, GraduationCap, Flame, Building2, TrendingUp, Award, User } from "lucide-react";
+import { LogOut, Edit3, X, Check, Plus, Grid, Heart, MessageCircle, Send, ChevronLeft, ChevronRight, Share2, Ghost, MapPin, Zap, Star, Camera, Clock, Image as ImageIcon, Music, Code, Palette, Plane, Gamepad2, Book, Dumbbell, Film, Utensils, Trophy, Briefcase, Users, Crown, CalendarDays, GraduationCap, Flame, Building2, TrendingUp, Award, User, MoreVertical, Globe, Sparkles, Users2, Lock } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 import { getAuthenticatedSupabaseClient } from "@/utils/supabaseAuthUser";
 
 const InstagramIcon = ({ size = 20 }) => (
-  <svg 
-    width={size} 
-    height={size} 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
     strokeLinejoin="round"
   >
     <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
@@ -71,9 +72,9 @@ const XP_TIERS = [
 ];
 
 const XP_ACTIONS = [
-  { 
-    action: "Post a picture on explore", 
-    xp: "+15 XP", 
+  {
+    action: "Post a picture on explore",
+    xp: "+15 XP",
     icon: <ImageIcon size={16} />,
     iconBg: "bg-amber-50 group-hover:bg-amber-100",
     iconColor: "text-amber-500 group-hover:text-amber-600",
@@ -82,9 +83,9 @@ const XP_ACTIONS = [
     borderHover: "hover:border-amber-200",
     shadowHover: "hover:shadow-[0_8px_24px_rgba(245,158,11,0.12)]"
   },
-  { 
-    action: "Create a post on the home page", 
-    xp: "+10 XP", 
+  {
+    action: "Create a post on the home page",
+    xp: "+10 XP",
     icon: <Grid size={16} />,
     iconBg: "bg-purple-50 group-hover:bg-purple-100",
     iconColor: "text-purple-500 group-hover:text-purple-600",
@@ -93,9 +94,9 @@ const XP_ACTIONS = [
     borderHover: "hover:border-purple-200",
     shadowHover: "hover:shadow-[0_8px_24px_rgba(168,85,247,0.12)]"
   },
-  { 
-    action: "Connect with another user", 
-    xp: "+5 XP", 
+  {
+    action: "Connect with another user",
+    xp: "+5 XP",
     icon: <Users size={16} />,
     iconBg: "bg-blue-50 group-hover:bg-blue-100",
     iconColor: "text-blue-500 group-hover:text-blue-600",
@@ -104,9 +105,9 @@ const XP_ACTIONS = [
     borderHover: "hover:border-blue-200",
     shadowHover: "hover:shadow-[0_8px_24px_rgba(59,130,246,0.12)]"
   },
-  { 
-    action: "Join a community", 
-    xp: "+5 XP", 
+  {
+    action: "Join a community",
+    xp: "+5 XP",
     icon: <Building2 size={16} />,
     iconBg: "bg-orange-50 group-hover:bg-orange-100",
     iconColor: "text-orange-500 group-hover:text-orange-600",
@@ -115,9 +116,9 @@ const XP_ACTIONS = [
     borderHover: "hover:border-orange-200",
     shadowHover: "hover:shadow-[0_8px_24px_rgba(249,115,22,0.12)]"
   },
-  { 
-    action: "Comment on a post", 
-    xp: "+2 XP", 
+  {
+    action: "Comment on a post",
+    xp: "+2 XP",
     icon: <MessageCircle size={16} />,
     iconBg: "bg-emerald-50 group-hover:bg-emerald-100",
     iconColor: "text-emerald-500 group-hover:text-emerald-600",
@@ -126,9 +127,9 @@ const XP_ACTIONS = [
     borderHover: "hover:border-emerald-200",
     shadowHover: "hover:shadow-[0_8px_24px_rgba(16,185,129,0.12)]"
   },
-  { 
-    action: "Like a post", 
-    xp: "+1 XP", 
+  {
+    action: "Like a post",
+    xp: "+1 XP",
     icon: <Heart size={16} />,
     iconBg: "bg-pink-50 group-hover:bg-pink-100",
     iconColor: "text-pink-500 group-hover:text-pink-600",
@@ -136,6 +137,28 @@ const XP_ACTIONS = [
     xpText: "text-pink-600",
     borderHover: "hover:border-pink-200",
     shadowHover: "hover:shadow-[0_8px_24px_rgba(236,72,153,0.12)]"
+  },
+  {
+    action: "Create 1st post",
+    xp: "+5 XP",
+    icon: <Star size={16} />,
+    iconBg: "bg-cyan-50 group-hover:bg-cyan-100",
+    iconColor: "text-cyan-500 group-hover:text-cyan-600",
+    xpBg: "bg-cyan-50 border-cyan-100",
+    xpText: "text-cyan-600",
+    borderHover: "hover:border-cyan-200",
+    shadowHover: "hover:shadow-[0_8px_24px_rgba(6,182,212,0.12)]"
+  },
+  {
+    action: "Create 1st story",
+    xp: "+5 XP",
+    icon: <Camera size={16} />,
+    iconBg: "bg-indigo-50 group-hover:bg-indigo-100",
+    iconColor: "text-indigo-500 group-hover:text-indigo-600",
+    xpBg: "bg-indigo-50 border-indigo-100",
+    xpText: "text-indigo-600",
+    borderHover: "hover:border-indigo-200",
+    shadowHover: "hover:shadow-[0_8px_24px_rgba(99,102,241,0.12)]"
   },
 ];
 const ACHIEVEMENT_BADGES = [
@@ -154,7 +177,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
-  const [modal, setModal] = useState(null); 
+  const [modal, setModal] = useState(null);
   const [activePostIndex, setActivePostIndex] = useState(null);
   const [commentInput, setCommentInput] = useState("");
   const [toastMsg, setToastMsg] = useState("");
@@ -196,6 +219,15 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("badges");
   const [communitiesCount, setCommunitiesCount] = useState(0);
   const [campusUsers, setCampusUsers] = useState([]);
+  const [showAllXpActions, setShowAllXpActions] = useState(false);
+  const [activeXpDot, setActiveXpDot] = useState(0);
+  const [showAllBadges, setShowAllBadges] = useState(false);
+  const [postLiking, setPostLiking] = useState(false);
+  const [commentSending, setCommentSending] = useState(false);
+  const [userPosts, setUserPosts] = useState([]);
+  const [activeDropdown, setActiveDropdown] = useState(null);
+  const [shareModalPost, setShareModalPost] = useState(null);
+  const [shareSending, setShareSending] = useState({});
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
@@ -222,9 +254,9 @@ export default function ProfilePage() {
         phonePrivacy: parsedUser.phonePrivacy || "private",
         linkedin: parsedUser.linkedin || "",
         github: parsedUser.github || "",
-        instaId: parsedUser.instagram || "", 
-        snapId: parsedUser.snapchat || "", 
-        interests: parsedUser.interests || [], 
+        instaId: parsedUser.instagram || "",
+        snapId: parsedUser.snapchat || "",
+        interests: parsedUser.interests || [],
         sports: parsedUser.sports || [],
         customCourse: ""
       });
@@ -262,10 +294,10 @@ export default function ProfilePage() {
       // Only update if something changed to prevent infinite loops, or just rely on Query
       setUser(mergedProfileData);
       localStorage.setItem("collegeadda_user", JSON.stringify(mergedProfileData));
-      
+
       // Prevent resetting editData if the user is currently editing (modal is open)
       if (!modal) {
-        setEditData({ 
+        setEditData({
           name: profileData.name || "",
           bio: profileData.bio || "",
           profilePic: profileData.profilePic || "",
@@ -279,15 +311,15 @@ export default function ProfilePage() {
           phonePrivacy: profileData.phonePrivacy || "private",
           linkedin: profileData.linkedin || "",
           github: profileData.github || "",
-          instaId: profileData.instagram || "", 
-          snapId: profileData.snapchat || "", 
-          interests: profileData.interests || [], 
+          instaId: profileData.instagram || "",
+          snapId: profileData.snapchat || "",
+          interests: profileData.interests || [],
           sports: profileData.sports || [],
           customCourse: ""
         });
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileData, modal]);
 
   // -- TanStack Query: My Posts --
@@ -300,23 +332,131 @@ export default function ProfilePage() {
     }
   );
 
-  const userPosts = useMemo(() => {
-    if (!user) return [];
+  useEffect(() => {
+    if (!user) return;
     const filtered = myPostsRaw.filter(p => p.author?._id === user._id || p.author?._id === user.id);
-    return filtered.map(p => ({
+    setUserPosts(filtered.map(p => ({
       id: p._id,
-      img: p.mediaUrl || "https://picsum.photos/seed/fallback/300/300",
+      img: p.mediaUrl || null,
       content: p.content,
-      likes: p.likes?.length || 0,
-      isLiked: p.likes?.includes(user._id || user.id),
-      comments: p.comments?.length || 0,
-      commentsList: p.comments?.map(c => ({
+      createdAt: p.createdAt,
+      mediaType: p.mediaType,
+      likes: p.likesCount || 0,
+      isLiked: p.likedByMe || false,
+      comments: p.commentsCount || 0,
+      commentsList: (p.comments || []).map(c => ({
         id: c._id || Math.random().toString(),
         author: c.user?.name || "Student",
+        profilePic: c.user?.profilePic || null,
+        createdAt: c.createdAt || new Date().toISOString(),
         text: c.text
-      })) || []
-    }));
+      }))
+    })));
   }, [myPostsRaw, user]);
+
+  const handlePostLike = async () => {
+    if (activePostIndex === null || postLiking) return;
+    const post = userPosts[activePostIndex];
+    if (!post) return;
+
+    const prevLiked = post.isLiked;
+    const prevLikes = post.likes;
+
+    setUserPosts(prev => prev.map(p => p.id === post.id ? { ...p, isLiked: !prevLiked, likes: prevLiked ? prevLikes - 1 : prevLikes + 1 } : p));
+    setPostLiking(true);
+
+    try {
+      const res = await fetch(`${apiUrl}/api/posts/${post.id}/like`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${getToken()}` }
+      });
+      if (!res.ok) throw new Error("Like failed");
+      const data = await res.json();
+      setUserPosts(prev => prev.map(p => p.id === post.id ? {
+        ...p,
+        isLiked: typeof data.liked === "boolean" ? data.liked : !prevLiked,
+        likes: typeof data.likes === "number" ? data.likes : (prevLiked ? prevLikes - 1 : prevLikes + 1),
+      } : p));
+    } catch (err) {
+      setUserPosts(prev => prev.map(p => p.id === post.id ? { ...p, isLiked: prevLiked, likes: prevLikes } : p));
+    } finally {
+      setPostLiking(false);
+    }
+  };
+
+  const submitPostComment = async () => {
+    if (!commentInput.trim() || commentSending || activePostIndex === null) return;
+    const post = userPosts[activePostIndex];
+    if (!post) return;
+
+    const text = commentInput.trim();
+    const tempComment = {
+      id: Date.now().toString(),
+      author: user?.name || "Student",
+      text
+    };
+
+    setUserPosts(prev => prev.map(p => p.id === post.id ? { ...p, commentsList: [...p.commentsList, tempComment] } : p));
+    setCommentInput("");
+    setCommentSending(true);
+
+    try {
+      await fetch(`${apiUrl}/api/posts/${post.id}/comment`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+    } catch (err) { } finally {
+      setCommentSending(false);
+    }
+  };
+
+  const handleDeletePost = async (postId) => {
+    if (!window.confirm("Are you sure you want to delete this post?")) return;
+    setUserPosts(prev => prev.filter(p => p.id !== postId));
+    try {
+      await fetch(`${apiUrl}/api/posts/${postId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${getToken()}` }
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleShareToConnection = async (conn, post) => {
+    const connId = conn._id || conn.id;
+    setShareSending(prev => ({ ...prev, [connId]: true }));
+    try {
+      const token = getToken();
+      const roomRes = await fetch(`${apiUrl}/api/chat/rooms`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUserId: connId })
+      });
+      if (!roomRes.ok) throw new Error("Failed to get room");
+      const room = await roomRes.json();
+
+      const text = `Check out this post: ${window.location.origin}/post/${post.id}`;
+      await fetch(`${apiUrl}/api/chat/rooms/${room._id}/messages`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+
+      setToastMsg(`Shared to ${conn.name}`);
+      setTimeout(() => setToastMsg(""), 3000);
+    } catch (err) {
+      console.error(err);
+      setToastMsg("Failed to share.");
+      setTimeout(() => setToastMsg(""), 3000);
+    }
+  };
+
+  const handlePostShare = () => {
+    if (activePostIndex === null) return;
+    setShareModalPost(userPosts[activePostIndex]);
+  };
 
   // -- TanStack Query: Followers --
   const { data: followers = [] } = useApiQuery(
@@ -338,7 +478,8 @@ export default function ProfilePage() {
     }
   );
 
-  const networksCount = followers.filter(f => following.some(fol => fol._id === f._id || fol.id === f._id)).length;
+  const connections = followers.filter(f => following.some(fol => fol._id === f._id || fol.id === f._id));
+  const networksCount = connections.length;
 
   // -- TanStack Query: Colleges (for banner image) --
   const { data: colleges = [] } = useApiQuery(
@@ -436,17 +577,23 @@ export default function ProfilePage() {
       ...(user?.badgesEarned || [])
     ]);
 
-    return ACHIEVEMENT_BADGES.map((badge) => {
+    const mappedBadges = ACHIEVEMENT_BADGES.map((badge) => {
       const apiBadgeId = badge.id.replace('-', '_');
       const newProgress = xpData?.progress?.[apiBadgeId]?.current || 0;
       const oldProgress = profileActivityStats[badge.stat] || 0;
       const progress = Math.max(newProgress, oldProgress);
-      
+
       return {
         ...badge,
         progress,
         earned: explicitBadges.has(apiBadgeId) || explicitBadges.has(badge.id) || progress >= badge.target,
       };
+    });
+
+    return mappedBadges.sort((a, b) => {
+      if (a.earned && !b.earned) return -1;
+      if (!a.earned && b.earned) return 1;
+      return 0;
     });
   }, [xpData, user?.unlockedBadges, user?.badgesEarned, profileActivityStats]);
 
@@ -498,7 +645,7 @@ export default function ProfilePage() {
       if (res.ok) {
         queryClient.setQueryData(["user-following"], (prev) => (prev || []).filter(f => f._id !== targetUserId));
         queryClient.setQueryData(["user-followers"], (prev) => (prev || []).filter(f => f._id !== targetUserId));
-        
+
         queryClient.invalidateQueries({ queryKey: ["network-profile"] });
         queryClient.invalidateQueries({ queryKey: ["user-profile"] });
         queryClient.invalidateQueries({ queryKey: ["explore-following"] });
@@ -539,7 +686,7 @@ export default function ProfilePage() {
       const token = localStorage.getItem("collegeadda_token");
       const res = await fetch(`${apiUrl}/api/users/profile`, {
         method: 'PUT',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
@@ -679,7 +826,7 @@ export default function ProfilePage() {
 
       {/* Header - only show on mobile, sidebar handles desktop nav */}
       <header className="lg:hidden page-header sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
-        <motion.h1 
+        <motion.h1
           initial={{ x: -20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           className="text-xl font-black text-[#1A1A1A] tracking-tight"
@@ -687,7 +834,7 @@ export default function ProfilePage() {
           {user.name?.split(" ")[0]}<span className="text-[#C8922A]">.</span>
         </motion.h1>
         <div className="flex items-center space-x-3">
-          <motion.button 
+          <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={handleLogout}
@@ -760,8 +907,8 @@ export default function ProfilePage() {
                   onClick={() => setModal("edit")}
                   className={clsx(
                     "px-5 py-2 border rounded-xl text-xs font-bold transition-all shadow-sm",
-                    !user.isVerified 
-                      ? "bg-green-500 border-green-600 text-white hover:bg-green-600" 
+                    !user.isVerified
+                      ? "bg-green-500 border-green-600 text-white hover:bg-green-600"
                       : "bg-white border-[#E8E6E0] text-[#1A1A1A] hover:bg-[#F9F8F5]"
                   )}
                 >
@@ -790,35 +937,35 @@ export default function ProfilePage() {
               )}
 
               {/* University / Course / Class / Location row */}
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px] text-[#6B6B6B] font-semibold">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5 text-[13px] text-[#1A1A1A] font-semibold mt-4 mb-4">
                 {user.university && (
                   <span className="flex items-center gap-1.5">
-                    <Building2 size={13} className="text-[#C8922A] shrink-0" />
+                    <span className="text-base shrink-0">🏫</span>
                     {user.university}
                   </span>
                 )}
                 {(user.course || user.branch) && (
                   <span className="flex items-center gap-1.5">
-                    <GraduationCap size={13} className="text-[#C8922A] shrink-0" />
+                    <span className="text-base shrink-0">👨🏻‍🎓</span>
                     {[user.course, user.branch].filter(Boolean).join(' • ')}
                   </span>
                 )}
                 {user.passOutBatch && (
                   <span className="flex items-center gap-1.5">
-                    <Users size={13} className="text-[#C8922A] shrink-0" />
+                    <span className="text-base shrink-0">🏛️</span>
                     Class of {user.passOutBatch}
                   </span>
                 )}
                 {(user.hometownState || collegeLocation || user.studyYear) && (
                   <span className="flex items-center gap-1.5">
-                    <MapPin size={13} className="text-[#C8922A] shrink-0" />
+                    <span className="text-base shrink-0">📌</span>
                     {user.hometownState ? `${user.hometownState}${user.hometownDistrict ? `, ${user.hometownDistrict}` : ''}` : collegeLocation || user.studyYear}
                   </span>
                 )}
               </div>
 
               {/* Pills row: Streak + Campus Rank + Joined */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-3">
                 <div className="flex flex-wrap items-center gap-2">
                   {/* Streak pill */}
                   <span className="group inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-black bg-gradient-to-r from-orange-50 to-rose-50 border border-orange-200 shadow-sm hover:shadow-[0_4px_12px_rgba(249,115,22,0.15)] hover:-translate-y-0.5 transition-all cursor-default">
@@ -860,11 +1007,9 @@ export default function ProfilePage() {
               key={stat.label}
               onClick={stat.action}
               disabled={!stat.action}
-              className={`flex flex-col items-center py-5 px-2 gap-1.5 transition-colors group ${
-                stat.action ? 'hover:bg-[#F9F8F5] cursor-pointer' : 'cursor-default'
-              } ${
-                i < arr.length - 1 ? 'border-r border-[#F3F2EE]' : ''
-              }`}
+              className={`flex flex-col items-center py-5 px-2 gap-1.5 transition-colors group ${stat.action ? 'hover:bg-[#F9F8F5] cursor-pointer' : 'cursor-default'
+                } ${i < arr.length - 1 ? 'border-r border-[#F3F2EE]' : ''
+                }`}
             >
               <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${stat.iconBg} group-hover:scale-110 transition-transform`}>
                 {stat.icon}
@@ -877,464 +1022,735 @@ export default function ProfilePage() {
 
         {/* Tab Navigation + Content */}
         <div className="px-4 md:px-0 pt-6 pb-10 space-y-6">
-        {/* Tab Navigation */}
-        <div className="flex border-b border-[#F3F2EE] gap-8 text-sm font-semibold">
-          {["badges", "posts", "about"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={clsx(
-                "pb-3 pt-1 capitalize relative transition-all",
-                activeTab === tab 
-                  ? "text-[#C8922A] font-bold" 
-                  : "text-[#888888] hover:text-[#4A4A4A]"
-              )}
-            >
-              {tab}
-              {activeTab === tab && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#C8922A]" />
-              )}
-            </button>
-          ))}
-        </div>
+          {/* Tab Navigation */}
+          <div className="flex border-b border-[#F3F2EE] gap-8 text-sm font-semibold">
+            {["badges", "posts", "about"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={clsx(
+                  "pb-3 pt-1 capitalize relative transition-all",
+                  activeTab === tab
+                    ? "text-[#C8922A] font-bold"
+                    : "text-[#888888] hover:text-[#4A4A4A]"
+                )}
+              >
+                {tab}
+                {activeTab === tab && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#C8922A]" />
+                )}
+              </button>
+            ))}
+          </div>
 
-        {/* Tab Contents */}
-        {activeTab === "about" && (
-          <div className="grid grid-cols-1 md:grid-cols-[1.6fr_1fr] gap-10">
-            {/* Left Column: Details */}
-            <div className="space-y-6">
-              <div className="space-y-3">
-                <h3 className="text-sm font-bold text-[#1A1A1A] uppercase tracking-wider">About</h3>
-                <p className="text-sm text-[#6B6B6B] leading-relaxed">
-                  {user.bio || "No description provided."}
-                </p>
+          {/* Tab Contents */}
+          {activeTab === "about" && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Left Column: Details */}
+              <div className="lg:col-span-2">
+                <div className="bg-[#FFFDF8] rounded-[2.5rem] border border-[#F3F2EE] p-8 shadow-[0_4px_20px_rgba(0,0,0,0.03)] relative overflow-hidden h-full flex flex-col">
+                  {/* Decorative blob */}
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFF8E6] rounded-full blur-[80px] -translate-y-1/2 translate-x-1/3 opacity-80 pointer-events-none"></div>
+
+                  <div className="flex items-center gap-4 mb-6 relative z-10">
+                    <div className="w-16 h-16 rounded-full bg-[#FFF9E6] border-4 border-white shadow-sm flex items-center justify-center shrink-0">
+                      <span className="text-2xl">🎓</span>
+                    </div>
+                    <h3 className="text-2xl font-black text-[#1A1A1A]">About <span className="text-[#C8922A]">{user.name}</span></h3>
+                  </div>
+
+                  <p className="text-[#4A4A4A] font-medium leading-relaxed mb-8 relative z-10">
+                    {user.bio || "No description provided."}
+                  </p>
+
+                  <div className="mt-auto space-y-3 relative z-10">
+                    {user.university && (
+                      <div className="bg-white rounded-2xl p-4 border border-[#F3F2EE] flex items-center justify-between shadow-sm hover:border-[#E8E6E0] transition-colors">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-[#FFF9E6] flex items-center justify-center text-lg">🏫</div>
+                          <span className="text-sm font-semibold text-[#1A1A1A]">{user.university}</span>
+                        </div>
+                      </div>
+                    )}
+                    {(user.course || user.branch) && (
+                      <div className="bg-white rounded-2xl p-4 border border-[#F3F2EE] flex items-center justify-between shadow-sm hover:border-[#E8E6E0] transition-colors">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-[#FFF5F5] flex items-center justify-center text-lg">👨🏻‍🎓</div>
+                          <span className="text-sm font-semibold text-[#1A1A1A]">{[user.course, user.branch, user.studyYear].filter(Boolean).join(" · ")}</span>
+                        </div>
+                      </div>
+                    )}
+                    {(user.hometownState || collegeLocation) && (
+                      <div className="bg-white rounded-2xl p-4 border border-[#F3F2EE] flex items-center justify-between shadow-sm hover:border-[#E8E6E0] transition-colors">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-[#F5F8FF] flex items-center justify-center text-lg">📌</div>
+                          <span className="text-sm font-semibold text-[#1A1A1A]">
+                            {user.hometownState ? `${user.hometownState}${user.hometownDistrict ? `, ${user.hometownDistrict}` : ''}` : collegeLocation}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    {user.phone && (
+                      <div className="bg-white rounded-2xl p-4 border border-[#F3F2EE] flex items-center justify-between shadow-sm hover:border-[#E8E6E0] transition-colors">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-[#F4FBFA] flex items-center justify-center text-lg">📞</div>
+                          <span className="text-sm font-semibold text-[#1A1A1A]">
+                            {user.phonePrivacy === 'private'
+                              ? `${user.phone.substring(0, 3)}... (Private)`
+                              : user.phone}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-              
-              <div className="space-y-3.5 pt-4 border-t border-[#F3F2EE] text-sm text-[#4A4A4A]">
-                <div className="flex items-center gap-3">
-                  <span className="text-lg">🏫</span>
-                  <span>{user.university || "CampusAdda Member"}</span>
+
+              {/* Right Column: Badges, Socials, Interests */}
+              <div className="lg:col-span-1 space-y-6">
+
+                {/* Badges */}
+                <div className="bg-white rounded-[2rem] border border-[#F3F2EE] p-6 shadow-sm">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-8 h-8 rounded-full bg-[#FFF9E6] flex items-center justify-center text-[#C8922A]">
+                      <Award size={16} className="text-[#C8922A] fill-[#C8922A]" />
+                    </div>
+                    <h4 className="text-xs font-black text-[#1A1A1A] uppercase tracking-widest">Badges</h4>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <UniversityBadges userId={user.id || user.email} />
+                    <span className="ca-badge bg-[#FFF9E6] text-[#C8922A] border border-[#C8922A]/20 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold">
+                      🔥 {getDisplayStreak(user)}
+                    </span>
+                    {user.isVerified && (
+                      <span className="ca-badge bg-[#FFF9E6] text-[#C8922A] border border-[#C8922A]/20 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold">
+                        🏅 Verified User
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-lg">📍</span>
-                  <span>{[user.course, user.branch].filter(Boolean).join(" · ") || "Student"}</span>
+
+                {/* User Socials */}
+                <div className="bg-white rounded-[2rem] border border-[#F3F2EE] p-6 shadow-sm relative overflow-hidden">
+                  <div className="absolute right-[-10%] top-[10%] text-[#F5F8FF] pointer-events-none w-32 h-32 flex items-center justify-center">
+                    <Globe size={120} strokeWidth={1} />
+                  </div>
+                  <div className="flex items-center gap-3 mb-5 relative z-10">
+                    <div className="w-8 h-8 rounded-full bg-[#F5F8FF] flex items-center justify-center text-[#4A7DFF]">
+                      <Users size={16} className="text-[#4A7DFF] fill-[#4A7DFF]" />
+                    </div>
+                    <h4 className="text-xs font-black text-[#1A1A1A] uppercase tracking-widest">User Socials</h4>
+                  </div>
+                  <div className="flex items-center gap-3 relative z-10">
+                    {user.instagram && (
+                      <a
+                        href={user.instagram.includes('http') ? user.instagram : `https://instagram.com/${user.instagram}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-10 h-10 rounded-full bg-[#FCF8F9] flex items-center justify-center text-[#E1306C] hover:bg-[#E1306C] hover:text-white transition-all shadow-sm border border-[#E1306C]/10"
+                      >
+                        <InstagramIcon size={18} />
+                      </a>
+                    )}
+                    {user.linkedin && (
+                      <a
+                        href={user.linkedin}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-10 h-10 rounded-full bg-[#F3F8FC] flex items-center justify-center text-[#229ED9] hover:bg-[#229ED9] hover:text-white transition-all shadow-sm border border-[#229ED9]/10"
+                      >
+                        <Send size={16} />
+                      </a>
+                    )}
+                    {user.github && (
+                      <a
+                        href={user.github}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-10 h-10 rounded-full bg-[#F5F8FF] flex items-center justify-center text-[#4A7DFF] hover:bg-[#4A7DFF] hover:text-white transition-all shadow-sm border border-[#4A7DFF]/10"
+                      >
+                        <Code size={16} />
+                      </a>
+                    )}
+                    {user.snapchat && (
+                      <a
+                        href={`https://snapchat.com/add/${user.snapchat}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-10 h-10 rounded-full bg-[#F5F8FF] flex items-center justify-center text-[#4A7DFF] hover:bg-[#4A7DFF] hover:text-white transition-all shadow-sm border border-[#4A7DFF]/10"
+                      >
+                        <Ghost size={18} />
+                      </a>
+                    )}
+                    {!user.instagram && !user.linkedin && !user.github && !user.snapchat && (
+                      <span className="text-xs text-[#888888]">No social links added.</span>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-lg">📅</span>
-                  <span>Joined {user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : "Recently"}</span>
+
+                {/* Interests & Sports */}
+                <div className="bg-white rounded-[2rem] border border-[#F3F2EE] p-6 shadow-sm">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-8 h-8 rounded-full bg-[#FBF5FF] flex items-center justify-center text-[#A855F7]">
+                      <Heart size={16} className="text-[#A855F7] fill-[#A855F7]" />
+                    </div>
+                    <h4 className="text-xs font-black text-[#1A1A1A] uppercase tracking-widest">Interests & Sports</h4>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {(user.interests || []).map((i, idx) => (
+                      <span key={idx} className="bg-[#F5F8FF] px-4 py-2 rounded-full text-xs font-semibold text-[#4A7DFF] border border-transparent hover:border-[#4A7DFF]/20 transition-all cursor-default">
+                        {i}
+                      </span>
+                    ))}
+                    {(user.sports || []).map((s, idx) => (
+                      <span key={idx} className="bg-[#FFF9E6] px-4 py-2 rounded-full text-xs font-semibold text-[#C8922A] border border-[#C8922A]/10 cursor-default">
+                        {s}
+                      </span>
+                    ))}
+                    {(user.interests || []).length === 0 && (user.sports || []).length === 0 && (
+                      <span className="text-xs text-[#888888]">No interests or sports added.</span>
+                    )}
+                  </div>
                 </div>
-                {user.phone && (
-                  <div className="flex items-center gap-3">
-                    <span className="text-lg">📞</span>
-                    <span>
-                      {user.phonePrivacy === 'private' 
-                        ? `${user.phone.substring(0,3)}... (Private)`
-                        : user.phone}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "posts" && (
+            <div className="space-y-6 pb-10">
+              <motion.div
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  visible: { transition: { staggerChildren: 0.05 } }
+                }}
+                className="grid grid-cols-1 md:grid-cols-2 gap-6"
+              >
+                {userPosts.length === 0 ? (
+                  <div className="col-span-1 md:col-span-2 py-20 bg-white border border-[#E8E6E0] shadow-sm rounded-[2.5rem] border-dashed text-center">
+                    <p className="text-xl font-black text-[#888888]">No Posts Yet</p>
+                    <p className="text-[10px] text-[#888888] font-bold uppercase tracking-widest mt-2">Your story starts here</p>
+                  </div>
+                ) : (
+                  userPosts.map((post, idx) => (
+                    <motion.div
+                      key={post.id}
+                      variants={{
+                        hidden: { scale: 0.95, opacity: 0 },
+                        visible: { scale: 1, opacity: 1 }
+                      }}
+                      className="bg-white border border-[#E8E6E0] rounded-[2rem] p-5 shadow-sm flex flex-col relative"
+                    >
+                      {/* Header */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-3">
+                          <img src={getAvatarSrc(user.profilePic, user.name, user._id || user.id)} alt={user.name} className="w-10 h-10 rounded-full object-cover border border-[#E8E6E0]" />
+                          <div>
+                            <p className="text-sm font-black text-[#1A1A1A]"><NameWithTick name={user.name} tick={user.currentTick} user={user} /></p>
+                            <p className="text-[10px] font-bold text-[#888888] uppercase tracking-widest">MEMORIES • {post.createdAt ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: true }) : 'recently'}</p>
+                          </div>
+                        </div>
+                        <div className="relative">
+                          <button onClick={(e) => { e.stopPropagation(); setActiveDropdown(activeDropdown === post.id ? null : post.id); }} className="p-2 text-[#888888] hover:text-[#1A1A1A] transition-colors">
+                            <MoreVertical size={16} />
+                          </button>
+                          <AnimatePresence>
+                            {activeDropdown === post.id && (
+                              <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="absolute right-0 top-10 w-40 bg-white rounded-xl shadow-lg border border-[#E8E6E0] z-10 overflow-hidden"
+                              >
+                                <button onClick={() => { setActiveDropdown(null); handleDeletePost(post.id); }} className="w-full text-left px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 transition-colors">
+                                  Delete Post
+                                </button>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      </div>
+
+                      {/* Content (Clickable to open modal) */}
+                      <div onClick={() => { setActivePostIndex(idx); setModal("post"); }} className="cursor-pointer flex-1 flex flex-col">
+                        {post.content && (
+                          <p className="text-sm text-[#4A4A4A] mb-4 whitespace-pre-wrap leading-relaxed font-medium line-clamp-3">
+                            {post.content}
+                          </p>
+                        )}
+
+                        {post.img && post.mediaType !== 'none' && (
+                          <div className="rounded-[1.5rem] overflow-hidden mb-4 bg-[#F9F8F5]">
+                            <img src={post.img} className="w-full object-cover max-h-[300px]" alt="" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Footer Actions */}
+                      <div className="flex items-center justify-between pt-4 border-t border-[#E8E6E0]/50 mt-auto">
+                        <div className="flex space-x-6">
+                          <div className="flex items-center space-x-2">
+                            <Heart size={20} onClick={() => { setActivePostIndex(idx); setTimeout(handlePostLike, 0); }} className={clsx("cursor-pointer transition-all", post.isLiked ? "text-red-500 fill-red-500" : "text-[#6B6B6B] hover:text-red-500")} />
+                            <span className="text-xs font-bold text-[#6B6B6B]">{post.likes}</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <MessageCircle size={20} onClick={() => { setActivePostIndex(idx); setModal("post"); }} className="cursor-pointer text-[#6B6B6B] hover:text-[#C8922A]" />
+                            <span className="text-xs font-bold text-[#6B6B6B]">{post.comments}</span>
+                          </div>
+                        </div>
+                        <Send size={20} onClick={() => { setActivePostIndex(idx); handlePostShare(); }} className="cursor-pointer text-[#6B6B6B] hover:text-[#C8922A]" />
+                      </div>
+                    </motion.div>
+                  ))
+                )}
+              </motion.div>
+            </div>
+          )}
+
+          {activeTab === "badges" && (
+            <div className="space-y-12 pb-14 pt-4">
+              {/* 1. Badges Overview Hero (Premium) */}
+              <section className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-gradient-to-br from-[#FFFAF0] via-white to-[#F0F7FF] p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+                <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-amber-300/10 blur-[60px]" />
+                <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-blue-300/10 blur-[60px]" />
+
+                <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
+                  <div>
+                    <h2 className="text-[17px] font-black text-[#1A1A1A] flex items-center gap-2 mb-1.5">
+                      <span className="text-xl">🎖️</span> Badges Overview
+                    </h2>
+                    <p className="text-[12px] font-semibold text-slate-500">
+                      Your achievements that make you stand out.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-full border border-amber-200/50 bg-white/80 backdrop-blur-md px-4 py-2 shadow-sm transition-transform hover:scale-105">
+                    <Trophy size={16} className="text-amber-500 fill-amber-500" />
+                    <span className="text-[11px] font-black uppercase tracking-widest text-slate-800">
+                      {earnedBadges.filter(b => b.earned).length} / {earnedBadges.length} UNLOCKED
                     </span>
                   </div>
-                )}
-              </div>
-            </div>
-
-            {/* Right Column: Badges, Socials, Interests */}
-            <div className="space-y-8">
-              {/* Badges */}
-              <div className="space-y-3">
-                <h4 className="text-[11px] font-black text-[#888888] uppercase tracking-wider">Badges</h4>
-                <div className="flex items-center gap-2">
-                  <UniversityBadges userId={user.id || user.email} />
-                  <span className="ca-badge bg-[#FFF8EC] text-[#C8922A] border border-[#C8922A]/20">
-                    🔥 {getDisplayStreak(user)}
-                  </span>
-                  {user.isVerified && (
-                    <span className="ca-badge bg-[#FFF8EC] text-[#C8922A] border border-[#C8922A]/20">Verified User</span>
-                  )}
                 </div>
-              </div>
 
-              {/* Campus Socials */}
-              <div className="space-y-3">
-                <h4 className="text-[11px] font-black text-[#888888] uppercase tracking-wider">Campus Socials</h4>
-                <div className="flex items-center gap-3">
-                  {user.instagram && (
-                    <a 
-                      href={user.instagram.includes('http') ? user.instagram : `https://instagram.com/${user.instagram}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-9 h-9 rounded-full bg-[#F3F2EE] flex items-center justify-center text-[#4A4A4A] hover:bg-[#FFF8EC] hover:text-[#C8922A] transition-all"
-                    >
-                      <InstagramIcon size={18} />
-                    </a>
-                  )}
-                  {user.linkedin && (
-                    <a 
-                      href={user.linkedin}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-9 h-9 rounded-full bg-[#F3F2EE] flex items-center justify-center text-[#4A4A4A] hover:bg-[#FFF8EC] hover:text-[#C8922A] transition-all"
-                    >
-                      <Send size={16} />
-                    </a>
-                  )}
-                  {user.github && (
-                    <a 
-                      href={user.github}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-9 h-9 rounded-full bg-[#F3F2EE] flex items-center justify-center text-[#4A4A4A] hover:bg-[#FFF8EC] hover:text-[#C8922A] transition-all"
-                    >
-                      <Code size={16} />
-                    </a>
-                  )}
-                  {user.snapchat && (
-                    <a 
-                      href={`https://snapchat.com/add/${user.snapchat}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-9 h-9 rounded-full bg-[#F3F2EE] flex items-center justify-center text-[#4A4A4A] hover:bg-[#FFF8EC] hover:text-[#C8922A] transition-all"
-                    >
-                      <Ghost size={18} />
-                    </a>
-                  )}
-                  {!user.instagram && !user.linkedin && !user.github && !user.snapchat && (
-                    <span className="text-xs text-[#888888]">No social links added.</span>
-                  )}
-                </div>
-              </div>
+                <div className="relative z-10 flex flex-col lg:flex-row gap-8 mb-6">
+                  {/* Featured Badge */}
+                  {(() => {
+                    const featuredBadge = earnedBadges.find(b => b.earned) || earnedBadges[0];
+                    return (
+                      <div className="group flex flex-col sm:flex-row items-center sm:items-start gap-6 lg:w-1/2 p-4 rounded-[1.5rem] bg-white/40 border border-white/50 backdrop-blur-xl transition-all duration-300 hover:bg-white/60 hover:shadow-lg">
+                        <div className="relative shrink-0 flex items-center justify-center h-40 w-40 rounded-[2rem] bg-gradient-to-br from-[#0A1128] to-[#1a2b5e] border-[3px] border-amber-400/30 shadow-[0_8px_20px_rgba(10,17,40,0.3)] p-4 transition-transform duration-500 group-hover:scale-105">
+                          <div className="absolute inset-0 rounded-[2rem] bg-amber-400/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                          <img src={featuredBadge.image} alt={featuredBadge.name} className="relative z-10 w-full h-full object-contain filter drop-shadow-[0_0_20px_rgba(251,191,36,0.3)] transition-all duration-500 group-hover:drop-shadow-[0_0_30px_rgba(251,191,36,0.5)]" />
+                        </div>
+                        <div className="flex flex-col justify-center h-full w-full max-w-[200px] text-center sm:text-left">
+                          <h3 className="text-[17px] font-black text-slate-800 mb-1.5">{featuredBadge.name}</h3>
+                          <p className="text-[11px] font-bold text-slate-500 mb-5 leading-relaxed">{featuredBadge.condition}</p>
 
-              {/* Interests & Sports */}
-              <div className="space-y-3">
-                <h4 className="text-[11px] font-black text-[#888888] uppercase tracking-wider">Interests & Sports</h4>
-                <div className="flex flex-wrap gap-1.5">
-                  {(user.interests || []).map((i, idx) => (
-                    <span key={idx} className="bg-[#F3F2EE] px-3 py-1.5 rounded-full text-xs font-semibold text-[#6B6B6B] border border-transparent hover:border-[#C8922A]/20 transition-all">
-                      {i}
-                    </span>
-                  ))}
-                  {(user.sports || []).map((s, idx) => (
-                    <span key={idx} className="bg-[#FFF8EC] px-3 py-1.5 rounded-full text-xs font-semibold text-[#C8922A] border border-[#C8922A]/10">
-                      {s}
-                    </span>
-                  ))}
-                  {(user.interests || []).length === 0 && (user.sports || []).length === 0 && (
-                    <span className="text-xs text-[#888888]">No interests or sports added.</span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+                          <div className="flex flex-col gap-2 mb-5">
+                            <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200/80 shadow-inner">
+                              <div
+                                className={clsx("h-full rounded-full transition-all duration-1000", featuredBadge.earned ? "bg-gradient-to-r from-amber-400 to-orange-400" : "bg-slate-300")}
+                                style={{ width: `${Math.min(100, (featuredBadge.progress / featuredBadge.target) * 100)}%` }}
+                              />
+                            </div>
+                            <p className="text-right text-[11px] font-black text-slate-700">{Math.min(featuredBadge.progress, featuredBadge.target)} / {featuredBadge.target}</p>
+                          </div>
 
-        {activeTab === "posts" && (
-          <div className="space-y-6 pb-10">
-            <motion.div 
-              initial="hidden"
-              animate="visible"
-              variants={{
-                visible: { transition: { staggerChildren: 0.05 } }
-              }}
-              className="grid grid-cols-3 gap-2"
-            >
-              {userPosts.length === 0 ? (
-                <div className="col-span-3 py-20 bg-white border border-[#E8E6E0] shadow-sm rounded-[2.5rem] border-dashed text-center">
-                  <p className="text-xl font-black text-[#888888]">No Posts Yet</p>
-                  <p className="text-[10px] text-[#888888] font-bold uppercase tracking-widest mt-2">Your story starts here</p>
+                          <div className="self-center sm:self-start inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest shadow-sm border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-600">
+                            <Check size={12} strokeWidth={3} /> {featuredBadge.earned ? "UNLOCKED" : "LOCKED"}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Mini Badges Grid */}
+                  <div className="grid grid-cols-4 gap-3 lg:w-1/2">
+                    {earnedBadges.slice(1, 9).map((badge, idx) => (
+                      <div
+                        key={idx}
+                        className={clsx(
+                          "group flex flex-col items-center justify-center h-[80px] rounded-[1.2rem] border transition-all duration-300",
+                          badge.earned
+                            ? "border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50/30 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-amber-300"
+                            : "border-slate-200/60 bg-white/50 backdrop-blur-sm opacity-90 hover:opacity-100"
+                        )}
+                      >
+                        {badge.earned ? (
+                          <img src={badge.image} alt={badge.name} className="h-9 w-9 object-contain mb-1.5 filter drop-shadow-sm transition-transform duration-300 group-hover:scale-110" />
+                        ) : (
+                          <div className="flex items-center justify-center text-slate-300 mb-1.5 transition-transform duration-300 group-hover:scale-110">
+                            <Lock size={16} />
+                          </div>
+                        )}
+                        <span className={clsx("text-[9px] font-bold uppercase tracking-wider transition-colors", badge.earned ? "text-amber-600 group-hover:text-amber-700" : "text-slate-400 group-hover:text-slate-500")}>
+                          {badge.earned ? "Unlocked" : "Locked"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ) : (
-                userPosts.map((post, idx) => (
-                  <motion.div
-                    key={post.id}
-                    variants={{
-                      hidden: { scale: 0.8, opacity: 0 },
-                      visible: { scale: 1, opacity: 1 }
+
+                <div className="flex justify-center mt-2">
+                  <button
+                    onClick={() => {
+                      document.getElementById('achievements-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      setShowAllBadges(true);
                     }}
-                    whileHover={{ scale: 0.98 }}
-                    onClick={() => { setActivePostIndex(idx); setModal("post"); }}
-                    className="aspect-square rounded-[1.5rem] overflow-hidden relative group cursor-pointer border border-[#E8E6E0]"
+                    className="flex items-center gap-2 rounded-full border border-[#E8E6E0] bg-[#FFFAF0] px-5 py-2 text-[11px] font-black text-[#1A1A1A] transition-colors hover:bg-amber-50"
                   >
-                    <img src={post.img} className="w-full h-full object-cover" alt="" />
-                    <div className="absolute inset-0 bg-[#C8922A]/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center space-x-4">
-                      <div className="flex items-center text-white text-xs font-black">
-                        <Heart size={14} className="fill-white mr-1" /> {post.likes}
-                      </div>
-                      <div className="flex items-center text-white text-xs font-black">
-                        <MessageCircle size={14} className="fill-white mr-1" /> {post.comments}
-                      </div>
-                    </div>
-                  </motion.div>
-                ))
-              )}
-            </motion.div>
-          </div>
-        )}
-
-        {activeTab === "badges" && (
-          <div className="space-y-6 pb-10">
-            <section className="relative overflow-hidden rounded-[2rem] border border-[#E8E6E0] bg-white p-5 shadow-sm sm:p-6">
-              <div className="pointer-events-none absolute -right-12 -top-20 h-44 w-44 rounded-full bg-[#FFD166]/15 blur-3xl" />
-              <div className="pointer-events-none absolute -bottom-24 left-1/3 h-48 w-48 rounded-full bg-[#7DD3FC]/10 blur-3xl" />
-              <div className="flex flex-wrap items-end justify-between gap-3">
-                <div className="relative">
-                  <h3 className="text-sm font-black uppercase tracking-wider text-[#1A1A1A]">Badges Earned</h3>
-                  <p className="mt-1 text-[10px] font-semibold text-[#888888] uppercase tracking-wider">
-                    {earnedBadges.filter(badge => badge.earned).length > 0
-                      ? "Your unlocked achievement badges show here."
-                      : "Earn an achievement to unlock badge artwork here."}
-                  </p>
+                    View All Badges <ChevronRight size={14} />
+                  </button>
                 </div>
-                <span className="relative rounded-full border border-[#E8E6E0] bg-[#F9F8F5] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#1A1A1A] shadow-sm">
-                  {earnedBadges.filter(badge => badge.earned).length}/{earnedBadges.length} unlocked
-                </span>
-              </div>
+              </section>
 
-              {earnedBadges.filter(badge => badge.earned).length > 0 ? (
-                <div className="relative mt-5 flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 hide-scrollbar">
-                  {earnedBadges.filter(badge => badge.earned).map((badge) => (
-                    <motion.div
-                      key={badge.id}
-                      whileHover={{ y: -6, scale: 1.03 }}
-                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                      className="group relative w-36 shrink-0 snap-start rounded-[1.35rem] border border-[#E8E6E0] bg-white p-3 shadow-sm hover:shadow-[0_12px_30px_rgba(200,146,42,0.12)] transition-shadow overflow-hidden"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-br from-transparent to-amber-100/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                      
-                      <div className="relative mx-auto aspect-[3/4] max-h-52 overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#F9F8F5] to-white shadow-inner border border-[#E8E6E0]/50">
-                        <img
-                          src={badge.image}
-                          alt={badge.name}
-                          className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-110"
-                        />
-                      </div>
-                      <p className="relative mt-3 truncate text-center text-xs font-black text-[#1A1A1A] group-hover:text-[#C8922A] transition-colors">{badge.name}</p>
-                    </motion.div>
-                  ))}
-                </div>
-              ) : (
-                <div className="relative mt-5 rounded-[1.35rem] border border-dashed border-[#E2B84D] bg-white/60 px-4 py-8 text-center text-sm font-bold text-[#9A6A10]">
-                  No badges earned yet.
-                </div>
-              )}
-            </section>
-
-
-            {/* Performance Stats Placeholder */}
-            <section className="rounded-[2rem] border border-[#E8E6E0] bg-white p-5 shadow-sm sm:p-6">
-              <div className="flex items-center justify-between mb-5">
-                <div>
-                  <h3 className="text-sm font-black uppercase tracking-wider text-[#1A1A1A] flex items-center gap-2">
-                    <TrendingUp size={16} className="text-emerald-500" /> Performance Stats
-                  </h3>
-                  <p className="mt-1 text-[10px] font-semibold text-[#888888] uppercase tracking-wider">Weekly / Monthly totals</p>
-                </div>
-                <div className="flex items-center gap-1 rounded-full bg-[#F9F8F5] p-1 border border-[#E8E6E0]">
-                  <span className="flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-red-600 shadow-sm border border-red-200 hover:bg-red-100 transition-colors cursor-default">
-                    <span className="relative flex h-2 w-2">
+              {/* 2. Performance Snapshot */}
+              <section className="space-y-6">
+                <div className="flex items-center justify-between px-2">
+                  <div>
+                    <h3 className="text-[17px] font-black text-[#1A1A1A] flex items-center gap-2 mb-1">
+                      <TrendingUp size={18} className="text-amber-500" /> Performance Snapshot
+                    </h3>
+                    <p className="text-[12px] font-semibold text-slate-500">
+                      Your recent activity highlights.
+                    </p>
+                  </div>
+                  <span className="flex items-center gap-1.5 rounded-full border border-red-200 bg-gradient-to-r from-white to-red-50 px-4 py-1.5 text-[11px] font-black uppercase tracking-widest text-red-600 shadow-sm transition-transform hover:scale-105">
+                    <span className="relative flex h-2.5 w-2.5">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
                     </span>
                     Live
                   </span>
                 </div>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-center transition-all hover:bg-amber-100 hover:shadow-[0_4px_12px_rgba(245,158,11,0.15)] hover:-translate-y-0.5">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600 mb-1.5">XP Earned</p>
-                  <p className="text-2xl font-black text-amber-700 tracking-tight">✨ {totalXp.toLocaleString()}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                  {/* XP Earned */}
+                  <div className="group flex items-center gap-5 rounded-3xl border border-amber-100/50 bg-gradient-to-br from-[#FFFAF0] to-amber-50 p-6 shadow-sm transition-all hover:shadow-[0_8px_30px_rgba(251,191,36,0.1)] hover:-translate-y-1">
+                    <div className="flex h-14 w-14 items-center justify-center text-4xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12">
+                      ✨
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-widest text-amber-600/80 mb-1">XP Earned</p>
+                      <p className="text-3xl font-black text-slate-800 leading-none mb-1.5">{totalXp.toLocaleString()}</p>
+                      <p className="text-[11px] font-bold text-amber-600/60">This Month</p>
+                    </div>
+                  </div>
+                  {/* Streaks */}
+                  <div className="group flex items-center gap-5 rounded-3xl border border-red-100/50 bg-gradient-to-br from-[#FFF5F5] to-red-50 p-6 shadow-sm transition-all hover:shadow-[0_8px_30px_rgba(239,68,68,0.1)] hover:-translate-y-1">
+                    <div className="flex h-14 w-14 items-center justify-center text-4xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12">
+                      🔥
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-widest text-red-600/80 mb-1">Streaks</p>
+                      <p className="text-3xl font-black text-slate-800 leading-none mb-1.5">{getDisplayStreak(user)}</p>
+                      <p className="text-[11px] font-bold text-red-600/60">Days in a row</p>
+                    </div>
+                  </div>
+                  {/* Network */}
+                  <div className="group flex items-center gap-5 rounded-3xl border border-blue-100/50 bg-gradient-to-br from-[#F0F7FF] to-blue-50 p-6 shadow-sm transition-all hover:shadow-[0_8px_30px_rgba(59,130,246,0.1)] hover:-translate-y-1">
+                    <div className="flex h-14 w-14 items-center justify-center text-4xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12">
+                      🫂
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-widest text-blue-600/80 mb-1">Network</p>
+                      <p className="text-3xl font-black text-slate-800 leading-none mb-1.5">{((user?.followers?.length ?? followers.length) + (user?.following?.length ?? following.length)).toLocaleString()}</p>
+                      <p className="text-[11px] font-bold text-blue-600/60">Total Network</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-center transition-all hover:bg-rose-100 hover:shadow-[0_4px_12px_rgba(244,63,94,0.15)] hover:-translate-y-0.5">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-rose-500 mb-1.5">Strikes</p>
-                  <p className="text-2xl font-black text-rose-600 tracking-tight">🔥 {getDisplayStreak(user)}</p>
-                </div>
-                <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-center transition-all hover:bg-blue-100 hover:shadow-[0_4px_12px_rgba(59,130,246,0.15)] hover:-translate-y-0.5">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-blue-500 mb-1.5">Network</p>
-                  <p className="text-2xl font-black text-blue-600 tracking-tight">🫂 {((user?.followers?.length ?? followers.length) + (user?.following?.length ?? following.length)).toLocaleString()}</p>
-                </div>
-              </div>
-            </section>
+              </section>
 
-            <section className="rounded-[2rem] border border-[#E8E6E0] bg-[linear-gradient(135deg,#FFFFFF_0%,#F8F9FA_100%)] p-5 shadow-sm sm:p-6 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-amber-100/60 rounded-full blur-3xl opacity-50 -mr-10 -mt-10 pointer-events-none"></div>
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-5">
-                  <h3 className="text-sm font-black uppercase tracking-wider text-[#1A1A1A] flex items-center gap-2">
-                    <Zap size={16} className="text-amber-500" /> How XP Works
-                  </h3>
-                  <span className="flex h-6 items-center rounded-full bg-amber-50 px-2.5 text-[10px] font-black text-amber-600 border border-amber-200/50">Level Up Fast</span>
+              {/* 3. How XP Works */}
+              <section className="space-y-6">
+                <div className="flex items-center justify-between px-2">
+                  <div>
+                    <h3 className="text-[17px] font-black text-[#1A1A1A] flex items-center gap-2 mb-1">
+                      <span className="text-xl">⚡️</span> How XP Works
+                    </h3>
+                    <p className="text-[12px] font-semibold text-slate-500">
+                      Complete actions and earn XP to level up faster.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowAllXpActions(!showAllXpActions)}
+                    className="flex items-center gap-1.5 rounded-full border border-amber-200/50 bg-white px-4 py-2 text-[11px] font-black text-slate-700 shadow-sm transition-all hover:scale-105 hover:bg-amber-50"
+                  >
+                    See All <ChevronRight size={14} className={clsx("transition-transform duration-300", showAllXpActions ? "-rotate-90 text-amber-500" : "rotate-90")} />
+                  </button>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {XP_ACTIONS.map((item) => (
-                    <div key={item.action} className={clsx("group flex flex-col justify-between rounded-[1.25rem] border border-[#E8E6E0] bg-white p-4 transition-all hover:-translate-y-0.5", item.borderHover, item.shadowHover)}>
-                      <div className="flex items-start justify-between mb-3">
-                        <span className={clsx("flex h-10 w-10 items-center justify-center rounded-xl transition-colors", item.iconBg, item.iconColor)}>
+                <div id="xp-actions-container"
+                  onScroll={(e) => {
+                    if (!showAllXpActions) {
+                      const scrollLeft = e.target.scrollLeft;
+                      const newIndex = Math.round(scrollLeft / 296);
+                      if (newIndex !== activeXpDot && newIndex >= 0 && newIndex <= 2) {
+                        setActiveXpDot(newIndex);
+                      }
+                    }
+                  }}
+                  className={clsx(
+                    "gap-5",
+                    showAllXpActions
+                      ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4"
+                      : "flex overflow-x-auto snap-x snap-mandatory pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                  )}>
+                  {(showAllXpActions ? XP_ACTIONS : XP_ACTIONS.slice(0, 4)).map((item) => (
+                    <div
+                      key={item.action}
+                      className={clsx(
+                        "group flex flex-col rounded-[1.5rem] border border-slate-200/60 bg-gradient-to-b from-white to-slate-50/50 p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-amber-200",
+                        !showAllXpActions && "w-[280px] shrink-0 snap-start"
+                      )}
+                    >
+                      <div className="flex items-start justify-between mb-8">
+                        <div className={clsx("flex h-14 w-14 items-center justify-center rounded-2xl shadow-sm transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6", item.iconBg)}>
                           {item.icon}
+                        </div>
+                        <span className={clsx("inline-flex items-center rounded-full px-3 py-1.5 text-[11px] font-black shadow-sm border", item.xpBg, item.xpText)}>
+                          {item.xp}
                         </span>
-                        <span className={clsx("inline-flex items-center rounded-lg px-2 py-1 text-xs font-black shadow-sm border", item.xpBg, item.xpText)}>{item.xp}</span>
                       </div>
-                      <p className="text-sm font-bold text-[#1A1A1A] leading-tight">{item.action}</p>
+                      <p className="text-[15px] font-black text-slate-800 mb-2 transition-colors group-hover:text-amber-600">{item.action}</p>
+                      <p className="text-[12px] font-semibold text-slate-500 leading-relaxed">
+                        {item.action === "Post on Explore" ? "Share a picture on Explore page" :
+                          item.action === "Create a Post" ? "Create a post on the home page" :
+                            item.action === "Connect with User" ? "Send a connection request" :
+                              "Become a part of any community"}
+                      </p>
                     </div>
                   ))}
                 </div>
-              </div>
-            </section>
+                {!showAllXpActions && (
+                  <div className="flex justify-center gap-2 pt-2">
+                    {[0, 1, 2].map((dotIndex) => (
+                      <button
+                        key={dotIndex}
+                        onClick={() => {
+                          const container = document.getElementById('xp-actions-container');
+                          if (container) {
+                            // Scroll by approximately one card width
+                            const scrollAmount = 296 * dotIndex; // 280px width + 16px gap
+                            container.scrollTo({ left: scrollAmount, behavior: 'smooth' });
+                          }
+                        }}
+                        className={clsx(
+                          "h-2.5 w-2.5 rounded-full transition-all duration-300 shadow-sm hover:scale-110",
+                          activeXpDot === dotIndex
+                            ? "bg-amber-500 w-6" // Widen the active dot for a cool shifting animation
+                            : "bg-amber-200 hover:bg-amber-400 focus:bg-amber-400"
+                        )}
+                        aria-label={`Scroll to page ${dotIndex + 1}`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
 
-            <section className="rounded-[2rem] border border-[#D9B45D]/30 bg-[linear-gradient(180deg,#FFFFFF_0%,#FFF9EF_100%)] p-5 shadow-[0_8px_30px_rgba(200,146,42,0.06)] sm:p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-                <div>
-                  <h3 className="text-sm font-black uppercase tracking-wider text-[#1A1A1A] flex items-center gap-2">
-                    <Trophy size={16} className="text-[#C8922A]" /> Achievements & Badges
-                  </h3>
-                  <p className="mt-1 text-xs font-semibold text-[#6B6B6B]">Unlock exclusive profile badges by participating in the community.</p>
+              {/* 4. Achievements & Badges */}
+              <section id="achievements-section" className="space-y-6 scroll-mt-24">
+                <div className="flex items-center justify-between px-2">
+                  <div>
+                    <h3 className="text-[17px] font-black text-[#1A1A1A] flex items-center gap-2 mb-1">
+                      <span className="text-xl">🏆</span> Achievements & Badges
+                    </h3>
+                    <p className="text-[12px] font-semibold text-slate-500">
+                      Unlock exclusive profile badges by participating in the community.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-full border border-amber-200/50 bg-white px-4 py-2 shadow-sm transition-transform hover:scale-105">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-slate-800 flex items-center gap-2">
+                      PROGRESS <span className="rounded-full bg-gradient-to-r from-amber-400 to-orange-400 px-2.5 py-0.5 text-white shadow-sm">{earnedBadges.filter(badge => badge.earned).length} / {earnedBadges.length}</span>
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0 bg-white border border-[#E8E6E0] rounded-full p-1 pl-3 shadow-sm">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-[#6B6B6B]">
-                    Progress
-                  </span>
-                  <span className="rounded-full bg-[#C8922A] px-2.5 py-1 text-[10px] font-black text-white">
-                    {earnedBadges.filter(badge => badge.earned).length} / {earnedBadges.length}
-                  </span>
-                </div>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {earnedBadges.map((badge) => (
-                  <div
-                    key={badge.id}
-                    title={badge.condition}
-                    className={clsx(
-                      "group relative overflow-hidden rounded-[1.5rem] border p-4 transition-all duration-300",
-                      badge.earned
-                        ? "border-[#D9B45D]/40 bg-white shadow-[0_10px_30px_rgba(200,146,42,0.12)] hover:shadow-[0_14px_40px_rgba(200,146,42,0.2)] hover:-translate-y-1 z-10"
-                        : "border-[#E8E6E0] bg-white/60 opacity-80 hover:opacity-100 hover:bg-white"
-                    )}
-                  >
-                    {badge.earned && (
-                      <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[#C8922A]/10 blur-2xl transition-all group-hover:bg-[#C8922A]/20" />
-                    )}
-                    <div className="relative z-10 flex items-start gap-4">
-                      <div className={clsx(
-                        "h-16 w-16 shrink-0 overflow-hidden rounded-[1.25rem] border-[3px] bg-[#111827] shadow-sm transition-transform duration-300 group-hover:scale-[1.03]",
-                        badge.earned ? "border-[#D9B45D]/40" : "border-[#E8E6E0] grayscale opacity-50"
-                      )}>
-                        <img
-                          src={badge.image}
-                          alt={badge.name}
-                          className={clsx("h-full w-full object-cover", !badge.earned && "opacity-40")}
-                        />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-2 mb-1">
-                          <p className={clsx("font-black truncate text-sm", badge.earned ? "text-[#1A1A1A]" : "text-[#4A4A4A]")}>{badge.name}</p>
-                          <span className={clsx(
-                            "rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider shrink-0 shadow-sm",
-                            badge.earned ? "bg-gradient-to-r from-amber-100 to-emerald-50 text-emerald-700 border border-emerald-200/50" : "bg-[#F3F2EE] text-[#888888] border border-[#E8E6E0]"
+                <div className="flex gap-5 overflow-x-auto snap-x snap-mandatory pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-1">
+                  {(showAllBadges ? earnedBadges : earnedBadges.slice(0, 4)).map((badge) => (
+                    <div
+                      key={badge.id}
+                      className={clsx(
+                        "group relative w-[280px] shrink-0 snap-start overflow-hidden rounded-[1.5rem] border p-6 transition-all duration-300",
+                        badge.earned
+                          ? "border-amber-200 bg-gradient-to-br from-white to-amber-50/30 shadow-[0_4px_20px_rgba(251,191,36,0.08)] hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(251,191,36,0.15)]"
+                          : "border-slate-200/70 bg-white/40 backdrop-blur-md opacity-90 hover:opacity-100"
+                      )}
+                    >
+                      <div className="relative z-10 flex flex-col h-full justify-between">
+                        <div className="flex items-start gap-4 mb-5">
+                          <div className={clsx(
+                            "flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-[1.2rem] transition-transform duration-500 group-hover:scale-110",
+                            badge.earned ? "bg-gradient-to-br from-[#0A1128] to-[#1a2b5e] border-[3px] border-amber-400/30 p-2 shadow-md" : "bg-[#0A1128] border-2 border-slate-700/50 p-2 grayscale opacity-70"
                           )}>
-                            {badge.earned ? "Unlocked" : "Locked"}
-                          </span>
-                        </div>
-                        <p className="text-xs font-semibold text-[#6B6B6B] leading-tight mb-3">{badge.condition}</p>
-                        <div className="flex flex-col gap-1.5">
-                          <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
-                            <span className={badge.earned ? "text-[#C8922A]" : "text-[#888888]"}>Progress</span>
-                            <span className="text-[#1A1A1A]">{Math.min(badge.progress, badge.target).toLocaleString()} / {badge.target.toLocaleString()}</span>
+                            <img
+                              src={badge.image}
+                              alt={badge.name}
+                              className={clsx("h-full w-full object-contain filter", badge.earned && "drop-shadow-[0_0_12px_rgba(251,191,36,0.4)]")}
+                            />
                           </div>
-                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#F3F2EE]">
-                            <div 
-                              className={clsx("h-full rounded-full transition-all duration-1000", badge.earned ? "bg-gradient-to-r from-[#C8922A] to-amber-400" : "bg-[#D1D1D1]")}
+                          <div className="min-w-0 flex-1 flex flex-col items-end">
+                            <span className={clsx(
+                              "rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-widest shadow-sm mb-2 transition-colors",
+                              badge.earned ? "bg-emerald-50 text-emerald-600 border border-emerald-200 group-hover:bg-emerald-100" : "bg-slate-100 text-slate-500 border border-slate-200"
+                            )}>
+                              {badge.earned ? "UNLOCKED" : "LOCKED"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="mb-5">
+                          <p className={clsx("font-black truncate text-[15px] mb-1.5 transition-colors", badge.earned ? "text-slate-800 group-hover:text-amber-600" : "text-slate-500")}>{badge.name}</p>
+                          <p className="text-[11px] font-semibold text-slate-500 leading-relaxed">{badge.condition}</p>
+                        </div>
+
+                        <div className="mt-auto">
+                          <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200/80 mb-2 shadow-inner">
+                            <div
+                              className={clsx("h-full rounded-full transition-all duration-1000", badge.earned ? "bg-gradient-to-r from-amber-400 to-orange-400" : "bg-slate-300")}
                               style={{ width: `${Math.min(100, (badge.progress / badge.target) * 100)}%` }}
                             />
+                          </div>
+                          <div className="flex items-center justify-end">
+                            <span className="text-[11px] font-black text-slate-500">{Math.min(badge.progress, badge.target).toLocaleString()} / {badge.target.toLocaleString()}</span>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </section>
+                  ))}
+                </div>
 
-            <section className="rounded-[2rem] border border-[#D9B45D]/30 bg-white p-5 shadow-sm sm:p-6 overflow-hidden relative">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-amber-100 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
-              <div className="absolute bottom-0 left-0 w-40 h-40 bg-orange-50 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
-              
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-sm font-black uppercase tracking-wider text-[#1A1A1A] flex items-center gap-2">
-                    <Award size={16} className="text-[#C8922A]" /> XP Tiers
-                  </h3>
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-6 items-center rounded-full bg-[#FFF8EC] px-3 text-[10px] font-black text-[#C8922A] border border-[#D9B45D]/30 shadow-sm">
-                      Current: {totalXp.toLocaleString()} XP
+                <div className="flex justify-center mt-2">
+                  <button
+                    onClick={() => setShowAllBadges(!showAllBadges)}
+                    className="flex items-center gap-2 rounded-full border border-[#E8E6E0] bg-[#FFFAF0] px-5 py-2 text-[11px] font-black text-[#1A1A1A] transition-colors hover:bg-amber-50"
+                  >
+                    View All Achievements <ChevronRight size={14} />
+                  </button>
+                </div>
+              </section>
+
+              {/* 5. XP Tiers */}
+              <section className="space-y-6">
+                <div className="flex items-center justify-between px-2">
+                  <div>
+                    <h3 className="text-[17px] font-black text-[#1A1A1A] flex items-center gap-2 mb-1">
+                      <span className="text-xl">👑</span> XP Tiers
+                    </h3>
+                    <p className="text-[12px] font-semibold text-slate-500">
+                      Climb the tiers and unlock new rewards.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-full border border-amber-200/50 bg-gradient-to-r from-amber-50 to-orange-50/50 px-4 py-1.5 shadow-sm transition-transform hover:scale-105">
+                    <span className="text-[11px] font-black text-amber-700">
+                      Current: <span className="text-amber-600">{totalXp.toLocaleString()} XP</span>
                     </span>
                   </div>
                 </div>
-                
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                   {XP_TIERS.map((tier) => {
                     const reached = totalXp >= tier.xp;
                     const inProgress = nextTick?.id === tier.id;
+
+                    let tierStyles = {
+                      gradient: "from-amber-200/40 to-yellow-400/40 border-amber-300 shadow-[0_4px_15px_rgba(251,191,36,0.15)]",
+                      text: "text-amber-700",
+                      progressBg: "bg-gradient-to-r from-amber-400 to-yellow-500",
+                      iconRing: "border-amber-400/50 shadow-[0_0_15px_rgba(251,191,36,0.3)]",
+                      inProgressGradient: "from-amber-50 to-white border-amber-200"
+                    };
+
+                    if (tier.id === "silver") {
+                      tierStyles = {
+                        gradient: "from-slate-200/60 to-slate-300/60 border-slate-300 shadow-[0_4px_15px_rgba(148,163,184,0.15)]",
+                        text: "text-slate-700",
+                        progressBg: "bg-gradient-to-r from-slate-400 to-slate-500",
+                        iconRing: "border-slate-400/50 shadow-[0_0_15px_rgba(148,163,184,0.3)]",
+                        inProgressGradient: "from-slate-50 to-white border-slate-200"
+                      };
+                    } else if (tier.id === "purple") {
+                      tierStyles = {
+                        gradient: "from-purple-200/40 to-purple-300/40 border-purple-300 shadow-[0_4px_15px_rgba(168,85,247,0.15)]",
+                        text: "text-purple-700",
+                        progressBg: "bg-gradient-to-r from-purple-400 to-purple-500",
+                        iconRing: "border-purple-400/50 shadow-[0_0_15px_rgba(168,85,247,0.3)]",
+                        inProgressGradient: "from-purple-50 to-white border-purple-200"
+                      };
+                    } else if (tier.id === "orange") {
+                      tierStyles = {
+                        gradient: "from-orange-200/40 to-orange-300/40 border-orange-300 shadow-[0_4px_15px_rgba(249,115,22,0.15)]",
+                        text: "text-orange-700",
+                        progressBg: "bg-gradient-to-r from-orange-400 to-orange-500",
+                        iconRing: "border-orange-400/50 shadow-[0_0_15px_rgba(249,115,22,0.3)]",
+                        inProgressGradient: "from-orange-50 to-white border-orange-200"
+                      };
+                    } else if (tier.id === "gold") {
+                      tierStyles = {
+                        gradient: "from-amber-200/60 to-yellow-400/60 border-yellow-400 shadow-[0_4px_20px_rgba(234,179,8,0.2)]",
+                        text: "text-yellow-700",
+                        progressBg: "bg-gradient-to-r from-amber-400 to-yellow-500",
+                        iconRing: "border-yellow-400/60 shadow-[0_0_20px_rgba(234,179,8,0.4)]",
+                        inProgressGradient: "from-yellow-50 to-white border-yellow-200"
+                      };
+                    }
+
                     return (
-                      <div 
-                        key={tier.id} 
+                      <div
+                        key={tier.id}
                         className={clsx(
-                          "group relative overflow-hidden rounded-[1.25rem] border p-4 transition-all duration-300",
-                          reached ? "border-[#D9B45D]/50 bg-white shadow-md hover:-translate-y-0.5 hover:shadow-lg" : inProgress ? "border-[#D9B45D]/30 bg-[#F9F8F5] shadow-sm hover:bg-white" : "border-[#E8E6E0] bg-[#F9F8F5] opacity-80 grayscale hover:grayscale-0 hover:opacity-100"
+                          "group relative flex flex-col overflow-hidden rounded-[1.5rem] border p-6 transition-all duration-500",
+                          reached ? `bg-gradient-to-br ${tierStyles.gradient} hover:-translate-y-1 hover:scale-[1.02]`
+                            : inProgress ? `bg-gradient-to-br ${tierStyles.inProgressGradient} shadow-sm hover:-translate-y-1`
+                              : "border-slate-200/60 bg-white/40 backdrop-blur-sm opacity-80 hover:opacity-100"
                         )}
                       >
-                        {reached && (
-                          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl -mr-12 -mt-12 transition-all group-hover:bg-amber-500/20"></div>
-                        )}
-                        <div className="relative z-10 flex flex-col gap-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                              <div className={clsx(
-                                "flex h-16 w-16 shrink-0 overflow-hidden items-center justify-center rounded-2xl shadow-sm transition-transform duration-300 group-hover:scale-110 group-hover:shadow-lg",
-                                reached ? "border-2 border-[#D9B45D]/50 bg-black/5" : inProgress ? "border border-[#E8E6E0] bg-black/5" : "opacity-40 grayscale"
-                              )}>
-                                <img src={tier.icon} alt={tier.label} className="w-full h-full object-cover" />
-                              </div>
-                              <div>
-                                <p className={clsx("text-sm font-black leading-tight mb-0.5", reached ? "text-[#1A1A1A]" : "text-[#4A4A4A]")}>{tier.label}</p>
-                                <p className="text-[9px] font-bold uppercase tracking-widest text-[#888888]">{tier.xp.toLocaleString()} XP required</p>
-                              </div>
-                            </div>
-                            {reached ? (
-                              <span className="flex items-center justify-center h-6 w-6 rounded-full bg-emerald-100 text-emerald-600 shadow-sm border border-emerald-200">
-                                <Check size={12} strokeWidth={4} />
-                              </span>
-                            ) : inProgress ? (
-                              <span className="rounded-full bg-[#FFF8EC] px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-[#C8922A] border border-[#D9B45D]/30 shadow-sm">
-                                In Progress
-                              </span>
-                            ) : (
-                              <span className="rounded-full bg-white px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-[#888888] border border-[#E8E6E0]">
-                                Locked
-                              </span>
-                            )}
+                        <div className="flex items-center gap-4 mb-6">
+                          <div className={clsx(
+                            "flex h-14 w-14 shrink-0 items-center justify-center rounded-[1.2rem] transition-all duration-500 overflow-hidden",
+                            reached ? `bg-[#0A1128] border-[3px] ${tierStyles.iconRing} group-hover:rotate-[10deg]` 
+                              : inProgress ? "bg-[#0A1128] border-[3px] border-amber-400/40 shadow-[0_0_15px_rgba(251,191,36,0.3)] group-hover:scale-110" 
+                              : "bg-[#0A1128] border-2 border-slate-700/50 grayscale opacity-60"
+                          )}>
+                            <img src={tier.icon} alt={tier.label} className={clsx("w-full h-full object-contain filter scale-[1.25]", reached && "drop-shadow-[0_0_15px_rgba(251,191,36,0.5)]")} />
                           </div>
-                          
-                          <div className="flex flex-col gap-1.5 mt-2">
-                            <div className="h-1.5 overflow-hidden rounded-full bg-[#F3F2EE]">
-                              <div
-                                className={clsx(
-                                  "h-full rounded-full transition-all duration-1000", 
-                                  reached ? "bg-emerald-500" : "bg-gradient-to-r from-amber-400 to-amber-500"
-                                )}
-                                style={{ width: `${reached ? 100 : inProgress ? nextTickProgress : 0}%` }}
-                              />
+                          <div className="flex-1">
+                            <div className="flex flex-col items-start gap-1">
+                              <div className="flex items-center justify-between w-full">
+                                <p className={clsx("text-[15px] font-black leading-none", reached ? tierStyles.text : inProgress ? "text-slate-800" : "text-slate-500")}>{tier.label}</p>
+                              </div>
+                              <p className={clsx("text-[10px] font-bold uppercase tracking-widest", reached ? "text-slate-600/80" : "text-slate-400")}>{tier.xp.toLocaleString()} XP REQ</p>
                             </div>
-                            {inProgress && (
-                              <p className="text-right text-[9px] font-bold uppercase tracking-widest text-[#888888]">
-                                {totalXp.toLocaleString()} / {tier.xp.toLocaleString()} XP
-                              </p>
-                            )}
                           </div>
+                        </div>
+
+                        <div className="mt-auto">
+                          {reached ? (
+                            <>
+                              <div className="h-2 w-full overflow-hidden rounded-full bg-white/50 mb-2 shadow-inner">
+                                <div className={`h-full w-full rounded-full ${tierStyles.progressBg}`}></div>
+                              </div>
+                              <p className={clsx("text-[11px] font-black text-center", tierStyles.text)}>COMPLETED</p>
+                            </>
+                          ) : inProgress ? (
+                            <>
+                              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200/80 mb-2 shadow-inner">
+                                <div
+                                  className={clsx("h-full rounded-full transition-all duration-1000", tierStyles.progressBg)}
+                                  style={{ width: `${nextTickProgress}%` }}
+                                />
+                              </div>
+                              <p className="text-[11px] font-black text-slate-600 text-center">{totalXp.toLocaleString()} / {tier.xp.toLocaleString()} XP</p>
+                            </>
+                          ) : (
+                            <div className="flex justify-center mt-2 group-hover:scale-110 transition-transform duration-300">
+                              <Lock size={18} className="text-slate-300" />
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
                   })}
                 </div>
-              </div>
-            </section>
-          </div>
-        )}
+              </section>
+            </div>
+          )}
         </div>{/* end Tab Navigation + Content */}
       </div>{/* end max-w-4xl */}
 
@@ -1358,14 +1774,14 @@ export default function ProfilePage() {
       <AnimatePresence>
         {/* Followers/Following Modal */}
         {(modal === "followers" || modal === "following") && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-3 backdrop-blur-sm sm:p-4"
             onClick={() => setModal(null)}
           >
-            <motion.div 
+            <motion.div
               initial={{ y: 100 }}
               animate={{ y: 0 }}
               exit={{ y: 100 }}
@@ -1384,9 +1800,9 @@ export default function ProfilePage() {
                     <div key={i} className="flex items-center justify-between p-3 hover:bg-[#F3F2EE] rounded-[2rem] transition-all">
                       <div className="flex items-center space-x-3">
                         <div className="w-12 h-12 rounded-full p-[1.5px] gradient-bg">
-                          <img 
-                            src={getAvatarSrc(f.profilePic, f.name, f._id || f.id)} 
-                            className="w-full h-full rounded-full object-cover border-2 border-[#0A0A0F]" 
+                          <img
+                            src={getAvatarSrc(f.profilePic, f.name, f._id || f.id)}
+                            className="w-full h-full rounded-full object-cover border-2 border-[#0A0A0F]"
                           />
                         </div>
                         <div>
@@ -1395,7 +1811,7 @@ export default function ProfilePage() {
                         </div>
                       </div>
                       {modal === "following" && (
-                        <button 
+                        <button
                           onClick={() => handleUnfollow(f._id)}
                           disabled={unfollowingId === f._id}
                           className="px-4 py-2 bg-[#F9F8F5] border border-[#E8E6E0] rounded-xl text-[10px] font-black uppercase text-red-400 border border-red-500/10 disabled:opacity-50"
@@ -1413,14 +1829,14 @@ export default function ProfilePage() {
 
         {/* Edit Modal */}
         {modal === "edit" && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-3 backdrop-blur-sm sm:p-4"
             onClick={() => setModal(null)}
           >
-            <motion.div 
+            <motion.div
               initial={{ y: 100 }}
               animate={{ y: 0 }}
               exit={{ y: 100 }}
@@ -1432,7 +1848,7 @@ export default function ProfilePage() {
                 <button onClick={() => setModal(null)} className="p-2 bg-[#F9F8F5] border border-[#E8E6E0] rounded-full text-[#6B6B6B]"><X size={20} /></button>
               </div>
               <div className="max-h-[72dvh] space-y-6 overflow-y-auto p-5 custom-scrollbar sm:max-h-[70vh] sm:p-6">
-                
+
                 <div className="flex flex-col items-center justify-center space-y-4 mb-4 mt-2">
                   <div className="relative w-24 h-24 rounded-full border-4 border-white shadow-lg overflow-hidden bg-[#F9F8F5]">
                     {editData.profilePic ? (
@@ -1509,7 +1925,7 @@ export default function ProfilePage() {
                         <option key={state} value={state} className="bg-[#0A0A0F]">{state}</option>
                       ))}
                     </select>
-                    
+
                     <select
                       value={editData.hometownDistrict}
                       onChange={e => setEditData({ ...editData, hometownDistrict: e.target.value })}
@@ -1519,8 +1935,8 @@ export default function ProfilePage() {
                       <option value="" className="bg-[#0A0A0F]">Select District</option>
                       {editData.hometownState && indiaStatesDistricts[editData.hometownState]
                         ? indiaStatesDistricts[editData.hometownState].sort().map(dist => (
-                            <option key={dist} value={dist} className="bg-[#0A0A0F]">{dist}</option>
-                          ))
+                          <option key={dist} value={dist} className="bg-[#0A0A0F]">{dist}</option>
+                        ))
                         : null}
                     </select>
                   </div>
@@ -1596,14 +2012,14 @@ export default function ProfilePage() {
                   </div>
                   {editData.phone && editData.phone.length >= 10 && (
                     <div className="flex justify-center gap-3 mt-3">
-                      <button 
-                        onClick={() => setEditData({...editData, phonePrivacy: 'public'})}
+                      <button
+                        onClick={() => setEditData({ ...editData, phonePrivacy: 'public' })}
                         className={`px-5 py-2 text-xs font-black rounded-xl border transition-all ${editData.phonePrivacy === 'public' ? 'bg-green-500 border-green-600 text-white shadow-md' : 'bg-white border-[#E8E6E0] text-[#1A1A1A] hover:bg-[#F9F8F5]'}`}
                       >
                         PUBLIC
                       </button>
-                      <button 
-                        onClick={() => setEditData({...editData, phonePrivacy: 'private'})}
+                      <button
+                        onClick={() => setEditData({ ...editData, phonePrivacy: 'private' })}
                         className={`px-5 py-2 text-xs font-black rounded-xl border transition-all ${editData.phonePrivacy === 'private' ? 'bg-green-500 border-green-600 text-white shadow-md' : 'bg-white border-[#E8E6E0] text-[#1A1A1A] hover:bg-[#F9F8F5]'}`}
                       >
                         PRIVATE
@@ -1695,14 +2111,14 @@ export default function ProfilePage() {
 
         {/* Post Detail Modal */}
         {modal === "post" && activePostIndex !== null && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-end justify-center bg-black/95 p-3 backdrop-blur-xl sm:items-center sm:p-4"
             onClick={() => setModal(null)}
           >
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
@@ -1717,61 +2133,99 @@ export default function ProfilePage() {
                   </div>
                   <div>
                     <p className="text-sm font-black text-[#1A1A1A]"><NameWithTick name={user.name} tick={user.currentTick} user={user} /></p>
-                    <p className="text-[10px] text-[#6B6B6B] font-bold uppercase">Memories</p>
+                    <p className="text-[10px] text-[#6B6B6B] font-bold uppercase">POST</p>
                   </div>
                 </div>
                 <button onClick={() => setModal(null)} className="p-2 bg-[#F9F8F5] border border-[#E8E6E0] rounded-full text-[#6B6B6B]"><X size={20} /></button>
               </div>
 
-              {/* Post Image */}
-              <div className="relative aspect-square">
-                 <img src={userPosts[activePostIndex].img} className="w-full h-full object-cover" />
-                 {/* Navigation buttons */}
-                 <div className="absolute inset-y-0 left-0 flex items-center px-2">
-                   <button onClick={(e) => { e.stopPropagation(); if(activePostIndex > 0) setActivePostIndex(activePostIndex-1); }} className="p-2 bg-[#F9F8F5] border border-[#E8E6E0] rounded-full text-[#6B6B6B] hover:text-[#1A1A1A]"><ChevronLeft size={20}/></button>
-                 </div>
-                 <div className="absolute inset-y-0 right-0 flex items-center px-2">
-                   <button onClick={(e) => { e.stopPropagation(); if(activePostIndex < userPosts.length-1) setActivePostIndex(activePostIndex+1); }} className="p-2 bg-[#F9F8F5] border border-[#E8E6E0] rounded-full text-[#6B6B6B] hover:text-[#1A1A1A]"><ChevronRight size={20}/></button>
-                 </div>
+              {/* Media or Text Content */}
+              <div className="relative flex-1 bg-[#F9F8F5] min-h-[300px] overflow-y-auto custom-scrollbar flex flex-col">
+                {userPosts[activePostIndex].mediaType !== 'none' && userPosts[activePostIndex].img ? (
+                  <div className="flex-1 flex items-center justify-center">
+                    <img src={userPosts[activePostIndex].img} className="w-full h-full object-cover max-h-[60vh]" />
+                  </div>
+                ) : (
+                  <div className="p-8 text-center w-full flex-1 flex flex-col min-h-full">
+                    <p className="text-2xl sm:text-3xl font-black text-[#1A1A1A] leading-relaxed break-words my-auto">
+                      {userPosts[activePostIndex].content}
+                    </p>
+                  </div>
+                )}
+                {/* Navigation buttons */}
+                <div className="absolute inset-y-0 left-0 flex items-center px-2">
+                  <button onClick={(e) => { e.stopPropagation(); if (activePostIndex > 0) setActivePostIndex(activePostIndex - 1); }} className="p-2 bg-white/80 backdrop-blur border border-[#E8E6E0] rounded-full text-[#6B6B6B] hover:text-[#1A1A1A]"><ChevronLeft size={20} /></button>
+                </div>
+                <div className="absolute inset-y-0 right-0 flex items-center px-2">
+                  <button onClick={(e) => { e.stopPropagation(); if (activePostIndex < userPosts.length - 1) setActivePostIndex(activePostIndex + 1); }} className="p-2 bg-white/80 backdrop-blur border border-[#E8E6E0] rounded-full text-[#6B6B6B] hover:text-[#1A1A1A]"><ChevronRight size={20} /></button>
+                </div>
               </div>
 
               {/* Post Actions */}
               <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
                 <div className="flex items-center justify-between">
                   <div className="flex space-x-4">
-                    <Heart size={24} className={clsx("cursor-pointer transition-all", userPosts[activePostIndex].isLiked ? "text-red-500 fill-red-500 scale-110" : "text-[#6B6B6B] hover:text-red-500")} />
-                    <MessageCircle size={24} className="text-[#6B6B6B] hover:text-[#C8922A]" />
-                    <Send size={24} className="text-[#6B6B6B] hover:text-[#C8922A]" />
+                    <Heart size={24} onClick={handlePostLike} className={clsx("cursor-pointer transition-all", userPosts[activePostIndex].isLiked ? "text-red-500 fill-red-500 scale-110" : "text-[#6B6B6B] hover:text-red-500")} />
+                    <MessageCircle size={24} onClick={() => document.getElementById('comment-input').focus()} className="cursor-pointer text-[#6B6B6B] hover:text-[#C8922A]" />
+                    <Send size={24} onClick={() => { setModal(null); setShareModalPost(userPosts[activePostIndex]); }} className="cursor-pointer text-[#6B6B6B] hover:text-[#C8922A]" />
                   </div>
-                  <div className="text-xs font-black text-[#6B6B6B] uppercase tracking-widest">{userPosts[activePostIndex].likes} Vibes</div>
+                  <div className="text-xs font-black text-[#1A1A1A] uppercase tracking-widest">{userPosts[activePostIndex].likes} Vibes</div>
                 </div>
-                
+
                 <div className="space-y-4">
-                   <p className="text-sm text-[#4A4A4A] leading-relaxed font-medium">
-                     <span className="font-black mr-2"><NameWithTick name={user.name} tick={user.currentTick} user={user} /></span>
-                     {userPosts[activePostIndex].content || "No caption provided."}
-                   </p>
-                   
-                   <div className="space-y-3 pt-4 border-t border-[#E8E6E0]">
-                      {userPosts[activePostIndex].commentsList.map(c => (
-                        <div key={c.id} className="flex items-start space-x-2 text-sm">
-                          <span className="font-black text-[#1A1A1A] whitespace-nowrap">{c.author}</span>
-                          <span className="text-[#6B6B6B]">{c.text}</span>
+                  {!!userPosts[activePostIndex].img && userPosts[activePostIndex].content && (
+                    <p className="text-sm text-[#4A4A4A] leading-relaxed font-medium">
+                      <span className="font-black mr-2"><NameWithTick name={user.name} tick={user.currentTick} user={user} /></span>
+                      {userPosts[activePostIndex].content}
+                    </p>
+                  )}
+                  {/* Comments Section Header */}
+                  <div className="flex items-center justify-between pt-6 border-t border-[#E8E6E0]/50">
+                    <h4 className="text-sm font-black text-[#1A1A1A]">Comments ({userPosts[activePostIndex].commentsList.length})</h4>
+                    <button className="flex items-center space-x-1 text-[10px] font-bold text-[#6B6B6B]">
+                      <span>Latest</span>
+                      <ChevronRight size={12} className="rotate-90" />
+                    </button>
+                  </div>
+
+                  {/* Comments List */}
+                  <div className="space-y-4">
+                    {userPosts[activePostIndex].commentsList.map(c => (
+                      <div key={c.id} className="flex items-start space-x-3">
+                        <img src={c.profilePic || getAvatarSrc(null, c.author, c.id)} className="w-8 h-8 rounded-full object-cover border border-[#E8E6E0]" alt="" />
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start">
+                            <div className="bg-[#F5F5F5] rounded-2xl rounded-tl-none px-4 py-3 relative max-w-[90%]">
+                              <div className="flex items-center space-x-2 mb-1">
+                                <span className="font-black text-[#1A1A1A] text-xs">{c.author}</span>
+                                <span className="text-[10px] font-medium text-[#888888]">
+                                  {c.createdAt ? formatDistanceToNow(new Date(c.createdAt), { addSuffix: true }) : 'just now'}
+                                </span>
+                              </div>
+                              <p className="text-[#1A1A1A] text-xs font-medium leading-relaxed">{c.text}</p>
+                            </div>
+                            <button className="p-2 text-[#888888] hover:text-[#1A1A1A]"><MoreVertical size={14} /></button>
+                          </div>
                         </div>
-                      ))}
-                   </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
               {/* Add Comment Input */}
-              <div className="p-4 bg-[#F9F8F5] border border-[#E8E6E0]-panel border-t border-[#E8E6E0] flex items-center space-x-3">
-                 <input 
-                  value={commentInput}
-                  onChange={e => setCommentInput(e.target.value)}
-                  placeholder="Drop a vibe..."
-                  className="flex-1 bg-transparent text-sm text-[#1A1A1A] focus:outline-none font-medium"
-                 />
-                 <button className="text-[#C8922A] font-black uppercase text-[10px] tracking-widest">Post</button>
+              <div className="p-4 bg-white border-t border-[#E8E6E0]/50 flex items-center space-x-3">
+                <div className="flex-1 bg-[#F9F8F5] border border-[#E8E6E0] rounded-full flex items-center px-4 py-2">
+                  <input
+                    id="comment-input"
+                    value={commentInput}
+                    onChange={e => setCommentInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && submitPostComment()}
+                    placeholder="Add a comment..."
+                    className="flex-1 bg-transparent text-sm text-[#1A1A1A] focus:outline-none font-medium placeholder:text-[#888888]"
+                  />
+                </div>
+                <button onClick={submitPostComment} disabled={!commentInput.trim()} className="bg-[#C8922A] text-white px-5 py-2 rounded-full font-black text-xs hover:bg-[#B07B1E] disabled:opacity-50 transition-colors">Post</button>
               </div>
             </motion.div>
           </motion.div>
@@ -2004,6 +2458,46 @@ export default function ProfilePage() {
           </motion.div>
         )}
 
+        {/* Share Modal */}
+        {shareModalPost && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            onClick={() => setShareModalPost(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden flex flex-col max-h-[80vh]"
+            >
+              <div className="p-6 border-b border-[#E8E6E0] flex justify-between items-center">
+                <h3 className="text-lg font-black text-[#1A1A1A]">Share with Connection</h3>
+                <button onClick={() => setShareModalPost(null)} className="p-2 bg-[#F9F8F5] rounded-full text-[#6B6B6B]"><X size={20} /></button>
+              </div>
+              <div className="p-4 overflow-y-auto custom-scrollbar flex-1 space-y-4">
+                {connections.length === 0 ? (
+                  <p className="text-center text-sm font-bold text-[#888888] py-8">No connections found to share with.</p>
+                ) : (
+                  connections.map(conn => (
+                    <div key={conn._id || conn.id} className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <img src={conn.profilePic || getAvatarSrc(conn)} className="w-10 h-10 rounded-full object-cover border border-[#E8E6E0]" />
+                        <span className="text-sm font-black text-[#1A1A1A]"><NameWithTick name={conn.name} tick={conn.currentTick} user={conn} /></span>
+                      </div>
+                      <button
+                        onClick={() => handleShareToConnection(conn, shareModalPost)}
+                        disabled={shareSending[conn._id || conn.id]}
+                        className="px-4 py-2 bg-[#C8922A] text-white rounded-full text-[10px] font-black uppercase tracking-widest disabled:opacity-50"
+                      >
+                        {shareSending[conn._id || conn.id] ? "Sent" : "Send"}
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );
