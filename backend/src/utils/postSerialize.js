@@ -37,18 +37,24 @@ export const slimPoll = (poll, userId) => {
   };
 };
 
-export const slimComments = (comments = []) => {
-  return comments.slice(-5).map((comment) => ({
-    _id: comment._id,
-    text: comment.text,
-    createdAt: comment.createdAt,
-    user: comment.user
-      ? {
-          _id: comment.user._id || comment.user,
-          name: comment.user.name || 'Student'
-        }
-      : null
-  }));
+export const slimComments = (comments = [], userId) => {
+  const uid = toIdString(userId);
+  return comments.slice(-5).map((comment) => {
+    const likes = comment.likes || [];
+    return {
+      _id: comment._id,
+      text: comment.text,
+      createdAt: comment.createdAt,
+      likesCount: likes.length,
+      likedByMe: uid ? likes.some((id) => toIdString(id) === uid) : false,
+      user: comment.user
+        ? {
+            _id: comment.user._id || comment.user,
+            name: comment.user.name || 'Student'
+          }
+        : null
+    };
+  });
 };
 
 export const resolveMediaUrl = (post) => {
@@ -77,7 +83,7 @@ export const slimPost = (post, userId) => {
     likesCount: likes.length,
     likedByMe: likes.some((id) => toIdString(id) === uid),
     commentsCount: comments.length,
-    comments: slimComments(comments),
+    comments: slimComments(comments, userId),
     poll: slimPoll(post.poll, userId),
     isMemoryOnly: post.isMemoryOnly || false
   };

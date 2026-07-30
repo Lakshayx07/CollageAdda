@@ -1,13 +1,19 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Heart, MessageCircle, Share2, MoreVertical, Send, X, Check, Plus, Flame, TrendingUp, Search, Zap, BarChart2, Compass, ShieldCheck, Flag, Globe, GraduationCap, ChevronLeft, ChevronRight, Users, Trophy, Sun, Sunset, Moon, Pause, Play } from "lucide-react";
+import { Heart, MessageCircle, Share2, MoreVertical, Send, X, Check, Plus, Flame, TrendingUp, Search, Zap, BarChart2, Compass, ShieldCheck, Flag, Globe, GraduationCap, ChevronLeft, ChevronRight, Users, Trophy, Sun, Sunset, Moon, Pause, Play, Bookmark, Smile, Image as ImageIcon, Video } from "lucide-react";
 import Image from "next/image";
 import NotificationBell from "../../components/NotificationBell";
+import TopNav from "../../components/TopNav";
 import NameWithTick from '../../components/NameWithTick';
 
 import CampusLeaderboard from "../../components/CampusLeaderboard";
+import { Button } from "../../components/ui/Button";
+import { IconButton } from "../../components/ui/IconButton";
+import { Card } from "../../components/ui/Card";
+import { Input } from "../../components/ui/Input";
+import FAB from "../../components/FAB";
 import clsx from "clsx";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -33,6 +39,7 @@ export default function Home() {
   const [postMenu, setPostMenu] = useState(null);
   const [shareSearchTerm, setShareSearchTerm] = useState("");
   const [toastMsg, setToastMsg] = useState("");
+  const [isMobileCreateOpen, setIsMobileCreateOpen] = useState(false);
   const [newPostContent, setNewPostContent] = useState("");
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [selectedMediaFile, setSelectedMediaFile] = useState(null);
@@ -92,6 +99,41 @@ export default function Home() {
   const [selectedGradient, setSelectedGradient] = useState("from-orange-500 via-rose-500 to-[#D4A843]");
   const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001').trim();
 
+  // Real-time character-by-character typing animation for Create Post input
+  const placeholderTexts = useMemo(() => [
+    "What's happening on your campus today?",
+    "Got any college tea to spill? ☕️",
+    "Any upcoming fests or events?",
+    "How are you balancing studies and personal life?",
+    "Who's winning the inter-college sports tournament? 🏆",
+    "Share your campus hack for the day!",
+    "What's your dream car right now? 🏎️",
+    "Ask a question to your seniors...",
+    "Looking for project collaborators?",
+    "Late night thoughts or early morning hustle?",
+    "What's the best spot to hang out today?"
+  ], []);
+  
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [typedCharCount, setTypedCharCount] = useState(0);
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const placeholderTextToType = placeholderTexts[placeholderIndex];
+
+  useEffect(() => {
+    let timeout;
+    if (typedCharCount < placeholderTextToType.length) {
+      timeout = setTimeout(() => {
+        setTypedCharCount((prev) => prev + 1);
+      }, 55);
+    } else {
+      timeout = setTimeout(() => {
+        setTypedCharCount(0);
+        setPlaceholderIndex((prev) => (prev + 1) % placeholderTexts.length);
+      }, 2500);
+    }
+    return () => clearTimeout(timeout);
+  }, [typedCharCount, placeholderTextToType, placeholderTexts]);
+
   // ── TanStack Query hooks for cached data fetching ────────────────────────
   const formatPosts = useCallback((data) => {
     const user = currentUser || {};
@@ -113,7 +155,7 @@ export default function Home() {
         authorId: p.author?._id,
         university: p.university,
         avatar: getAvatarSrc(p.author?.profilePic, p.author?.name, p.author?._id),
-        time: new Date(p.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' }),
+        time: new Date(p.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
         content: p.content,
         likes: likesCount,
         isLiked,
@@ -124,22 +166,24 @@ export default function Home() {
           authorTick: c.user?.currentTick || null,
           userId: c.user?._id || c.user?.id,
           profilePic: c.user?.profilePic,
-          text: c.text
+          text: c.text,
+          likesCount: c.likesCount || 0,
+          likedByMe: c.likedByMe || false
         })) || [],
         mediaUrl: p.mediaUrl,
         mediaType: p.mediaType,
         poll: p.poll
           ? {
-              ...p.poll,
-              options: (p.poll.options || []).map((option) => ({
-                text: option.text,
-                votesCount: typeof option.votesCount === 'number' ? option.votesCount : (option.votes?.length || 0),
-                votedByMe: typeof option.votedByMe === 'boolean'
-                  ? option.votedByMe
-                  : Boolean(option.votes?.some?.((id) => String(id) === String(userId)) || option.votes?.includes?.(userId)),
-                votes: option.votes
-              }))
-            }
+            ...p.poll,
+            options: (p.poll.options || []).map((option) => ({
+              text: option.text,
+              votesCount: typeof option.votesCount === 'number' ? option.votesCount : (option.votes?.length || 0),
+              votedByMe: typeof option.votedByMe === 'boolean'
+                ? option.votedByMe
+                : Boolean(option.votes?.some?.((id) => String(id) === String(userId)) || option.votes?.includes?.(userId)),
+              votes: option.votes
+            }))
+          }
           : p.poll,
         authorFollowers: p.author?.followers || [],
         authorFollowing: p.author?.following || [],
@@ -302,7 +346,7 @@ export default function Home() {
   });
 
   const isTextTooShort = newPostContent.trim().length > 0 && newPostContent.trim().length < 10 && !selectedMedia;
-  
+
   const photoInputRef = useRef(null);
   const videoInputRef = useRef(null);
   const exploreInputRef = useRef(null);
@@ -415,7 +459,7 @@ export default function Home() {
       const token = localStorage.getItem("collegeadda_token");
       const res = await fetch(`${apiUrl}/api/confessions`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
@@ -482,7 +526,7 @@ export default function Home() {
       const token = localStorage.getItem("collegeadda_token");
       const res = await fetch(`${apiUrl}/api/confessions/${id}/comment`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
@@ -553,7 +597,7 @@ export default function Home() {
     const savedMediaFile = selectedMediaFile;
     const savedMediaType = mediaType;
     const wasExploreMode = isExploreMode;
-    
+
     // 1. Optimistic UI Update (only if NOT explore mode)
     if (!wasExploreMode) {
       const optimisticRawPost = {
@@ -568,12 +612,12 @@ export default function Home() {
         mediaType: savedMediaType,
         poll: null
       };
-      
+
       queryClient.setQueryData(["posts", "v2", currentUser?._id], (old) => {
         return [optimisticRawPost, ...(old || [])];
       });
     }
-    
+
     try {
       let mediaUrl = savedMedia || "";
       let uploadedPostImage = null;
@@ -585,21 +629,21 @@ export default function Home() {
 
       const res = await fetch(`${apiUrl.trim()}/api/posts`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
+          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           content: savedContent,
           mediaUrl,
           mediaType: savedMediaType,
           isMemoryOnly: wasExploreMode
         })
       });
-      
+
       if (res.ok) {
         const createdPost = await res.json();
-        
+
         if (savedMediaType === "image" && uploadedPostImage) {
           await savePostImageRecord({
             postId: createdPost._id || createdPost.id,
@@ -610,7 +654,7 @@ export default function Home() {
             createdAt: createdPost.createdAt
           });
         }
-        
+
         // Success: Reset UI states
         setNewPostContent("");
         setSelectedMedia(null);
@@ -621,7 +665,7 @@ export default function Home() {
         setFeedPage(1);
         setHasMorePosts(true);
         refetchPosts();
-        
+
         setToastMsg("Post created!");
         setTimeout(() => setToastMsg(""), 2000);
       } else {
@@ -652,11 +696,11 @@ export default function Home() {
       const token = localStorage.getItem("collegeadda_token");
       const res = await fetch(`${apiUrl}/api/posts`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
+          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           content: pollQuestion,
           poll: {
             question: pollQuestion,
@@ -686,7 +730,7 @@ export default function Home() {
       const token = localStorage.getItem("collegeadda_token");
       const res = await fetch(`${apiUrl}/api/posts/${postId}/vote`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
@@ -705,7 +749,7 @@ export default function Home() {
     const text = commentInputs[postId];
     if (!text?.trim()) return;
 
-    setPosts(currentPosts => 
+    setPosts(currentPosts =>
       currentPosts.map(post => {
         if (post.id === postId) {
           return {
@@ -729,7 +773,7 @@ export default function Home() {
       const token = localStorage.getItem("collegeadda_token");
       const res = await fetch(`${apiUrl}/api/posts/${postId}/comment`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
@@ -748,7 +792,7 @@ export default function Home() {
   };
 
   const toggleLike = async (postId) => {
-    setPosts(currentPosts => 
+    setPosts(currentPosts =>
       currentPosts.map(post => {
         if (post.id === postId) {
           const isCurrentlyLiked = post.isLiked;
@@ -761,7 +805,7 @@ export default function Home() {
         return post;
       })
     );
-    
+
     try {
       const token = localStorage.getItem("collegeadda_token");
       await fetch(`${apiUrl}/api/posts/${postId}/like`, {
@@ -770,6 +814,37 @@ export default function Home() {
       });
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const toggleCommentLike = async (postId, commentId) => {
+    // Optimistic UI update via setCommentLikes to keep it fast
+    setCommentLikes(prev => {
+      const isCurrentlyLiked = prev[commentId]?.liked !== undefined
+        ? prev[commentId].liked
+        : false;
+
+      const currentCount = prev[commentId]?.count !== undefined
+        ? prev[commentId].count
+        : 0;
+
+      return {
+        ...prev,
+        [commentId]: {
+          liked: !isCurrentlyLiked,
+          count: currentCount + (isCurrentlyLiked ? -1 : 1)
+        }
+      };
+    });
+
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      await fetch(`${apiUrl}/api/posts/${postId}/comment/${commentId}/like`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+    } catch (err) {
+      console.error("Failed to toggle comment like:", err);
     }
   };
 
@@ -814,17 +889,17 @@ export default function Home() {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ participantId: friendId, isGroup: false })
       });
-      
+
       if (!roomRes.ok) return;
       const room = await roomRes.json();
 
       // 2. Send message
       let messageText = `Check out this post by ${postToShare.author}: ${postToShare.content || ""}`;
-      
+
       await fetch(`${apiUrl}/api/chat/rooms/${room._id}/messages`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           text: messageText,
           mediaUrl: postToShare.mediaUrl || '',
           mediaType: postToShare.mediaType || 'none'
@@ -872,7 +947,7 @@ export default function Home() {
     setIsUploadingStory(true);
     try {
       const { publicUrl } = await uploadAvatar(file, currentUser._id || currentUser.id);
-      
+
       const token = localStorage.getItem("collegeadda_token");
       const res = await fetch(`${apiUrl}/api/stories`, {
         method: "POST",
@@ -886,7 +961,7 @@ export default function Home() {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.message || "Failed to post story to server");
       }
-      
+
       queryClient.invalidateQueries(["stories"]);
       setToastMsg("Story uploaded successfully!");
       setTimeout(() => setToastMsg(""), 2000);
@@ -902,7 +977,7 @@ export default function Home() {
   const handleStoryLike = async (storyId) => {
     try {
       const token = localStorage.getItem("collegeadda_token");
-      
+
       // Optimistic update
       if (activeStory) {
         setActiveStory(prev => {
@@ -914,7 +989,7 @@ export default function Home() {
             const targetStory = { ...newStoryGroup.stories[storyIndex] };
             const hasLiked = targetStory.likes?.some(id => id.toString() === currentUserId.toString());
             const likes = targetStory.likes || [];
-            
+
             if (hasLiked) {
               targetStory.likes = (targetStory.likes || []).filter(id => id.toString() !== currentUserId.toString());
             } else {
@@ -942,7 +1017,7 @@ export default function Home() {
 
     try {
       const token = localStorage.getItem("collegeadda_token");
-      
+
       // 1. Get or create private room
       const roomRes = await fetch(`${apiUrl}/api/chat/rooms`, {
         method: 'POST',
@@ -952,10 +1027,10 @@ export default function Home() {
         },
         body: JSON.stringify({ target: targetUserId })
       });
-      
+
       if (!roomRes.ok) throw new Error("Failed to access chat room");
       const room = await roomRes.json();
-      
+
       // 2. Send the message
       const msgRes = await fetch(`${apiUrl}/api/chat/rooms/${room._id}/messages`, {
         method: 'POST',
@@ -963,14 +1038,14 @@ export default function Home() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           text: `Replying to story: ${storyReplyText}`,
           mediaType: 'none'
         })
       });
 
       if (!msgRes.ok) throw new Error("Failed to send reply");
-      
+
       setToastMsg("Reply sent!");
       setStoryReplyText("");
       setTimeout(() => setToastMsg(""), 2000);
@@ -989,960 +1064,1111 @@ export default function Home() {
   return (
     <div className="relative flex min-h-screen flex-col overflow-x-hidden bg-transparent pb-[90px] lg:pb-0">
       <style>{`
-        @keyframes shimmer-bg {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-        .header-shimmer {
-          background: linear-gradient(270deg, rgba(255,255,255,0.9), rgba(252,245,229,0.5), rgba(255,255,255,0.9));
-          background-size: 200% 200%;
-          animation: shimmer-bg 6s ease infinite;
-        }
+        .post-card { transition: box-shadow 0.25s cubic-bezier(0.22,1,0.36,1), transform 0.25s cubic-bezier(0.22,1,0.36,1); }
+        .post-card:hover { box-shadow: 0 16px 40px rgba(0,0,0,0.07), 0 6px 16px rgba(0,0,0,0.03); transform: translateY(-2px); }
+        .story-ring { background: linear-gradient(135deg, #FDE68A, #FCD34D, #EAC87A); }
+        .action-btn { transition: color 0.2s ease, background 0.2s ease, transform 0.15s ease; border-radius: 9999px; }
+        .action-btn:hover { transform: scale(1.05); }
+        .action-btn:active { transform: scale(0.95); }
       `}</style>
-      <header className="sticky top-0 z-40 w-full border-b border-[#E8E6E0] header-shimmer px-4 py-4 backdrop-blur-xl sm:px-6">
-        <div className="mx-auto flex max-w-[1440px] w-full px-2 items-center justify-between">
-          <div className="relative overflow-hidden py-1">
-            {(() => {
-              if (!currentUser) {
-                return (
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#C8922A]">
-                      Campus pulse
-                    </p>
-                    <h1 className="mt-1 text-2xl font-black tracking-tight text-[#1A1A1A]">
-                      Campus Adda
-                    </h1>
-                  </div>
-                );
-              }
-              const greeting = getGreeting();
-              const Icon = greeting.icon;
-              const firstName = currentUser?.name ? currentUser.name.split(' ')[0] : 'Champ';
-              return (
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-[#FFF8EC] to-[#FFEAD0] border border-[#FAD6A5]/60 shadow-[0_4px_12px_rgba(200,146,42,0.08)] shrink-0">
-                    <motion.div 
-                      animate={{ rotate: [0, 15, 0] }}
-                      transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-                      className={greeting.color}
-                    >
-                      <Icon size={24} strokeWidth={2.5} />
-                    </motion.div>
-                  </div>
-                  <div className="flex flex-col justify-center">
-                    <motion.p 
-                      initial={{ opacity: 0, y: -5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 }}
-                      className="text-sm font-semibold capitalize text-[#6B6B6B] leading-none mb-1"
-                    >
-                      {greeting.text?.toLowerCase()}
-                    </motion.p>
-                    <motion.h1 
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.1, type: "spring", stiffness: 100 }}
-                      className="text-xl font-black tracking-tight text-[#1A1A1A] leading-tight flex items-center gap-1"
-                    >
-                      {firstName} <span className="inline-block hover:animate-bounce cursor-default">👋</span>
-                    </motion.h1>
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-        <div className="flex items-center space-x-4">
 
-          <button 
-            onClick={() => router.push('/collab')}
-            title="Collab"
-            className="rounded-2xl border border-[#E8E6E0] bg-[#F3F2EE] p-2.5 text-[#4A4A4A] transition-colors hover:bg-[#FFF8EC] hover:text-[#C8922A]"
-          >
-            <Zap size={22} />
-          </button>
-          <NotificationBell />
-          <div 
-            onClick={() => router.push('/profile')}
-            className="brand-mark h-10 w-10 cursor-pointer rounded-2xl p-[2px] transition-transform hover:scale-105"
-          >
-            <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-[0.95rem] bg-white border border-[#E8E6E0]">
-              <img src={getAvatarSrc(currentUser?.profilePic, currentUser?.name, currentUser?._id || currentUser?.id)} className="w-full h-full object-cover" alt="Me" />
-            </div>
-          </div>
-        </div>
-        </div>
-      </header>
+      {/* ── TOP NAV ─────────────────────────────────────────── */}
+      <TopNav currentUser={currentUser} />
 
+      {/* ── MAIN CONTENT ───────────────────────────────────── */}
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="show"
-        className="mx-auto w-full max-w-[1440px] min-w-0 flex-1 px-3 py-4 sm:p-6"
+        className="mx-auto w-full max-w-[1440px] min-w-0 flex-1 px-0 py-2 sm:p-6"
       >
-        <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_280px]">
-        <div className="min-w-0 space-y-7 sm:space-y-8">
-        <section className="app-panel min-w-0 max-w-full rounded-[1.6rem] border-2 border-[rgba(229,201,122,0.45)] px-4 py-2 sm:py-3 transition-colors hover:border-[rgba(229,201,122,0.68)] sm:rounded-[2rem] sm:px-5">
-          <div className="no-scrollbar flex max-w-full space-x-4 overflow-x-auto py-2 sm:space-x-5">
-            {/* Your Story */}
-            <div 
-              className="flex flex-col items-center space-y-2 flex-shrink-0 cursor-pointer group"
+        <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_292px]">
+          {/* ── LEFT COLUMN ── */}
+          <div className="min-w-0 space-y-5">
+
+            <section
+              className="bg-card border-y sm:border border-border sm:rounded-[18px] shadow-sm px-4 py-3 sm:px-6 sm:py-4"
             >
-              <input type="file" className="hidden" accept="image/*" ref={storyInputRef} onChange={handleStoryUpload} />
-              <div className="relative">
-                <div 
-                  className={clsx(
-                    "w-20 h-20 rounded-full p-[3px] transition-all cursor-pointer",
-                    hasMyStory 
-                      ? "gradient-bg animate-rotate-gradient" 
-                      : "bg-[#F3F2EE] group-hover:bg-[#E8E6E0]"
-                  )}
-                  onClick={() => hasMyStory ? setActiveStory(myStoriesGroup) : storyInputRef.current?.click()}
-                >
-                  <div className={clsx("w-full h-full rounded-full flex items-center justify-center overflow-hidden border", hasMyStory ? "bg-[#F9F8F5] border-[#E8E6E0] p-[2px]" : "bg-white border-[#E8E6E0]")}>
-                    <div className={clsx("w-full h-full rounded-full flex items-center justify-center overflow-hidden", hasMyStory ? "border border-[#E8E6E0] shadow-inner" : "")}>
-                       {isUploadingStory ? (
-                         <div className="flex flex-col items-center justify-center">
-                           <div className="h-4 w-4 border-2 border-[#C8922A] border-t-transparent rounded-full animate-spin"></div>
-                         </div>
-                       ) : (
-                         <img src={getAvatarSrc(currentUser?.profilePic, currentUser?.name, currentUser?._id || currentUser?.id)} className="w-full h-full object-cover" alt="You" />
-                       )}
-                    </div>
-                  </div>
-                </div>
-                {(!hasMyStory || (myStoriesGroup?.stories?.length || 0) < 3) && (
-                  <div 
-                    onClick={(e) => { e.stopPropagation(); storyInputRef.current?.click(); }}
-                    className="absolute bottom-1 right-1 w-6 h-6 gradient-bg rounded-full border-2 border-white flex items-center justify-center text-white shadow-lg z-10 hover:scale-110 transition-transform cursor-pointer"
-                  >
-                    <Plus size={14} strokeWidth={3} />
-                  </div>
-                )}
-              </div>
-              <span className="text-xs text-[#6B6B6B] font-medium">Your Story</span>
-            </div>
-
-            {/* Others' Stories - all uni members except yourself */}
-            {stories.filter(group => (group.author?._id || group.author?.id) !== (currentUser?._id || currentUser?.id)).map((group) => (
-              <motion.div 
-                key={group.author._id} 
-                whileHover={{ scale: 1.05 }}
-                className="flex flex-col items-center space-y-2 flex-shrink-0 cursor-pointer"
-                onClick={() => setActiveStory(group)}
-              >
-                <div className="w-20 h-20 rounded-full p-[3px] gradient-bg animate-rotate-gradient">
-                  <div className="w-full h-full rounded-full bg-white p-[2px]">
-                    <div className="w-full h-full rounded-full bg-[#F9F8F5] flex items-center justify-center overflow-hidden border border-[#E8E6E0] shadow-inner">
-                      <img 
-                        src={getAvatarSrc(group.author.profilePic, group.author.name, group.author._id || group.author.id)} 
-                        className="w-full h-full object-cover" 
-                        alt={group.author.name} 
-                      />
-                    </div>
-                  </div>
-                </div>
-                <span className="text-xs text-[#4A4A4A] font-medium truncate w-20 text-center">{group.author.name.split(' ')[0]}</span>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-
-
-        {/* Create Post Prompt */}
-        <motion.div 
-          variants={itemVariants}
-          className="relative flex min-w-0 max-w-full flex-col space-y-4 overflow-hidden bg-white border-2 border-black rounded-xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)] group sm:p-5"
-        >
-          <div className="absolute top-0 left-0 w-full h-1 gradient-bg opacity-30 group-focus-within:opacity-100 transition-opacity" />
-          <div className="flex min-w-0 items-start space-x-3 sm:space-x-4">
-            <div className="w-12 h-12 rounded-full gradient-bg p-[2px] flex-shrink-0">
-              <div className="w-full h-full bg-background rounded-full flex items-center justify-center overflow-hidden">
-                <img src={getAvatarSrc(currentUser?.profilePic, currentUser?.name, currentUser?._id || currentUser?.id)} className="w-full h-full object-cover" alt="You" />
-              </div>
-            </div>
-            <div className="flex-1 flex flex-col gap-2 min-w-0">
-              <textarea 
-                value={newPostContent}
-                onChange={(e) => setNewPostContent(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    if (!isTextTooShort) handleCreatePost();
-                  }
-                }}
-                placeholder={placeholderText}
-                className="ca-input w-full min-w-0 resize-none sm:text-base mt-2 min-h-[60px] p-3"
-              />
-              {isTextTooShort && (
-                <div className="flex items-center space-x-2 text-orange-400 text-xs font-semibold animate-pulse">
-                  <span>⚠️ Write at least 10 characters to share a quality update!</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <AnimatePresence>
-            {selectedMedia && (
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                className="relative rounded-2xl overflow-hidden border border-[#E8E6E0] max-h-[400px] bg-[#F3F2EE] flex items-center justify-center"
-              >
-                {mediaType === 'video' ? (
-                  <video src={selectedMedia} controls className="w-full h-auto max-h-[400px] object-contain" />
-                ) : (
-                  <img src={selectedMedia} className="w-full h-auto max-h-[400px] object-contain" alt="Preview" />
-                )}
-                <button 
-                  onClick={() => {
-                    if (selectedMedia?.startsWith("blob:")) URL.revokeObjectURL(selectedMedia);
-                    setSelectedMedia(null);
-                    setSelectedMediaFile(null);
-                    setMediaType('none');
-                  }}
-                  className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white p-2 rounded-full hover:bg-black/40 transition-all border border-white/10"
-                >
-                  <X size={16} />
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <div className="flex flex-col gap-3 border-t border-black pt-4 sm:flex-row sm:items-center sm:justify-between">
-             <div className="grid grid-cols-3 gap-2 sm:flex sm:space-x-5">
-               <input type="file" ref={photoInputRef} className="hidden" accept="image/*" onChange={(e) => { setIsExploreMode(false); handleMediaSelect(e, 'image'); }} />
-               <input type="file" ref={videoInputRef} className="hidden" accept="video/*" onChange={(e) => { setIsExploreMode(false); handleMediaSelect(e, 'video'); }} />
-               <input type="file" ref={exploreInputRef} className="hidden" accept="image/*,video/*" onChange={(e) => {
-                 const file = e.target.files?.[0];
-                 if (file) {
-                   const type = file.type.startsWith('video/') ? 'video' : 'image';
-                   setIsExploreMode(true);
-                   handleMediaSelect(e, type);
-                 }
-               }} />
-               
-               <button 
-                 onClick={() => photoInputRef.current?.click()}
-                 className="flex min-w-0 items-center justify-center space-x-1.5 rounded-2xl px-2 py-2 text-[#6B6B6B] transition-colors hover:text-[#C8922A] group sm:justify-start sm:px-0 sm:space-x-2"
-               >
-                 <div className="p-2 rounded-full group-hover:bg-[#FFF8EC] transition-colors">
-                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                 </div>
-                 <span className="text-xs font-semibold">Photo</span>
-               </button>
-               <button 
-                 onClick={() => videoInputRef.current?.click()}
-                 className="flex min-w-0 items-center justify-center space-x-1.5 rounded-2xl px-2 py-2 text-[#6B6B6B] transition-colors hover:text-[#C8922A] group sm:justify-start sm:px-0 sm:space-x-2"
-               >
-                 <div className="p-2 rounded-full group-hover:bg-[#FFF8EC] transition-colors">
-                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-                 </div>
-                 <span className="text-xs font-semibold">Video</span>
-               </button>
-               <button 
-                 onClick={() => setShowPollModal(true)}
-                 className="flex min-w-0 items-center justify-center space-x-1.5 rounded-2xl px-2 py-2 text-[#6B6B6B] transition-colors hover:text-[#C8922A] group sm:justify-start sm:px-0 sm:space-x-2"
-               >
-                 <div className="p-2 rounded-full group-hover:bg-[#FFF8EC] transition-colors">
-                   <BarChart2 size={20} />
-                 </div>
-                 <span className="text-xs font-semibold">Poll</span>
-               </button>
-             </div>
-             <div className="flex gap-2 w-full sm:w-auto mt-3 sm:mt-0">
-               {(!selectedMedia || isExploreMode) && (
-                 <motion.button 
-                   whileHover={{ scale: 1.05 }}
-                   whileTap={{ scale: 0.95 }}
-                   onClick={() => {
-                     if (!selectedMedia) {
-                       exploreInputRef.current?.click();
-                     } else {
-                       handleCreatePost();
-                     }
-                   }} 
-                   disabled={isPosting}
-                   className="flex w-full sm:w-auto sm:min-w-[140px] px-5 py-3 sm:px-7 sm:py-2.5 items-center justify-center disabled:opacity-50 cursor-pointer border-2 border-[#C8922A] text-[#C8922A] rounded-full font-bold text-sm bg-white hover:bg-[#FFF8EC] transition-colors"
-                 >
-                   {isPosting ? (
-                     <div className="w-5 h-5 border-2 border-[#C8922A]/30 border-t-[#C8922A] rounded-full animate-spin" />
-                   ) : (
-                     "Post to Explore"
-                   )}
-                 </motion.button>
-               )}
-               {(!selectedMedia || !isExploreMode) && (
-                 <motion.button 
-                   whileHover={{ scale: 1.05 }}
-                   whileTap={{ scale: 0.95 }}
-                   onClick={handleCreatePost} 
-                   disabled={isPosting || isTextTooShort || (!newPostContent.trim() && !selectedMedia)}
-                   className="ca-btn-primary flex w-full sm:w-auto sm:min-w-[120px] px-5 py-3 sm:px-7 sm:py-2.5 items-center justify-center disabled:opacity-50 cursor-pointer"
-                 >
-                   {isPosting ? (
-                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                   ) : (
-                     "Post to Feed"
-                   )}
-                 </motion.button>
-               )}
-             </div>
-          </div>
-        </motion.div>
-
-        {/* Posts List */}
-        <div className="overflow-hidden rounded-[1.25rem] border-2 border-black bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-          {showFeedSkeleton && (
-            <div className="divide-y divide-[#E8E6E0]">
-              {[1, 2, 3].map((n) => (
-                <div key={n} className="p-6 space-y-4 animate-pulse bg-white">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 rounded-full bg-[#F3F2EE]" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-[#F3F2EE] rounded w-1/3" />
-                      <div className="h-3 bg-[#F0EFE9] rounded w-1/4" />
-                    </div>
-                  </div>
-                  <div className="space-y-2 pt-2">
-                    <div className="h-4 bg-[#F3F2EE] rounded w-full" />
-                    <div className="h-4 bg-[#F3F2EE] rounded w-5/6" />
-                  </div>
-                  <div className="h-40 bg-[#F0EFE9] rounded-2xl w-full" />
-                  <div className="flex justify-between pt-2 border-t border-[#E8E6E0]">
-                    <div className="h-6 bg-[#F0EFE9] rounded w-12" />
-                    <div className="h-6 bg-[#F0EFE9] rounded w-12" />
-                    <div className="h-6 bg-[#F0EFE9] rounded w-8" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {!showFeedSkeleton && posts.length === 0 && (
-            <div className="bg-white p-8 text-center flex flex-col items-center justify-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-[#FFF8EC] flex items-center justify-center text-[#C8922A]">
-                <Compass size={32} />
-              </div>
-              <h3 className="text-xl font-bold text-[#1A1A1A]">Welcome to Campus Adda!</h3>
-              <p className="text-sm text-[#6B6B6B] max-w-sm">
-                Your feed is currently empty. Follow students at your college or explore other campuses to see posts and start connecting!
-              </p>
-              <button 
-                onClick={() => router.push('/explore')}
-                className="gradient-bg text-white px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)] hover:scale-105 transition-transform animate-[pulse_2s_ease-in-out_infinite]"
-              >
-                Explore Campuses
-              </button>
-            </div>
-          )}
-
-          {!showFeedSkeleton && posts.length > 0 && filteredPosts.length === 0 && (
-            <div className="bg-white p-8 text-center flex flex-col items-center justify-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-[#FFF8EC] flex items-center justify-center text-[#C8922A]">
-                <Flame size={32} />
-              </div>
-              <h3 className="text-xl font-bold text-[#1A1A1A]">No posts for #{selectedTopic}</h3>
-              <p className="text-sm text-[#6B6B6B] max-w-sm">
-                Be the first one to post about this topic on your campus!
-              </p>
-              <button 
-                onClick={() => setSelectedTopic(null)}
-                className="gradient-bg text-white px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)] hover:scale-105 transition-transform"
-              >
-                Show All Posts
-              </button>
-            </div>
-          )}
-          
-          {!showFeedSkeleton && filteredPosts.map((post) => (
-            <motion.article
-              key={post.id} 
-              variants={itemVariants}
-              className="relative min-w-0 border-b-2 border-black bg-white p-4 group last:border-b-0 sm:p-6"
-            >
-              {/* Post Header */}
-              <div className="flex items-center justify-between mb-5">
-                <div className="flex items-center space-x-4">
+              <div className="no-scrollbar flex max-w-full space-x-4 overflow-x-auto py-1">
+                {/* Your Story */}
+                <div className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer group">
+                  <input type="file" className="hidden" accept="image/*" ref={storyInputRef} onChange={handleStoryUpload} />
                   <div className="relative">
-                    <div className="w-12 h-12 rounded-full p-[2px] bg-[#F3F2EE] overflow-hidden">
-                      <img 
-                        src={post.avatar} 
-                        alt={post.author} 
-                        className="w-full h-full object-cover rounded-full" 
-                        onError={(e) => { e.target.src = getAvatarSrc("", post.author, post.authorId); }}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="text-[#1A1A1A] font-semibold flex items-center gap-2">
-                      <NameWithTick name={post.author} tick={post.authorTick} />
-                    </h3>
-                    <p suppressHydrationWarning className="text-[#888888] text-sm">{post.university} • {post.time}</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-0">
-                  {currentUser?._id !== post.authorId && currentUser?.id !== post.authorId ? (
-                    friendsList.some(f => String(f.id) === String(post.authorId)) || (currentUser?.following || []).some(id => String(id) === String(post.authorId)) || connectStatus[post.authorId] === 'connected' ? (
-                      <span className="inline-flex items-center justify-center rounded-full border border-[#0ea5e9]/40 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-wide shadow-sm" style={{ color: '#0ea5e9' }}>
-                        Network
-                      </span>
-                    ) : (
-                      <motion.button 
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => handleConnectUser(post.authorId)}
-                        disabled={connectStatus[post.authorId] === 'pending'}
-                        className="text-[11px] font-bold px-4 py-1.5 rounded-full border border-[#E8E6E0] hover:bg-[#FFF8EC] hover:border-[#C8922A]/30 transition-all text-[#4A4A4A] disabled:opacity-50 disabled:cursor-not-allowed"
+                    <div
+                      className="transition-all cursor-pointer"
+                      style={{
+                        width: 64, height: 64,
+                        borderRadius: 9999,
+                        padding: 2.5,
+                        background: hasMyStory
+                          ? "linear-gradient(135deg, #FDE68A, #FCD34D, #EAC87A)"
+                          : "#F5F2EC",
+                      }}
+                      onClick={() => hasMyStory ? setActiveStory(myStoriesGroup) : storyInputRef.current?.click()}
+                    >
+                      <div
+                        className="w-full h-full flex items-center justify-center overflow-hidden"
+                        style={{
+                          borderRadius: 9999,
+                          background: "#FFFFFF",
+                          border: hasMyStory ? "1.5px solid rgba(255,255,255,0.8)" : "none",
+                        }}
                       >
-                        {connectStatus[post.authorId] === 'pending' ? '...' : 'Follow'}
-                      </motion.button>
-                    )
-                  ) : null}
-                  <div className="relative">
-                    <button onClick={() => setPostMenu(postMenu === post.id ? null : post.id)} className="text-[#888888] hover:text-[#1A1A1A] p-1">
-                      <MoreVertical size={20} />
-                    </button>
-                    {postMenu === post.id && (
-                      <div className="absolute right-0 top-full mt-2 w-40 bg-white border border-[#E8E6E0] rounded-xl shadow-lg py-1 z-50 overflow-hidden">
-                        {currentUser?._id === post.authorId || currentUser?.id === post.authorId ? (
-                          <button 
-                            onClick={() => { handleDeletePost(post.id); setPostMenu(null); }} 
-                            className="w-full text-left px-4 py-2.5 text-[13px] font-bold text-red-500 hover:bg-[#FFF8EC] transition-colors cursor-pointer"
-                          >
-                            Delete Post
-                          </button>
+                        {isUploadingStory ? (
+                          <div className="h-4 w-4 border-2 border-[#FDE68A] border-t-transparent rounded-full animate-spin" />
                         ) : (
-                          <>
-                            <button 
-                              onClick={() => { handleHidePost(post.id); setPostMenu(null); }}
-                              className="w-full text-left px-4 py-2.5 text-[13px] font-bold text-[#4A4A4A] hover:bg-[#F9F8F5] hover:text-[#1A1A1A] transition-colors cursor-pointer"
-                            >
-                              Hide Post
-                            </button>
-                            <button 
-                              onClick={() => { handleReportPost(post.id); setPostMenu(null); }}
-                              className="w-full text-left px-4 py-2.5 text-[13px] font-bold text-red-500 hover:bg-[#FFF8EC] hover:text-red-600 transition-colors border-t border-[#E8E6E0] cursor-pointer"
-                            >
-                              Report Spam
-                            </button>
-                          </>
+                          <img src={getAvatarSrc(currentUser?.profilePic, currentUser?.name, currentUser?._id || currentUser?.id)} className="w-full h-full object-cover rounded-full" alt="You" />
                         )}
+                      </div>
+                    </div>
+                    {(!hasMyStory || (myStoriesGroup?.stories?.length || 0) < 3) && (
+                      <div
+                        onClick={(e) => { e.stopPropagation(); storyInputRef.current?.click(); }}
+                        className="absolute bottom-0 right-0 flex items-center justify-center text-white cursor-pointer"
+                        style={{
+                          width: 20, height: 20,
+                          borderRadius: 9999,
+                          background: "linear-gradient(135deg, #FDE68A, #FCD34D)",
+                          border: "2px solid #FFFFFF",
+                          boxShadow: "0 2px 6px rgba(253, 230, 138,0.35)",
+                          zIndex: 10,
+                          transition: "transform 0.15s ease",
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.15)"}
+                        onMouseLeave={(e) => e.currentTarget.style.transform = ""}
+                      >
+                        <Plus size={12} strokeWidth={3} />
                       </div>
                     )}
                   </div>
+                  <span style={{ fontSize: 11, fontWeight: 500, color: "#6B7280", letterSpacing: "-0.01em" }}>Your Story</span>
                 </div>
+
+                {/* Others' Stories */}
+                {stories.filter(group => (group.author?._id || group.author?.id) !== (currentUser?._id || currentUser?.id)).map((group) => (
+                  <motion.div
+                    key={group.author._id}
+                    whileHover={{ scale: 1.04 }}
+                    transition={{ duration: 0.15 }}
+                    className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer"
+                    onClick={() => setActiveStory(group)}
+                  >
+                    <div
+                      style={{
+                        width: 64, height: 64,
+                        borderRadius: 9999,
+                        padding: 2.5,
+                        background: "linear-gradient(135deg, #FDE68A, #FCD34D, #EAC87A)",
+                      }}
+                    >
+                      <div
+                        className="w-full h-full flex items-center justify-center overflow-hidden"
+                        style={{ borderRadius: 9999, background: "#FFFFFF", border: "1.5px solid rgba(255,255,255,0.8)" }}
+                      >
+                        <img
+                          src={getAvatarSrc(group.author.profilePic, group.author.name, group.author._id || group.author.id)}
+                          className="w-full h-full object-cover rounded-full"
+                          alt={group.author.name}
+                        />
+                      </div>
+                    </div>
+                    <span style={{ fontSize: 11, fontWeight: 500, color: "#4B5563", letterSpacing: "-0.01em", maxWidth: 64, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "center" }}>
+                      {group.author.name.split(' ')[0]}
+                    </span>
+                  </motion.div>
+                ))}
               </div>
-              
-              {post.content && (
-                <p className="text-[#1A1A1A] text-[15px] mb-5 leading-relaxed whitespace-pre-wrap">
-                  {post.content}
-                </p>
-              )}
+            </section>
 
-              {/* Poll Section */}
-              {post.poll && post.poll.options && post.poll.options.length > 0 && (
-                <div className="bg-[#F9F8F5] p-5 rounded-2xl border border-[#E8E6E0] space-y-4 mb-5">
-                  <div className="flex items-center justify-between pb-2 border-b border-[#EBEBEB]">
-                    <p className="text-xs font-semibold text-[#888888]">{post.poll.allowMultiple ? "Select multiple answers" : "Select one answer"}</p>
-                    <span className="text-[10px] text-[#C8922A] font-bold uppercase tracking-wider bg-[#C8922A]/10 px-2.5 py-0.5 rounded">Active Poll</span>
-                  </div>
-                  <div className="space-y-2.5">
-                    {post.poll.options.map((option, idx) => {
-                      const voteCountOf = (o) => (typeof o.votesCount === 'number' ? o.votesCount : (o.votes?.length || 0));
-                      const maxVotes = Math.max(...post.poll.options.map(voteCountOf));
-                      const totalVotes = post.poll.options.reduce((sum, opt) => sum + voteCountOf(opt), 0);
-                      const optionVotes = voteCountOf(option);
-                      const percentage = totalVotes === 0 ? 0 : Math.round((optionVotes / totalVotes) * 100);
-                      const hasVoted = typeof option.votedByMe === 'boolean'
-                        ? option.votedByMe
-                        : Boolean(option.votes?.includes?.(currentUser?._id || currentUser?.id));
-                      const isLeading = optionVotes === maxVotes && maxVotes > 0;
-                      
-                      return (
-                        <div 
-                          key={idx}
-                          onClick={() => handleVote(post.id, idx)}
-                          className="relative overflow-hidden rounded-lg bg-[#F3F2EE] transition-all hover:opacity-90 cursor-pointer group"
-                        >
-                          {/* Percentage Bar Fill */}
-                          <motion.div 
-                            initial={{ width: 0 }}
-                            animate={{ width: `${percentage}%` }}
-                            className={`absolute top-0 bottom-0 left-0 ${isLeading ? 'ca-poll-bar-leading' : 'ca-poll-bar-default'}`}
-                            transition={{ type: "spring", stiffness: 80, damping: 15 }}
-                          />
-                          
-                          <div className="relative flex items-center justify-between p-4 z-10">
-                            <div className="flex items-center space-x-3 min-w-0">
-                              <div className={clsx(
-                                "w-5 h-5 rounded-md border flex items-center justify-center transition-all shrink-0",
-                                hasVoted ? "border-[#C8922A] bg-[#C8922A] text-white" : "border-[#D1CFC8]"
-                              )}>
-                                {hasVoted && <Check size={12} strokeWidth={4} />}
-                              </div>
-                              <span className="text-[#1A1A1A] text-sm truncate">{option.text}</span>
-                            </div>
-                            
-                            <div className="flex items-center justify-end space-x-2 shrink-0 bg-white/80 px-2.5 py-1 rounded-lg border border-[#E8E6E0] backdrop-blur-sm w-20">
-                              <span className="text-[#1A1A1A] font-semibold">{percentage}%</span>
-                              <span className="text-[10px] font-medium text-[#888888]">({optionVotes})</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="flex items-center justify-between pt-3 border-t border-[#EBEBEB] text-[10px] font-bold uppercase tracking-wider">
-                    <button className="text-[#C8922A] border border-[#C8922A]/30 hover:bg-[#FFF8EC] flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all">
-                      <BarChart2 size={12} />
-                      View Breakdown
-                    </button>
-                    <span className="text-[#888888] text-[10px] font-bold uppercase tracking-wider">{post.poll.options.reduce((sum, opt) => sum + (typeof opt.votesCount === 'number' ? opt.votesCount : (opt.votes?.length || 0)), 0)} total votes</span>
+            {/* CREATE POST (Hidden on Mobile unless FAB clicked) */}
+            <Card variants={itemVariants} className={clsx("relative overflow-hidden group border border-border/70", !isMobileCreateOpen && "hidden sm:block")}>
+              <div className="flex min-w-0 items-start gap-4">
+                {/* Avatar */}
+                <div
+                  className="flex-shrink-0 cursor-pointer bg-gradient-to-br from-primary to-primary-hover transition-transform duration-200 hover:scale-105"
+                  style={{ padding: 2, borderRadius: 9999 }}
+                  onClick={() => router.push('/profile')}
+                >
+                  <div className="w-11 h-11 rounded-full overflow-hidden bg-card border-2 border-card">
+                    <img src={getAvatarSrc(currentUser?.profilePic, currentUser?.name, currentUser?._id || currentUser?.id)} className="w-full h-full object-cover" alt="You" />
                   </div>
                 </div>
-              )}
 
-              {post.mediaUrl && (
-                <div className="rounded-2xl overflow-hidden mb-5 border border-[#E8E6E0] bg-[#F3F2EE] shadow-sm">
-                  {post.mediaType === 'video' ? (
-                    <video src={post.mediaUrl} controls className="w-full h-auto max-h-[500px] object-contain" />
-                  ) : (
-                    <img src={post.mediaUrl} alt="Post content" className="w-full h-auto max-h-[500px] object-contain mx-auto" />
+                <div className="flex-1 flex flex-col min-w-0 relative bg-secondary-background rounded-2xl border border-border/60 p-3.5 transition-colors duration-200 hover:border-primary/40 focus-within:border-primary focus-within:bg-card focus-within:shadow-[0_2px_12px_rgba(251,191,36,0.15)]">
+                  {!newPostContent && !isInputFocused && (
+                    <div className="absolute top-3.5 left-3.5 pointer-events-none text-foreground-muted/65 text-[16.5px] font-medium leading-relaxed flex items-center">
+                      <span>
+                        {placeholderTextToType.slice(0, typedCharCount)}
+                      </span>
+                      <motion.span
+                        animate={{ opacity: [1, 0, 1] }}
+                        transition={{ repeat: Infinity, duration: 0.7 }}
+                        className="inline-block w-[2px] h-[19px] bg-primary ml-0.5 rounded-full"
+                      />
+                    </div>
+                  )}
+                  <textarea
+                    value={newPostContent}
+                    onChange={(e) => setNewPostContent(e.target.value)}
+                    onFocus={() => setIsInputFocused(true)}
+                    onBlur={() => setIsInputFocused(false)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        if (!isTextTooShort) handleCreatePost();
+                      }
+                    }}
+                    className="post-editor-textarea w-full min-w-0 resize-none leading-relaxed bg-transparent border-none outline-none text-foreground text-[16.5px] font-medium"
+                    style={{
+                      minHeight: 56,
+                      fontFamily: "Inter, sans-serif",
+                      letterSpacing: "-0.015em",
+                    }}
+                  />
+                  {isTextTooShort && (
+                    <div className="flex items-center gap-1.5 text-warning animate-pulse mt-2 text-[13px] font-semibold">
+                      <span>⚠️ Write at least 10 characters to share a quality update!</span>
+                    </div>
                   )}
                 </div>
-              )}
-
-              {/* Action Bar */}
-              <div className="flex items-center justify-between border-t border-[#EBEBEB] pt-4">
-                <div className="flex items-center space-x-6 relative">
-                  <div className="flex flex-col items-center group/like">
-                    <motion.button 
-                      whileTap={{ scale: 1.5 }}
-                      onClick={() => toggleLike(post.id)}
-                      className={clsx(
-                        "flex items-center space-x-2 transition-colors p-2 rounded-full",
-                        post.isLiked ? "text-red-500" : "text-[#888888] hover:text-red-500"
-                      )}
-                    >
-                      <Heart size={22} className={clsx("transition-all", post.isLiked && "fill-red-500")} />
-                      <span className="text-sm text-[#888888]">{post.likes}</span>
-                    </motion.button>
-                  </div>
-
-                  <button 
-                    onClick={() => setActiveCommentPost(activeCommentPost === post.id ? null : post.id)}
-                    className="flex items-center space-x-2 text-[#888888] hover:text-[#C8922A] p-2 rounded-full transition-colors"
-                  >
-                    <MessageCircle size={22} />
-                    <span className="text-sm text-[#888888]">{post.comments}</span>
-                  </button>
-                </div>
-
-                <button 
-                  onClick={() => setShareModal(post.id)}
-                  className="flex items-center space-x-2 text-[#888888] hover:text-[#C8922A] p-2 rounded-full transition-colors"
-                >
-                  <Send size={20} />
-                </button>
               </div>
 
-              {/* Inline Comments Section */}
+              {/* Media Preview */}
               <AnimatePresence>
-                {activeCommentPost === post.id && (
-                  <motion.div 
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="mt-4 border-t border-[#EBEBEB] pt-4 overflow-hidden"
+                {selectedMedia && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="relative overflow-hidden flex items-center justify-center mt-4 mb-2 rounded-2xl border border-border bg-secondary-background"
+                    style={{
+                      maxHeight: 400,
+                    }}
                   >
-                    <div className="space-y-4 mb-5 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                      {(post.commentsList || []).map(comment => (
-                        <div key={comment.id} className="flex space-x-3 items-start bg-[#F9F8F5] p-3 rounded-2xl">
-                          <div className="w-7 h-7 rounded-full gradient-bg p-[1px] flex-shrink-0">
-                            <img
-                              src={getAvatarSrc(comment.profilePic, comment.author, comment.id || comment._id)}
-                              alt={comment.author}
-                              className="w-full h-full rounded-full object-cover bg-white"
-                              onError={(e) => {
-                                e.currentTarget.onerror = null;
-                                e.currentTarget.src = getDefaultAvatar(comment.author, comment.id || comment._id);
-                              }}
-                            />
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-xs font-bold text-[#1A1A1A]"><NameWithTick name={comment.author} tick={comment.authorTick} /></p>
-                            <p className="text-xs text-[#6B6B6B] mt-0.5">{comment.text}</p>
-                          </div>
-                          <button 
-                            type="button"
-                            onClick={() => {
-                              setCommentLikes(prev => ({
-                                ...prev,
-                                [comment.id]: {
-                                  liked: !prev[comment.id]?.liked,
-                                  count: (prev[comment.id]?.count || comment.likesCount || 0) + (prev[comment.id]?.liked ? -1 : 1)
-                                }
-                              }));
-                            }}
-                            className={`flex items-center gap-1.5 flex-shrink-0 self-center p-1.5 rounded-full transition-colors group/like cursor-pointer ${
-                              commentLikes[comment.id]?.liked ? 'text-red-500' : 'text-[#AAAAAA] hover:text-red-500 hover:bg-white'
-                            }`}
-                            title="Like comment"
-                          >
-                            <Heart size={16} className={`group-active/like:scale-75 transition-transform ${commentLikes[comment.id]?.liked ? 'fill-red-500 text-red-500' : ''}`} />
-                            {((commentLikes[comment.id]?.count || comment.likesCount || 0) > 0) && (
-                              <span className="text-[11px] font-bold">
-                                {commentLikes[comment.id]?.count || comment.likesCount || 0}
-                              </span>
-                            )}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="flex items-center space-x-3 bg-[#F3F2EE] p-2 rounded-full border border-[#E8E6E0] focus-within:border-[#C8922A]/50 transition-all">
-                      <input 
-                        type="text" 
-                        value={commentInputs[post.id] || ""}
-                        onChange={(e) => setCommentInputs(prev => ({ ...prev, [post.id]: e.target.value }))}
-                        onKeyDown={(e) => e.key === "Enter" && handleComment(post.id)}
-                        placeholder={`Reply to ${post.author}...`} 
-                        className="flex-1 bg-transparent px-4 py-1.5 text-sm focus:outline-none text-[#1A1A1A] placeholder:text-[#AAAAAA]" 
-                      />
-                      <motion.button 
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => handleComment(post.id)}
-                        className="gradient-bg p-2 rounded-full text-white shadow-md"
-                      >
-                        <Send size={16} />
-                      </motion.button>
-                    </div>
+                    {mediaType === 'video' ? (
+                      <video src={selectedMedia} controls className="w-full h-auto max-h-[400px] object-contain" />
+                    ) : (
+                      <img src={selectedMedia} className="w-full h-auto max-h-[400px] object-contain" alt="Preview" />
+                    )}
+                    <IconButton
+                      onClick={() => {
+                        if (selectedMedia?.startsWith("blob:")) URL.revokeObjectURL(selectedMedia);
+                        setSelectedMedia(null);
+                        setSelectedMediaFile(null);
+                        setMediaType('none');
+                      }}
+                      className="absolute top-3 right-3 !h-8 !w-8 bg-card/80 text-foreground hover:bg-card border border-border backdrop-blur-md shadow-xs"
+                    >
+                      <X size={16} strokeWidth={2.5} />
+                    </IconButton>
                   </motion.div>
                 )}
               </AnimatePresence>
-            </motion.article>
-          ))}
 
-          {!showFeedSkeleton && posts.length > 0 && hasMorePosts && !selectedTopic && (
-            <div className="p-4 bg-white border-t border-black">
-              <button
-                type="button"
-                onClick={loadMorePosts}
-                disabled={loadingMorePosts}
-                className="w-full rounded-full border border-[#E8E6E0] bg-[#F9F8F5] px-4 py-3 text-xs font-black uppercase tracking-widest text-[#1A1A1A] transition-colors hover:border-[#C8922A]/40 hover:bg-[#FFF8EC] disabled:cursor-wait disabled:opacity-60"
+              {/* Action Bar */}
+              <div
+                className="flex flex-col gap-4 mt-4 pt-4 sm:flex-row sm:items-center sm:justify-between border-t border-border/80"
               >
-                {loadingMorePosts ? "Loading more..." : "Load more posts"}
-              </button>
-            </div>
-          )}
-        </div>
-        </div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <input type="file" ref={photoInputRef} className="hidden" accept="image/*" onChange={(e) => { setIsExploreMode(false); handleMediaSelect(e, 'image'); }} />
+                  <input type="file" ref={videoInputRef} className="hidden" accept="video/*" onChange={(e) => { setIsExploreMode(false); handleMediaSelect(e, 'video'); }} />
+                  <input type="file" ref={exploreInputRef} className="hidden" accept="image/*,video/*" onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const type = file.type.startsWith('video/') ? 'video' : 'image';
+                      setIsExploreMode(true);
+                      handleMediaSelect(e, type);
+                    }
+                  }} />
 
-        {/* Right Sidebar */}
-        <aside className="hidden xl:flex flex-col w-[280px] shrink-0 space-y-6 self-start sticky top-24">
-          
-          {/* College Leaderboard */}
-          <div className="bg-white border border-[#E8E6E0] border-t-[3px] border-t-amber-400 rounded-2xl p-5 shadow-sm space-y-5 relative overflow-hidden">
-            <div className="flex items-center justify-between pb-4 mb-2 border-b border-[#F3F2EE]/60 relative z-10">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl leading-none drop-shadow-sm">🏆</span>
-                <h3 className="text-[13px] font-black uppercase tracking-[0.2em] bg-gradient-to-r from-amber-600 via-yellow-500 to-orange-500 bg-clip-text text-transparent drop-shadow-sm">
-                  Leaderboard
-                </h3>
-              </div>
-              <div className="flex items-center gap-1.5 px-2 py-1 bg-red-50 border border-red-100 rounded-full shadow-sm">
-                <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_4px_rgba(239,68,68,0.8)]"></div>
-                <span className="text-[8px] font-black text-red-600 uppercase tracking-widest leading-none mt-[1px]">Live</span>
-              </div>
-            </div>
-            <div className="space-y-4">
-              {loadingLeaderboard ? (
-                <div className="text-center py-4 text-xs text-[#888888]">Loading...</div>
-              ) : leaderboard.length === 0 ? (
-                <div className="text-center py-4 text-xs text-[#888888]">No rankings yet.</div>
-              ) : (
-                leaderboard.map((item, idx) => {
-                  const name = item.college || item.name || item._id || "Unknown";
-                  const count = item.verifiedStudents ?? item.verifiedCount ?? 0;
-                  const points = item.points ?? item.score ?? 0;
-                  
-                  return (
-                    <div key={idx} className={clsx(
-                      "relative group flex items-center justify-between gap-2 text-xs p-2.5 -mx-2 rounded-2xl transition-all duration-200 cursor-default overflow-hidden",
-                      idx === 0 ? "bg-gradient-to-r from-[#FFD700]/15 to-[#FDB931]/10 border border-[#FFD700] shadow-sm" :
-                      idx === 1 ? "bg-gradient-to-r from-[#C0C0C0]/20 to-[#E8E8E8]/10 border border-[#C0C0C0] shadow-sm" :
-                      idx === 2 ? "bg-gradient-to-r from-[#CD7F32]/15 to-[#A0522D]/10 border border-[#CD7F32] shadow-sm" :
-                      "hover:bg-[#F9F8F5]"
-                    )}>
-                      {/* Particles for top 3 */}
-                      {idx < 3 && (
-                        <div className="absolute inset-0 pointer-events-none">
-                          <motion.div 
-                            animate={{ y: [0, -15, 0], opacity: [0, 0.8, 0] }} 
-                            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-                            className={clsx("absolute top-1 left-8 w-1 h-1 rounded-full", idx === 0 ? "bg-amber-400" : idx === 1 ? "bg-slate-400" : "bg-orange-400")}
-                          />
-                          <motion.div 
-                            animate={{ y: [0, -20, 0], x: [0, 10, 0], opacity: [0, 0.8, 0] }} 
-                            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-                            className={clsx("absolute bottom-1 right-20 w-1.5 h-1.5 rounded-full", idx === 0 ? "bg-yellow-500" : idx === 1 ? "bg-slate-300" : "bg-orange-500")}
-                          />
-                          <motion.div 
-                            animate={{ y: [0, -10, 0], x: [0, -5, 0], opacity: [0, 0.8, 0] }} 
-                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                            className={clsx("absolute top-3 left-1/2 w-1 h-1 rounded-full", idx === 0 ? "bg-amber-400" : idx === 1 ? "bg-slate-400" : "bg-orange-400")}
-                          />
-                          <motion.div 
-                            animate={{ y: [0, -25, 0], x: [0, -10, 0], opacity: [0, 0.6, 0] }} 
-                            transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-                            className={clsx("absolute bottom-2 left-1/4 w-1 h-1 rounded-full", idx === 0 ? "bg-yellow-300" : idx === 1 ? "bg-slate-300" : "bg-orange-300")}
-                          />
-                        </div>
-                      )}
+                  {[
+                    { label: "Photo", icon: <ImageIcon size={19} strokeWidth={2} />, onClick: () => photoInputRef.current?.click(), color: "#22C55E" },
+                    { label: "Video", icon: <Video size={19} strokeWidth={2} />, onClick: () => videoInputRef.current?.click(), color: "#3B82F6" },
+                    { label: "Poll", icon: <BarChart2 size={19} strokeWidth={2} />, onClick: () => setShowPollModal(true), color: "#FCD34D" },
+                  ].map(({ label, icon, onClick, color }) => (
+                    <button
+                      key={label}
+                      onClick={onClick}
+                      className="flex items-center justify-center gap-2 cursor-pointer text-foreground-muted bg-transparent hover:bg-secondary-background transition-all duration-200 rounded-xl px-3.5 py-2 text-[13.5px] font-semibold"
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = color;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = "var(--color-foreground-muted)";
+                      }}
+                    >
+                      {icon}
+                      <span className="hidden sm:inline">{label}</span>
+                    </button>
+                  ))}
+                </div>
 
-                      <div className="flex items-center gap-3 min-w-0 relative z-10">
-                        <div className={clsx(
-                          "w-6 h-6 rounded-full flex items-center justify-center font-black text-[11px] shrink-0 shadow-sm",
-                          idx === 0 ? "bg-gradient-to-br from-yellow-300 to-amber-500 text-white border border-amber-400 shadow-amber-200/50" :
-                          idx === 1 ? "bg-gradient-to-br from-slate-200 to-slate-400 text-white border border-slate-300" :
-                          idx === 2 ? "bg-gradient-to-br from-orange-300 to-orange-500 text-white border border-orange-400 shadow-orange-200/50" :
-                          "bg-[#FAFAF8] border border-[#E8E6E0] text-[#888888]"
-                        )}>
-                          {idx + 1}
-                        </div>
-                        
-                        <div className="flex flex-col min-w-0 ml-1">
-                          <span className={clsx("font-bold truncate max-w-[125px]", idx === 0 ? "text-[#1A1A1A] text-[13px]" : "text-[#1A1A1A]")} title={name}>
-                            {name}
-                          </span>
-                          <span className="text-[9px] text-[#888888] font-medium tracking-wide">
-                            {count} VERIFIED STDS
-                          </span>
+                <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                  {(!selectedMedia || isExploreMode) && (
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        if (!selectedMedia) { exploreInputRef.current?.click(); }
+                        else { handleCreatePost(); }
+                      }}
+                      disabled={isPosting}
+                      loading={isPosting}
+                      className="w-full sm:w-auto sm:min-w-[130px] text-black"
+                    >
+                      Post to Explore
+                    </Button>
+                  )}
+                  {(!selectedMedia || !isExploreMode) && (
+                    <Button
+                      variant="primary"
+                      onClick={handleCreatePost}
+                      disabled={isPosting || isTextTooShort || (!newPostContent.trim() && !selectedMedia)}
+                      loading={isPosting}
+                      className="w-full sm:w-auto sm:min-w-[140px]"
+                    >
+                      Post to Feed
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </Card>
+
+            {/* POSTS FEED */}
+            <div
+              className="bg-card border-y sm:border border-border sm:rounded-[18px] shadow-sm overflow-hidden"
+            >
+              {/* Skeleton */}
+              {showFeedSkeleton && (
+                <div>
+                  {[1, 2, 3].map((n) => (
+                    <div key={n} className="p-6 space-y-4 animate-pulse" style={{ borderBottom: n < 3 ? "1px solid #EDE9E0" : "none" }}>
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-full" style={{ background: "#F0EBE0" }} />
+                        <div className="flex-1 space-y-2">
+                          <div className="h-3.5 rounded-md w-1/3" style={{ background: "#F0EBE0" }} />
+                          <div className="h-3 rounded-md w-1/4" style={{ background: "#F5F2EC" }} />
                         </div>
                       </div>
-                      <div className="text-right shrink-0 flex flex-col items-end relative z-10">
-                        <span className={clsx("font-black tracking-tight", idx === 0 ? "text-amber-600 text-sm" : idx === 1 ? "text-slate-600 text-sm" : idx === 2 ? "text-orange-700 text-sm" : "text-[#C8922A] text-xs")}>
-                          {points.toLocaleString()}
-                        </span>
-                        <span className="text-[9px] text-[#888888] uppercase font-bold tracking-wider leading-none">PTS</span>
+                      <div className="space-y-2 pt-1">
+                        <div className="h-3.5 rounded-md w-full" style={{ background: "#F0EBE0" }} />
+                        <div className="h-3.5 rounded-md w-5/6" style={{ background: "#F0EBE0" }} />
+                        <div className="h-3.5 rounded-md w-3/4" style={{ background: "#F5F2EC" }} />
+                      </div>
+                      <div className="h-48 rounded-2xl w-full" style={{ background: "#F5F2EC" }} />
+                      <div className="flex justify-between pt-2" style={{ borderTop: "1px solid #EDE9E0" }}>
+                        <div className="h-5 rounded-full w-14" style={{ background: "#F5F2EC" }} />
+                        <div className="h-5 rounded-full w-14" style={{ background: "#F5F2EC" }} />
+                        <div className="h-5 rounded-full w-8" style={{ background: "#F5F2EC" }} />
                       </div>
                     </div>
-                  );
-                })
+                  ))}
+                </div>
               )}
-            </div>
-          </div>
 
-          {/* Suggested for you */}
-          <div className="bg-white border border-[#E8E6E0] rounded-2xl p-4 shadow-sm space-y-4">
-            <div className="flex items-center gap-2 pb-2 border-b border-[#F3F2EE]">
-              <Users size={18} className="text-[#C8922A]" />
-              <h3 className="text-xs font-black uppercase tracking-wider text-[#1A1A1A]">Suggested for you</h3>
-            </div>
-            <div className="space-y-4">
-              {loadingSuggested ? (
-                <div className="text-center py-4 text-xs text-[#888888]">Loading...</div>
-              ) : suggestedUsers.length === 0 ? (
-                <div className="text-center py-4 text-xs text-[#888888]">No suggestions right now.</div>
-              ) : (
-                suggestedUsers.slice(0, 5).map((user) => {
-                  const isPending = connectStatus[user._id] === 'pending';
-                  const isConnected = connectStatus[user._id] === 'connected';
-                  
-                  return (
-                    <div key={user._id} className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div 
-                          className="w-9 h-9 rounded-full overflow-hidden border border-[#E8E6E0] bg-[#F9F8F5] flex-shrink-0 cursor-pointer"
-                          onClick={() => router.push(`/profile/${user._id}`)}
+              {/* Empty state */}
+              {!showFeedSkeleton && posts.length === 0 && (
+                <div className="p-10 text-center flex flex-col items-center gap-4">
+                  <div
+                    className="flex items-center justify-center"
+                    style={{ width: 64, height: 64, borderRadius: 18, background: "#FBF7EE", color: "#FDE68A" }}
+                  >
+                    <Compass size={28} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: 18, fontWeight: 700, color: "#202124", letterSpacing: "-0.02em" }}>Welcome to Campus Adda!</h3>
+                    <p style={{ fontSize: 13, color: "#6B7280", marginTop: 6, maxWidth: 320, lineHeight: 1.6 }}>
+                      Your feed is currently empty. Follow students at your college or explore other campuses to see posts and start connecting!
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => router.push('/explore')}
+                    className="text-white"
+                    style={{
+                      borderRadius: 14,
+                      padding: "10px 24px",
+                      background: "linear-gradient(135deg, #FDE68A, #FCD34D)",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      letterSpacing: "0.05em",
+                      textTransform: "uppercase",
+                      boxShadow: "0 4px 14px rgba(253, 230, 138,0.28)",
+                      transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px) scale(1.02)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(253, 230, 138,0.36)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 4px 14px rgba(253, 230, 138,0.28)"; }}
+                  >
+                    Explore Campuses
+                  </button>
+                </div>
+              )}
+
+              {/* Topic filter empty */}
+              {!showFeedSkeleton && posts.length > 0 && filteredPosts.length === 0 && (
+                <div className="p-10 text-center flex flex-col items-center gap-4">
+                  <div className="flex items-center justify-center" style={{ width: 64, height: 64, borderRadius: 18, background: "#FBF7EE", color: "#FDE68A" }}>
+                    <Flame size={28} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: 18, fontWeight: 700, color: "#202124" }}>No posts for #{selectedTopic}</h3>
+                    <p style={{ fontSize: 13, color: "#6B7280", marginTop: 6 }}>Be the first one to post about this topic on your campus!</p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedTopic(null)}
+                    className="text-white"
+                    style={{ borderRadius: 14, padding: "10px 24px", background: "linear-gradient(135deg, #FDE68A, #FCD34D)", fontSize: 12, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", boxShadow: "0 4px 14px rgba(253, 230, 138,0.28)" }}
+                  >
+                    Show All Posts
+                  </button>
+                </div>
+              )}
+
+              {/* Post Cards */}
+              {!showFeedSkeleton && filteredPosts.map((post, postIdx) => (
+                <Card
+                  key={post.id}
+                  variants={itemVariants}
+                  className="post-card relative min-w-0"
+                >
+                  {/* Post Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-4">
+                      {/* Avatar */}
+                      <div
+                        className="overflow-hidden flex-shrink-0 cursor-pointer bg-secondary-background border border-border/80 transition-transform duration-200 hover:scale-105"
+                        style={{ width: 44, height: 44, borderRadius: 14 }}
+                        onClick={() => router.push(`/profile/${post.authorId}`)}
+                      >
+                        <img
+                          src={post.avatar}
+                          alt={post.author}
+                          className="w-full h-full object-cover"
+                          onError={(e) => { e.target.src = getAvatarSrc("", post.author, post.authorId); }}
+                        />
+                      </div>
+                      <div>
+                        <h3
+                          className="flex items-center gap-1.5 cursor-pointer hover:underline decoration-1 underline-offset-2 text-foreground font-bold"
+                          style={{ fontSize: 15, letterSpacing: "-0.015em", lineHeight: 1.25 }}
+                          onClick={() => router.push(`/profile/${post.authorId}`)}
                         >
-                          <img src={getAvatarSrc(user.profilePic, user.name, user._id || user.id)} alt={user.name} className="w-full h-full object-cover" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1">
-                            <p 
-                              className="text-xs font-bold text-[#1A1A1A] truncate cursor-pointer hover:underline"
-                              onClick={() => router.push(`/profile/${user._id}`)}
-                            >
-                              {user.name}
-                            </p>
-                          </div>
-                          <p className="text-[10px] text-[#888888] truncate max-w-[120px]">
-                            {user.university || "CampusAdda User"}
+                          <NameWithTick name={post.author} tick={post.authorTick} />
+                        </h3>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <p suppressHydrationWarning className="text-foreground-muted font-normal" style={{ fontSize: 12.5, letterSpacing: "-0.01em" }}>
+                            {post.university}
+                          </p>
+                          <span className="text-border" style={{ fontSize: 10 }}>•</span>
+                          <p suppressHydrationWarning className="text-foreground-muted/70 font-normal" style={{ fontSize: 12 }}>
+                            {post.time}
                           </p>
                         </div>
                       </div>
-                      
-                      {friendsList.some(f => String(f.id) === String(user._id) || String(f.id) === String(user.id)) || (currentUser?.following || []).some(id => String(id) === String(user._id) || String(id) === String(user.id)) || isConnected ? (
-                        <span className="inline-flex shrink-0 items-center justify-center rounded-full border border-[#0ea5e9]/40 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-wide shadow-sm" style={{ color: '#0ea5e9' }}>
-                          Network
-                        </span>
-                      ) : (
-                        <button
-                          onClick={() => handleConnectUser(user._id)}
-                          disabled={isPending}
-                          className="text-[10px] font-bold px-3 py-1.5 rounded-full border bg-white border-[#C8922A]/40 text-[#C8922A] hover:bg-[#FFF8EC] transition-all shrink-0"
+                    </div>
+
+                    {/* Actions: Follow + Menu */}
+                    <div className="flex items-center gap-2">
+                      {currentUser?._id !== post.authorId && currentUser?.id !== post.authorId ? (
+                        friendsList.some(f => String(f.id) === String(post.authorId)) || (currentUser?.following || []).some(id => String(id) === String(post.authorId)) || connectStatus[post.authorId] === 'connected' ? (
+                          <span
+                            className="inline-flex items-center justify-center rounded-full border border-info/30 bg-info/10 px-3 py-1 text-[10.5px] font-bold text-info tracking-[0.04em] uppercase"
+                          >
+                            Network
+                          </span>
+                        ) : (
+                          <Button
+                            variant="secondary"
+                            onClick={() => handleConnectUser(post.authorId)}
+                            disabled={connectStatus[post.authorId] === 'pending'}
+                            loading={connectStatus[post.authorId] === 'pending'}
+                            className="!h-[32px] !px-4 !text-[11.5px] !rounded-full"
+                          >
+                            Follow
+                          </Button>
+                        )
+                      ) : null}
+
+                      {/* Menu */}
+                      <div className="relative">
+                        <IconButton
+                          onClick={() => setPostMenu(postMenu === post.id ? null : post.id)}
+                          className="!h-8 !w-8"
                         >
-                          {isPending ? "Connecting..." : "Connect"}
+                          <MoreVertical size={18} />
+                        </IconButton>
+                        {postMenu === post.id && (
+                          <div
+                            className="absolute right-0 top-full mt-1.5 py-1 z-50 overflow-hidden rounded-2xl bg-card border border-border shadow-[0_8px_24px_rgba(0,0,0,0.10)]"
+                            style={{
+                              width: 156,
+                            }}
+                          >
+                            {currentUser?._id === post.authorId || currentUser?.id === post.authorId ? (
+                              <button
+                                onClick={() => { handleDeletePost(post.id); setPostMenu(null); }}
+                                className="w-full text-left px-4 py-2.5 cursor-pointer text-danger hover:bg-danger/10 transition-colors"
+                                style={{ fontSize: 13, fontWeight: 600 }}
+                              >
+                                Delete Post
+                              </button>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => { handleHidePost(post.id); setPostMenu(null); }}
+                                  className="w-full text-left px-4 py-2.5 cursor-pointer text-foreground hover:bg-background transition-colors"
+                                  style={{ fontSize: 13, fontWeight: 500 }}
+                                >
+                                  Hide Post
+                                </button>
+                                <div className="h-px bg-border my-0.5 mx-0" />
+                                <button
+                                  onClick={() => { handleReportPost(post.id); setPostMenu(null); }}
+                                  className="w-full text-left px-4 py-2.5 cursor-pointer text-danger hover:bg-danger/10 transition-colors"
+                                  style={{ fontSize: 13, fontWeight: 600 }}
+                                >
+                                  Report Spam
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Post Content */}
+                  {post.content && (
+                    <p className="text-foreground font-medium" style={{ fontSize: 15, lineHeight: 1.6, whiteSpace: "pre-wrap", marginBottom: 16, letterSpacing: "-0.01em" }}>
+                      {post.content}
+                    </p>
+                  )}
+
+                  {/* Poll */}
+                  {post.poll && post.poll.options && post.poll.options.length > 0 && (
+                    <div
+                      className="space-y-3 mb-5 bg-secondary-background border border-border p-4"
+                      style={{ borderRadius: 16 }}
+                    >
+                      <div className="flex items-center justify-between pb-2.5 border-b border-border/80">
+                        <p className="text-foreground-muted" style={{ fontSize: 11.5, fontWeight: 600 }}>
+                          {post.poll.allowMultiple ? "Select multiple answers" : "Select one answer"}
+                        </p>
+                        <span
+                          className="bg-primary/10 border border-primary/20 text-primary"
+                          style={{
+                            fontSize: 9.5, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+                            padding: "2.5px 9px", borderRadius: 9999,
+                          }}
+                        >
+                          Active Poll
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {post.poll.options.map((option, idx) => {
+                          const voteCountOf = (o) => (typeof o.votesCount === 'number' ? o.votesCount : (o.votes?.length || 0));
+                          const maxVotes = Math.max(...post.poll.options.map(voteCountOf));
+                          const totalVotes = post.poll.options.reduce((sum, opt) => sum + voteCountOf(opt), 0);
+                          const optionVotes = voteCountOf(option);
+                          const percentage = totalVotes === 0 ? 0 : Math.round((optionVotes / totalVotes) * 100);
+                          const hasVoted = typeof option.votedByMe === 'boolean'
+                            ? option.votedByMe
+                            : Boolean(option.votes?.includes?.(currentUser?._id || currentUser?.id));
+                          const isLeading = optionVotes === maxVotes && maxVotes > 0;
+                          return (
+                            <div
+                              key={idx}
+                              onClick={() => handleVote(post.id, idx)}
+                              className="relative overflow-hidden cursor-pointer"
+                              style={{ borderRadius: 10, background: "#F5F2EC", transition: "opacity 0.2s ease" }}
+                            >
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${percentage}%` }}
+                                className="absolute top-0 bottom-0 left-0"
+                                style={{
+                                  borderRadius: 10,
+                                  background: isLeading
+                                    ? "linear-gradient(90deg, #FDE68A, #FCD34D)"
+                                    : "rgba(253, 230, 138,0.12)",
+                                }}
+                                transition={{ type: "spring", stiffness: 80, damping: 15 }}
+                              />
+                              <div className="relative flex items-center justify-between z-10" style={{ padding: "12px 14px" }}>
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div
+                                    className="flex items-center justify-center shrink-0 transition-all"
+                                    style={{
+                                      width: 18, height: 18,
+                                      borderRadius: 5,
+                                      border: hasVoted ? "none" : "1.5px solid var(--color-border)",
+                                      background: hasVoted ? "linear-gradient(135deg, var(--color-primary), var(--color-primary-hover))" : "transparent",
+                                    }}
+                                  >
+                                    {hasVoted && <Check size={11} strokeWidth={3} className="text-white" />}
+                                  </div>
+                                  <span className="truncate text-foreground" style={{ fontSize: 13, fontWeight: 500 }}>{option.text}</span>
+                                </div>
+                                <div
+                                  className="flex items-center gap-1.5 shrink-0"
+                                  style={{
+                                    background: "rgba(255,255,255,0.85)",
+                                    backdropFilter: "blur(4px)",
+                                    border: "1px solid #EDE9E0",
+                                    borderRadius: 8, padding: "3px 10px",
+                                    minWidth: 72,
+                                  }}
+                                >
+                                  <span style={{ fontSize: 13, fontWeight: 700, color: "#202124" }}>{percentage}%</span>
+                                  <span style={{ fontSize: 10, fontWeight: 500, color: "#9CA3AF" }}>({optionVotes})</span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="flex items-center justify-between pt-2" style={{ borderTop: "1px solid #EDE9E0" }}>
+                        <button
+                          className="flex items-center gap-1.5 transition-all bg-transparent hover:bg-background text-primary border border-primary/25"
+                          style={{
+                            fontSize: 10, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
+                            borderRadius: 9999, padding: "4px 12px",
+                          }}
+                        >
+                          <BarChart2 size={11} /> View Breakdown
                         </button>
+                        <span className="text-foreground-muted" style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                          {post.poll.options.reduce((sum, opt) => sum + (typeof opt.votesCount === 'number' ? opt.votesCount : (opt.votes?.length || 0)), 0)} total votes
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Media */}
+                  {post.mediaUrl && (
+                    <div
+                      className="overflow-hidden mb-5 rounded-2xl border border-border bg-secondary-background shadow-xs"
+                    >
+                      {post.mediaType === 'video' ? (
+                        <video src={post.mediaUrl} controls className="w-full h-auto max-h-[500px] object-contain" />
+                      ) : (
+                        <img src={post.mediaUrl} alt="Post content" className="w-full h-auto max-h-[500px] object-cover mx-auto" />
                       )}
                     </div>
-                  );
-                })
+                  )}
+
+                  {/* Action Bar */}
+                  <div className="flex items-center justify-between pt-4 mt-2 border-t border-border/40">
+                    <div className="flex items-center gap-2">
+                      {/* Like */}
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.90 }}
+                        onClick={() => toggleLike(post.id)}
+                        className={clsx(
+                          "flex items-center gap-2 h-9 px-3.5 rounded-xl font-bold text-[13px] transition-all cursor-pointer border border-transparent",
+                          post.isLiked
+                            ? "bg-danger/10 text-danger border-danger/20"
+                            : "bg-transparent text-foreground-muted hover:bg-secondary-background hover:text-foreground"
+                        )}
+                      >
+                        <motion.div
+                          animate={post.isLiked ? { scale: [1, 1.25, 1] } : { scale: 1 }}
+                          transition={{ duration: 0.3, ease: "easeInOut" }}
+                        >
+                          <Heart size={19} strokeWidth={post.isLiked ? 2.5 : 2} className={post.isLiked ? "fill-danger" : ""} />
+                        </motion.div>
+                        <span>{post.likes}</span>
+                      </motion.button>
+
+                      {/* Comment */}
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.90 }}
+                        onClick={() => setActiveCommentPost(activeCommentPost === post.id ? null : post.id)}
+                        className={clsx(
+                          "flex items-center gap-2 h-9 px-3.5 rounded-xl font-bold text-[13px] transition-all cursor-pointer border border-transparent",
+                          activeCommentPost === post.id
+                            ? "bg-primary/10 text-primary border-primary/20"
+                            : "bg-transparent text-foreground-muted hover:bg-secondary-background hover:text-foreground"
+                        )}
+                      >
+                        <MessageCircle size={19} strokeWidth={2} />
+                        <span>{post.comments}</span>
+                      </motion.button>
+                    </div>
+
+                    {/* Share (Telegram Style) */}
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.90 }}
+                      onClick={() => setShareModal(post.id)}
+                      title="Share post"
+                      className="flex items-center justify-center h-9 w-9 rounded-xl bg-white text-[#2AABEE] hover:bg-slate-50 shadow-[0_2px_8px_rgba(42,171,238,0.15)] border border-[#2AABEE]/20 transition-all cursor-pointer"
+                    >
+                      <Send size={16} strokeWidth={2.5} className="ml-[-2px] mt-[1px]" />
+                    </motion.button>
+                  </div>
+
+                  {/* Comments Section */}
+                  <AnimatePresence>
+                    {activeCommentPost === post.id && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                        className="mt-4 overflow-hidden border-t border-border pt-4"
+                      >
+                        <div className="space-y-3 mb-4 max-h-52 overflow-y-auto pr-1">
+                          {(post.commentsList || []).map(comment => (
+                            <div
+                              key={comment.id}
+                              className="flex gap-2.5 items-start bg-background rounded-xl px-3 py-2.5"
+                            >
+                              <div
+                                className="overflow-hidden flex-shrink-0 bg-gradient-to-br from-primary to-primary-hover"
+                                style={{ width: 28, height: 28, borderRadius: 9999, padding: 1.5 }}
+                              >
+                                <img
+                                  src={getAvatarSrc(comment.profilePic, comment.author, comment.id || comment._id)}
+                                  alt={comment.author}
+                                  className="w-full h-full rounded-full object-cover bg-white"
+                                  onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getDefaultAvatar(comment.author, comment.id || comment._id); }}
+                                />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-foreground" style={{ fontSize: 12, fontWeight: 700 }}>
+                                  <NameWithTick name={comment.author} tick={comment.authorTick} />
+                                </p>
+                                <p className="text-foreground-muted" style={{ fontSize: 13, marginTop: 2, lineHeight: 1.5 }}>{comment.text}</p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (!commentLikes[comment.id]) {
+                                    setCommentLikes(prev => ({ ...prev, [comment.id]: { liked: comment.likedByMe, count: comment.likesCount } }));
+                                  }
+                                  toggleCommentLike(post.id, comment.id);
+                                }}
+                                className={`flex items-center gap-1 flex-shrink-0 self-center p-1.5 rounded-full transition-colors cursor-pointer ${(commentLikes[comment.id]?.liked ?? comment.likedByMe) ? 'text-red-500' : 'text-[#B5BAC4] hover:text-red-400'
+                                  }`}
+                              >
+                                <Heart size={14} className={`transition-transform ${(commentLikes[comment.id]?.liked ?? comment.likedByMe) ? 'fill-red-500' : ''}`} />
+                                {((commentLikes[comment.id]?.count ?? comment.likesCount ?? 0) > 0) && (
+                                  <span style={{ fontSize: 10, fontWeight: 700 }}>{commentLikes[comment.id]?.count ?? comment.likesCount ?? 0}</span>
+                                )}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-4 flex items-center gap-2">
+                          <Input
+                            placeholder={`Reply to ${post.author}...`}
+                            value={commentInputs[post.id] || ""}
+                            onChange={(e) => setCommentInputs(prev => ({ ...prev, [post.id]: e.target.value }))}
+                            onKeyDown={(e) => e.key === "Enter" && handleComment(post.id)}
+                            wrapperClassName="flex-1"
+                            rightElement={
+                              <Button
+                                variant="primary"
+                                onClick={() => handleComment(post.id)}
+                                className="!h-8 !w-8 !min-w-0 !px-0 !rounded-lg shrink-0"
+                              >
+                                <Send size={14} />
+                              </Button>
+                            }
+                          />
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </Card>
+              ))}
+
+              {/* Load More */}
+              {!showFeedSkeleton && posts.length > 0 && hasMorePosts && !selectedTopic && (
+                <div className="border-t border-border" style={{ padding: "16px 20px" }}>
+                  <Button
+                    variant="secondary"
+                    onClick={loadMorePosts}
+                    disabled={loadingMorePosts}
+                    loading={loadingMorePosts}
+                    className="w-full"
+                  >
+                    Load more posts
+                  </Button>
+                </div>
               )}
             </div>
           </div>
 
-        </aside>
+          {/* ── RIGHT SIDEBAR ── */}
+          <aside className="hidden xl:flex flex-col w-[300px] shrink-0 gap-6 self-start sticky top-6">
+
+            {/* Premium Leaderboard Card */}
+            <Card className="group flex flex-col overflow-hidden border border-border/80 shadow-sm hover:shadow-md transition-shadow duration-300 relative bg-card">
+              {/* Subtle top gradient glow */}
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+              <div className="flex items-center justify-between pb-4 border-b border-border/60 mb-2 relative z-10">
+                <div className="flex items-center gap-3">
+                  <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#FDFBF7] to-[#F5F2EC] border border-border/80 shadow-xs">
+                    <span className="text-lg">🏆</span>
+                    {/* Sparkle animation around trophy */}
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                      className="absolute -inset-1 rounded-xl border border-dashed border-[#FCD34D]/30"
+                    />
+                  </div>
+                  <div className="flex flex-col justify-center">
+                    <h3 className="text-[#1F2937] font-black text-[14px] tracking-tight leading-tight uppercase">
+                      Top Campuses
+                    </h3>
+                    <span className="text-[10px] text-[#6B7280] font-bold tracking-wider uppercase mt-0.5">
+                      Weekly Standings
+                    </span>
+                  </div>
+                </div>
+                <span className="flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-widest text-[#EF4444] border border-[#EF4444]/20 shadow-xs">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#EF4444] opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#EF4444]"></span>
+                  </span>
+                  Live
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-2 relative z-10">
+                {loadingLeaderboard ? (
+                  <div className="py-8 flex flex-col items-center justify-center gap-3">
+                    <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }} className="w-5 h-5 rounded-full border-2 border-[#FCD34D] border-t-transparent" />
+                    <span className="text-[11px] font-bold text-[#6B7280] uppercase tracking-widest">Crunching Numbers...</span>
+                  </div>
+                ) : leaderboard.length === 0 ? (
+                  <div className="py-8 text-center text-xs font-bold text-[#6B7280]">No campus rankings yet.</div>
+                ) : (
+                  leaderboard.slice(0, 5).map((item, idx) => {
+                    const name = item.college || item.name || item._id || "Unknown";
+                    const points = item.points ?? item.score ?? 0;
+                    const maxPts = leaderboard[0]?.points || leaderboard[0]?.score || 1;
+                    const progress = Math.min(100, Math.max(8, (points / maxPts) * 100));
+
+                    return (
+                      <motion.div
+                        key={idx}
+                        initial={{ opacity: 0, y: 15, scale: 0.98 }}
+                        animate={
+                          idx < 3
+                            ? { opacity: 1, y: 0, scale: 1, backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }
+                            : { opacity: 1, y: 0, scale: 1 }
+                        }
+                        transition={{
+                          opacity: { duration: 0.4, delay: idx * 0.08, ease: [0.22, 1, 0.36, 1] },
+                          y: { duration: 0.4, delay: idx * 0.08, ease: [0.22, 1, 0.36, 1] },
+                          scale: { duration: 0.4, delay: idx * 0.08, ease: [0.22, 1, 0.36, 1] },
+                          backgroundPosition: { duration: 4, ease: "linear", repeat: Infinity }
+                        }}
+                        style={idx < 3 ? { backgroundSize: "200% 200%" } : {}}
+                        whileHover={{ scale: 1.02, x: 2 }}
+                        className={clsx(
+                          "relative group/row flex items-center justify-between overflow-hidden rounded-xl p-2.5 transition-all cursor-pointer border",
+                          idx === 0
+                            ? "bg-gradient-to-r from-amber-100 via-amber-300/40 to-amber-100 border-[#FCD34D]/50 shadow-[0_2px_12px_rgba(252, 211, 77,0.2)] hover:border-[#FCD34D]/80"
+                            : idx === 1
+                              ? "bg-gradient-to-r from-slate-100 via-slate-300/40 to-slate-100 border-slate-400/50 shadow-sm hover:border-slate-500/60"
+                              : idx === 2
+                                ? "bg-gradient-to-r from-orange-100 via-orange-300/40 to-orange-100 border-orange-400/50 shadow-sm hover:border-orange-500/60"
+                                : "border-border/50 bg-[#FDFCF9] hover:bg-white hover:border-[#FCD34D]/30 hover:shadow-sm"
+                        )}
+                      >
+                        {/* Animated Soft Background Fill (Twitter Poll Style) */}
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${progress}%` }}
+                          transition={{ duration: 1, delay: 0.2 + idx * 0.1, ease: "easeOut" }}
+                          className={clsx(
+                            "absolute top-0 bottom-0 left-0 z-0",
+                            idx === 0 ? "bg-gradient-to-r from-[#FCD34D]/15 to-[#FCD34D]/5" : "bg-[#F3F0E9]"
+                          )}
+                        />
+
+                        {/* Content */}
+                        <div className="relative z-10 flex items-center gap-3 min-w-0">
+                          {/* Rank Badge */}
+                          <motion.div
+                            animate={idx < 3 ? { backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] } : {}}
+                            transition={{ duration: 3.5, ease: "linear", repeat: Infinity }}
+                            style={idx < 3 ? { backgroundSize: "200% 200%" } : {}}
+                            className={clsx(
+                              "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[12px] font-black shadow-sm border-2",
+                              idx === 0
+                                ? "bg-gradient-to-r from-[#FDE68A] via-[#D97706] to-[#FDE68A] text-[#78350F] border-white ring-2 ring-amber-400/30"
+                                : idx === 1
+                                  ? "bg-gradient-to-r from-[#F3F4F6] via-[#9CA3AF] to-[#F3F4F6] text-[#1F2937] border-white ring-1 ring-slate-300/30"
+                                  : idx === 2
+                                    ? "bg-gradient-to-r from-[#FDBA74] via-[#B45309] to-[#FDBA74] text-[#431407] border-white ring-1 ring-orange-400/30"
+                                    : "bg-white text-[#6B7280] border-[#E8E2D8]"
+                            )}
+                          >
+                            {idx + 1}
+                          </motion.div>
+                          <span className={clsx(
+                            "truncate text-[13.5px] transition-colors",
+                            idx === 0 ? "text-[#1F2937] font-extrabold" : "text-[#4B5563] font-bold group-hover/row:text-[#1F2937]"
+                          )}>
+                            {name}
+                          </span>
+                        </div>
+
+                        <div className="relative z-10 flex shrink-0 items-baseline gap-1">
+                          <span className={clsx(
+                            "font-black tracking-tight",
+                            idx === 0 ? "text-[#FCD34D] text-[14.5px]" : "text-[#1F2937] text-[13px]"
+                          )}>
+                            {points.toLocaleString()}
+                          </span>
+                          <span className="text-[9.5px] font-bold uppercase text-[#6B7280]">pts</span>
+                        </div>
+                      </motion.div>
+                    );
+                  })
+                )}
+              </div>
+            </Card>
+
+            {/* Suggested Connects */}
+            <Card className="group flex flex-col">
+              <div className="flex items-center justify-between pb-4 border-b border-border">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-info/10 text-info">
+                    <Users size={14} strokeWidth={2.5} />
+                  </div>
+                  <h3 className="text-foreground font-bold" style={{ fontSize: 13, letterSpacing: "0.05em", textTransform: "uppercase" }}>
+                    Suggested Connects
+                  </h3>
+                </div>
+              </div>
+              <div className="mt-3.5 flex flex-col gap-1.5">
+                {loadingSuggested ? (
+                  <div className="py-4 text-center text-xs text-foreground-muted">Loading...</div>
+                ) : suggestedUsers.length === 0 ? (
+                  <div className="py-4 text-center text-xs text-foreground-muted">No suggestions right now.</div>
+                ) : (
+                  suggestedUsers.slice(0, 5).map((user) => {
+                    const isPending = connectStatus[user._id] === 'pending';
+                    const isConnected = connectStatus[user._id] === 'connected';
+                    const isNetwork = friendsList.some(f => String(f.id) === String(user._id) || String(f.id) === String(user.id)) || (currentUser?.following || []).some(id => String(id) === String(user._id) || String(id) === String(user.id)) || isConnected;
+                    return (
+                      <div
+                        key={user._id}
+                        className="group/user flex items-center justify-between gap-3 rounded-2xl p-2.5 transition-all duration-200 cursor-pointer border border-transparent hover:border-border/60 hover:bg-secondary-background hover:shadow-xs hover:-translate-y-[1px]"
+                      >
+                        <div className="flex items-center gap-3.5 min-w-0" onClick={() => router.push(`/profile/${user._id}`)}>
+                          <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full border border-border/80 bg-secondary-background shadow-xs">
+                            <img src={getAvatarSrc(user.profilePic, user.name, user._id || user.id)} alt={user.name} className="h-full w-full object-cover" />
+                          </div>
+                          <div className="flex min-w-0 flex-col gap-0.5">
+                            <span className="truncate text-[13.5px] font-bold text-foreground group-hover/user:text-primary transition-colors">{user.name}</span>
+                            <span className="truncate text-[11.5px] font-normal text-foreground-muted">{user.university || "CampusAdda"}</span>
+                          </div>
+                        </div>
+                        {isNetwork ? (
+                          <span className="flex shrink-0 items-center justify-center rounded-full bg-info/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-info border border-info/20">
+                            Network
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleConnectUser(user._id)}
+                            disabled={isPending}
+                            className="flex shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-primary to-primary-hover px-3.5 py-1.5 text-[11.5px] font-bold text-white transition-all duration-200 hover:scale-105 shadow-[0_2px_10px_rgba(201,161,75,0.25)] active:scale-95"
+                          >
+                            {isPending ? "..." : "Connect"}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </Card>
+
+          </aside>
         </div>
       </motion.div>
 
-      {/* Create Poll Modal */}
+      {/* ── CREATE POLL MODAL ───────────────────────────────── */}
       <AnimatePresence>
         {showPollModal && (
-          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 px-3 py-3 backdrop-blur-sm sm:items-center sm:px-4" onClick={() => setShowPollModal(false)}>
+          <div
+            className="fixed inset-0 z-50 flex items-end justify-center px-3 py-3 sm:items-center sm:px-4"
+            style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(6px)" }}
+            onClick={() => setShowPollModal(false)}
+          >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              initial={{ scale: 0.95, opacity: 0, y: 16 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-[1.75rem] border border-[#E8E6E0] p-5 shadow-xl bg-white custom-scrollbar sm:rounded-[3rem] sm:p-8"
+              exit={{ scale: 0.95, opacity: 0, y: 16 }}
+              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              className="max-h-[92dvh] w-full max-w-md overflow-y-auto no-scrollbar"
+              style={{ background: "#FFFFFF", borderRadius: 24, border: "1px solid #EDE9E0", padding: "24px 24px", boxShadow: "0 24px 64px rgba(0,0,0,0.18)" }}
               onClick={e => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2.5 bg-green-500/10 rounded-2xl text-green-500">
-                    <BarChart2 size={24} />
+              <div className="flex items-center justify-between mb-7">
+                <div className="flex items-center gap-3">
+                  <div style={{ padding: 10, background: "rgba(34,197,94,0.10)", borderRadius: 14 }}>
+                    <BarChart2 size={22} style={{ color: "#16a34a" }} />
                   </div>
-                  <h2 className="text-2xl font-bold text-[#1A1A1A] tracking-tight">Create Poll</h2>
+                  <h2 style={{ fontSize: 22, fontWeight: 800, color: "#202124", letterSpacing: "-0.03em" }}>Create Poll</h2>
                 </div>
-                <button onClick={() => setShowPollModal(false)} className="p-2.5 hover:bg-[#F3F2EE] rounded-full transition-colors text-[#888888]"><X size={24} /></button>
+                <IconButton
+                  onClick={() => setShowPollModal(false)}
+                >
+                  <X size={20} />
+                </IconButton>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-5">
                 <div className="space-y-2">
-                  <label className="text-[11px] font-black uppercase tracking-[0.2em] text-[#888888] ml-2">Question</label>
-                  <textarea 
-                    placeholder="Ask something to the campus..." 
+                  <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#9CA3AF" }}>Question</label>
+                  <textarea
+                    placeholder="Ask something to the campus..."
                     value={pollQuestion}
                     onChange={(e) => setPollQuestion(e.target.value)}
-                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-[1.5rem] p-5 text-sm text-[#1A1A1A] focus:outline-none focus:border-[#C8922A]/50 transition-all min-h-[100px] resize-none"
+                    className="w-full resize-none focus:outline-none"
+                    style={{ background: "#F5F2EC", border: "1.5px solid #EDE9E0", borderRadius: 14, padding: "14px 16px", fontSize: 14, color: "#202124", minHeight: 96, fontFamily: "Inter, sans-serif", transition: "all 0.2s ease" }}
+                    onFocus={(e) => { e.target.style.borderColor = "#FDE68A"; e.target.style.boxShadow = "0 0 0 3px rgba(253, 230, 138,0.12)"; e.target.style.background = "#FFFFFF"; }}
+                    onBlur={(e) => { e.target.style.borderColor = "#EDE9E0"; e.target.style.boxShadow = ""; e.target.style.background = "#F5F2EC"; }}
                   />
                 </div>
 
-                <div className="space-y-3">
-                  <label className="text-[11px] font-black uppercase tracking-[0.2em] text-[#888888] ml-2">Options</label>
+                <div className="space-y-2.5">
+                  <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#9CA3AF" }}>Options</label>
                   {pollOptions.map((opt, i) => (
-                    <div key={i} className="relative group">
-                      <input 
-                        type="text" 
+                    <div key={i} className="relative">
+                      <Input
                         placeholder={`Option ${i + 1}`}
                         value={opt}
-                        onChange={(e) => {
-                          const newOpts = [...pollOptions];
-                          newOpts[i] = e.target.value;
-                          setPollOptions(newOpts);
-                        }}
-                        className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-2xl py-4 pl-5 pr-12 text-sm text-[#1A1A1A] focus:outline-none focus:border-[#C8922A]/50 transition-all"
+                        onChange={(e) => { const newOpts = [...pollOptions]; newOpts[i] = e.target.value; setPollOptions(newOpts); }}
                       />
                       {pollOptions.length > 2 && (
-                        <button 
+                        <IconButton
                           onClick={() => setPollOptions(prev => prev.filter((_, idx) => idx !== i))}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-[#AAAAAA] hover:text-red-500 p-1"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 !h-8 !w-8 hover:!bg-[#FFF1F2] hover:!text-[#EF4444]"
                         >
-                          <X size={16} />
-                        </button>
+                          <X size={14} />
+                        </IconButton>
                       )}
                     </div>
                   ))}
-                  
+
                   {pollOptions.length < 5 && (
-                    <button 
+                    <Button
+                      variant="ghost"
                       onClick={() => setPollOptions(prev => [...prev, ""])}
-                      className="w-full py-4 rounded-2xl border border-dashed border-[#E8E6E0] text-[#AAAAAA] text-xs font-bold hover:bg-[#F9F8F5] hover:text-[#4A4A4A] transition-all flex items-center justify-center space-x-2"
+                      className="w-full !border-dashed !border-[1.5px] !border-[#EDE9E0] gap-2 !text-[#B5BAC4] hover:!text-[#6B7280]"
                     >
-                      <Plus size={14} />
-                      <span>Add Option</span>
-                    </button>
+                      <Plus size={14} /> Add Option
+                    </Button>
                   )}
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-[#F9F8F5] rounded-3xl border border-[#E8E6E0]">
-                  <div className="flex items-center space-x-3">
-                    <Check size={18} className={pollAllowMultiple ? "text-green-500" : "text-[#AAAAAA]"} />
-                    <span className="text-sm font-bold text-[#4A4A4A]">Allow multiple answers</span>
+                {/* Allow Multiple Toggle */}
+                <div
+                  className="flex items-center justify-between"
+                  style={{ padding: "14px 16px", background: "#FAF8F3", borderRadius: 14, border: "1px solid #EDE9E0" }}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Check size={16} style={{ color: pollAllowMultiple ? "#16a34a" : "#B5BAC4" }} />
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#4B5563" }}>Allow multiple answers</span>
                   </div>
-                  <button 
+                  <button
                     onClick={() => setPollAllowMultiple(!pollAllowMultiple)}
-                    className={clsx(
-                      "w-12 h-6 rounded-full p-1 transition-all duration-300",
-                      pollAllowMultiple ? "bg-green-500" : "bg-[#D1CFC8]"
-                    )}
+                    className="transition-all duration-300"
+                    style={{
+                      width: 44, height: 24, borderRadius: 9999,
+                      padding: "3px",
+                      background: pollAllowMultiple ? "#16a34a" : "#D8D2C4",
+                      display: "flex", alignItems: "center",
+                      justifyContent: pollAllowMultiple ? "flex-end" : "flex-start",
+                    }}
                   >
-                    <div className={clsx(
-                      "w-4 h-4 bg-white rounded-full shadow-md transition-all transform",
-                      pollAllowMultiple ? "translate-x-6" : "translate-x-0"
-                    )} />
+                    <div style={{ width: 18, height: 18, borderRadius: 9999, background: "#FFFFFF", boxShadow: "0 1px 4px rgba(0,0,0,0.15)" }} />
                   </button>
                 </div>
 
-                <motion.button 
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                <Button
+                  variant="primary"
                   onClick={handleCreatePoll}
                   disabled={!pollQuestion.trim() || pollOptions.filter(opt => opt.trim()).length < 2 || isPosting}
-                  className="w-full bg-green-500 py-4 rounded-[1.5rem] text-sm font-black text-white uppercase tracking-widest shadow-xl shadow-green-500/20 disabled:opacity-40 transition-all"
+                  loading={isPosting}
+                  className="w-full"
                 >
-                  {isPosting ? "Creating..." : "Launch Poll"}
-                </motion.button>
+                  🚀 Launch Poll
+                </Button>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
-      {/* Campus Adda Share Modal */}
+      {/* ── SHARE MODAL ─────────────────────────────────────── */}
       {shareModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 px-3 py-3 backdrop-blur-sm sm:items-center sm:px-4" onClick={() => setShareModal(null)}>
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center px-3 py-3 sm:items-center sm:px-4"
+          style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(6px)" }}
+          onClick={() => setShareModal(null)}
+        >
           <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
+            initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="max-h-[88dvh] w-full max-w-md overflow-y-auto rounded-[1.75rem] border border-[#E8E6E0] p-5 shadow-xl bg-white custom-scrollbar sm:rounded-[2.5rem] sm:p-6"
+            className="max-h-[88dvh] w-full max-w-md overflow-y-auto no-scrollbar"
+            style={{ background: "#FFFFFF", borderRadius: 24, border: "1px solid #EDE9E0", padding: "24px", boxShadow: "0 24px 64px rgba(0,0,0,0.18)" }}
             onClick={e => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-[#1A1A1A] tracking-tight">Share with Network</h2>
-              <button onClick={() => setShareModal(null)} className="p-2 hover:bg-[#F3F2EE] rounded-full transition-colors text-[#888888]"><X size={20} /></button>
+            <div className="flex items-center justify-between mb-5">
+              <h2 style={{ fontSize: 20, fontWeight: 800, color: "#202124", letterSpacing: "-0.03em" }}>Share with Network</h2>
+              <button
+                onClick={() => setShareModal(null)}
+                style={{ width: 34, height: 34, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", color: "#9CA3AF", transition: "all 0.2s ease" }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "#F5F2EC"; e.currentTarget.style.color = "#202124"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#9CA3AF"; }}
+              >
+                <X size={18} />
+              </button>
             </div>
-            <div className="relative mb-6">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#AAAAAA]" size={18} />
-              <input 
-                type="text" 
-                placeholder="Find people to share with..." 
+            <div className="mb-5">
+              <Input
+                icon={Search}
+                placeholder="Find people to share with..."
                 value={shareSearchTerm}
                 onChange={(e) => setShareSearchTerm(e.target.value)}
-                className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-2xl py-3 pl-12 pr-4 text-sm text-[#1A1A1A] focus:outline-none focus:border-[#C8922A]/50 transition-all"
               />
             </div>
-            <div className="space-y-3 max-h-72 overflow-y-auto pr-1 custom-scrollbar">
+            <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
               {friendsList.length === 0 && (
                 <div className="text-center py-10 space-y-2">
-                  <p className="text-[#888888] text-sm">No connections found yet.</p>
-                  <button onClick={() => router.push('/friends')} className="text-[#C8922A] text-xs font-bold hover:underline">Find Campus Network</button>
+                  <p style={{ fontSize: 13, color: "#9CA3AF" }}>No connections found yet.</p>
+                  <button onClick={() => router.push('/friends')} style={{ fontSize: 12, fontWeight: 700, color: "#FDE68A" }} className="hover:underline">Find Campus Network</button>
                 </div>
               )}
               {friendsList.filter(f => f.name.toLowerCase().includes(shareSearchTerm.toLowerCase())).map(friend => (
-                <div key={friend.id} className="flex items-center justify-between p-3 hover:bg-[#F9F8F5] rounded-2xl transition-all border border-transparent hover:border-[#E8E6E0] group">
-                  <div className="flex items-center space-x-4">
-                    <img src={friend.avatar} alt={friend.name} className="w-11 h-11 rounded-full object-cover border border-[#E8E6E0]" />
-                    <p className="text-sm font-bold text-[#1A1A1A]">{friend.name}</p>
+                <div
+                  key={friend.id}
+                  className="flex items-center justify-between gap-3 group rounded-xl p-3 transition-all"
+                  style={{ border: "1px solid #EDE9E0", background: "#FDFCF9", transition: "all 0.2s ease" }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "#FAF5E8"; e.currentTarget.style.borderColor = "#FDE68A"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "#FDFCF9"; e.currentTarget.style.borderColor = "#EDE9E0"; }}
+                >
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <img src={friend.avatar} alt={friend.name} className="object-cover shrink-0" style={{ width: 42, height: 42, borderRadius: 12, border: "1.5px solid #EDE9E0" }} />
+                    <p className="truncate" style={{ fontSize: 14, fontWeight: 700, color: "#202124" }}>{friend.name}</p>
                   </div>
-                  <button 
+                  <button
                     onClick={() => handleShareToFriend(friend.id, shareModal)}
-                    className="gradient-bg text-white text-[11px] font-bold px-5 py-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="text-white shrink-0 transition-all hover:scale-105 active:scale-95"
+                    style={{ borderRadius: 9999, padding: "6px 16px", fontSize: 11, fontWeight: 700, background: "linear-gradient(135deg, #FDE68A, #FCD34D)", boxShadow: "0 2px 8px rgba(253, 230, 138,0.28)" }}
                   >
-                    Send Now
+                    Send
                   </button>
                 </div>
               ))}
@@ -1951,155 +2177,142 @@ export default function Home() {
         </div>
       )}
 
-      {/* Story Viewer */}
+      {/* ── STORY VIEWER ────────────────────────────────────── */}
       {activeStory && (() => {
         const currentStory = activeStory.stories[currentStoryIndex];
         const totalStories = activeStory.stories.length;
         const goNext = (e) => { e?.stopPropagation(); if (currentStoryIndex < totalStories - 1) { storyProgressKey.current++; setCurrentStoryIndex(i => i + 1); setIsStoryPaused(false); } else { setActiveStory(null); } };
         const goPrev = (e) => { e?.stopPropagation(); if (currentStoryIndex > 0) { storyProgressKey.current++; setCurrentStoryIndex(i => i - 1); setIsStoryPaused(false); } };
         return (
-        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/90" onClick={() => setActiveStory(null)}>
-          <style>{`
-            @keyframes story-progress-30s { from { width: 0%; } to { width: 100%; } }
-            .story-bar-active { animation: story-progress-30s 30s linear forwards; }
-            .story-bar-active.paused { animation-play-state: paused; }
-            .story-bar-done { width: 100%; background: white; }
-            .story-bar-pending { width: 0%; }
-          `}</style>
-          <div className="relative h-[100dvh] w-full max-w-lg overflow-hidden bg-black shadow-2xl sm:aspect-[9/16] sm:h-auto md:rounded-3xl" onClick={e => e.stopPropagation()}>
-
-            {/* Progress Bars */}
-            <div className="absolute top-4 left-4 right-4 flex space-x-1 z-30">
-              {activeStory.stories.map((s, i) => (
-                <div key={`${s._id}-${storyProgressKey.current}`} className="h-[3px] bg-white/30 flex-1 rounded-full overflow-hidden">
-                  <div 
-                    onAnimationEnd={() => goNext()}
-                    className={`h-full bg-white rounded-full ${
-                      i < currentStoryIndex ? 'story-bar-done' :
-                      i === currentStoryIndex ? `story-bar-active ${isStoryPaused ? 'paused' : ''}` :
-                      'story-bar-pending'
-                    }`}
-                  />
+          <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center" style={{ background: "rgba(0,0,0,0.92)" }} onClick={() => setActiveStory(null)}>
+            <style>{`
+              @keyframes story-progress-30s { from { width: 0%; } to { width: 100%; } }
+              .story-bar-active { animation: story-progress-30s 30s linear forwards; }
+              .story-bar-active.paused { animation-play-state: paused; }
+              .story-bar-done { width: 100%; background: white; }
+              .story-bar-pending { width: 0%; }
+            `}</style>
+            <div className="relative h-[100dvh] w-full max-w-lg overflow-hidden bg-black sm:aspect-[9/16] sm:h-auto md:rounded-3xl" style={{ boxShadow: "0 0 80px rgba(0,0,0,0.8)" }} onClick={e => e.stopPropagation()}>
+              {/* Progress Bars */}
+              <div className="absolute top-4 left-4 right-4 flex gap-1 z-30">
+                {activeStory.stories.map((s, i) => (
+                  <div key={`${s._id}-${storyProgressKey.current}`} className="h-[3px] flex-1 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.28)" }}>
+                    <div
+                      onAnimationEnd={() => goNext()}
+                      className={`h-full rounded-full ${i < currentStoryIndex ? 'story-bar-done' : i === currentStoryIndex ? `story-bar-active ${isStoryPaused ? 'paused' : ''}` : 'story-bar-pending'}`}
+                      style={{ background: "#FFFFFF" }}
+                    />
+                  </div>
+                ))}
+              </div>
+              {/* Header */}
+              <div className="absolute top-10 left-4 right-4 flex justify-between items-center z-30">
+                <div className="flex items-center gap-3">
+                  <div style={{ width: 36, height: 36, borderRadius: 9999, padding: 2, background: "linear-gradient(135deg, #FDE68A, #FCD34D)" }}>
+                    <img src={getAvatarSrc(activeStory.author.profilePic, activeStory.author.name, activeStory.author._id || activeStory.author.id)} className="w-full h-full rounded-full border border-black object-cover" alt="" />
+                  </div>
+                  <div>
+                    <p className="!text-white font-bold" style={{ fontSize: 14 }}>{activeStory.author.name}</p>
+                    <p className="!text-white/60 uppercase" style={{ fontSize: 10, letterSpacing: "0.06em" }}>
+                      {new Date(currentStory.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · {currentStoryIndex + 1}/{totalStories}
+                    </p>
+                  </div>
                 </div>
-              ))}
-            </div>
-
-            {/* Header */}
-            <div className="absolute top-10 left-4 right-4 flex justify-between items-center z-30">
-              <div className="flex items-center space-x-3">
-                <div className="w-9 h-9 rounded-full p-[2px] gradient-bg">
-                  <img 
-                    src={getAvatarSrc(activeStory.author.profilePic, activeStory.author.name, activeStory.author._id || activeStory.author.id)} 
-                    className="w-full h-full rounded-full border border-black object-cover" 
-                    alt="" 
-                  />
-                </div>
-                <div>
-                  <p className="!text-white font-bold text-sm leading-tight">{activeStory.author.name}</p>
-                  <p className="!text-white/60 text-[10px] uppercase tracking-wider">
-                    {new Date(currentStory.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} · {currentStoryIndex + 1}/{totalStories}
-                  </p>
+                <div className="flex items-center gap-1">
+                  <button onClick={(e) => { e.stopPropagation(); setIsStoryPaused(p => !p); }} className="!text-white p-2 rounded-full transition-all" style={{ background: "rgba(255,255,255,0.12)" }}>
+                    {isStoryPaused ? <Play size={18} /> : <Pause size={18} />}
+                  </button>
+                  <button onClick={() => setActiveStory(null)} className="!text-white p-2 rounded-full transition-all" style={{ background: "rgba(255,255,255,0.12)" }}>
+                    <X size={20} />
+                  </button>
                 </div>
               </div>
-              <div className="flex items-center space-x-1">
-                <button onClick={(e) => { e.stopPropagation(); setIsStoryPaused(p => !p); }} className="!text-white p-2 !bg-white/10 hover:!bg-white/20 rounded-full transition-all">
-                  {isStoryPaused ? <Play size={18} /> : <Pause size={18} />}
-                </button>
-                <button onClick={() => setActiveStory(null)} className="!text-white p-2 !bg-white/10 hover:!bg-white/20 rounded-full transition-all">
-                  <X size={20} />
-                </button>
+              {/* Content */}
+              <div className="w-full h-full flex items-center justify-center bg-black relative">
+                {currentStory.mediaType === 'video' ? (
+                  <video ref={storyVideoRef} src={currentStory.mediaUrl} autoPlay playsInline className="w-full h-full object-cover" />
+                ) : (
+                  <img src={currentStory.mediaUrl} className="w-full h-full object-cover" alt="" />
+                )}
+                <div className="absolute inset-x-0 top-0 h-36 bg-gradient-to-b from-black/70 to-transparent z-10" />
+                <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/80 to-transparent z-10" />
+                <div className="absolute inset-y-0 left-0 w-1/3 z-20 cursor-pointer" onClick={goPrev} />
+                <div className="absolute inset-y-0 right-0 w-1/3 z-20 cursor-pointer" onClick={goNext} />
               </div>
-            </div>
-
-            {/* Content */}
-            <div className="w-full h-full flex items-center justify-center bg-black relative">
-              {currentStory.mediaType === 'video' ? (
-                <video ref={storyVideoRef} src={currentStory.mediaUrl} autoPlay playsInline className="w-full h-full object-cover" />
-              ) : (
-                <img src={currentStory.mediaUrl} className="w-full h-full object-cover" alt="" />
+              {/* Nav Arrows */}
+              {currentStoryIndex > 0 && (
+                <button onClick={goPrev} className="absolute left-3 top-1/2 -translate-y-1/2 z-30 p-2 !text-white rounded-full backdrop-blur-sm transition-all" style={{ background: "rgba(255,255,255,0.15)" }}>
+                  <ChevronLeft size={24} />
+                </button>
               )}
-              {/* Top & Bottom Gradients */}
-              <div className="absolute inset-x-0 top-0 h-36 bg-gradient-to-b from-black/70 to-transparent z-10" />
-              <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/80 to-transparent z-10" />
-
-              {/* Tap zones: left = prev, right = next */}
-              <div className="absolute inset-y-0 left-0 w-1/3 z-20 cursor-pointer" onClick={goPrev} />
-              <div className="absolute inset-y-0 right-0 w-1/3 z-20 cursor-pointer" onClick={goNext} />
-            </div>
-
-            {/* Prev / Next Arrow Buttons */}
-            {currentStoryIndex > 0 && (
-              <button
-                onClick={goPrev}
-                className="absolute left-3 top-1/2 -translate-y-1/2 z-30 p-2 !bg-white/15 hover:!bg-white/30 !text-white rounded-full backdrop-blur-sm transition-all"
-              >
-                <ChevronLeft size={24} />
-              </button>
-            )}
-            {currentStoryIndex < totalStories - 1 && (
-              <button
-                onClick={goNext}
-                className="absolute right-3 top-1/2 -translate-y-1/2 z-30 p-2 !bg-white/15 hover:!bg-white/30 !text-white rounded-full backdrop-blur-sm transition-all"
-              >
-                <ChevronRight size={24} />
-              </button>
-            )}
-
-            {/* Story Actions */}
-            <div className="absolute bottom-8 left-4 right-4 flex items-center space-x-3 z-30">
-              <form 
-                onSubmit={(e) => handleStoryReply(e, currentStory._id, activeStory.author._id || activeStory.author.id)}
-                className="flex-1 flex space-x-2"
-                onClick={e => e.stopPropagation()}
-              >
-                <div className="flex-1 rounded-full flex items-center px-4 py-3 border !border-white/30 !bg-black/40 backdrop-blur-md">
-                  <input 
-                    type="text" 
-                    value={storyReplyText}
-                    onChange={(e) => setStoryReplyText(e.target.value)}
-                    placeholder={`Reply to ${activeStory.author.name.split(' ')[0]}...`} 
-                    className="!bg-transparent !text-white text-sm focus:outline-none w-full placeholder:!text-white/60"
-                  />
-                </div>
-                <button 
-                  type="submit"
-                  className="p-3 gradient-bg rounded-full !text-white shadow-lg shrink-0"
-                  disabled={!storyReplyText.trim()}
-                >
-                  <Send size={18} />
+              {currentStoryIndex < totalStories - 1 && (
+                <button onClick={goNext} className="absolute right-3 top-1/2 -translate-y-1/2 z-30 p-2 !text-white rounded-full backdrop-blur-sm transition-all" style={{ background: "rgba(255,255,255,0.15)" }}>
+                  <ChevronRight size={24} />
                 </button>
-              </form>
-              <button 
-                onClick={(e) => { e.stopPropagation(); handleStoryLike(currentStory._id); }}
-                className="p-3 rounded-full !text-white !bg-black/40 border !border-white/30 backdrop-blur-md shrink-0"
-              >
-                <Heart 
-                  size={22} 
-                  className={(currentStory.likes || []).some(id => id.toString() === (currentUser?._id || currentUser?.id)?.toString()) ? "fill-red-500 text-red-500" : ""}
-                />
-              </button>
+              )}
+              {/* Story Actions */}
+              <div className="absolute bottom-8 left-4 right-4 flex items-center gap-3 z-30">
+                <form
+                  onSubmit={(e) => handleStoryReply(e, currentStory._id, activeStory.author._id || activeStory.author.id)}
+                  className="flex-1 flex gap-2"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <div className="flex-1 rounded-full flex items-center px-4 py-3" style={{ border: "1px solid rgba(255,255,255,0.25)", background: "rgba(0,0,0,0.45)", backdropFilter: "blur(12px)" }}>
+                    <input
+                      type="text"
+                      value={storyReplyText}
+                      onChange={(e) => setStoryReplyText(e.target.value)}
+                      placeholder={`Reply to ${activeStory.author.name.split(' ')[0]}...`}
+                      className="!bg-transparent !text-white text-sm focus:outline-none w-full placeholder:!text-white/55"
+                    />
+                  </div>
+                  <button type="submit" className="p-3 gradient-bg rounded-full !text-white shadow-lg shrink-0" disabled={!storyReplyText.trim()}>
+                    <Send size={18} />
+                  </button>
+                </form>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleStoryLike(currentStory._id); }}
+                  className="p-3 rounded-full !text-white shrink-0 backdrop-blur-sm"
+                  style={{ border: "1px solid rgba(255,255,255,0.25)", background: "rgba(0,0,0,0.40)" }}
+                >
+                  <Heart size={22} style={{ fill: (currentStory.likes || []).some(id => id.toString() === (currentUser?._id || currentUser?.id)?.toString()) ? "#EF4444" : "none", color: (currentStory.likes || []).some(id => id.toString() === (currentUser?._id || currentUser?.id)?.toString()) ? "#EF4444" : "#FFFFFF" }} />
+                </button>
+              </div>
             </div>
           </div>
-        </div>
         );
       })()}
 
-      {/* Premium Toast */}
+      {/* ── TOAST ───────────────────────────────────────────── */}
       <AnimatePresence>
         {toastMsg && (
-          <motion.div 
-            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+          <motion.div
+            initial={{ opacity: 0, y: 40, scale: 0.92 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 50, scale: 0.9 }}
-            className="app-panel fixed bottom-28 left-1/2 -translate-x-1/2 px-8 py-3.5 rounded-full z-[60] flex items-center space-x-3"
+            exit={{ opacity: 0, y: 40, scale: 0.92 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed bottom-28 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-3 px-6 py-3.5"
+            style={{
+              background: "#202124",
+              borderRadius: 9999,
+              boxShadow: "0 8px 32px rgba(0,0,0,0.24), 0 0 0 1px rgba(255,255,255,0.08)",
+              backdropFilter: "blur(12px)",
+            }}
           >
-            <div className="gradient-bg text-white p-1 rounded-full">
-              <Check size={14} strokeWidth={4} />
+            <div
+              className="flex items-center justify-center text-white"
+              style={{ width: 22, height: 22, borderRadius: 9999, background: "linear-gradient(135deg, #FDE68A, #FCD34D)" }}
+            >
+              <Check size={12} strokeWidth={3.5} />
             </div>
-            <span className="text-sm font-bold text-white whitespace-nowrap">{toastMsg}</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "#FFFFFF", whiteSpace: "nowrap", letterSpacing: "-0.01em" }}>{toastMsg}</span>
           </motion.div>
         )}
       </AnimatePresence>
+      <FAB onClick={() => {
+        setIsMobileCreateOpen(true);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }} isVisible={!isMobileCreateOpen} />
     </div>
   );
 }

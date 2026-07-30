@@ -10,6 +10,7 @@ const postSchema = mongoose.Schema({
   comments: [{
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     text: { type: String, required: true },
+    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     createdAt: { type: Date, default: Date.now }
   }],
   hashtags: [{ type: String }],

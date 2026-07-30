@@ -1112,7 +1112,7 @@ export default function FriendsPage() {
                     onClick={() => setLeaderboardTab("my_campus")}
                     className={clsx(
                       "rounded-[1.1rem] px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] transition-all",
-                      leaderboardTab === "my_campus" ? "gradient-bg text-[#1A1A1A] shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)]" : "text-[#6B6B6B] hover:text-[#1A1A1A]"
+                      leaderboardTab === "my_campus" ? "bg-gradient-to-br from-primary to-primary-hover text-[#1F2937] shadow-[0_4px_14px_rgba(253,230,138,0.4)]" : "text-[#6B6B6B] hover:text-[#1A1A1A]"
                     )}
                   >
                     My Campus
@@ -1123,7 +1123,7 @@ export default function FriendsPage() {
                     }}
                     className={clsx(
                       "rounded-[1.1rem] px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] transition-all",
-                      leaderboardTab === "global_pulse" ? "gradient-bg text-[#1A1A1A] shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)]" : "text-[#6B6B6B] hover:text-[#1A1A1A]"
+                      leaderboardTab === "global_pulse" ? "bg-gradient-to-br from-primary to-primary-hover text-[#1F2937] shadow-[0_4px_14px_rgba(253,230,138,0.4)]" : "text-[#6B6B6B] hover:text-[#1A1A1A]"
                     )}
                   >
                     Global Pulse

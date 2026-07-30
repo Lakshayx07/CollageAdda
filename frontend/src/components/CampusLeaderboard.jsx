@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo } from "react";
 import Image from "next/image";
 import { Clock3, Sparkles, Star, Trophy, UsersRound } from "lucide-react";
 import clsx from "clsx";
 import { useApiQuery } from "@/utils/useApiQuery";
+import { motion } from "framer-motion";
 
 const POLL_INTERVAL_MS = 15000;
 
@@ -17,14 +18,13 @@ const LOCAL_LOGOS = [
   { pattern: /christ/i, logo: "/college-logos/christ-university.png" }
 ];
 
-const FALLBACK_COLORS = ["#1f8a70", "#7c3aed", "#2563eb", "#ea580c", "#be123c", "#047857", "#0891b2"];
+const FALLBACK_COLORS = ["#FDE68A", "#3B82F6", "#10B981", "#8B5CF6", "#F59E0B", "#EF4444", "#06B6D4"];
 
 const formatTimestamp = (value) => {
   if (!value) return "Refreshing...";
   return new Intl.DateTimeFormat("en-US", {
-    month: "long",
+    month: "short",
     day: "2-digit",
-    year: "numeric",
     hour: "numeric",
     minute: "2-digit",
     hour12: true
@@ -61,21 +61,21 @@ const normalizeLeaderboard = (payload) => {
 
 function CollegeMark({ college, size = "md" }) {
   const dimensions = {
-    lg: "h-[68px] w-[68px]",
-    md: "h-[58px] w-[58px]",
-    sm: "h-10 w-10"
+    lg: "h-[72px] w-[72px]",
+    md: "h-[60px] w-[60px]",
+    sm: "h-11 w-11"
   }[size];
   const initials = initialsFor(college.name);
   const hasImage = typeof college.logo === "string" && college.logo.startsWith("/");
 
   return (
-    <div className={clsx("grid shrink-0 place-items-center overflow-hidden rounded-full bg-white p-1.5 shadow-[0_8px_22px_rgba(0,0,0,0.32)] ring-2 ring-white/12", dimensions)} aria-hidden="true">
+    <div className={clsx("grid shrink-0 place-items-center overflow-hidden rounded-full bg-white p-1 shadow-[0_4px_12px_rgba(0,0,0,0.06)] border border-[#EDE9E0]", dimensions)} aria-hidden="true">
       {hasImage ? (
         <Image src={college.logo} alt="" width={72} height={72} className="h-full w-full rounded-full object-contain" />
       ) : (
         <div
-          className="grid h-full w-full place-items-center rounded-full text-sm font-black text-[#1A1A1A]"
-          style={{ backgroundColor: college.accent }}
+          className="grid h-full w-full place-items-center rounded-full text-sm font-black text-white"
+          style={{ background: `linear-gradient(135deg, ${college.accent}, #202124)` }}
         >
           {college.fallbackLogo && college.fallbackLogo.length <= 3 ? college.fallbackLogo : initials}
         </div>
@@ -84,88 +84,120 @@ function CollegeMark({ college, size = "md" }) {
   );
 }
 
-function Ribbon({ rank, tone }) {
-  const toneStyles = {
-    gold: "from-yellow-100 via-yellow-300 to-amber-500 text-[#1b1200] shadow-[0_0_18px_rgba(250,204,21,0.42)]",
-    silver: "from-slate-50 via-slate-300 to-slate-500 text-[#111827] shadow-[0_0_14px_rgba(203,213,225,0.24)]",
-    bronze: "from-orange-200 via-orange-400 to-orange-700 text-[#1f0b00] shadow-[0_0_14px_rgba(251,146,60,0.26)]"
-  };
-
-  return (
-    <div className="absolute -top-5 left-1/2 z-30 -translate-x-1/2">
-      <div className={clsx("relative flex h-[52px] w-[42px] items-start justify-center bg-gradient-to-b pt-2 text-[22px] font-black leading-none", toneStyles[tone])}>
-        <span className="relative z-20 drop-shadow-[0_1px_0_rgba(255,255,255,0.45)]">{rank}</span>
-        <div className="absolute -left-3 top-2.5 h-7 w-4 rounded-l-full border-l border-t border-current/25 opacity-65" />
-        <div className="absolute -right-3 top-2.5 h-7 w-4 rounded-r-full border-r border-t border-current/25 opacity-65" />
-        <div className="absolute bottom-0 left-0 h-0 w-0 border-b-[12px] border-l-[21px] border-r-[21px] border-b-[#0a0a14] border-l-transparent border-r-transparent" />
-      </div>
-    </div>
-  );
-}
-
 function WinnerSparkles() {
   const sparkles = [
-    { left: "5%", top: "14%", size: 12, delay: "0s", duration: "1.7s" },
-    { left: "18%", top: "8%", size: 9, delay: "0.35s", duration: "2.2s" },
-    { left: "80%", top: "13%", size: 13, delay: "0.75s", duration: "1.9s" },
-    { left: "92%", top: "33%", size: 10, delay: "1.05s", duration: "2.4s" },
-    { left: "11%", top: "48%", size: 8, delay: "1.3s", duration: "2s" }
+    { left: "10%", top: "15%", size: 14, delay: "0s", duration: "2s" },
+    { left: "20%", top: "5%", size: 10, delay: "0.4s", duration: "2.5s" },
+    { left: "85%", top: "10%", size: 16, delay: "0.8s", duration: "2.2s" },
+    { left: "90%", top: "35%", size: 12, delay: "1.2s", duration: "2.8s" },
+    { left: "12%", top: "50%", size: 9, delay: "1.5s", duration: "2.4s" }
   ];
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-10">
+    <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden rounded-2xl">
       {sparkles.map((sparkle, index) => (
-        <Sparkles
+        <motion.div
           key={index}
-          size={sparkle.size}
-          className="leaderboard-twinkle absolute text-[#ffd700] drop-shadow-[0_0_8px_rgba(255,215,0,0.82)]"
-          style={{
-            left: sparkle.left,
-            top: sparkle.top,
-            animationDelay: sparkle.delay,
-            animationDuration: sparkle.duration
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ opacity: [0, 1, 0], scale: [0.5, 1.2, 0.5] }}
+          transition={{
+            duration: parseFloat(sparkle.duration),
+            repeat: Infinity,
+            delay: parseFloat(sparkle.delay),
+            ease: "easeInOut"
           }}
-        />
+          className="absolute text-[#FDE68A]"
+          style={{ left: sparkle.left, top: sparkle.top }}
+        >
+          <Sparkles size={sparkle.size} fill="#FDE68A" />
+        </motion.div>
       ))}
     </div>
   );
 }
 
-function PodiumCard({ college, variant }) {
+function PodiumCard({ college, variant, maxPoints }) {
   const isWinner = variant === "gold";
+  
   const variantStyles = {
-    gold: "min-h-[250px] border-yellow-400/70 bg-[radial-gradient(circle_at_50%_0%,rgba(250,204,21,0.33),rgba(120,53,15,0.20)_46%,rgba(12,12,24,0.94)_100%)] shadow-[0_0_34px_rgba(245,158,11,0.25)] lg:-mt-8 lg:min-h-[265px]",
-    silver: "min-h-[210px] border-indigo-300/45 bg-[radial-gradient(circle_at_50%_0%,rgba(148,163,184,0.20),rgba(67,56,202,0.13)_46%,rgba(12,12,24,0.95)_100%)] lg:mt-5",
-    bronze: "min-h-[210px] border-orange-500/50 bg-[radial-gradient(circle_at_50%_0%,rgba(234,88,12,0.24),rgba(88,28,13,0.18)_46%,rgba(12,12,24,0.95)_100%)] lg:mt-5"
-  };
-  const pointsColor = {
-    gold: "#facc15",
-    silver: "#a5a6ff",
-    bronze: "#fb923c"
+    gold: {
+      container: "min-h-[270px] lg:-mt-6 border-primary/40 bg-gradient-to-b from-[#FFFDF5] to-card",
+      shadow: "shadow-[0_8px_28px_rgba(201,161,75,0.15)] hover:shadow-[0_16px_40px_rgba(201,161,75,0.22)]",
+      badge: "bg-gradient-to-br from-primary to-[#EAC87A] border-white text-white shadow-sm",
+      text: "text-primary",
+    },
+    silver: {
+      container: "min-h-[230px] lg:mt-4 border-slate-300/50 bg-gradient-to-b from-[#F8FAFC] to-card",
+      shadow: "shadow-[0_8px_24px_rgba(148,163,184,0.12)] hover:shadow-[0_16px_36px_rgba(148,163,184,0.18)]",
+      badge: "bg-gradient-to-br from-slate-400 to-slate-200 border-white text-white shadow-sm",
+      text: "text-slate-600",
+    },
+    bronze: {
+      container: "min-h-[210px] lg:mt-8 border-amber-600/30 bg-gradient-to-b from-[#FFFBF0] to-card",
+      shadow: "shadow-[0_8px_24px_rgba(217,119,6,0.12)] hover:shadow-[0_16px_36px_rgba(217,119,6,0.18)]",
+      badge: "bg-gradient-to-br from-amber-600 to-amber-400 border-white text-white shadow-sm",
+      text: "text-amber-700",
+    }
   }[variant];
 
+  const progress = maxPoints > 0 ? (college.points / maxPoints) * 100 : 0;
+
   return (
-    <article className={clsx("relative flex flex-col items-center justify-center rounded-[1.05rem] border px-4 pb-5 pt-10 text-center", variantStyles[variant])}>
-      <Ribbon rank={college.rank} tone={variant} />
+    <motion.article 
+      whileHover={{ y: -4, scale: 1.02 }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      className={clsx(
+        "relative flex flex-col items-center justify-center rounded-[20px] border-2 px-4 pb-6 pt-10 text-center transition-all duration-300 cursor-default",
+        variantStyles.container,
+        variantStyles.shadow
+      )}
+    >
+      {/* Animated Rank Badge */}
+      <motion.div 
+        initial={{ scale: 0, rotate: -180 }}
+        animate={{ scale: 1, rotate: 0 }}
+        transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
+        className={clsx(
+          "absolute -top-5 flex h-10 w-10 items-center justify-center rounded-full border-[3px] text-lg font-black shadow-md z-20",
+          variantStyles.badge
+        )}
+      >
+        {college.rank}
+      </motion.div>
+
       {isWinner && <WinnerSparkles />}
+
       <CollegeMark college={college} size={isWinner ? "lg" : "md"} />
-      <h3 className="mt-4 max-w-[14rem] text-base font-black leading-tight tracking-tight text-[#1A1A1A] sm:text-lg">
+      
+      <h3 className="mt-4 max-w-[14rem] text-base font-bold leading-tight tracking-tight text-foreground">
         {college.name}
       </h3>
+      
       {isWinner && (
-        <div className="mt-2 rounded-md border border-yellow-300/10 bg-yellow-400/12 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: "#facc15" }}>
+        <div className="mt-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.1em] text-primary">
           Top Campus 🏆
         </div>
       )}
-      <div className="mt-4 flex items-end justify-center gap-1.5">
-        <span className="text-3xl font-black leading-none sm:text-4xl" style={{ color: pointsColor }}>{college.points}</span>
-        <span className="pb-0.5 text-lg font-black text-[#1A1A1A]">pts</span>
+
+      <div className="mt-4 flex flex-col items-center gap-1.5 w-full px-2">
+        <div className="flex items-baseline justify-center gap-1.5">
+          <span className={clsx("text-3xl font-black leading-none", variantStyles.text)}>
+            {college.points}
+          </span>
+          <span className="text-[11px] font-bold text-foreground-muted uppercase tracking-wider">weekly pts</span>
+        </div>
+        
+        {/* Tiny Progress Bar */}
+        <div className="mt-1 h-1.5 w-full max-w-[100px] overflow-hidden rounded-full bg-border">
+          <motion.div 
+            initial={{ width: 0 }}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 1, delay: 0.3 }}
+            className={clsx("h-full rounded-full", variantStyles.badge)}
+          />
+        </div>
       </div>
-      <p className="mt-3 flex items-center justify-center gap-1.5 text-xs font-semibold text-[#4A4A4A] sm:text-sm">
-        <UsersRound size={15} />
-        {pluralizeStudents(college.verifiedStudents)}
-      </p>
-    </article>
+    </motion.article>
   );
 }
 
@@ -192,111 +224,167 @@ export default function CampusLeaderboard({ apiUrl }) {
     const third = leaders.find(item => item.rank === 3);
     return { first, second, third };
   }, [leaders]);
+  
   const tableRows = leaders.filter(item => item.rank >= 4);
+  const maxPoints = podium.first?.points || 1;
 
   return (
-    <section className="relative mx-auto max-w-[980px] overflow-visible rounded-[1.35rem] border border-[#E8E6E0] bg-[#0a0a14] p-4 shadow-2xl shadow-black/30 sm:p-5 lg:p-6">
-      <style>{`
-        @keyframes leaderboardTwinkle {
-          0%, 100% { opacity: 0.32; transform: scale(1); }
-          50% { opacity: 1; transform: scale(1.2); }
-        }
-        .leaderboard-twinkle { animation-name: leaderboardTwinkle; animation-iteration-count: infinite; animation-timing-function: ease-in-out; }
-      `}</style>
-      <div className="absolute inset-x-0 top-0 h-44 rounded-t-[1.35rem] bg-[radial-gradient(circle_at_50%_0%,rgba(139,92,246,0.18),transparent_66%)]" />
+    <section className="relative mx-auto max-w-[980px] overflow-visible rounded-3xl border border-border bg-card p-5 shadow-[0_8px_32px_rgba(0,0,0,0.04)] sm:p-6 lg:p-8">
+      {/* Soft Top Gradient */}
+      <div className="absolute inset-x-0 top-0 h-32 rounded-t-3xl bg-gradient-to-b from-background to-transparent pointer-events-none" />
+      
       <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <Trophy size={32} strokeWidth={2.4} style={{ color: "#8b5cf6" }} />
-            <h2 className="text-2xl font-black uppercase tracking-tight sm:text-3xl">
-              <span className="text-[#1A1A1A]">Campus </span>
-              <span className="bg-gradient-to-r from-violet-400 to-[#D4A843] bg-clip-text text-transparent">Leaderboard</span>
-            </h2>
+            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-primary/10 border border-primary/20 shadow-[0_2px_8px_rgba(252, 211, 77,0.12)]">
+              <Trophy size={24} strokeWidth={2.5} className="text-primary animate-pulse" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
+                  Campus Leaderboard
+                </h2>
+                <span className="flex items-center gap-1.5 rounded-full bg-danger/10 px-2.5 py-0.5 text-[10px] font-bold text-danger border border-danger/20 uppercase tracking-wider">
+                  <span className="h-1.5 w-1.5 rounded-full bg-danger animate-ping" />
+                  Live
+                </span>
+              </div>
+            </div>
           </div>
-          <p className="mt-2 text-sm font-medium text-[#6B6B6B]">
+          <p className="mt-2 text-sm font-medium text-foreground-muted">
             Celebrating colleges with the most verified students on CampusAdda
           </p>
         </div>
-        <div className="flex w-full max-w-[15rem] items-center gap-2.5 rounded-xl border border-white/15 bg-[#F3F2EE] px-3 py-2.5 shadow-lg shadow-black/20">
-          <div className="grid h-8 w-8 place-items-center rounded-lg bg-white/8">
-            <Clock3 size={17} className="text-[#4A4A4A]" />
+        <div className="flex w-full max-w-[14rem] items-center gap-3 rounded-2xl border border-border bg-secondary-background px-3.5 py-2.5 shadow-xs">
+          <div className="grid h-8 w-8 place-items-center rounded-full bg-card shadow-sm border border-border">
+            <Clock3 size={16} className="text-primary" />
           </div>
           <div>
-            <p className="text-[11px] font-semibold text-[#4A4A4A]">Last Updated</p>
-            <p className="mt-0.5 text-[11px] font-medium text-[#4A4A4A]">{formatTimestamp(lastUpdated)}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted">Last Updated</p>
+            <p className="mt-0.5 text-xs font-semibold text-foreground-muted">{formatTimestamp(lastUpdated)}</p>
           </div>
         </div>
       </div>
 
       {loading ? (
-        <div className="relative z-10 mt-8 rounded-2xl border border-dashed border-white/12 py-10 text-center">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-[#888888]">Building leaderboard...</p>
+        <div className="relative z-10 mt-8 rounded-2xl border-2 border-dashed border-border bg-background py-12 text-center">
+          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }} className="mx-auto h-8 w-8 rounded-full border-2 border-primary border-t-transparent" />
+          <p className="mt-4 text-xs font-bold uppercase tracking-widest text-foreground-muted">Building leaderboard...</p>
         </div>
       ) : leaders.length === 0 ? (
-        <div className="relative z-10 mt-8 rounded-2xl border border-dashed border-white/12 py-10 text-center">
-          <p className="text-sm font-bold text-[#6B6B6B]">No colleges ranked yet.</p>
-          <p className="mt-2 text-xs text-[#6B6B6B]">Rankings appear as more verified students join.</p>
+        <div className="relative z-10 mt-8 rounded-2xl border-2 border-dashed border-border bg-background py-12 text-center">
+          <p className="text-sm font-bold text-foreground-muted">No colleges ranked yet.</p>
+          <p className="mt-2 text-xs font-medium text-foreground-muted">Rankings appear as more verified students join.</p>
         </div>
       ) : (
         <>
-          <div className="relative z-10 mt-12 grid items-end gap-3 lg:grid-cols-[0.96fr_1.12fr_0.96fr]">
-            {podium.second && <PodiumCard college={podium.second} variant="silver" />}
-            {podium.first && <PodiumCard college={podium.first} variant="gold" />}
-            {podium.third && <PodiumCard college={podium.third} variant="bronze" />}
+          <div className="relative z-10 mt-10 grid items-end gap-4 lg:grid-cols-[1fr_1.1fr_1fr]">
+            {podium.second && (
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <PodiumCard college={podium.second} variant="silver" maxPoints={maxPoints} />
+              </motion.div>
+            )}
+            {podium.first && (
+              <motion.div
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <motion.div
+                  animate={{ y: [0, -5, 0] }}
+                  transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+                >
+                  <PodiumCard college={podium.first} variant="gold" maxPoints={maxPoints} />
+                </motion.div>
+              </motion.div>
+            )}
+            {podium.third && (
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <PodiumCard college={podium.third} variant="bronze" maxPoints={maxPoints} />
+              </motion.div>
+            )}
           </div>
 
-          <div className="relative z-10 mt-5 overflow-hidden rounded-[1.05rem] border border-[#E8E6E0] bg-[#F3F2EE] p-2.5">
-            <div className="grid grid-cols-[4.25rem_minmax(0,1fr)_7rem_5.75rem] rounded-lg bg-[#F3F2EE] px-3.5 py-2.5 text-[10px] font-black uppercase tracking-[0.13em] text-[#888888]5 max-md:hidden">
+          <div className="relative z-10 mt-8 flex flex-col gap-2">
+            <div className="hidden grid-cols-[4rem_minmax(0,1fr)_10rem] rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-[0.1em] text-foreground-muted md:grid">
               <span>Rank</span>
-              <span>College / University</span>
-              <span className="text-center">Verified Students</span>
-              <span className="text-right">Points</span>
+              <span>College</span>
+              <span className="text-right">Weekly Points</span>
             </div>
-            <div className="mt-2 space-y-1.5">
+            
+            <div className="space-y-2">
               {tableRows.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-[#E8E6E0] py-6 text-center">
-                  <p className="text-xs font-bold text-[#888888]">More ranked colleges will appear here.</p>
+                <div className="rounded-2xl border-2 border-dashed border-border bg-background py-8 text-center">
+                  <p className="text-xs font-bold text-foreground-muted">More ranked colleges will appear here.</p>
                 </div>
-              ) : tableRows.map(college => (
-                <div key={college.name} className="grid items-center gap-2.5 rounded-xl bg-[#12182a]/82 px-3.5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] md:grid-cols-[4.25rem_minmax(0,1fr)_7rem_5.75rem]">
-                  <div className="flex items-center gap-2.5 md:block">
-                    <div className="grid h-9 w-9 place-items-center rounded-full bg-[#F3F2EE] text-sm font-black text-[#4A4A4A]">
+              ) : tableRows.map((college, idx) => (
+                <motion.div 
+                  key={college.name} 
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.35, delay: 0.35 + idx * 0.05, ease: [0.22, 1, 0.36, 1] }}
+                  whileHover={{ scale: 1.015, x: 6, backgroundColor: "var(--color-card)" }}
+                  className="grid items-center gap-3 rounded-2xl border border-border/60 px-4 py-3 shadow-xs transition-all hover:border-primary/40 hover:shadow-[0_4px_16px_rgba(252, 211, 77,0.12)] md:grid-cols-[4rem_minmax(0,1fr)_10rem] bg-secondary-background cursor-pointer"
+                >
+                  <div className="flex items-center">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-card border border-border text-sm font-black text-foreground-muted shadow-sm transition-colors group-hover:border-primary">
                       {college.rank}
                     </div>
-                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#888888] md:hidden">Rank</span>
                   </div>
+                  
                   <div className="flex min-w-0 items-center gap-3">
                     <CollegeMark college={college} size="sm" />
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-black text-[#1A1A1A]">{college.name}</p>
-                      <p className="mt-0.5 flex items-center gap-1.5 text-[11px] font-medium text-[#888888]5">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold text-foreground">{college.name}</p>
+                      <p className="mt-0.5 flex items-center gap-1.5 text-[11px] font-medium text-foreground-muted">
                         <UsersRound size={12} />
                         {pluralizeStudents(college.verifiedStudents)}
                       </p>
                     </div>
                   </div>
-                  <div className="text-left text-sm font-black text-[#1A1A1A] md:text-center">{college.verifiedStudents}</div>
-                  <div className="text-left text-base font-black text-[#1A1A1A] md:text-right">{college.points} pts</div>
-                </div>
+                  
+                  <div className="flex flex-col justify-center px-2 text-right">
+                    <div className="flex items-baseline justify-end gap-1">
+                      <span className="text-base font-bold text-primary">{college.points}</span>
+                      <span className="text-[10px] font-bold uppercase text-foreground-muted">pts</span>
+                    </div>
+                    <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-border">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${maxPoints > 0 ? (college.points/maxPoints)*100 : 0}%` }}
+                        transition={{ duration: 1, delay: 0.4 + idx * 0.05 }}
+                        className="h-full rounded-full bg-gradient-to-r from-primary to-primary-hover"
+                      />
+                    </div>
+                  </div>
+                </motion.div>
               ))}
             </div>
           </div>
         </>
       )}
 
-      <div className="relative z-10 mt-4 flex flex-col gap-3 rounded-xl border border-[#E8E6E0] bg-[#F3F2EE] p-3.5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-[#C8922A] to-[#D4A843]">
-            <Star size={20} className="text-[#1A1A1A]" />
+      <div className="relative z-10 mt-8 flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3.5">
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-primary-hover shadow-md">
+            <Star size={20} className="text-white" />
           </div>
           <div>
-            <p className="text-sm font-black" style={{ color: "#a78bfa" }}>How it works?</p>
-            <p className="mt-0.5 text-xs font-medium text-[#6B6B6B]">
+            <p className="text-sm font-black text-foreground">How it works?</p>
+            <p className="mt-0.5 text-xs font-medium text-foreground-muted">
               Colleges earn points based on the number of verified students on CampusAdda.
             </p>
           </div>
         </div>
-        <p className="text-left text-sm font-black sm:text-right" style={{ color: "#a78bfa" }}>
+        <p className="text-left text-sm font-bold text-primary sm:text-right px-2 py-1.5 rounded-lg bg-background">
           Invite more. Earn more. Climb the ranks! 🚀
         </p>
       </div>

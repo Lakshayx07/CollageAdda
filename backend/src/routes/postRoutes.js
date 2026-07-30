@@ -224,7 +224,39 @@ router.post('/:id/comment', protect, verified, async (req, res) => {
     await awardXP(req.user._id, 'COMMENT_POST', `comment_${post.comments[post.comments.length - 1]._id.toString()}`);
 
     await post.populate('comments.user', 'name');
-    res.status(201).json(slimComments(post.comments));
+    res.status(201).json(slimComments(post.comments, req.user._id));
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @route   PUT /api/posts/:id/comment/:commentId/like
+// @desc    Toggle like on a comment
+router.put('/:id/comment/:commentId/like', protect, verified, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).json({ message: 'Post not found' });
+
+    const comment = post.comments.id(req.params.commentId);
+    if (!comment) return res.status(404).json({ message: 'Comment not found' });
+
+    if (!comment.likes) {
+      comment.likes = [];
+    }
+
+    const userIdStr = req.user._id.toString();
+    const alreadyLiked = comment.likes.some((id) => id.toString() === userIdStr);
+    
+    if (alreadyLiked) {
+      comment.likes = comment.likes.filter((id) => id.toString() !== userIdStr);
+    } else {
+      comment.likes.push(req.user._id);
+    }
+    
+    post.markModified('comments');
+    await post.save();
+
+    res.json({ likes: comment.likes.length, liked: !alreadyLiked });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Camera, Check, PartyPopper, Phone, SkipForward, Sparkles, User } from "lucide-react";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import { Input } from "@/components/ui/Input";
 import clsx from "clsx";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import { saveProfileAvatarUrl, uploadAvatar } from "@/utils/supabaseUploads";
@@ -291,7 +292,7 @@ export default function OnboardingPage() {
               <div className="space-y-5">
                 <User className="text-[#C8922A]" size={34} />
                 <h1 className="text-3xl font-black tracking-tight">What&apos;s your full name?</h1>
-                <input className={fieldClass} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Your full name" />
+                <Input label="Your full name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Jane Doe" />
               </div>
             )}
 
@@ -337,7 +338,7 @@ export default function OnboardingPage() {
                     <option value="" className="bg-white">Course</option>
                     {courseOptions.map(course => <option key={course} value={course} className="bg-white">{course}</option>)}
                   </select>
-                  <input className={fieldClass} value={form.branch} onChange={e => setForm({ ...form, branch: e.target.value })} placeholder="Computer Science, ECE, Marketing" />
+                  <Input label="Branch" value={form.branch} onChange={e => setForm({ ...form, branch: e.target.value })} placeholder="Computer Science, ECE, Marketing" />
                 </div>
               </div>
             )}
@@ -371,7 +372,7 @@ export default function OnboardingPage() {
               <div className="space-y-5">
                 <Sparkles className="text-[#C8922A]" size={34} />
                 <h1 className="text-3xl font-black tracking-tight">Write a short bio</h1>
-                <input className={fieldClass} maxLength={100} value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} placeholder="Final year CSE | Dev | CAT 2025 Aspirant" />
+                <Input label="Short Bio" maxLength={100} value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} placeholder="Final year CSE | Dev | CAT 2025 Aspirant" />
                 <p className="text-right text-xs font-bold text-[#888888]">{form.bio.length}/100</p>
               </div>
             )}
@@ -380,10 +381,7 @@ export default function OnboardingPage() {
               <div className="space-y-5">
                 <Phone className="text-[#C8922A]" size={34} />
                 <h1 className="text-3xl font-black tracking-tight">Phone number</h1>
-                <div className="flex rounded-2xl border border-[#E8E6E0] bg-[#F3F2EE]">
-                  <span className="border-r border-[#E8E6E0] px-4 py-3 text-sm font-black text-[#888888]5">+91</span>
-                  <input className="min-w-0 flex-1 bg-transparent px-4 py-3 text-sm font-semibold text-[#1A1A1A] outline-none" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="Optional" />
-                </div>
+                <Input label="Phone (+91)" type="tel" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="Optional" />
               </div>
             )}
 

@@ -488,7 +488,7 @@ router.get('/daily-drop', protect, async (req, res) => {
       dropDate &&
       dropDate.getTime() === today.getTime() &&
       me.dailyDropUsers &&
-      me.dailyDropUsers.length === 5
+      me.dailyDropUsers.length >= 8
     ) {
       console.log('[DailyDrop] Returning cached users for today');
       const userIds = me.dailyDropUsers.map(u => u._id || u);
@@ -518,7 +518,9 @@ router.get('/daily-drop', protect, async (req, res) => {
           followingCount: fc.followingCount || 0,
         };
       });
-      return res.json(cachedWithPostsCount);
+      // Always exclude self from results
+      const filtered = cachedWithPostsCount.filter(u => String(u._id || u.id) !== String(req.user._id));
+      return res.json(filtered);
     }
 
     // ── Build exclusion list (self + already following) ───────────────────
@@ -531,34 +533,34 @@ router.get('/daily-drop', protect, async (req, res) => {
     const notAlreadyPicked = () => [...excludeIds, ...suggested.map(u => u._id.toString())];
 
     // ── PRIORITY 1: Same campus, not connected ─────────────────────────────
-    if (suggested.length < 5 && me.university) {
+    if (suggested.length < 8 && me.university) {
       const sameCampus = await User.find({
         _id: { $nin: notAlreadyPicked() },
         university: me.university,
         name: { $exists: true, $ne: '' }
       })
         .select(fields)
-        .limit(5 - suggested.length)
+        .limit(8 - suggested.length)
         .lean();
       console.log(`[DailyDrop] P1 same-campus found: ${sameCampus.length}`);
       suggested = [...suggested, ...sameCampus];
     }
 
     // ── PRIORITY 2: Common interests ──────────────────────────────────────
-    if (suggested.length < 5 && me.interests && me.interests.length > 0) {
+    if (suggested.length < 8 && me.interests && me.interests.length > 0) {
       const common = await User.find({
         _id: { $nin: notAlreadyPicked() },
         interests: { $elemMatch: { $in: me.interests } }
       })
         .select(fields)
-        .limit(5 - suggested.length)
+        .limit(8 - suggested.length)
         .lean();
       console.log(`[DailyDrop] P2 common-interests found: ${common.length}`);
       suggested = [...suggested, ...common];
     }
 
     // ── PRIORITY 3: Popular users (highest follower count) ─────────────────
-    if (suggested.length < 5) {
+    if (suggested.length < 8) {
       const popular = await User.aggregate([
         { $match: { _id: { $nin: notAlreadyPicked().map(id => {
           try { return new mongoose.Types.ObjectId(id); } catch { return null; }
@@ -566,7 +568,7 @@ router.get('/daily-drop', protect, async (req, res) => {
         { $sample: { size: 200 } },
         { $addFields: { score: { $add: [{ $size: { $ifNull: ['$followers', []] } }, { $size: { $ifNull: ['$following', []] } }] } } },
         { $sort: { score: -1 } },
-        { $limit: 5 - suggested.length },
+        { $limit: 8 - suggested.length },
         { $project: { name: 1, university: 1, profilePic: 1, bio: 1, interests: 1, year: 1, studyYear: 1, passOutBatch: 1, course: 1, branch: 1, followers: 1, following: 1, isVerified: 1, xp: 1, points: 1, currentTick: 1, streak: 1, createdAt: 1, updatedAt: 1 } }
       ]);
       console.log(`[DailyDrop] P3 popular found: ${popular.length}`);
@@ -574,26 +576,26 @@ router.get('/daily-drop', protect, async (req, res) => {
     }
 
     // ── PRIORITY 4: Recently joined (last 7 days) ──────────────────────────
-    if (suggested.length < 5) {
+    if (suggested.length < 8) {
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
       const newUsers = await User.find({
         _id: { $nin: notAlreadyPicked() },
         createdAt: { $gte: sevenDaysAgo }
       })
         .select(fields)
-        .limit(5 - suggested.length)
+        .limit(8 - suggested.length)
         .lean();
       console.log(`[DailyDrop] P4 new-users found: ${newUsers.length}`);
       suggested = [...suggested, ...newUsers];
     }
 
     // ── PRIORITY 5: ABSOLUTE FALLBACK — just get anyone ───────────────────
-    if (suggested.length < 5) {
+    if (suggested.length < 8) {
       const anyone = await User.find({
         _id: { $nin: notAlreadyPicked() }
       })
         .select(fields)
-        .limit(5 - suggested.length)
+        .limit(8 - suggested.length)
         .lean();
       console.log(`[DailyDrop] P5 fallback found: ${anyone.length}`);
       suggested = [...suggested, ...anyone];
@@ -636,7 +638,11 @@ router.get('/daily-drop', protect, async (req, res) => {
       };
     });
 
-    res.json(suggestedWithPostsCount);
+    // Always exclude self from results and slice to max 5
+    const finalSuggested = suggestedWithPostsCount
+      .filter(u => String(u._id || u.id) !== String(req.user._id))
+      .slice(0, 5);
+    res.json(finalSuggested);
   } catch (error) {
     console.error('[DailyDrop] Error:', error);
     res.status(500).json({ message: error.message });
@@ -726,15 +732,19 @@ router.put('/:id/follow', protect, async (req, res) => {
     const currentUser = await User.findById(req.user._id);
     if (!targetUser) return res.status(404).json({ message: 'User not found' });
 
-    const isFollowing = currentUser.following.includes(req.params.id);
+    const isFollowing = currentUser.following.some(id => id.toString() === req.params.id);
     if (isFollowing) {
       currentUser.following = currentUser.following.filter(id => id.toString() !== req.params.id);
       targetUser.followers = targetUser.followers.filter(id => id.toString() !== req.user._id.toString());
       await revokeXP(targetUser._id, 'CONNECT_USER', `follow_${req.user._id}_${targetUser._id}`);
       await revokeXP(req.user._id, 'CONNECT_USER', `follow_${req.user._id}_${targetUser._id}`);
     } else {
-      currentUser.following.push(req.params.id);
-      targetUser.followers.push(req.user._id);
+      if (!currentUser.following.some(id => id.toString() === req.params.id)) {
+        currentUser.following.push(req.params.id);
+      }
+      if (!targetUser.followers.some(id => id.toString() === req.user._id.toString())) {
+        targetUser.followers.push(req.user._id);
+      }
       // Award XP to the user being followed (as a connection event)
       await awardXP(targetUser._id, 'CONNECT_USER', `follow_${req.user._id}_${targetUser._id}`);
       // Also award to the follower if desired, but typically "Make 15 connections" might mean both sides
@@ -832,6 +842,30 @@ router.get('/network/leaderboard', protect, async (req, res) => {
     res.json(formatted);
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+// @route   GET /api/users/:id/followers
+// @desc    Get user's followers
+router.get('/:id/followers', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).populate('followers', 'name university profilePic _id isVerified xp points currentTick createdAt');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json((user.followers || []).map(follower => transformUser(follower.toObject ? follower.toObject() : follower)));
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/users/:id/following
+// @desc    Get user's following
+router.get('/:id/following', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).populate('following', 'name university profilePic _id isVerified xp points currentTick createdAt');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json((user.following || []).map(followed => transformUser(followed.toObject ? followed.toObject() : followed)));
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
   }
 });
 

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { Input } from '@/components/ui/Input';
 import {
   Check,
   ChevronDown,
@@ -161,6 +162,7 @@ function GoogleContinueButton({ onSuccess, onError, disabled }) {
   const fallbackHostRef = useRef(null);
   const onSuccessRef = useRef(onSuccess);
   const onErrorRef = useRef(onError);
+  const isPromptingRef = useRef(false);
 
   useEffect(() => {
     onSuccessRef.current = onSuccess;
@@ -191,7 +193,10 @@ function GoogleContinueButton({ onSuccess, onError, disabled }) {
 
     window.google.accounts.id.initialize({
       client_id: clientId,
-      callback: (response) => onSuccessRef.current?.(response),
+      callback: (response) => {
+        isPromptingRef.current = false;
+        onSuccessRef.current?.(response);
+      },
       auto_select: false,
       cancel_on_tap_outside: true,
       use_fedcm_for_prompt: true,
@@ -232,7 +237,7 @@ function GoogleContinueButton({ onSuccess, onError, disabled }) {
   }, []);
 
   const handleClick = useCallback(() => {
-    if (disabled) return;
+    if (disabled || isPromptingRef.current) return;
     if (!scriptLoadedSuccessfully || !window.google?.accounts?.id) {
       onErrorRef.current?.("Google is still loading — try again in a moment.");
       return;
@@ -245,7 +250,10 @@ function GoogleContinueButton({ onSuccess, onError, disabled }) {
     if (!initializedRef.current) {
       window.google.accounts.id.initialize({
         client_id: clientId,
-        callback: (response) => onSuccessRef.current?.(response),
+        callback: (response) => {
+          isPromptingRef.current = false;
+          onSuccessRef.current?.(response);
+        },
         auto_select: false,
         cancel_on_tap_outside: true,
         use_fedcm_for_prompt: true,
@@ -255,13 +263,33 @@ function GoogleContinueButton({ onSuccess, onError, disabled }) {
       initializedRef.current = true;
     }
 
-    // Prefer on-page FedCM / One Tap — no blank popup window
-    window.google.accounts.id.prompt((notification) => {
-      // Only fall back when Google cannot show the on-page prompt
-      if (notification.isNotDisplayed?.() || notification.isSkippedMoment?.()) {
-        triggerFallbackButton();
-      }
-    });
+    try {
+      isPromptingRef.current = true;
+      // Prefer on-page FedCM / One Tap — no blank popup window
+      window.google.accounts.id.prompt((notification) => {
+        if (
+          notification.isNotDisplayed?.() ||
+          notification.isSkippedMoment?.() ||
+          notification.isDismissedMoment?.()
+        ) {
+          isPromptingRef.current = false;
+        }
+
+        // Only fall back when Google cannot show the on-page prompt
+        // Or if it skipped for a reason other than user explicitly cancelling
+        if (
+          notification.isNotDisplayed?.() ||
+          (notification.isSkippedMoment?.() &&
+            notification.getSkippedReason?.() !== "user_cancel" &&
+            notification.getSkippedReason?.() !== "tap_outside")
+        ) {
+          triggerFallbackButton();
+        }
+      });
+    } catch (err) {
+      isPromptingRef.current = false;
+      triggerFallbackButton();
+    }
   }, [disabled, scriptLoadedSuccessfully, clientId, triggerFallbackButton]);
 
   const ready = scriptLoadedSuccessfully && clientId && clientId !== "YOUR_GOOGLE_CLIENT_ID";
@@ -541,43 +569,34 @@ export default function LoginPage() {
               {emailOpen && (
                   <form className={styles.emailForm} onSubmit={handleAuth}>
                     {isSignUp && (
-                      <input
-                        type="text"
+                      <Input
+                        label="Full name"
                         value={name}
                         onChange={(event) => setName(event.target.value)}
-                        placeholder="Full name"
+                        placeholder="e.g. Jane Doe"
                         autoComplete="name"
                         required
                       />
                     )}
-                    <input
+                    <Input
+                      label="College Email"
                       type="email"
                       value={email}
                       onChange={(event) => setEmail(event.target.value)}
-                      placeholder="College email"
+                      placeholder="you@college.edu"
                       autoComplete="email"
                       required
                     />
-                    <div className={styles.passwordField}>
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        value={password}
-                        onChange={(event) => setPassword(event.target.value)}
-                        placeholder="Password"
-                        autoComplete={isSignUp ? "new-password" : "current-password"}
-                        minLength={6}
-                        required
-                      />
-                      <button
-                        type="button"
-                        className={styles.passwordToggle}
-                        onClick={() => setShowPassword((visible) => !visible)}
-                        aria-label={showPassword ? "Hide password" : "Show password"}
-                        aria-pressed={showPassword}
-                      >
-                        {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
-                      </button>
-                    </div>
+                    <Input
+                      label="Password"
+                      type="password"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      placeholder="••••••••"
+                      autoComplete={isSignUp ? "new-password" : "current-password"}
+                      minLength={6}
+                      required
+                    />
                     <button className={styles.submitButton} type="submit" disabled={isLoading}>
                       {isLoading ? "Please wait..." : isSignUp ? "Create Account" : "Continue with Email"}
                     </button>

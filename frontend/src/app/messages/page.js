@@ -1812,7 +1812,7 @@ function MessagesContent() {
                 Connect with your campus network or join university hubs to start vibrating.
               </p>
             </div>
-            <button className="gradient-bg px-8 py-3 rounded-full text-sm font-bold text-[#1A1A1A] shadow-xl shadow-[0_4px_14px_rgba(200,146,42,0.15)]">
+            <button className="bg-gradient-to-br from-primary to-primary-hover px-8 py-3 rounded-full text-sm font-extrabold text-[#1F2937] shadow-[0_4px_14px_rgba(253,230,138,0.4)] hover:shadow-[0_6px_20px_rgba(253,230,138,0.6)] transition-all transform hover:scale-105 hover:-translate-y-0.5 active:scale-95">
               New Message
             </button>
           </div>

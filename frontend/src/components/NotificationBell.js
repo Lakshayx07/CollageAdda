@@ -57,7 +57,8 @@ export default function NotificationBell() {
         setNotifications(data);
       }
     } catch (err) {
-      console.error("Error fetching notifications:", err);
+      // Use console.warn instead of console.error to prevent Next.js from throwing a full-screen dev overlay on simple polling network failures
+      console.warn("Could not fetch notifications:", err.message);
     }
   };
 
@@ -88,7 +89,7 @@ export default function NotificationBell() {
       setUnreadCount(0);
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
     } catch (err) {
-      console.error(err);
+      console.warn("Failed to mark notifications as read:", err.message);
     }
   };
 
@@ -124,9 +125,10 @@ export default function NotificationBell() {
         >
           <Bell 
             size={20} 
+            strokeWidth={2.2}
             className={clsx(
               "transition-colors",
-              unreadCount > 0 ? "text-amber-400 fill-amber-400" : "text-[#6B6B6B]"
+              unreadCount > 0 ? "text-primary fill-primary" : "text-[#1F2937]"
             )} 
           />
         </motion.div>

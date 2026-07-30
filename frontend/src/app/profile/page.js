@@ -38,30 +38,30 @@ import { useQueryClient } from "@tanstack/react-query";
 import { indiaStatesDistricts } from "@/utils/indiaStatesDistricts";
 
 const INTEREST_OPTIONS = [
-  { name: "Hackathons", icon: <Trophy size={12} /> },
-  { name: "Music", icon: <Music size={12} /> },
-  { name: "Coding", icon: <Code size={12} /> },
-  { name: "Design", icon: <Palette size={12} /> },
-  { name: "Gaming", icon: <Gamepad2 size={12} /> },
-  { name: "Sports", icon: <Trophy size={12} /> },
-  { name: "Placements", icon: <Briefcase size={12} /> },
-  { name: "Startups", icon: <Zap size={12} /> },
-  { name: "Content Creation", icon: <Film size={12} /> },
-  { name: "Photography", icon: <Camera size={12} /> },
-  { name: "Reading", icon: <Book size={12} /> },
-  { name: "Cultural Events", icon: <Music size={12} /> }
+  { name: "Hackathons", icon: "💻" },
+  { name: "Music", icon: "🎵" },
+  { name: "Coding", icon: "👨‍💻" },
+  { name: "Design", icon: "🎨" },
+  { name: "Gaming", icon: "🎮" },
+  { name: "Sports", icon: "🏅" },
+  { name: "Placements", icon: "💼" },
+  { name: "Startups", icon: "🚀" },
+  { name: "Content Creation", icon: "🎬" },
+  { name: "Photography", icon: "📸" },
+  { name: "Reading", icon: "📚" },
+  { name: "Cultural Events", icon: "🎭" }
 ];
 const SPORT_OPTIONS = [
-  { name: "Football", icon: <Trophy size={12} /> },
-  { name: "Basketball", icon: <Trophy size={12} /> },
-  { name: "Cricket", icon: <Trophy size={12} /> },
-  { name: "Tennis", icon: <Trophy size={12} /> },
-  { name: "Badminton", icon: <Trophy size={12} /> },
-  { name: "Volleyball", icon: <Trophy size={12} /> },
-  { name: "Table Tennis", icon: <Trophy size={12} /> },
-  { name: "Athletics", icon: <Trophy size={12} /> },
-  { name: "Swimming", icon: <Trophy size={12} /> },
-  { name: "Chess", icon: <Trophy size={12} /> }
+  { name: "Football", icon: "⚽" },
+  { name: "Basketball", icon: "🏀" },
+  { name: "Cricket", icon: "🏏" },
+  { name: "Tennis", icon: "🎾" },
+  { name: "Badminton", icon: "🏸" },
+  { name: "Volleyball", icon: "🏐" },
+  { name: "Table Tennis", icon: "🏓" },
+  { name: "Athletics", icon: "🏃" },
+  { name: "Swimming", icon: "🏊" },
+  { name: "Chess", icon: "♟️" }
 ];
 
 const XP_TIERS = [
@@ -228,7 +228,8 @@ export default function ProfilePage() {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [shareModalPost, setShareModalPost] = useState(null);
   const [shareSending, setShareSending] = useState({});
-
+  const [customInterestInput, setCustomInterestInput] = useState("");
+  const [customSportInput, setCustomSportInput] = useState("");
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
   // Token helper
@@ -458,25 +459,20 @@ export default function ProfilePage() {
     setShareModalPost(userPosts[activePostIndex]);
   };
 
-  // -- TanStack Query: Followers --
-  const { data: followers = [] } = useApiQuery(
+  // -- TanStack Query: Followers & Following --
+  const { data: rawFollowers = [] } = useApiQuery(
     "user-followers",
     "/api/users/me/followers",
-    {
-      enabled: !!getToken(),
-      staleTime: 2 * 60 * 1000,
-    }
+    { enabled: !!getToken(), staleTime: 60 * 1000 }
   );
+  const followers = useMemo(() => rawFollowers.filter((v, i, a) => a.findIndex(t => (t._id || t.id) === (v._id || v.id)) === i), [rawFollowers]);
 
-  // -- TanStack Query: Following --
-  const { data: following = [] } = useApiQuery(
+  const { data: rawFollowing = [] } = useApiQuery(
     "user-following",
     "/api/users/me/following",
-    {
-      enabled: !!getToken(),
-      staleTime: 2 * 60 * 1000,
-    }
+    { enabled: !!getToken(), staleTime: 60 * 1000 }
   );
+  const following = useMemo(() => rawFollowing.filter((v, i, a) => a.findIndex(t => (t._id || t.id) === (v._id || v.id)) === i), [rawFollowing]);
 
   const connections = followers.filter(f => following.some(fol => fol._id === f._id || fol.id === f._id));
   const networksCount = connections.length;
@@ -878,7 +874,7 @@ export default function ProfilePage() {
                     <div className="w-full h-full rounded-full bg-white" />
                   </div>
                 )}
-                <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full p-[3px] gradient-bg shadow-xl z-20 border-4 border-white">
+                <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full p-[3px] bg-primary shadow-xl z-20 border-4 border-white">
                   <div
                     onClick={() => hasActiveStory ? setModal("viewStory") : null}
                     className={`w-full h-full rounded-full bg-[#FAFAF8] flex items-center justify-center overflow-hidden ${hasActiveStory ? 'cursor-pointer active:scale-95 transition-transform' : ''}`}
@@ -894,7 +890,7 @@ export default function ProfilePage() {
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                     onClick={() => setModal("uploadChoice")}
-                    className="absolute -bottom-1 -right-1 w-8 h-8 gradient-bg rounded-xl border-2 border-white flex items-center justify-center text-white shadow-md z-30"
+                    className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary rounded-xl border-2 border-white flex items-center justify-center text-white shadow-md z-30"
                   >
                     <Plus size={15} strokeWidth={3} />
                   </motion.button>
@@ -998,8 +994,8 @@ export default function ProfilePage() {
         <div className="grid grid-cols-5 gap-0 bg-white border border-[#E8E6E0] border-t shadow-sm md:rounded-b-[1.75rem] overflow-hidden relative z-0">
           {[
             { icon: <Grid size={18} className="text-emerald-500" />, iconBg: "bg-emerald-50", label: "Posts", value: userPosts.length > 0 ? userPosts.length : (user?.postsCount || 0), action: () => { setActiveTab("posts"); window.scrollTo({ top: 500, behavior: "smooth" }); } },
-            { icon: <Users size={18} className="text-blue-500" />, iconBg: "bg-blue-50", label: "Followers", value: user?.followers?.length ?? followers.length, action: () => setModal("followers") },
-            { icon: <Users size={18} className="text-indigo-500" />, iconBg: "bg-indigo-50", label: "Following", value: user?.following?.length ?? following.length, action: () => setModal("following") },
+            { icon: <Users size={18} className="text-blue-500" />, iconBg: "bg-blue-50", label: "Followers", value: followers.length, action: () => setModal("followers") },
+            { icon: <Users size={18} className="text-indigo-500" />, iconBg: "bg-indigo-50", label: "Following", value: following.length, action: () => setModal("following") },
             { icon: <Crown size={18} className="text-purple-500" />, iconBg: "bg-purple-50", label: "Campus Rank", value: campusRank ? `#${campusRank}` : "—", action: () => router.push("/friends?tab=leaderboard") },
             { icon: <Zap size={18} className="text-amber-500" />, iconBg: "bg-amber-50", label: "XP", value: totalXp.toLocaleString(), action: () => { setActiveTab("badges"); window.scrollTo({ top: 500, behavior: "smooth" }); } },
           ].map((stat, i, arr) => (
@@ -1309,7 +1305,66 @@ export default function ProfilePage() {
 
           {activeTab === "badges" && (
             <div className="space-y-12 pb-14 pt-4">
-              {/* 1. Badges Overview Hero (Premium) */}
+
+              {/* 1. Performance Snapshot */}
+              <section className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-gradient-to-br from-[#FFFAF0] via-white to-[#F0F7FF] p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6">
+                <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-amber-300/10 blur-[60px]" />
+                <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-blue-300/10 blur-[60px]" />
+                
+                <div className="relative z-10 flex items-center justify-between px-2 mb-8">
+                  <div>
+                    <h2 className="text-[17px] font-black text-[#1A1A1A] flex items-center gap-2 mb-1.5">
+                      <TrendingUp size={18} className="text-amber-500" /> Performance Snapshot
+                    </h2>
+                    <p className="text-[12px] font-semibold text-slate-500">
+                      Your recent activity highlights.
+                    </p>
+                  </div>
+                  <span className="flex items-center gap-1.5 rounded-full border border-red-200 bg-gradient-to-r from-white to-red-50 px-4 py-1.5 text-[11px] font-black uppercase tracking-widest text-red-600 shadow-sm transition-transform hover:scale-105">
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                    </span>
+                    Live
+                  </span>
+                </div>
+                <div className="relative z-10 grid grid-cols-1 sm:grid-cols-3 gap-5">
+                  {/* XP Earned */}
+                  <div className="group flex items-center gap-5 rounded-3xl border border-amber-100/50 bg-gradient-to-br from-[#FFFAF0] to-amber-50 p-6 shadow-sm transition-all hover:shadow-[0_8px_30px_rgba(251,191,36,0.1)] hover:-translate-y-1">
+                    <div className="flex h-14 w-14 items-center justify-center text-4xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12">
+                      ✨
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-widest text-amber-600/80 mb-1">XP Earned</p>
+                      <p className="text-3xl font-black text-slate-800 leading-none mb-1.5">{totalXp.toLocaleString()}</p>
+                      <p className="text-[11px] font-bold text-amber-600/60">This Month</p>
+                    </div>
+                  </div>
+                  {/* Streaks */}
+                  <div className="group flex items-center gap-5 rounded-3xl border border-red-100/50 bg-gradient-to-br from-[#FFF5F5] to-red-50 p-6 shadow-sm transition-all hover:shadow-[0_8px_30px_rgba(239,68,68,0.1)] hover:-translate-y-1">
+                    <div className="flex h-14 w-14 items-center justify-center text-4xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12">
+                      🔥
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-widest text-red-600/80 mb-1">Streaks</p>
+                      <p className="text-3xl font-black text-slate-800 leading-none mb-1.5">{getDisplayStreak(user)}</p>
+                      <p className="text-[11px] font-bold text-red-600/60">Days in a row</p>
+                    </div>
+                  </div>
+                  {/* Network */}
+                  <div className="group flex items-center gap-5 rounded-3xl border border-blue-100/50 bg-gradient-to-br from-[#F0F7FF] to-blue-50 p-6 shadow-sm transition-all hover:shadow-[0_8px_30px_rgba(59,130,246,0.1)] hover:-translate-y-1">
+                    <div className="flex h-14 w-14 items-center justify-center text-4xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12">
+                      🫂
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-widest text-blue-600/80 mb-1">Network</p>
+                      <p className="text-3xl font-black text-slate-800 leading-none mb-1.5">{(followers.length + following.length).toLocaleString()}</p>
+                      <p className="text-[11px] font-bold text-blue-600/60">Total Network</p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+              {/* 2. Badges Overview Hero (Premium) */}
               <section className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-gradient-to-br from-[#FFFAF0] via-white to-[#F0F7FF] p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
                 <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-amber-300/10 blur-[60px]" />
                 <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-blue-300/10 blur-[60px]" />
@@ -1390,7 +1445,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <div className="flex justify-center mt-2">
+                <div className="relative z-10 flex justify-center mt-2">
                   <button
                     onClick={() => {
                       document.getElementById('achievements-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1403,65 +1458,11 @@ export default function ProfilePage() {
                 </div>
               </section>
 
-              {/* 2. Performance Snapshot */}
-              <section className="space-y-6">
-                <div className="flex items-center justify-between px-2">
-                  <div>
-                    <h3 className="text-[17px] font-black text-[#1A1A1A] flex items-center gap-2 mb-1">
-                      <TrendingUp size={18} className="text-amber-500" /> Performance Snapshot
-                    </h3>
-                    <p className="text-[12px] font-semibold text-slate-500">
-                      Your recent activity highlights.
-                    </p>
-                  </div>
-                  <span className="flex items-center gap-1.5 rounded-full border border-red-200 bg-gradient-to-r from-white to-red-50 px-4 py-1.5 text-[11px] font-black uppercase tracking-widest text-red-600 shadow-sm transition-transform hover:scale-105">
-                    <span className="relative flex h-2.5 w-2.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
-                    </span>
-                    Live
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                  {/* XP Earned */}
-                  <div className="group flex items-center gap-5 rounded-3xl border border-amber-100/50 bg-gradient-to-br from-[#FFFAF0] to-amber-50 p-6 shadow-sm transition-all hover:shadow-[0_8px_30px_rgba(251,191,36,0.1)] hover:-translate-y-1">
-                    <div className="flex h-14 w-14 items-center justify-center text-4xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12">
-                      ✨
-                    </div>
-                    <div>
-                      <p className="text-[11px] font-black uppercase tracking-widest text-amber-600/80 mb-1">XP Earned</p>
-                      <p className="text-3xl font-black text-slate-800 leading-none mb-1.5">{totalXp.toLocaleString()}</p>
-                      <p className="text-[11px] font-bold text-amber-600/60">This Month</p>
-                    </div>
-                  </div>
-                  {/* Streaks */}
-                  <div className="group flex items-center gap-5 rounded-3xl border border-red-100/50 bg-gradient-to-br from-[#FFF5F5] to-red-50 p-6 shadow-sm transition-all hover:shadow-[0_8px_30px_rgba(239,68,68,0.1)] hover:-translate-y-1">
-                    <div className="flex h-14 w-14 items-center justify-center text-4xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12">
-                      🔥
-                    </div>
-                    <div>
-                      <p className="text-[11px] font-black uppercase tracking-widest text-red-600/80 mb-1">Streaks</p>
-                      <p className="text-3xl font-black text-slate-800 leading-none mb-1.5">{getDisplayStreak(user)}</p>
-                      <p className="text-[11px] font-bold text-red-600/60">Days in a row</p>
-                    </div>
-                  </div>
-                  {/* Network */}
-                  <div className="group flex items-center gap-5 rounded-3xl border border-blue-100/50 bg-gradient-to-br from-[#F0F7FF] to-blue-50 p-6 shadow-sm transition-all hover:shadow-[0_8px_30px_rgba(59,130,246,0.1)] hover:-translate-y-1">
-                    <div className="flex h-14 w-14 items-center justify-center text-4xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12">
-                      🫂
-                    </div>
-                    <div>
-                      <p className="text-[11px] font-black uppercase tracking-widest text-blue-600/80 mb-1">Network</p>
-                      <p className="text-3xl font-black text-slate-800 leading-none mb-1.5">{((user?.followers?.length ?? followers.length) + (user?.following?.length ?? following.length)).toLocaleString()}</p>
-                      <p className="text-[11px] font-bold text-blue-600/60">Total Network</p>
-                    </div>
-                  </div>
-                </div>
-              </section>
-
               {/* 3. How XP Works */}
-              <section className="space-y-6">
-                <div className="flex items-center justify-between px-2">
+              <section className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-gradient-to-br from-[#FFFAF0] via-white to-[#F0F7FF] p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6">
+                <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-amber-300/10 blur-[60px]" />
+                <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-blue-300/10 blur-[60px]" />
+                <div className="relative z-10 flex items-center justify-between px-2">
                   <div>
                     <h3 className="text-[17px] font-black text-[#1A1A1A] flex items-center gap-2 mb-1">
                       <span className="text-xl">⚡️</span> How XP Works
@@ -1477,7 +1478,7 @@ export default function ProfilePage() {
                     See All <ChevronRight size={14} className={clsx("transition-transform duration-300", showAllXpActions ? "-rotate-90 text-amber-500" : "rotate-90")} />
                   </button>
                 </div>
-                <div id="xp-actions-container"
+                <div id="xp-actions-container" className="relative z-10"
                   onScroll={(e) => {
                     if (!showAllXpActions) {
                       const scrollLeft = e.target.scrollLeft;
@@ -1488,7 +1489,7 @@ export default function ProfilePage() {
                     }
                   }}
                   className={clsx(
-                    "gap-5",
+                    "relative z-10 gap-5",
                     showAllXpActions
                       ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4"
                       : "flex overflow-x-auto snap-x snap-mandatory pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
@@ -1546,8 +1547,10 @@ export default function ProfilePage() {
               </section>
 
               {/* 4. Achievements & Badges */}
-              <section id="achievements-section" className="space-y-6 scroll-mt-24">
-                <div className="flex items-center justify-between px-2">
+              <section id="achievements-section" className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-gradient-to-br from-[#FFFAF0] via-white to-[#F0F7FF] p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6 scroll-mt-24">
+                <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-amber-300/10 blur-[60px]" />
+                <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-blue-300/10 blur-[60px]" />
+                <div className="relative z-10 flex items-center justify-between px-2">
                   <div>
                     <h3 className="text-[17px] font-black text-[#1A1A1A] flex items-center gap-2 mb-1">
                       <span className="text-xl">🏆</span> Achievements & Badges
@@ -1562,7 +1565,7 @@ export default function ProfilePage() {
                     </span>
                   </div>
                 </div>
-                <div className="flex gap-5 overflow-x-auto snap-x snap-mandatory pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-1">
+                <div className="relative z-10 flex gap-5 overflow-x-auto snap-x snap-mandatory pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-1">
                   {(showAllBadges ? earnedBadges : earnedBadges.slice(0, 4)).map((badge) => (
                     <div
                       key={badge.id}
@@ -1616,7 +1619,7 @@ export default function ProfilePage() {
                   ))}
                 </div>
 
-                <div className="flex justify-center mt-2">
+                <div className="relative z-10 flex justify-center mt-2">
                   <button
                     onClick={() => setShowAllBadges(!showAllBadges)}
                     className="flex items-center gap-2 rounded-full border border-[#E8E6E0] bg-[#FFFAF0] px-5 py-2 text-[11px] font-black text-[#1A1A1A] transition-colors hover:bg-amber-50"
@@ -1627,8 +1630,10 @@ export default function ProfilePage() {
               </section>
 
               {/* 5. XP Tiers */}
-              <section className="space-y-6">
-                <div className="flex items-center justify-between px-2">
+              <section className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-gradient-to-br from-[#FFFAF0] via-white to-[#F0F7FF] p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6">
+                <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-amber-300/10 blur-[60px]" />
+                <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-blue-300/10 blur-[60px]" />
+                <div className="relative z-10 flex items-center justify-between px-2">
                   <div>
                     <h3 className="text-[17px] font-black text-[#1A1A1A] flex items-center gap-2 mb-1">
                       <span className="text-xl">👑</span> XP Tiers
@@ -1644,7 +1649,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                   {XP_TIERS.map((tier) => {
                     const reached = totalXp >= tier.xp;
                     const inProgress = nextTick?.id === tier.id;
@@ -1799,7 +1804,7 @@ export default function ProfilePage() {
                   (modal === "followers" ? followers : following).map((f, i) => (
                     <div key={i} className="flex items-center justify-between p-3 hover:bg-[#F3F2EE] rounded-[2rem] transition-all">
                       <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 rounded-full p-[1.5px] gradient-bg">
+                        <div className="w-12 h-12 rounded-full p-[1.5px] bg-primary">
                           <img
                             src={getAvatarSrc(f.profilePic, f.name, f._id || f.id)}
                             className="w-full h-full rounded-full object-cover border-2 border-[#0A0A0F]"
@@ -2059,13 +2064,50 @@ export default function ProfilePage() {
                         onClick={() => toggleInterest(i.name)}
                         className={clsx(
                           "px-4 py-2 rounded-full text-[10px] font-bold transition-all border flex items-center space-x-2",
-                          (editData.interests || []).includes(i.name) ? "gradient-bg text-[#1A1A1A] border-transparent" : "bg-[#F9F8F5] border border-[#E8E6E0] text-[#6B6B6B] border-[#E8E6E0]"
+                          (editData.interests || []).includes(i.name) ? "bg-primary text-[#1A1A1A] border-transparent" : "bg-[#F9F8F5] border border-[#E8E6E0] text-[#6B6B6B] border-[#E8E6E0]"
                         )}
                       >
                         {i.icon}
                         <span>{i.name}</span>
                       </button>
                     ))}
+                    {(editData.interests || []).filter(name => !INTEREST_OPTIONS.find(o => o.name === name)).map(name => (
+                      <button
+                        key={name}
+                        onClick={() => toggleInterest(name)}
+                        className="px-4 py-2 rounded-full text-[10px] font-bold transition-all border flex items-center space-x-2 bg-primary text-[#1A1A1A] border-transparent"
+                      >
+                        <span>{name}</span>
+                      </button>
+                    ))}
+                    <div className="flex items-center rounded-full border border-[#E8E6E0] bg-[#F9F8F5] overflow-hidden pl-3 pr-1 py-1">
+                      <input
+                        value={customInterestInput}
+                        onChange={e => setCustomInterestInput(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' && customInterestInput.trim()) {
+                            e.preventDefault();
+                            if (!(editData.interests || []).includes(customInterestInput.trim())) {
+                              toggleInterest(customInterestInput.trim());
+                            }
+                            setCustomInterestInput("");
+                          }
+                        }}
+                        placeholder="Add custom..."
+                        className="bg-transparent text-[10px] font-bold text-[#1A1A1A] outline-none w-24"
+                      />
+                      <button
+                        onClick={() => {
+                          if (customInterestInput.trim() && !(editData.interests || []).includes(customInterestInput.trim())) {
+                            toggleInterest(customInterestInput.trim());
+                          }
+                          setCustomInterestInput("");
+                        }}
+                        className="p-1 rounded-full bg-primary text-black ml-1 transition-transform hover:scale-105 active:scale-95"
+                      >
+                        <Plus size={12} strokeWidth={3} />
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -2079,13 +2121,50 @@ export default function ProfilePage() {
                         onClick={() => toggleSport(s.name)}
                         className={clsx(
                           "px-4 py-2 rounded-full text-[10px] font-bold transition-all border flex items-center space-x-2",
-                          (editData.sports || []).includes(s.name) ? "bg-yellow-500 text-black border-transparent font-black" : "bg-[#F9F8F5] border border-[#E8E6E0] text-[#6B6B6B] border-[#E8E6E0]"
+                          (editData.sports || []).includes(s.name) ? "bg-primary text-black border-transparent font-black" : "bg-[#F9F8F5] border border-[#E8E6E0] text-[#6B6B6B] border-[#E8E6E0]"
                         )}
                       >
                         {s.icon}
                         <span>{s.name}</span>
                       </button>
                     ))}
+                    {(editData.sports || []).filter(name => !SPORT_OPTIONS.find(o => o.name === name)).map(name => (
+                      <button
+                        key={name}
+                        onClick={() => toggleSport(name)}
+                        className="px-4 py-2 rounded-full text-[10px] font-bold transition-all border flex items-center space-x-2 bg-primary text-black border-transparent font-black"
+                      >
+                        <span>{name}</span>
+                      </button>
+                    ))}
+                    <div className="flex items-center rounded-full border border-[#E8E6E0] bg-[#F9F8F5] overflow-hidden pl-3 pr-1 py-1">
+                      <input
+                        value={customSportInput}
+                        onChange={e => setCustomSportInput(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' && customSportInput.trim()) {
+                            e.preventDefault();
+                            if (!(editData.sports || []).includes(customSportInput.trim())) {
+                              toggleSport(customSportInput.trim());
+                            }
+                            setCustomSportInput("");
+                          }
+                        }}
+                        placeholder="Add custom..."
+                        className="bg-transparent text-[10px] font-bold text-[#1A1A1A] outline-none w-24"
+                      />
+                      <button
+                        onClick={() => {
+                          if (customSportInput.trim() && !(editData.sports || []).includes(customSportInput.trim())) {
+                            toggleSport(customSportInput.trim());
+                          }
+                          setCustomSportInput("");
+                        }}
+                        className="p-1 rounded-full bg-primary text-black ml-1 transition-transform hover:scale-105 active:scale-95"
+                      >
+                        <Plus size={12} strokeWidth={3} />
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -2094,7 +2173,7 @@ export default function ProfilePage() {
                   whileTap={{ scale: 0.98 }}
                   onClick={saveProfile}
                   disabled={isSaving}
-                  className="w-full gradient-bg py-5 rounded-[2rem] text-sm font-black text-[#1A1A1A] uppercase tracking-widest shadow-xl shadow-[0_4px_14px_rgba(200,146,42,0.15)] disabled:opacity-50 flex justify-center items-center h-16"
+                  className="w-full bg-primary py-5 rounded-[2rem] text-sm font-black text-[#1A1A1A] uppercase tracking-widest shadow-xl shadow-[0_4px_14px_rgba(200,146,42,0.15)] disabled:opacity-50 flex justify-center items-center h-16"
                 >
                   {isSaving ? (
                     <div className="w-5 h-5 border-2 border-[#E8E6E0] border-t-white rounded-full animate-spin" />
@@ -2128,7 +2207,7 @@ export default function ProfilePage() {
               {/* Post Header */}
               <div className="p-5 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-2xl p-[1.5px] gradient-bg">
+                  <div className="w-10 h-10 rounded-2xl p-[1.5px] bg-primary">
                     <img src={getAvatarSrc(user.profilePic, user.name, user._id || user.id)} className="w-full h-full rounded-[0.9rem] object-cover" />
                   </div>
                   <div>
@@ -2253,7 +2332,7 @@ export default function ProfilePage() {
                 onClick={() => setModal("editPic")}
                 className="w-full flex items-center space-x-4 p-5 bg-white border border-[#E8E6E0] shadow-sm rounded-2xl hover:border-[#C8922A]/30 transition-all group"
               >
-                <div className="w-12 h-12 gradient-bg rounded-2xl flex items-center justify-center text-[#1A1A1A] shadow-lg">
+                <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-[#1A1A1A] shadow-lg">
                   <Camera size={22} />
                 </div>
                 <div className="text-left">
@@ -2313,7 +2392,7 @@ export default function ProfilePage() {
                 whileTap={{ scale: 0.97 }}
                 onClick={saveProfile}
                 disabled={!editData.profilePic || isAvatarUploading || isSaving}
-                className="w-full gradient-bg py-4 rounded-2xl text-sm font-black text-[#1A1A1A] uppercase tracking-widest shadow-xl shadow-[0_4px_14px_rgba(200,146,42,0.15)] disabled:opacity-40"
+                className="w-full bg-primary py-4 rounded-2xl text-sm font-black text-[#1A1A1A] uppercase tracking-widest shadow-xl shadow-[0_4px_14px_rgba(200,146,42,0.15)] disabled:opacity-40"
               >
                 {isAvatarUploading ? "Uploading..." : saved ? "Saved! ✅" : "Save Picture"}
               </motion.button>
