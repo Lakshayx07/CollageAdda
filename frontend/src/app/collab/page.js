@@ -112,7 +112,7 @@ export default function CollabPage() {
       >
         <div
           className="mx-auto flex w-full max-w-[1440px] items-center justify-between"
-          style={{ padding: "0 48px", height: 72 }}
+          style={{ padding: "22px 48px" }}
         >
           {/* Logo */}
           <div className="flex shrink-0 items-center gap-3">
@@ -123,7 +123,7 @@ export default function CollabPage() {
               <Zap size={18} className="text-white" />
             </div>
             <span
-              className="text-base font-black tracking-tight"
+              className="text-lg font-black tracking-tight"
               style={{ color: "#1B1B1B" }}
             >
               CollabAdda
@@ -133,12 +133,12 @@ export default function CollabPage() {
           {/* Center heading */}
           <div className="flex flex-col items-center gap-1 text-center">
             <h1
-              className="text-xl font-black tracking-tight leading-tight"
+              className="text-5xl font-extrabold tracking-tight leading-none"
               style={{ color: "#1B1B1B" }}
             >
               Find your next opportunity
             </h1>
-            <p className="text-xs font-medium" style={{ color: "#6F6F6F" }}>
+            <p className="mt-2 text-base font-normal leading-relaxed" style={{ color: "#6F6F6F" }}>
               Hackathons, side projects, societies, and startup teams.
             </p>
           </div>
@@ -146,7 +146,7 @@ export default function CollabPage() {
           {/* CTA */}
           <button
             onClick={() => setShowPostModal(true)}
-            className="flex shrink-0 items-center gap-2 rounded-full text-xs font-black uppercase tracking-widest text-white transition hover:scale-[1.04] active:scale-95"
+            className="flex shrink-0 items-center gap-2 rounded-full text-xs font-bold uppercase tracking-[0.1em] text-white transition hover:scale-[1.04] active:scale-95"
             style={{
               background: "linear-gradient(135deg,#D6A12C,#C28F18)",
               padding: "10px 22px",
@@ -175,20 +175,20 @@ export default function CollabPage() {
           <div className="flex items-center justify-between" style={{ marginBottom: 24 }}>
             <div>
               <p
-                className="text-[10px] font-black uppercase tracking-[0.22em]"
+                className="text-xs font-bold uppercase tracking-[0.1em]"
                 style={{ color: "#6F6F6F" }}
               >
                 Team Cards
               </p>
               <h2
-                className="mt-1 text-2xl font-black tracking-tight"
+                className="mt-2 text-2xl font-bold leading-snug"
                 style={{ color: "#1B1B1B" }}
               >
                 Campus Collabs
               </h2>
             </div>
             <span
-              className="rounded-full border text-[10px] font-black uppercase tracking-widest"
+              className="rounded-full border text-sm font-medium"
               style={{
                 borderColor: "#ECE6DD",
                 background: "#FFFFFF",
@@ -245,7 +245,7 @@ export default function CollabPage() {
                     <Plus size={14} className="text-white" />
                   </div>
                   <h3
-                    className="text-sm font-black uppercase tracking-widest"
+                    className="text-xs font-bold uppercase tracking-[0.1em]"
                     style={{ color: "#1B1B1B" }}
                   >
                     Post Your Collab Card
@@ -268,7 +268,7 @@ export default function CollabPage() {
                 ].map(({ label, placeholder, value, onChange, hint }) => (
                   <div key={label}>
                     <label
-                      className="block text-[10px] font-black uppercase tracking-widest mb-2"
+                      className="block text-xs font-bold uppercase tracking-[0.1em] mb-2"
                       style={{ color: "#6F6F6F" }}
                     >
                       {label}
@@ -278,7 +278,7 @@ export default function CollabPage() {
                       placeholder={placeholder}
                       value={value}
                       onChange={e => onChange(e.target.value)}
-                      className="w-full rounded-xl border px-4 py-3 text-sm outline-none transition"
+                      className="w-full rounded-xl border px-4 py-3 text-base outline-none transition leading-relaxed"
                       style={{
                         borderColor: "#ECE6DD",
                         background: "#F4F1EB",
@@ -288,7 +288,7 @@ export default function CollabPage() {
                       onBlur={e => (e.target.style.borderColor = "#ECE6DD")}
                     />
                     {hint && (
-                      <p className="mt-1 text-[10px]" style={{ color: "#AAAAAA" }}>{hint}</p>
+                      <p className="mt-1 text-xs" style={{ color: "#AAAAAA" }}>{hint}</p>
                     )}
                   </div>
                 ))}
@@ -300,7 +300,7 @@ export default function CollabPage() {
                   ].map(({ label, value, onChange, options }) => (
                     <div key={label}>
                       <label
-                        className="block text-[10px] font-black uppercase tracking-widest mb-2"
+                        className="block text-[10px] font-black uppercase tracking-[0.25em] mb-2"
                         style={{ color: "#6F6F6F" }}
                       >
                         {label}
@@ -308,7 +308,7 @@ export default function CollabPage() {
                       <select
                         value={value}
                         onChange={e => onChange(e.target.value)}
-                        className="w-full appearance-none rounded-xl border px-3 py-3 text-sm outline-none transition"
+                        className="w-full appearance-none rounded-xl border px-3 py-3 text-base outline-none transition"
                         style={{
                           borderColor: "#ECE6DD",
                           background: "#F4F1EB",
@@ -323,7 +323,7 @@ export default function CollabPage() {
 
                 <div>
                   <label
-                    className="block text-[10px] font-black uppercase tracking-widest mb-2"
+                    className="block text-[10px] font-black uppercase tracking-[0.25em] mb-2"
                     style={{ color: "#6F6F6F" }}
                   >
                     Roles Needed
@@ -333,17 +333,17 @@ export default function CollabPage() {
                     placeholder="Backend Dev, UI Designer, Business Lead..."
                     value={rolesNeeded}
                     onChange={e => setRolesNeeded(e.target.value)}
-                    className="w-full rounded-xl border px-4 py-3 text-sm outline-none transition"
+                    className="w-full rounded-xl border px-4 py-3 text-base outline-none transition leading-relaxed"
                     style={{ borderColor: "#ECE6DD", background: "#F4F1EB", color: "#1B1B1B" }}
                     onFocus={e => (e.target.style.borderColor = "#D6A12C")}
                     onBlur={e => (e.target.style.borderColor = "#ECE6DD")}
                   />
-                  <p className="mt-1 text-[10px]" style={{ color: "#AAAAAA" }}>Comma-separated roles</p>
+                  <p className="mt-1 text-xs" style={{ color: "#AAAAAA" }}>Comma-separated roles</p>
                 </div>
 
                 <div>
                   <label
-                    className="block text-[10px] font-black uppercase tracking-widest mb-2"
+                    className="block text-[10px] font-black uppercase tracking-[0.25em] mb-2"
                     style={{ color: "#6F6F6F" }}
                   >
                     Short Description{" "}
@@ -356,7 +356,7 @@ export default function CollabPage() {
                     value={description}
                     onChange={e => setDescription(e.target.value)}
                     rows={3}
-                    className="w-full resize-none rounded-xl border px-4 py-3 text-sm outline-none transition"
+                    className="w-full resize-none rounded-xl border px-4 py-3 text-base leading-relaxed outline-none transition"
                     style={{ borderColor: "#ECE6DD", background: "#F4F1EB", color: "#1B1B1B" }}
                     onFocus={e => (e.target.style.borderColor = "#D6A12C")}
                     onBlur={e => (e.target.style.borderColor = "#ECE6DD")}
@@ -366,7 +366,7 @@ export default function CollabPage() {
                 <button
                   type="submit"
                   disabled={isPosting}
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-xs font-black uppercase tracking-widest text-white transition hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-xs font-bold uppercase tracking-[0.1em] text-white transition hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                   style={{ background: "linear-gradient(135deg,#D6A12C,#C28F18)", boxShadow: "0 4px 20px rgba(214,161,44,0.35)" }}
                 >
                   {isPosting ? <Loader size={14} className="animate-spin" /> : <Zap size={14} />}
