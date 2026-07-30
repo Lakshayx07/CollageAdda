@@ -155,8 +155,8 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-16">
-        <Loader size={32} className="animate-spin mb-4" style={{ color: "#C8922A" }} />
-        <p className="text-sm font-bold" style={{ color: "#888888" }}>
+        <Loader size={32} className="animate-spin mb-4" style={{ color: "#D6A12C" }} />
+        <p className="text-sm font-bold" style={{ color: "#6F6F6F" }}>
           Loading campus cards…
         </p>
       </div>
@@ -169,22 +169,22 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <div
           className="mb-5 flex h-16 w-16 items-center justify-center rounded-3xl"
-          style={{ background: "rgba(200,146,42,0.1)", color: "#C8922A" }}
+          style={{ background: "rgba(47,58,69,0.08)", color: "#2F3A45" }}
         >
           <Briefcase size={34} />
         </div>
-        <h3 className="text-2xl font-black tracking-tight" style={{ color: "#1A1A1A" }}>
+        <h3 className="text-2xl font-black tracking-tight" style={{ color: "#1B1B1B" }}>
           No cards on campus yet
         </h3>
-        <p className="mt-3 max-w-sm text-sm leading-relaxed" style={{ color: "#888888" }}>
+        <p className="mt-3 max-w-sm text-sm leading-relaxed" style={{ color: "#6F6F6F" }}>
           Be the first to post a collab card and find your team!
         </p>
         <button
           onClick={onPostCard}
           className="mt-6 flex items-center gap-2 rounded-2xl px-6 py-3 text-xs font-black uppercase tracking-widest text-white transition hover:scale-[1.03] active:scale-95"
           style={{
-            background: "linear-gradient(135deg,#C8922A,#D4A843)",
-            boxShadow: "0 4px 20px rgba(200,146,42,0.3)",
+            background: "linear-gradient(135deg,#D6A12C,#C28F18)",
+            boxShadow: "0 4px 20px rgba(214,161,44,0.35)",
           }}
         >
           <Plus size={14} />
@@ -215,7 +215,7 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 30 }}
             className="fixed bottom-24 left-1/2 z-[999] -translate-x-1/2 rounded-2xl px-5 py-3 text-xs font-black uppercase tracking-widest shadow-xl whitespace-nowrap"
-            style={{ background: "#10b981", color: "#000" }}
+            style={{ background: "#3AA675", color: "#FFFFFF" }}
           >
             {toastMsg}
           </motion.div>
@@ -229,8 +229,8 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
           {/* Left arrow */}
           <button
             onClick={handlePrev}
-            className="flex h-10 w-10 items-center justify-center rounded-full border transition hover:border-[#C8922A]/40 hover:bg-[#C8922A]/5 active:scale-95"
-            style={{ borderColor: "#ECE6DD", background: "#FAF8F4", color: "#888888" }}
+            className="flex h-10 w-10 items-center justify-center rounded-full border transition hover:border-[#2F3A45]/40 hover:text-[#2F3A45] active:scale-95"
+            style={{ borderColor: "#ECE6DD", background: "#F4F1EB", color: "#6F6F6F" }}
             aria-label="Previous card"
           >
             <ChevronLeft size={18} />
@@ -249,7 +249,7 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
                 style={{
                   width: i === currentIndex ? 24 : 8,
                   height: 8,
-                  background: i === currentIndex ? "#C8922A" : "#ECE6DD",
+                  background: i === currentIndex ? "#D6A12C" : "#ECE6DD",
                 }}
                 aria-label={`Go to card ${i + 1}`}
               />
@@ -259,8 +259,8 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
           {/* Right arrow */}
           <button
             onClick={handleNext}
-            className="flex h-10 w-10 items-center justify-center rounded-full border transition hover:border-[#C8922A]/40 hover:bg-[#C8922A]/5 active:scale-95"
-            style={{ borderColor: "#ECE6DD", background: "#FAF8F4", color: "#888888" }}
+            className="flex h-10 w-10 items-center justify-center rounded-full border transition hover:border-[#2F3A45]/40 hover:text-[#2F3A45] active:scale-95"
+            style={{ borderColor: "#ECE6DD", background: "#F4F1EB", color: "#6F6F6F" }}
             aria-label="Next card"
           >
             <ChevronRight size={18} />
@@ -304,7 +304,7 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
         </div>
 
         {/* Card counter label */}
-        <p className="text-xs font-bold" style={{ color: "#888888" }}>
+        <p className="text-xs font-bold" style={{ color: "#6F6F6F" }}>
           {currentIndex + 1} of {cards.length} cards
         </p>
       </div>

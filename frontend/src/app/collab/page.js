@@ -92,7 +92,8 @@ export default function CollabPage() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 30 }}
-            className="fixed bottom-24 left-1/2 z-[999] -translate-x-1/2 rounded-2xl bg-emerald-500 px-5 py-3 text-xs font-black uppercase tracking-widest text-black shadow-xl"
+            className="fixed bottom-24 left-1/2 z-[999] -translate-x-1/2 rounded-2xl px-5 py-3 text-xs font-black uppercase tracking-widest shadow-xl"
+            style={{ background: "#3AA675", color: "#FFFFFF" }}
           >
             {toastMsg}
           </motion.div>
@@ -117,13 +118,13 @@ export default function CollabPage() {
           <div className="flex shrink-0 items-center gap-3">
             <div
               className="flex h-9 w-9 items-center justify-center rounded-xl"
-              style={{ background: "linear-gradient(135deg,#C8922A,#D4A843)" }}
+              style={{ background: "linear-gradient(135deg,#D6A12C,#C28F18)" }}
             >
               <Zap size={18} className="text-white" />
             </div>
             <span
               className="text-base font-black tracking-tight"
-              style={{ color: "#1A1A1A" }}
+              style={{ color: "#1B1B1B" }}
             >
               CollabAdda
             </span>
@@ -133,11 +134,11 @@ export default function CollabPage() {
           <div className="flex flex-col items-center gap-1 text-center">
             <h1
               className="text-xl font-black tracking-tight leading-tight"
-              style={{ color: "#1A1A1A" }}
+              style={{ color: "#1B1B1B" }}
             >
               Find your next opportunity
             </h1>
-            <p className="text-xs font-medium" style={{ color: "#888888" }}>
+            <p className="text-xs font-medium" style={{ color: "#6F6F6F" }}>
               Hackathons, side projects, societies, and startup teams.
             </p>
           </div>
@@ -147,9 +148,9 @@ export default function CollabPage() {
             onClick={() => setShowPostModal(true)}
             className="flex shrink-0 items-center gap-2 rounded-full text-xs font-black uppercase tracking-widest text-white transition hover:scale-[1.04] active:scale-95"
             style={{
-              background: "linear-gradient(135deg,#C8922A,#D4A843)",
+              background: "linear-gradient(135deg,#D6A12C,#C28F18)",
               padding: "10px 22px",
-              boxShadow: "0 4px 20px rgba(200,146,42,0.35)",
+              boxShadow: "0 4px 20px rgba(214,161,44,0.4)",
             }}
           >
             <Plus size={14} />
@@ -175,13 +176,13 @@ export default function CollabPage() {
             <div>
               <p
                 className="text-[10px] font-black uppercase tracking-[0.22em]"
-                style={{ color: "#888888" }}
+                style={{ color: "#6F6F6F" }}
               >
                 Team Cards
               </p>
               <h2
                 className="mt-1 text-2xl font-black tracking-tight"
-                style={{ color: "#1A1A1A" }}
+                style={{ color: "#1B1B1B" }}
               >
                 Campus Collabs
               </h2>
@@ -191,7 +192,7 @@ export default function CollabPage() {
               style={{
                 borderColor: "#ECE6DD",
                 background: "#FFFFFF",
-                color: "#888888",
+                color: "#6F6F6F",
                 padding: "6px 16px",
               }}
             >
@@ -234,18 +235,18 @@ export default function CollabPage() {
               {/* Modal header */}
               <div
                 className="flex shrink-0 items-center justify-between border-b px-6 py-5"
-                style={{ borderColor: "#ECE6DD", background: "#FAF8F4" }}
+                style={{ borderColor: "#ECE6DD", background: "#F4F1EB" }}
               >
                 <div className="flex items-center gap-3">
                   <div
                     className="flex h-8 w-8 items-center justify-center rounded-xl"
-                    style={{ background: "linear-gradient(135deg,#C8922A,#D4A843)" }}
+                    style={{ background: "linear-gradient(135deg,#D6A12C,#C28F18)" }}
                   >
                     <Plus size={14} className="text-white" />
                   </div>
                   <h3
                     className="text-sm font-black uppercase tracking-widest"
-                    style={{ color: "#1A1A1A" }}
+                    style={{ color: "#1B1B1B" }}
                   >
                     Post Your Collab Card
                   </h3>
@@ -253,7 +254,7 @@ export default function CollabPage() {
                 <button
                   onClick={() => setShowPostModal(false)}
                   className="flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-black/5"
-                  style={{ color: "#888888" }}
+                  style={{ color: "#6F6F6F" }}
                 >
                   <X size={16} />
                 </button>
@@ -268,7 +269,7 @@ export default function CollabPage() {
                   <div key={label}>
                     <label
                       className="block text-[10px] font-black uppercase tracking-widest mb-2"
-                      style={{ color: "#888888" }}
+                      style={{ color: "#6F6F6F" }}
                     >
                       {label}
                     </label>
@@ -280,10 +281,10 @@ export default function CollabPage() {
                       className="w-full rounded-xl border px-4 py-3 text-sm outline-none transition"
                       style={{
                         borderColor: "#ECE6DD",
-                        background: "#FAF8F4",
-                        color: "#1A1A1A",
+                        background: "#F4F1EB",
+                        color: "#1B1B1B",
                       }}
-                      onFocus={e => (e.target.style.borderColor = "#C8922A")}
+                      onFocus={e => (e.target.style.borderColor = "#D6A12C")}
                       onBlur={e => (e.target.style.borderColor = "#ECE6DD")}
                     />
                     {hint && (
@@ -300,7 +301,7 @@ export default function CollabPage() {
                     <div key={label}>
                       <label
                         className="block text-[10px] font-black uppercase tracking-widest mb-2"
-                        style={{ color: "#888888" }}
+                        style={{ color: "#6F6F6F" }}
                       >
                         {label}
                       </label>
@@ -310,8 +311,8 @@ export default function CollabPage() {
                         className="w-full appearance-none rounded-xl border px-3 py-3 text-sm outline-none transition"
                         style={{
                           borderColor: "#ECE6DD",
-                          background: "#FAF8F4",
-                          color: "#1A1A1A",
+                          background: "#F4F1EB",
+                          color: "#1B1B1B",
                         }}
                       >
                         {options.map(o => <option key={o}>{o}</option>)}
@@ -323,7 +324,7 @@ export default function CollabPage() {
                 <div>
                   <label
                     className="block text-[10px] font-black uppercase tracking-widest mb-2"
-                    style={{ color: "#888888" }}
+                    style={{ color: "#6F6F6F" }}
                   >
                     Roles Needed
                   </label>
@@ -333,8 +334,8 @@ export default function CollabPage() {
                     value={rolesNeeded}
                     onChange={e => setRolesNeeded(e.target.value)}
                     className="w-full rounded-xl border px-4 py-3 text-sm outline-none transition"
-                    style={{ borderColor: "#ECE6DD", background: "#FAF8F4", color: "#1A1A1A" }}
-                    onFocus={e => (e.target.style.borderColor = "#C8922A")}
+                    style={{ borderColor: "#ECE6DD", background: "#F4F1EB", color: "#1B1B1B" }}
+                    onFocus={e => (e.target.style.borderColor = "#D6A12C")}
                     onBlur={e => (e.target.style.borderColor = "#ECE6DD")}
                   />
                   <p className="mt-1 text-[10px]" style={{ color: "#AAAAAA" }}>Comma-separated roles</p>
@@ -343,7 +344,7 @@ export default function CollabPage() {
                 <div>
                   <label
                     className="block text-[10px] font-black uppercase tracking-widest mb-2"
-                    style={{ color: "#888888" }}
+                    style={{ color: "#6F6F6F" }}
                   >
                     Short Description{" "}
                     <span className="font-medium normal-case tracking-normal" style={{ color: "#AAAAAA" }}>
@@ -356,8 +357,8 @@ export default function CollabPage() {
                     onChange={e => setDescription(e.target.value)}
                     rows={3}
                     className="w-full resize-none rounded-xl border px-4 py-3 text-sm outline-none transition"
-                    style={{ borderColor: "#ECE6DD", background: "#FAF8F4", color: "#1A1A1A" }}
-                    onFocus={e => (e.target.style.borderColor = "#C8922A")}
+                    style={{ borderColor: "#ECE6DD", background: "#F4F1EB", color: "#1B1B1B" }}
+                    onFocus={e => (e.target.style.borderColor = "#D6A12C")}
                     onBlur={e => (e.target.style.borderColor = "#ECE6DD")}
                   />
                 </div>
@@ -366,7 +367,7 @@ export default function CollabPage() {
                   type="submit"
                   disabled={isPosting}
                   className="flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-xs font-black uppercase tracking-widest text-white transition hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-                  style={{ background: "linear-gradient(135deg,#C8922A,#D4A843)", boxShadow: "0 4px 20px rgba(200,146,42,0.3)" }}
+                  style={{ background: "linear-gradient(135deg,#D6A12C,#C28F18)", boxShadow: "0 4px 20px rgba(214,161,44,0.35)" }}
                 >
                   {isPosting ? <Loader size={14} className="animate-spin" /> : <Zap size={14} />}
                   {isPosting ? "Posting..." : "Go Live 🚀"}

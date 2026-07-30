@@ -24,10 +24,10 @@ const TYPES = ["Internship", "Hackathon", "Workshop", "Scholarship", "Competitio
 const TYPE_STYLES = {
   Internship: { color: "#059669", bg: "rgba(5,150,105,0.08)", border: "rgba(5,150,105,0.2)" },
   Hackathon:  { color: "#2563EB", bg: "rgba(37,99,235,0.08)", border: "rgba(37,99,235,0.2)" },
-  Workshop:   { color: "#C8922A", bg: "rgba(200,146,42,0.08)", border: "rgba(200,146,42,0.25)" },
+  Workshop:   { color: "#D6A12C", bg: "rgba(214,161,44,0.08)", border: "rgba(214,161,44,0.25)" },
   Scholarship:{ color: "#D97706", bg: "rgba(217,119,6,0.08)", border: "rgba(217,119,6,0.2)" },
-  Competition:{ color: "#C8922A", bg: "rgba(200,146,42,0.08)", border: "rgba(200,146,42,0.3)" },
-  Other:      { color: "#6B6B6B", bg: "#F3F2EE", border: "#E8E6E0" },
+  Competition:{ color: "#D6A12C", bg: "rgba(214,161,44,0.08)", border: "rgba(214,161,44,0.3)" },
+  Other:      { color: "#6F6F6F", bg: "#F4F1EB", border: "#ECE6DD" },
 };
 
 const getDeadlineState = (deadline) => {
@@ -60,8 +60,8 @@ const inputStyle = {
   width: "100%",
   borderRadius: 12,
   border: "1px solid #ECE6DD",
-  background: "#FAF8F4",
-  color: "#1A1A1A",
+  background: "#F4F1EB",
+  color: "#1B1B1B",
   fontSize: 14,
   padding: "10px 14px",
   outline: "none",
@@ -72,7 +72,7 @@ function FieldLabel({ children }) {
   return (
     <span
       className="block text-[10px] font-black uppercase tracking-widest mb-2"
-      style={{ color: "#888888" }}
+      style={{ color: "#6F6F6F" }}
     >
       {children}
     </span>
@@ -161,25 +161,25 @@ export default function OpportunityFinder({ currentUser }) {
         {/* ── Panel header ─── */}
         <div
           className="flex items-center justify-between border-b px-8 py-6"
-          style={{ borderColor: "#ECE6DD", background: "#FAF8F4" }}
+          style={{ borderColor: "#ECE6DD", background: "#F4F1EB" }}
         >
           <div className="flex items-center gap-4">
             <div
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
-              style={{ background: "rgba(200,146,42,0.1)", color: "#C8922A" }}
+              style={{ background: "rgba(47,58,69,0.08)", color: "#2F3A45" }}
             >
               <Sparkles size={22} />
             </div>
             <div>
               <p
                 className="text-[10px] font-black uppercase tracking-[0.22em]"
-                style={{ color: "#888888" }}
+                style={{ color: "#6F6F6F" }}
               >
                 Opportunity Finder
               </p>
               <h2
                 className="mt-0.5 text-xl font-black tracking-tight"
-                style={{ color: "#1A1A1A" }}
+                style={{ color: "#1B1B1B" }}
               >
                 Find what fits your semester.
               </h2>
@@ -190,11 +190,11 @@ export default function OpportunityFinder({ currentUser }) {
             type="button"
             onClick={() => findOpportunities({ refresh: true })}
             disabled={loading || !searched}
-            className="flex items-center gap-2 rounded-full border text-[11px] font-black uppercase tracking-widest transition hover:border-[#C8922A]/40 hover:text-[#C8922A] disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex items-center gap-2 rounded-full border text-[11px] font-black uppercase tracking-widest transition hover:border-[#2F3A45]/40 hover:text-[#2F3A45] disabled:cursor-not-allowed disabled:opacity-40"
             style={{
               borderColor: "#ECE6DD",
               background: "#FFFFFF",
-              color: "#888888",
+              color: "#6F6F6F",
               padding: "8px 18px",
             }}
           >
@@ -219,10 +219,10 @@ export default function OpportunityFinder({ currentUser }) {
           >
             {/* Filter header */}
             <div className="flex items-center gap-2 mb-6">
-              <SlidersHorizontal size={14} style={{ color: "#C8922A" }} />
+              <SlidersHorizontal size={14} style={{ color: "#2F3A45" }} />
               <span
                 className="text-[10px] font-black uppercase tracking-[0.2em]"
-                style={{ color: "#888888" }}
+                style={{ color: "#6F6F6F" }}
               >
                 Student Profile
               </span>
@@ -239,7 +239,7 @@ export default function OpportunityFinder({ currentUser }) {
                   value={form.course}
                   onChange={(e) => updateField("course", e.target.value)}
                   style={inputStyle}
-                  onFocus={e => (e.target.style.borderColor = "#C8922A")}
+                  onFocus={e => (e.target.style.borderColor = "#D6A12C")}
                   onBlur={e => (e.target.style.borderColor = "#ECE6DD")}
                 >
                   {COURSES.map((c) => <option key={c}>{c}</option>)}
@@ -253,7 +253,7 @@ export default function OpportunityFinder({ currentUser }) {
                   value={form.branch}
                   onChange={(e) => updateField("branch", e.target.value)}
                   style={inputStyle}
-                  onFocus={e => (e.target.style.borderColor = "#C8922A")}
+                  onFocus={e => (e.target.style.borderColor = "#D6A12C")}
                   onBlur={e => (e.target.style.borderColor = "#ECE6DD")}
                 >
                   {BRANCHES.map((b) => <option key={b}>{b}</option>)}
@@ -268,7 +268,7 @@ export default function OpportunityFinder({ currentUser }) {
                     value={form.year}
                     onChange={(e) => updateField("year", e.target.value)}
                     style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = "#C8922A")}
+                    onFocus={e => (e.target.style.borderColor = "#D6A12C")}
                     onBlur={e => (e.target.style.borderColor = "#ECE6DD")}
                   >
                     {YEARS.map((y) => <option key={y}>{y}</option>)}
@@ -281,7 +281,7 @@ export default function OpportunityFinder({ currentUser }) {
                     onChange={(e) => updateField("location", e.target.value)}
                     placeholder="India, Remote…"
                     style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = "#C8922A")}
+                    onFocus={e => (e.target.style.borderColor = "#D6A12C")}
                     onBlur={e => (e.target.style.borderColor = "#ECE6DD")}
                   />
                 </div>
@@ -295,7 +295,7 @@ export default function OpportunityFinder({ currentUser }) {
                   onChange={(e) => updateField("skills", e.target.value)}
                   placeholder="Python, React, ML, finance…"
                   style={inputStyle}
-                  onFocus={e => (e.target.style.borderColor = "#C8922A")}
+                  onFocus={e => (e.target.style.borderColor = "#D6A12C")}
                   onBlur={e => (e.target.style.borderColor = "#ECE6DD")}
                 />
               </div>
@@ -315,14 +315,14 @@ export default function OpportunityFinder({ currentUser }) {
                         style={
                           active
                             ? {
-                                borderColor: "#C8922A",
-                                background: "rgba(200,146,42,0.1)",
-                                color: "#C8922A",
+                                borderColor: "#2F3A45",
+                                background: "rgba(47,58,69,0.08)",
+                                color: "#2F3A45",
                               }
                             : {
                                 borderColor: "#ECE6DD",
-                                background: "#FAF8F4",
-                                color: "#888888",
+                                background: "#F4F1EB",
+                                color: "#6F6F6F",
                               }
                         }
                       >
@@ -340,8 +340,8 @@ export default function OpportunityFinder({ currentUser }) {
                   disabled={loading}
                   className="flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-xs font-black uppercase tracking-widest text-white transition hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
                   style={{
-                    background: "linear-gradient(135deg,#C8922A,#D4A843)",
-                    boxShadow: "0 4px 20px rgba(200,146,42,0.28)",
+                    background: "linear-gradient(135deg,#D6A12C,#C28F18)",
+                    boxShadow: "0 4px 20px rgba(214,161,44,0.32)",
                   }}
                 >
                   {loading ? <Loader size={15} className="animate-spin" /> : <Search size={15} />}
@@ -361,7 +361,7 @@ export default function OpportunityFinder({ currentUser }) {
               <div>
                 {/* Result count */}
                 <div className="flex items-center gap-3 mb-5">
-                  <p className="text-xs font-bold" style={{ color: "#888888" }}>
+                  <p className="text-xs font-bold" style={{ color: "#6F6F6F" }}>
                     {opportunities.length} result{opportunities.length === 1 ? "" : "s"} found
                     {cached ? " · from cache" : ""}
                   </p>
@@ -407,7 +407,7 @@ function LoadingSkeleton() {
         <div
           key={i}
           className="rounded-[20px] border p-5"
-          style={{ borderColor: "#ECE6DD", background: "#FAF8F4" }}
+          style={{ borderColor: "#ECE6DD", background: "#F4F1EB" }}
         >
           <div className="mb-4 h-5 w-20 animate-pulse rounded-full" style={{ background: "#ECE6DD" }} />
           <div className="mb-3 h-5 w-4/5 animate-pulse rounded-lg" style={{ background: "#ECE6DD" }} />
@@ -436,7 +436,7 @@ function OpportunityCard({ opportunity }) {
       }}
       onMouseEnter={e => {
         e.currentTarget.style.boxShadow = "0 8px 32px rgba(0,0,0,0.08)";
-        e.currentTarget.style.borderColor = "rgba(200,146,42,0.35)";
+        e.currentTarget.style.borderColor = "rgba(47,58,69,0.3)";
         e.currentTarget.style.transform = "translateY(-2px)";
       }}
       onMouseLeave={e => {
@@ -462,7 +462,7 @@ function OpportunityCard({ opportunity }) {
           style={
             deadline.urgent
               ? { borderColor: "rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.08)", color: "#DC2626" }
-              : { borderColor: "#ECE6DD", background: "#FAF8F4", color: "#888888" }
+              : { borderColor: "#ECE6DD", background: "#F4F1EB", color: "#6F6F6F" }
           }
         >
           <CalendarClock size={11} />
@@ -471,17 +471,17 @@ function OpportunityCard({ opportunity }) {
       </div>
 
       {/* Title + org */}
-      <h3 className="text-base font-black leading-snug" style={{ color: "#1A1A1A" }}>
+      <h3 className="text-base font-black leading-snug" style={{ color: "#1B1B1B" }}>
         {opportunity.title}
       </h3>
-      <p className="mt-1 text-xs font-semibold" style={{ color: "#888888" }}>
+      <p className="mt-1 text-xs font-semibold" style={{ color: "#6F6F6F" }}>
         {opportunity.organization || "Organization not listed"}
       </p>
 
       {/* Description */}
       <p
         className="mt-3 flex-1 text-sm leading-relaxed line-clamp-3"
-        style={{ color: "#6B6B6B" }}
+        style={{ color: "#6F6F6F" }}
       >
         {opportunity.description}
       </p>
@@ -490,14 +490,14 @@ function OpportunityCard({ opportunity }) {
       <div className="mt-4 flex flex-wrap gap-2">
         <span
           className="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[10px] font-semibold"
-          style={{ borderColor: "#ECE6DD", background: "#FAF8F4", color: "#888888" }}
+          style={{ borderColor: "#ECE6DD", background: "#F4F1EB", color: "#6F6F6F" }}
         >
           <MapPin size={11} />
           {opportunity.location || "Remote / India"}
         </span>
         <span
           className="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[10px] font-semibold"
-          style={{ borderColor: "#ECE6DD", background: "#FAF8F4", color: "#888888" }}
+          style={{ borderColor: "#ECE6DD", background: "#F4F1EB", color: "#6F6F6F" }}
         >
           <GraduationCap size={11} />
           {(opportunity.eligibleBranches || []).slice(0, 2).join(", ") || "All branches"}
@@ -511,9 +511,9 @@ function OpportunityCard({ opportunity }) {
         rel="noopener noreferrer"
         className="mt-4 flex h-11 items-center justify-center gap-2 rounded-2xl text-xs font-black uppercase tracking-widest transition hover:scale-[1.02] active:scale-95"
         style={{
-          background: "linear-gradient(135deg,#C8922A,#D4A843)",
+          background: "linear-gradient(135deg,#D6A12C,#C28F18)",
           color: "#FFFFFF",
-          boxShadow: "0 2px 10px rgba(200,146,42,0.2)",
+          boxShadow: "0 2px 10px rgba(214,161,44,0.25)",
         }}
       >
         Apply Now
@@ -528,23 +528,23 @@ function EmptyState({ title, description }) {
   return (
     <div
       className="flex min-h-[420px] flex-col items-center justify-center rounded-[20px] border border-dashed p-10 text-center"
-      style={{ borderColor: "#ECE6DD", background: "#FAF8F4" }}
+      style={{ borderColor: "#ECE6DD", background: "#F4F1EB" }}
     >
       <div
         className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl"
-        style={{ background: "rgba(200,146,42,0.1)", color: "#C8922A" }}
+        style={{ background: "rgba(47,58,69,0.08)", color: "#2F3A45" }}
       >
         <Trophy size={28} />
       </div>
-      <h3 className="text-xl font-black tracking-tight" style={{ color: "#1A1A1A" }}>
+      <h3 className="text-xl font-black tracking-tight" style={{ color: "#1B1B1B" }}>
         {title}
       </h3>
-      <p className="mt-2 max-w-sm text-sm leading-relaxed" style={{ color: "#888888" }}>
+      <p className="mt-2 max-w-sm text-sm leading-relaxed" style={{ color: "#6F6F6F" }}>
         {description}
       </p>
       <div
         className="mt-6 flex items-center gap-2 rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-widest"
-        style={{ borderColor: "#ECE6DD", background: "#FFFFFF", color: "#888888" }}
+        style={{ borderColor: "#ECE6DD", background: "#FFFFFF", color: "#6F6F6F" }}
       >
         <Briefcase size={13} />
         Internships · Hackathons · Scholarships
