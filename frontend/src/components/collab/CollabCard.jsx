@@ -46,7 +46,7 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
           {card.poster_avatar ? (
             <img src={card.poster_avatar} alt="Avatar" style={{ width: 44, height: 44, borderRadius: 14, objectFit: "cover", border: "1px solid #ECE6DD" }} />
           ) : (
-            <div style={{ width: 44, height: 44, borderRadius: 14, background: "linear-gradient(135deg,#2F3A45,#1A2530)", color: "#FFF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 14, background: "#2E3440", color: "#FFF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800 }}>
               {card.poster_name ? card.poster_name.charAt(0).toUpperCase() : "?"}
             </div>
           )}
@@ -87,7 +87,7 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
       {/* ── Needed Roles ── */}
       {rolesArray.length > 0 && (
         <div style={{ marginBottom: 16 }}>
-          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#2F3A45", opacity: 0.6, marginBottom: 8 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#2E3440", opacity: 0.8, marginBottom: 8 }}>
             Roles Needed
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -103,12 +103,12 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
       {/* ── Required Skills ── */}
       {skillsArray.length > 0 && (
         <div style={{ marginBottom: 20 }}>
-          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#2F3A45", opacity: 0.6, marginBottom: 8 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#2E3440", opacity: 0.8, marginBottom: 8 }}>
             Required Skills
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {skillsArray.map((s, i) => (
-              <span key={i} style={{ fontSize: 11, fontWeight: 600, color: "#2F3A45", background: "rgba(47,58,69,0.06)", padding: "4px 10px", borderRadius: 8 }}>
+              <span key={i} style={{ fontSize: 11, fontWeight: 600, color: "#FFFFFF", background: "#2E3440", padding: "4px 10px", borderRadius: 8 }}>
                 {s.trim()}
               </span>
             ))}
