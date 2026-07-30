@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader, Briefcase, Plus } from "lucide-react";
+import { Loader, Briefcase, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/utils/supabase";
 import CollabCard from "./CollabCard";
@@ -21,7 +21,7 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
   const userId = currentUser ? (currentUser?.id || currentUser?._id || "").toString() : null;
 
   const { data: cards = [], isLoading: loading } = useQuery({
-    queryKey: ['collab-cards'],
+    queryKey: ["collab-cards"],
     queryFn: async () => {
       const { data: rawCards, error } = await supabase
         .from("collab_cards")
@@ -46,13 +46,13 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
   }, [cards]);
 
   useEffect(() => {
-    // Subscribe to new cards
     const subscription = supabase
       .channel("collab_cards_changes")
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "collab_cards" },
-        (payload) => queryClient.setQueryData(['collab-cards'], (prev) => [payload.new, ...(prev || [])])
+        (payload) =>
+          queryClient.setQueryData(["collab-cards"], (prev) => [payload.new, ...(prev || [])])
       )
       .subscribe();
 
@@ -61,33 +61,33 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
     };
   }, [queryClient]);
 
-  // When current card changes, check DB to see if user already applied + get status
   useEffect(() => {
     if (!currentUser) return;
     if (!cards || !cards.length || !userId) return;
     const currentCard = cards[currentIndex];
     if (!currentCard) return;
-
-    // Skip if we already know
     if (appliedCards[currentCard.id] !== undefined) return;
 
     const checkIfApplied = async () => {
-      const myId = (currentUser?.id || currentUser?._id || '').toString().trim();
+      const myId = (currentUser?.id || currentUser?._id || "").toString().trim();
       if (!myId) return;
 
       const { data: allApps } = await supabase
-        .from('collab_applications')
-        .select('id, card_id, applicant_user_id, status');
+        .from("collab_applications")
+        .select("id, card_id, applicant_user_id, status");
 
-      const existingApp = (allApps || []).find(app => 
-        String(app.card_id) === String(currentCard.id) &&
-        String(app.applicant_user_id).trim() === myId
+      const existingApp = (allApps || []).find(
+        (app) =>
+          String(app.card_id) === String(currentCard.id) &&
+          String(app.applicant_user_id).trim() === myId
       );
 
-      console.log(`=== CHECK APPLIED for card ${currentCard.id} ===`, existingApp);
       if (existingApp) {
         setAppliedCards((prev) => ({ ...prev, [currentCard.id]: true }));
-        setAppStatusByCard((prev) => ({ ...prev, [currentCard.id]: existingApp.status || 'pending' }));
+        setAppStatusByCard((prev) => ({
+          ...prev,
+          [currentCard.id]: existingApp.status || "pending",
+        }));
       } else {
         setAppliedCards((prev) => ({ ...prev, [currentCard.id]: false }));
       }
@@ -96,28 +96,27 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
     checkIfApplied();
   }, [currentIndex, cards, userId, currentUser, appliedCards]);
 
-  // Realtime: listen for status updates on MY applications
   useEffect(() => {
     if (!userId) return;
 
     const channel = supabase
       .channel(`my-app-status-${userId}`)
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'collab_applications',
+          event: "UPDATE",
+          schema: "public",
+          table: "collab_applications",
           filter: `applicant_user_id=eq.${userId}`,
         },
         (payload) => {
           const updated = payload.new;
-          if (updated.status === 'impressive') {
-            setAppStatusByCard((prev) => ({ ...prev, [updated.card_id]: 'impressive' }));
-            setToastMsg('🎉 Your application was marked Impressive! Check your messages.');
-            setTimeout(() => setToastMsg(''), 5000);
-          } else if (updated.status === 'rejected') {
-            setAppStatusByCard((prev) => ({ ...prev, [updated.card_id]: 'rejected' }));
+          if (updated.status === "impressive") {
+            setAppStatusByCard((prev) => ({ ...prev, [updated.card_id]: "impressive" }));
+            setToastMsg("🎉 Your application was marked Impressive! Check your messages.");
+            setTimeout(() => setToastMsg(""), 5000);
+          } else if (updated.status === "rejected") {
+            setAppStatusByCard((prev) => ({ ...prev, [updated.card_id]: "rejected" }));
           }
         }
       )
@@ -140,7 +139,9 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
     try {
       const { error } = await supabase.from("collab_cards").delete().eq("id", cardId);
       if (error) throw error;
-      queryClient.setQueryData(['collab-cards'], (prev) => (prev || []).filter((c) => c.id !== cardId));
+      queryClient.setQueryData(["collab-cards"], (prev) =>
+        (prev || []).filter((c) => c.id !== cardId)
+      );
       if (currentIndex >= cards.length - 1) {
         setCurrentIndex(Math.max(0, cards.length - 2));
       }
@@ -150,40 +151,46 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
     }
   };
 
+  /* ── Loading ─────────────────────────────────────── */
   if (loading) {
     return (
-    <section className="flex w-full flex-col items-end pl-16">
-        <div className="relative w-full max-w-sm" style={{ minHeight: 480 }}>
-          <div className="absolute inset-0 flex flex-col items-center justify-center rounded-[1.75rem] app-panel border border-[#E8E6E0] bg-[#F3F2EE]">
-            <Loader size={32} className="animate-spin text-primary mb-4" />
-            <p className="text-sm text-muted font-bold">Loading campus cards…</p>
-          </div>
-        </div>
-      </section>
+      <div className="flex flex-col items-center justify-center py-16">
+        <Loader size={32} className="animate-spin mb-4" style={{ color: "#C8922A" }} />
+        <p className="text-sm font-bold" style={{ color: "#888888" }}>
+          Loading campus cards…
+        </p>
+      </div>
     );
   }
 
+  /* ── Empty ───────────────────────────────────────── */
   if (!cards || cards.length === 0) {
     return (
-    <section className="flex w-full flex-col items-end pl-16">
-        <div className="relative w-full max-w-sm" style={{ minHeight: 480 }}>
-          <div className="app-panel absolute inset-0 flex flex-col items-center justify-center rounded-[1.75rem] p-7 text-center border border-[#E8E6E0] bg-[#F3F2EE]">
-            <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-primary/10 text-primary">
-              <Briefcase size={34} />
-            </div>
-            <h3 className="text-2xl font-black tracking-tight text-[#1A1A1A]">No cards on campus</h3>
-            <p className="mt-3 text-sm leading-6 text-muted">
-              Be the first to post a collab card for your campus!
-            </p>
-            <button
-              onClick={onPostCard}
-              className="mt-6 primary-button px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center"
-            >
-              <Plus size={14} className="mr-2" /> Post Your Card
-            </button>
-          </div>
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div
+          className="mb-5 flex h-16 w-16 items-center justify-center rounded-3xl"
+          style={{ background: "rgba(200,146,42,0.1)", color: "#C8922A" }}
+        >
+          <Briefcase size={34} />
         </div>
-      </section>
+        <h3 className="text-2xl font-black tracking-tight" style={{ color: "#1A1A1A" }}>
+          No cards on campus yet
+        </h3>
+        <p className="mt-3 max-w-sm text-sm leading-relaxed" style={{ color: "#888888" }}>
+          Be the first to post a collab card and find your team!
+        </p>
+        <button
+          onClick={onPostCard}
+          className="mt-6 flex items-center gap-2 rounded-2xl px-6 py-3 text-xs font-black uppercase tracking-widest text-white transition hover:scale-[1.03] active:scale-95"
+          style={{
+            background: "linear-gradient(135deg,#C8922A,#D4A843)",
+            boxShadow: "0 4px 20px rgba(200,146,42,0.3)",
+          }}
+        >
+          <Plus size={14} />
+          Post Your Card
+        </button>
+      </div>
     );
   }
 
@@ -193,70 +200,116 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
   const appStatus = appStatusByCard[currentCard?.id] || null;
 
   const variants = {
-    enter: (d) => ({ x: d > 0 ? 200 : -200, opacity: 0, scale: 0.9 }),
+    enter: (d) => ({ x: d > 0 ? 160 : -160, opacity: 0, scale: 0.95 }),
     center: { zIndex: 1, x: 0, opacity: 1, scale: 1 },
-    exit: (d) => ({ zIndex: 0, x: d < 0 ? 200 : -200, opacity: 0, scale: 0.9 }),
+    exit: (d) => ({ zIndex: 0, x: d < 0 ? 160 : -160, opacity: 0, scale: 0.95 }),
   };
 
   return (
-    <section className="flex w-full flex-col items-end pl-16">
-      {/* Applicant status toast */}
+    <div className="w-full">
+      {/* ── Applicant status toast ─────────────────── */}
       <AnimatePresence>
         {toastMsg && (
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 30 }}
-            className="fixed bottom-24 left-1/2 z-[999] -translate-x-1/2 rounded-2xl bg-emerald-500 px-5 py-3 text-xs font-black uppercase tracking-widest text-black shadow-xl whitespace-nowrap"
+            className="fixed bottom-24 left-1/2 z-[999] -translate-x-1/2 rounded-2xl px-5 py-3 text-xs font-black uppercase tracking-widest shadow-xl whitespace-nowrap"
+            style={{ background: "#10b981", color: "#000" }}
           >
             {toastMsg}
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="mb-4 flex w-full max-w-sm items-center justify-between">
-        <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-muted">Team cards</p>
-          <h2 className="text-lg font-black text-[#1A1A1A]">Campus Collabs</h2>
-        </div>
-        <span className="rounded-full border border-[#E8E6E0] bg-[#F3F2EE] px-3 py-1 text-[10px] font-black text-muted">
-          Swipe
-        </span>
-      </div>
-
-      <div className="relative w-full max-w-sm" style={{ minHeight: 480 }}>
-        <AnimatePresence initial={false} custom={direction}>
-          <motion.div
-            key={currentCard.id}
-            custom={direction}
-            variants={variants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{
-              x: { type: "spring", stiffness: 300, damping: 30 },
-              opacity: { duration: 0.2 },
-            }}
-            className="absolute inset-0 w-full h-full flex flex-col"
+      {/* ── Carousel layout ───────────────────────── */}
+      <div className="flex flex-col items-center gap-6">
+        {/* Counter + arrows row */}
+        <div className="flex w-full items-center justify-between">
+          {/* Left arrow */}
+          <button
+            onClick={handlePrev}
+            className="flex h-10 w-10 items-center justify-center rounded-full border transition hover:border-[#C8922A]/40 hover:bg-[#C8922A]/5 active:scale-95"
+            style={{ borderColor: "#ECE6DD", background: "#FAF8F4", color: "#888888" }}
+            aria-label="Previous card"
           >
-            <CollabCard
-              card={currentCard}
-              currentUser={currentUser}
-              hasApplied={hasApplied}
-              appStatus={appStatus}
-              onContribute={() => setShowModal(true)}
-              onShare={(c) => setShareCard(c)}
-              onDelete={handleDelete}
-              onNext={handleNext}
-              onPrev={handlePrev}
-              currentIndex={currentIndex}
-              totalCards={cards.length}
-            />
-          </motion.div>
-        </AnimatePresence>
+            <ChevronLeft size={18} />
+          </button>
+
+          {/* Counter dots */}
+          <div className="flex items-center gap-2">
+            {cards.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => {
+                  setDirection(i > currentIndex ? 1 : -1);
+                  setCurrentIndex(i);
+                }}
+                className="rounded-full transition"
+                style={{
+                  width: i === currentIndex ? 24 : 8,
+                  height: 8,
+                  background: i === currentIndex ? "#C8922A" : "#ECE6DD",
+                }}
+                aria-label={`Go to card ${i + 1}`}
+              />
+            ))}
+          </div>
+
+          {/* Right arrow */}
+          <button
+            onClick={handleNext}
+            className="flex h-10 w-10 items-center justify-center rounded-full border transition hover:border-[#C8922A]/40 hover:bg-[#C8922A]/5 active:scale-95"
+            style={{ borderColor: "#ECE6DD", background: "#FAF8F4", color: "#888888" }}
+            aria-label="Next card"
+          >
+            <ChevronRight size={18} />
+          </button>
+        </div>
+
+        {/* Card stage */}
+        <div
+          className="relative w-full"
+          style={{ maxWidth: 440, minHeight: 480 }}
+        >
+          <AnimatePresence initial={false} custom={direction}>
+            <motion.div
+              key={currentCard.id}
+              custom={direction}
+              variants={variants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{
+                x: { type: "spring", stiffness: 320, damping: 30 },
+                opacity: { duration: 0.18 },
+              }}
+              className="absolute inset-0 w-full h-full flex flex-col"
+            >
+              <CollabCard
+                card={currentCard}
+                currentUser={currentUser}
+                hasApplied={hasApplied}
+                appStatus={appStatus}
+                onContribute={() => setShowModal(true)}
+                onShare={(c) => setShareCard(c)}
+                onDelete={handleDelete}
+                onNext={handleNext}
+                onPrev={handlePrev}
+                currentIndex={currentIndex}
+                totalCards={cards.length}
+              />
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {/* Card counter label */}
+        <p className="text-xs font-bold" style={{ color: "#888888" }}>
+          {currentIndex + 1} of {cards.length} cards
+        </p>
       </div>
 
-      {/* Contribute Modal */}
+      {/* ── Modals ────────────────────────────────── */}
       <ContributeModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
@@ -264,12 +317,11 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
         currentUser={currentUser}
         onApplied={() => {
           setAppliedCards((prev) => ({ ...prev, [currentCard.id]: true }));
-          setAppStatusByCard((prev) => ({ ...prev, [currentCard.id]: 'pending' }));
+          setAppStatusByCard((prev) => ({ ...prev, [currentCard.id]: "pending" }));
           setShowModal(false);
         }}
       />
 
-      {/* Share Modal */}
       <ShareCollabModal
         isOpen={!!shareCard}
         onClose={() => setShareCard(null)}
@@ -277,10 +329,9 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
         currentUser={currentUser}
       />
 
-      {/* Applications Panel — only for card owner */}
       {isCardOwner && (
         <ApplicationsPanel cardId={currentCard.id} currentUser={currentUser} />
       )}
-    </section>
+    </div>
   );
 }
