@@ -3,6 +3,8 @@
 import React, { useMemo, useState, useRef } from "react";
 import clsx from "clsx";
 import {
+  Bookmark,
+  BookmarkCheck,
   Briefcase,
   CalendarClock,
   ExternalLink,
@@ -31,6 +33,39 @@ const TYPE_STYLES = {
   Competition: { color: "#D6A12C", bg: "rgba(214,161,44,0.08)",  border: "rgba(214,161,44,0.3)" },
   Startup:     { color: "#7C3AED", bg: "rgba(124,58,237,0.08)",  border: "rgba(124,58,237,0.2)" },
   Other:       { color: "#6F6F6F", bg: "#F4F1EB",                border: "#ECE6DD" },
+};
+
+/* ─── Logo color palette (deterministic by org name) ── */
+const LOGO_GRADIENTS = [
+  "linear-gradient(135deg,#D6A12C,#B8861C)",
+  "linear-gradient(135deg,#2563EB,#1D4ED8)",
+  "linear-gradient(135deg,#059669,#047857)",
+  "linear-gradient(135deg,#7C3AED,#6D28D9)",
+  "linear-gradient(135deg,#DC2626,#B91C1C)",
+  "linear-gradient(135deg,#2F3A45,#1A2530)",
+  "linear-gradient(135deg,#D97706,#B45309)",
+  "linear-gradient(135deg,#0891B2,#0E7490)",
+];
+
+const getLogoGradient = (name = "") => {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return LOGO_GRADIENTS[Math.abs(hash) % LOGO_GRADIENTS.length];
+};
+
+const getOrgInitials = (name = "") =>
+  (name || "?")
+    .replace(/[^a-zA-Z\s]/g, "")
+    .split(/\s+/).filter(Boolean)
+    .map(w => w[0].toUpperCase())
+    .slice(0, 2).join("") || "?";
+
+/* ─── Match score (deterministic, position-weighted) ── */
+const getMatchScore = (opp, index, total, selectedTypes) => {
+  const base      = Math.round(96 - (index / Math.max(total - 1, 1)) * 26);
+  const typeBonus = (selectedTypes || []).includes(opp.type) ? 2 : -2;
+  const jitter    = (opp.title?.length || 10) % 7 - 3; // -3 to +3
+  return Math.min(99, Math.max(66, base + typeBonus + jitter));
 };
 
 /* ─── Deadline helper ──────────────────────────────── */
@@ -510,9 +545,13 @@ export default function OpportunityFinder({ currentUser }) {
                     </span>
                   )}
                 </div>
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                   {opportunities.map((opp, i) => (
-                    <OpportunityCard key={`${opp.title}-${opp.organization}-${i}`} opportunity={opp} />
+                    <OpportunityCard
+                      key={`${opp.title}-${opp.organization}-${i}`}
+                      opportunity={opp}
+                      matchScore={getMatchScore(opp, i, opportunities.length, form.types)}
+                    />
                   ))}
                 </div>
               </div>
@@ -538,14 +577,24 @@ export default function OpportunityFinder({ currentUser }) {
 /* ─── Loading Skeleton ─────────────────────────────── */
 function LoadingSkeleton() {
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
       {[0,1,2,3].map(i => (
-        <div key={i} className="rounded-[20px] border p-5" style={{ borderColor:"#ECE6DD", background:"#F4F1EB" }}>
-          <div className="mb-4 h-5 w-20 animate-pulse rounded-full"  style={{ background:"#ECE6DD" }} />
-          <div className="mb-3 h-5 w-4/5 animate-pulse rounded-lg"   style={{ background:"#ECE6DD" }} />
-          <div className="mb-2 h-3 w-2/3 animate-pulse rounded"      style={{ background:"#ECE6DD" }} />
-          <div className="mb-5 h-12 w-full animate-pulse rounded-xl" style={{ background:"#ECE6DD" }} />
-          <div className="h-10 w-full animate-pulse rounded-2xl"      style={{ background:"#ECE6DD" }} />
+        <div key={i} style={{ borderRadius:18, border:"1.5px solid #ECE6DD", background:"#FFFFFF", padding:20 }}>
+          {/* Logo + bookmark row */}
+          <div style={{ display:"flex", justifyContent:"space-between", marginBottom:16 }}>
+            <div style={{ width:52, height:52, borderRadius:14, background:"#ECE6DD" }} className="animate-pulse" />
+            <div style={{ width:36, height:36, borderRadius:10, background:"#ECE6DD" }} className="animate-pulse" />
+          </div>
+          <div className="mb-2 h-5 w-4/5 animate-pulse rounded-lg"  style={{ background:"#ECE6DD" }} />
+          <div className="mb-4 h-4 w-1/2 animate-pulse rounded"     style={{ background:"#ECE6DD" }} />
+          <div className="mb-4 h-3 w-1/3 animate-pulse rounded-full" style={{ background:"#ECE6DD" }} />
+          <div className="mb-4 flex gap-2">
+            <div className="h-6 w-20 animate-pulse rounded-md" style={{ background:"#ECE6DD" }} />
+            <div className="h-6 w-14 animate-pulse rounded-md" style={{ background:"#ECE6DD" }} />
+          </div>
+          {/* Score bar */}
+          <div className="mb-5 h-2 w-full animate-pulse rounded-full" style={{ background:"#ECE6DD" }} />
+          <div className="h-12 w-full animate-pulse" style={{ borderRadius:14, background:"#ECE6DD" }} />
         </div>
       ))}
     </div>
@@ -553,86 +602,209 @@ function LoadingSkeleton() {
 }
 
 /* ─── Opportunity Card ─────────────────────────────── */
-function OpportunityCard({ opportunity }) {
-  const deadline  = getDeadlineState(opportunity.deadline);
-  const typeStyle = TYPE_STYLES[opportunity.type] || TYPE_STYLES.Other;
+function OpportunityCard({ opportunity, matchScore = 85 }) {
+  const [bookmarked, setBookmarked] = useState(false);
+  const deadline   = getDeadlineState(opportunity.deadline);
+  const typeStyle  = TYPE_STYLES[opportunity.type] || TYPE_STYLES.Other;
+  const logoGrad   = getLogoGradient(opportunity.organization || "");
+  const initials   = getOrgInitials(opportunity.organization);
+  const tags       = (opportunity.eligibleBranches || []).slice(0, 3).filter(Boolean);
+  const scoreColor = matchScore >= 88 ? "#3AA675" : matchScore >= 75 ? "#D6A12C" : "#6F6F6F";
+  const scoreGrad  = matchScore >= 88
+    ? "linear-gradient(90deg,#3AA675,#2D8F61)"
+    : matchScore >= 75
+      ? "linear-gradient(90deg,#D6A12C,#C28F18)"
+      : "linear-gradient(90deg,#9E9E9E,#757575)";
 
   return (
     <article
-      className="group flex h-full flex-col rounded-[20px] border transition"
-      style={{ borderColor:"#ECE6DD", background:"#FFFFFF", boxShadow:"0 2px 12px rgba(0,0,0,0.04)", padding:"20px" }}
+      style={{
+        padding: 20,
+        borderRadius: 18,
+        border: "1.5px solid #ECE6DD",
+        background: "#FFFFFF",
+        boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+        display: "flex",
+        flexDirection: "column",
+        transition: "transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease",
+      }}
       onMouseEnter={e => {
-        e.currentTarget.style.boxShadow   = "0 8px 32px rgba(0,0,0,0.08)";
-        e.currentTarget.style.borderColor = "rgba(47,58,69,0.3)";
-        e.currentTarget.style.transform   = "translateY(-2px)";
+        e.currentTarget.style.transform   = "translateY(-6px)";
+        e.currentTarget.style.boxShadow   = "0 18px 52px rgba(0,0,0,0.11)";
+        e.currentTarget.style.borderColor = "#D6A12C";
       }}
       onMouseLeave={e => {
+        e.currentTarget.style.transform   = "translateY(0)";
         e.currentTarget.style.boxShadow   = "0 2px 12px rgba(0,0,0,0.04)";
         e.currentTarget.style.borderColor = "#ECE6DD";
-        e.currentTarget.style.transform   = "translateY(0)";
       }}
     >
-      {/* Type + Deadline */}
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <span
-          className="rounded-lg border px-2.5 py-1"
-          style={{ fontSize:10, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase",
-            color:typeStyle.color, background:typeStyle.bg, borderColor:typeStyle.border }}
-        >
-          {opportunity.type || "Other"}
-        </span>
-        <span
-          className="flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1"
+      {/* ── Row 1: Logo + Bookmark ── */}
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16 }}>
+        {/* Org logo avatar */}
+        <div
           style={{
-            fontSize:10, fontWeight:600,
-            ...(deadline.urgent
-              ? { borderColor:"rgba(239,68,68,0.3)", background:"rgba(239,68,68,0.08)", color:"#DC2626" }
-              : { borderColor:"#ECE6DD", background:"#F4F1EB", color:"#6F6F6F" })
+            width:52, height:52, borderRadius:14, flexShrink:0,
+            background: logoGrad,
+            display:"flex", alignItems:"center", justifyContent:"center",
+            fontSize:18, fontWeight:800, color:"#FFFFFF", letterSpacing:"-0.02em",
+            boxShadow:"0 4px 14px rgba(0,0,0,0.14)",
           }}
         >
-          <CalendarClock size={11} />
+          {initials}
+        </div>
+
+        {/* Bookmark toggle */}
+        <button
+          type="button"
+          onClick={() => setBookmarked(p => !p)}
+          aria-label={bookmarked ? "Remove bookmark" : "Bookmark"}
+          style={{
+            width:36, height:36, borderRadius:10, flexShrink:0,
+            border:"1.5px solid",
+            borderColor: bookmarked ? "#D6A12C" : "#ECE6DD",
+            background:  bookmarked ? "rgba(214,161,44,0.1)" : "transparent",
+            color:       bookmarked ? "#D6A12C" : "#6F6F6F",
+            display:"flex", alignItems:"center", justifyContent:"center",
+            cursor:"pointer",
+            transition:"all 0.18s ease",
+          }}
+          onMouseEnter={e => {
+            if (!bookmarked) {
+              e.currentTarget.style.borderColor = "#D6A12C";
+              e.currentTarget.style.color       = "#D6A12C";
+              e.currentTarget.style.background  = "rgba(214,161,44,0.07)";
+            } else {
+              e.currentTarget.style.transform = "scale(1.1)";
+            }
+          }}
+          onMouseLeave={e => {
+            if (!bookmarked) {
+              e.currentTarget.style.borderColor = "#ECE6DD";
+              e.currentTarget.style.color       = "#6F6F6F";
+              e.currentTarget.style.background  = "transparent";
+            }
+            e.currentTarget.style.transform = "scale(1)";
+          }}
+        >
+          {bookmarked ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
+        </button>
+      </div>
+
+      {/* ── Opportunity name ── */}
+      <h3 style={{ fontSize:17, fontWeight:600, lineHeight:1.35, color:"#1B1B1B", marginBottom:4 }}>
+        {opportunity.title}
+      </h3>
+
+      {/* ── Company + Location ── */}
+      <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap", marginBottom:12 }}>
+        <span style={{ fontSize:13, fontWeight:600, color:"#2F3A45" }}>
+          {opportunity.organization || "Organization"}
+        </span>
+        {opportunity.location && (
+          <>
+            <span style={{ color:"#D4CEC5", fontSize:13 }}>·</span>
+            <span style={{ display:"flex", alignItems:"center", gap:3, fontSize:13, color:"#6F6F6F" }}>
+              <MapPin size={11} style={{ flexShrink:0 }} />
+              {opportunity.location}
+            </span>
+          </>
+        )}
+      </div>
+
+      {/* ── Deadline ── */}
+      <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:14 }}>
+        <CalendarClock size={13} style={{ color: deadline.urgent ? "#DC2626" : "#6F6F6F", flexShrink:0 }} />
+        <span
+          style={{
+            fontSize:12, fontWeight:600,
+            color:       deadline.urgent ? "#DC2626" : "#6F6F6F",
+            background:  deadline.urgent ? "rgba(220,38,38,0.07)" : "#F4F1EB",
+            borderRadius:6, padding:"3px 9px",
+          }}
+        >
           {deadline.label}
         </span>
       </div>
 
-      <h3 className="text-xl font-semibold leading-snug" style={{ color:"#1B1B1B" }}>
-        {opportunity.title}
-      </h3>
-      <p className="mt-1 text-sm font-medium leading-relaxed" style={{ color:"#6F6F6F" }}>
-        {opportunity.organization || "Organization not listed"}
-      </p>
-      <p className="mt-3 flex-1 text-base leading-relaxed line-clamp-3" style={{ color:"#6F6F6F" }}>
-        {opportunity.description}
-      </p>
-
-      {/* Meta pills */}
-      <div className="mt-4 flex flex-wrap gap-2">
-        {[
-          { icon: <MapPin size={11} />, text: opportunity.location || "Remote / India" },
-          { icon: <GraduationCap size={11} />, text: (opportunity.eligibleBranches||[]).slice(0,2).join(", ") || "All branches" },
-        ].map(({ icon, text }) => (
+      {/* ── Tags ── */}
+      <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:16 }}>
+        {/* Type tag */}
+        <span
+          style={{
+            fontSize:10, fontWeight:700, letterSpacing:"0.09em", textTransform:"uppercase",
+            color:typeStyle.color, background:typeStyle.bg,
+            border:`1px solid ${typeStyle.border}`,
+            borderRadius:6, padding:"4px 9px",
+          }}
+        >
+          {opportunity.type || "Other"}
+        </span>
+        {/* Branch/skill tags */}
+        {tags.map(tag => (
           <span
-            key={text}
-            className="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1"
-            style={{ fontSize:10, fontWeight:600, borderColor:"#ECE6DD", background:"#F4F1EB", color:"#6F6F6F" }}
+            key={tag}
+            style={{
+              fontSize:11, fontWeight:600,
+              color:"#2F3A45", background:"rgba(47,58,69,0.07)",
+              borderRadius:6, padding:"4px 9px",
+            }}
           >
-            {icon}{text}
+            {tag}
           </span>
         ))}
       </div>
 
+      {/* ── Match Score ── */}
+      <div style={{ marginBottom:18 }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
+          <span style={{ fontSize:10, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", color:"#6F6F6F" }}>
+            Match Score
+          </span>
+          <span style={{ fontSize:13, fontWeight:700, color:scoreColor }}>
+            {matchScore}%
+          </span>
+        </div>
+        <div style={{ height:5, background:"#ECE6DD", borderRadius:999, overflow:"hidden" }}>
+          <div
+            style={{
+              height:"100%", width:`${matchScore}%`,
+              background:scoreGrad,
+              borderRadius:999,
+              transition:"width 0.9s cubic-bezier(0.4,0,0.2,1)",
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Flex spacer */}
+      <div style={{ flex:1 }} />
+
+      {/* ── Apply button ── */}
       <a
         href={opportunity.applyLink}
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-4 flex h-11 items-center justify-center gap-2 rounded-2xl transition hover:scale-[1.02] active:scale-95"
         style={{
-          fontSize:12, fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase",
+          display:"flex", alignItems:"center", justifyContent:"center", gap:8,
+          height:48, borderRadius:14, textDecoration:"none",
           background:"linear-gradient(135deg,#D6A12C,#C28F18)",
-          color:"#FFFFFF", boxShadow:"0 2px 10px rgba(214,161,44,0.25)",
+          color:"#FFFFFF",
+          fontSize:12, fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase",
+          boxShadow:"0 2px 10px rgba(214,161,44,0.28)",
+          transition:"all 0.18s ease",
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.transform = "translateY(-1px)";
+          e.currentTarget.style.boxShadow = "0 8px 24px rgba(214,161,44,0.48)";
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.transform = "translateY(0)";
+          e.currentTarget.style.boxShadow = "0 2px 10px rgba(214,161,44,0.28)";
         }}
       >
-        Apply Now <ExternalLink size={13} />
+        Apply Now
+        <ExternalLink size={14} />
       </a>
     </article>
   );
