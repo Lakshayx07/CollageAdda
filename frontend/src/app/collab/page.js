@@ -1,31 +1,12 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Check, Code, Palette, Shield, X, Zap, Plus, Users, Clock, Briefcase, Loader } from "lucide-react";
+import { X, Zap, Plus, Loader } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
-import clsx from "clsx";
-import VerifiedBadge from "@/components/VerifiedBadge";
 import OpportunityFinder from "./OpportunityFinder";
 import CollabCarousel from "@/components/collab/CollabCarousel";
 import { supabase } from "@/utils/supabase";
 
-const URGENCY_COLORS = {
-  High: "text-red-400 bg-red-500/10 border-red-500/20",
-  Medium: "text-yellow-400 bg-yellow-500/10 border-yellow-500/20",
-  Low: "text-green-400 bg-green-500/10 border-green-500/20"
-};
-
-const PROJECT_TYPE_COLORS = {
-  Hackathon: "text-blue-400 bg-blue-500/10 border-blue-500/20",
-  Startup: "text-[#C8922A] bg-[#C8922A]/10 border-[#C8922A]/30",
-  Research: "text-[#C8922A] bg-[#C8922A]/10 border-[#E8E6E0]",
-  "Side Project": "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
-  Society: "text-orange-400 bg-orange-500/10 border-orange-500/20",
-  Other: "text-[#6B6B6B] bg-[#F3F2EE] border-[#E8E6E0]"
-};
-
 export default function CollabPage() {
-  const router = useRouter();
   const [showPostModal, setShowPostModal] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
@@ -53,7 +34,7 @@ export default function CollabPage() {
       alert("Please fill in your skillset, what you're building, and your class year.");
       return;
     }
-    
+
     const userId = currentUser?.id || currentUser?._id;
     if (!userId) {
       alert("You must be logged in to post.");
@@ -84,13 +65,13 @@ export default function CollabPage() {
         .insert(insertData);
 
       if (error) throw error;
-      
+
       setToastMsg("Your collab card is live! 🚀");
       setTimeout(() => setToastMsg(""), 3000);
       setShowPostModal(false);
       setSkillset(""); setBuilding(""); setYearMajor("");
       setProjectType("Side Project"); setRolesNeeded(""); setUrgency("Medium"); setDescription("");
-      
+
     } catch (err) {
       console.error(err);
       alert("Failed to post collab card: " + (err?.message || JSON.stringify(err)));
@@ -100,10 +81,11 @@ export default function CollabPage() {
   };
 
   return (
-    <div className="page-shell flex flex-col overflow-hidden relative">
-
-
-      {/* Toast */}
+    <div
+      className="relative flex min-h-screen flex-col overflow-x-hidden"
+      style={{ background: "#FAF8F4" }}
+    >
+      {/* ── Toast ───────────────────────────────────── */}
       <AnimatePresence>
         {toastMsg && (
           <motion.div
@@ -117,147 +99,274 @@ export default function CollabPage() {
         )}
       </AnimatePresence>
 
-      <header className="page-header sticky top-0 z-40 px-5 py-5 relative">
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 text-left sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="icon-tile h-12 w-12">
-              <Zap size={24} className="text-primary" />
+      {/* ── Top Navigation ──────────────────────────── */}
+      <nav
+        className="sticky top-0 z-40 border-b"
+        style={{
+          background: "rgba(250,248,244,0.85)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          borderColor: "#ECE6DD",
+        }}
+      >
+        <div
+          className="mx-auto flex w-full max-w-[1440px] items-center justify-between"
+          style={{ padding: "0 48px", height: 72 }}
+        >
+          {/* Logo */}
+          <div className="flex shrink-0 items-center gap-3">
+            <div
+              className="flex h-9 w-9 items-center justify-center rounded-xl"
+              style={{ background: "linear-gradient(135deg,#C8922A,#D4A843)" }}
+            >
+              <Zap size={18} className="text-white" />
             </div>
-            <div>
-              <h1 className="text-2xl font-black tracking-tight text-[#1A1A1A] sm:text-3xl">
-                Team Matchmaker<span className="text-primary">.</span>
-              </h1>
-              <p className="mt-1 text-sm font-medium text-muted">
-                Hackathons, side projects, societies, and startup teams.
-              </p>
-            </div>
+            <span
+              className="text-base font-black tracking-tight"
+              style={{ color: "#1A1A1A" }}
+            >
+              CollabAdda
+            </span>
           </div>
+
+          {/* Center heading */}
+          <div className="flex flex-col items-center gap-1 text-center">
+            <h1
+              className="text-xl font-black tracking-tight leading-tight"
+              style={{ color: "#1A1A1A" }}
+            >
+              Find your next opportunity
+            </h1>
+            <p className="text-xs font-medium" style={{ color: "#888888" }}>
+              Hackathons, side projects, societies, and startup teams.
+            </p>
+          </div>
+
+          {/* CTA */}
           <button
             onClick={() => setShowPostModal(true)}
-            className="ca-btn-primary flex w-full items-center justify-center rounded-2xl px-6 py-3 text-xs font-black uppercase tracking-widest transition sm:w-auto"
+            className="flex shrink-0 items-center gap-2 rounded-full text-xs font-black uppercase tracking-widest text-white transition hover:scale-[1.04] active:scale-95"
+            style={{
+              background: "linear-gradient(135deg,#C8922A,#D4A843)",
+              padding: "10px 22px",
+              boxShadow: "0 4px 20px rgba(200,146,42,0.35)",
+            }}
           >
-            <Plus size={16} className="mr-2" /> Post Your Card
+            <Plus size={14} />
+            Post Your Card
           </button>
         </div>
-      </header>
+      </nav>
 
-      <main className="mx-auto w-full max-w-[1180px] flex-1 px-5 py-8 relative z-10">
-        <div className="grid w-full justify-center gap-6 lg:grid-cols-[minmax(0,760px)_22rem] lg:items-start">
+      {/* ── Main Body ───────────────────────────────── */}
+      <main
+        className="mx-auto w-full max-w-[1440px] flex-1 flex flex-col"
+        style={{ padding: "48px 48px 80px" }}
+      >
+        {/* Section 1 — Opportunity Finder */}
+        <section>
           <OpportunityFinder currentUser={currentUser} />
+        </section>
 
-          <CollabCarousel currentUser={currentUser} onPostCard={() => setShowPostModal(true)} />
-        </div>
+        {/* Section 2 — Team Cards */}
+        <section style={{ marginTop: 56 }}>
+          {/* Section header */}
+          <div className="flex items-center justify-between" style={{ marginBottom: 24 }}>
+            <div>
+              <p
+                className="text-[10px] font-black uppercase tracking-[0.22em]"
+                style={{ color: "#888888" }}
+              >
+                Team Cards
+              </p>
+              <h2
+                className="mt-1 text-2xl font-black tracking-tight"
+                style={{ color: "#1A1A1A" }}
+              >
+                Campus Collabs
+              </h2>
+            </div>
+            <span
+              className="rounded-full border text-[10px] font-black uppercase tracking-widest"
+              style={{
+                borderColor: "#ECE6DD",
+                background: "#FFFFFF",
+                color: "#888888",
+                padding: "6px 16px",
+              }}
+            >
+              Swipe to explore
+            </span>
+          </div>
+
+          {/* Carousel container */}
+          <div
+            className="w-full rounded-[24px] border"
+            style={{
+              background: "#FFFFFF",
+              borderColor: "#ECE6DD",
+              boxShadow: "0 12px 40px rgba(0,0,0,0.04)",
+              padding: "40px 48px",
+            }}
+          >
+            <CollabCarousel currentUser={currentUser} onPostCard={() => setShowPostModal(true)} />
+          </div>
+        </section>
       </main>
 
-      {/* Post Modal */}
+      {/* ── Post Modal ──────────────────────────────── */}
       <AnimatePresence>
         {showPostModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="app-panel rounded-[1.75rem] w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]"
+              initial={{ scale: 0.95, opacity: 0, y: 12 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 12 }}
+              transition={{ type: "spring", stiffness: 340, damping: 28 }}
+              className="w-full max-w-md overflow-hidden flex flex-col rounded-[24px] border"
+              style={{
+                background: "#FFFFFF",
+                borderColor: "#ECE6DD",
+                maxHeight: "90vh",
+                boxShadow: "0 24px 80px rgba(0,0,0,0.12)",
+              }}
             >
-              <div className="p-5 border-b border-[#E8E6E0] flex justify-between items-center bg-[#F3F2EE] shrink-0">
-                <h3 className="font-black uppercase tracking-widest text-sm text-[#1A1A1A] flex items-center">
-                  <Plus size={16} className="mr-2 text-primary" /> Post Your Collab Card
-                </h3>
-                <button onClick={() => setShowPostModal(false)} className="text-[#6B6B6B] hover:text-[#1A1A1A]"><X size={18} /></button>
+              {/* Modal header */}
+              <div
+                className="flex shrink-0 items-center justify-between border-b px-6 py-5"
+                style={{ borderColor: "#ECE6DD", background: "#FAF8F4" }}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className="flex h-8 w-8 items-center justify-center rounded-xl"
+                    style={{ background: "linear-gradient(135deg,#C8922A,#D4A843)" }}
+                  >
+                    <Plus size={14} className="text-white" />
+                  </div>
+                  <h3
+                    className="text-sm font-black uppercase tracking-widest"
+                    style={{ color: "#1A1A1A" }}
+                  >
+                    Post Your Collab Card
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setShowPostModal(false)}
+                  className="flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-black/5"
+                  style={{ color: "#888888" }}
+                >
+                  <X size={16} />
+                </button>
               </div>
 
-              <form onSubmit={handlePost} className="p-6 space-y-4 overflow-y-auto">
-                <div>
-                  <label className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest block mb-2">My Skillset</label>
-                  <input
-                    type="text"
-                    placeholder="React, Node.js, Figma, Marketing..."
-                    value={skillset}
-                    onChange={e => setSkillset(e.target.value)}
-                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:border-primary focus:outline-none transition"
-                  />
-                  <p className="text-[10px] text-[#6B6B6B] mt-1">Comma-separated, e.g. &quot;Python, ML, Data Analysis&quot;</p>
-                </div>
-
-                <div>
-                  <label className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest block mb-2">What I&apos;m Building</label>
-                  <input
-                    type="text"
-                    placeholder="AI-powered study assistant, Fintech startup..."
-                    value={building}
-                    onChange={e => setBuilding(e.target.value)}
-                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:border-primary focus:outline-none transition"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest block mb-2">Class Year / Major</label>
-                  <input
-                    type="text"
-                    placeholder="3rd Year, CSE · 2nd Year, MBA..."
-                    value={yearMajor}
-                    onChange={e => setYearMajor(e.target.value)}
-                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:border-primary focus:outline-none transition"
-                  />
-                </div>
+              <form onSubmit={handlePost} className="overflow-y-auto p-6 space-y-5">
+                {[
+                  { label: "My Skillset", placeholder: "React, Node.js, Figma, Marketing...", value: skillset, onChange: setSkillset, hint: 'Comma-separated, e.g. "Python, ML, Data Analysis"' },
+                  { label: "What I'm Building", placeholder: "AI-powered study assistant, Fintech startup...", value: building, onChange: setBuilding },
+                  { label: "Class Year / Major", placeholder: "3rd Year, CSE · 2nd Year, MBA...", value: yearMajor, onChange: setYearMajor },
+                ].map(({ label, placeholder, value, onChange, hint }) => (
+                  <div key={label}>
+                    <label
+                      className="block text-[10px] font-black uppercase tracking-widest mb-2"
+                      style={{ color: "#888888" }}
+                    >
+                      {label}
+                    </label>
+                    <input
+                      type="text"
+                      placeholder={placeholder}
+                      value={value}
+                      onChange={e => onChange(e.target.value)}
+                      className="w-full rounded-xl border px-4 py-3 text-sm outline-none transition"
+                      style={{
+                        borderColor: "#ECE6DD",
+                        background: "#FAF8F4",
+                        color: "#1A1A1A",
+                      }}
+                      onFocus={e => (e.target.style.borderColor = "#C8922A")}
+                      onBlur={e => (e.target.style.borderColor = "#ECE6DD")}
+                    />
+                    {hint && (
+                      <p className="mt-1 text-[10px]" style={{ color: "#AAAAAA" }}>{hint}</p>
+                    )}
+                  </div>
+                ))}
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest block mb-2">Project Type</label>
-                    <select
-                      value={projectType}
-                      onChange={e => setProjectType(e.target.value)}
-                      className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-3 py-3 text-[#1A1A1A] text-sm focus:border-primary focus:outline-none transition appearance-none"
-                    >
-                      <option>Hackathon</option>
-                      <option>Startup</option>
-                      <option>Research</option>
-                      <option>Side Project</option>
-                      <option>Society</option>
-                      <option>Other</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest block mb-2">Urgency</label>
-                    <select
-                      value={urgency}
-                      onChange={e => setUrgency(e.target.value)}
-                      className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-3 py-3 text-[#1A1A1A] text-sm focus:border-primary focus:outline-none transition appearance-none"
-                    >
-                      <option>Low</option>
-                      <option>Medium</option>
-                      <option>High</option>
-                    </select>
-                  </div>
+                  {[
+                    { label: "Project Type", value: projectType, onChange: setProjectType, options: ["Hackathon", "Startup", "Research", "Side Project", "Society", "Other"] },
+                    { label: "Urgency", value: urgency, onChange: setUrgency, options: ["Low", "Medium", "High"] },
+                  ].map(({ label, value, onChange, options }) => (
+                    <div key={label}>
+                      <label
+                        className="block text-[10px] font-black uppercase tracking-widest mb-2"
+                        style={{ color: "#888888" }}
+                      >
+                        {label}
+                      </label>
+                      <select
+                        value={value}
+                        onChange={e => onChange(e.target.value)}
+                        className="w-full appearance-none rounded-xl border px-3 py-3 text-sm outline-none transition"
+                        style={{
+                          borderColor: "#ECE6DD",
+                          background: "#FAF8F4",
+                          color: "#1A1A1A",
+                        }}
+                      >
+                        {options.map(o => <option key={o}>{o}</option>)}
+                      </select>
+                    </div>
+                  ))}
                 </div>
 
                 <div>
-                  <label className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest block mb-2">Roles Needed</label>
+                  <label
+                    className="block text-[10px] font-black uppercase tracking-widest mb-2"
+                    style={{ color: "#888888" }}
+                  >
+                    Roles Needed
+                  </label>
                   <input
                     type="text"
                     placeholder="Backend Dev, UI Designer, Business Lead..."
                     value={rolesNeeded}
                     onChange={e => setRolesNeeded(e.target.value)}
-                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:border-primary focus:outline-none transition"
+                    className="w-full rounded-xl border px-4 py-3 text-sm outline-none transition"
+                    style={{ borderColor: "#ECE6DD", background: "#FAF8F4", color: "#1A1A1A" }}
+                    onFocus={e => (e.target.style.borderColor = "#C8922A")}
+                    onBlur={e => (e.target.style.borderColor = "#ECE6DD")}
                   />
-                  <p className="text-[10px] text-[#6B6B6B] mt-1">Comma-separated roles</p>
+                  <p className="mt-1 text-[10px]" style={{ color: "#AAAAAA" }}>Comma-separated roles</p>
                 </div>
 
                 <div>
-                  <label className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest block mb-2">Short Description (Optional)</label>
+                  <label
+                    className="block text-[10px] font-black uppercase tracking-widest mb-2"
+                    style={{ color: "#888888" }}
+                  >
+                    Short Description{" "}
+                    <span className="font-medium normal-case tracking-normal" style={{ color: "#AAAAAA" }}>
+                      (Optional)
+                    </span>
+                  </label>
                   <textarea
                     placeholder="Any extra context about the project or what you're looking for..."
                     value={description}
                     onChange={e => setDescription(e.target.value)}
                     rows={3}
-                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:border-primary focus:outline-none transition resize-none"
+                    className="w-full resize-none rounded-xl border px-4 py-3 text-sm outline-none transition"
+                    style={{ borderColor: "#ECE6DD", background: "#FAF8F4", color: "#1A1A1A" }}
+                    onFocus={e => (e.target.style.borderColor = "#C8922A")}
+                    onBlur={e => (e.target.style.borderColor = "#ECE6DD")}
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={isPosting}
-                  className="ca-btn-primary w-full py-4 rounded-xl text-xs font-black uppercase tracking-widest disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-xs font-black uppercase tracking-widest text-white transition hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                  style={{ background: "linear-gradient(135deg,#C8922A,#D4A843)", boxShadow: "0 4px 20px rgba(200,146,42,0.3)" }}
                 >
                   {isPosting ? <Loader size={14} className="animate-spin" /> : <Zap size={14} />}
                   {isPosting ? "Posting..." : "Go Live 🚀"}

@@ -6,12 +6,12 @@ import {
   Briefcase,
   CalendarClock,
   ExternalLink,
-  Filter,
   GraduationCap,
   Loader,
   MapPin,
   RefreshCw,
   Search,
+  SlidersHorizontal,
   Sparkles,
   Trophy,
 } from "lucide-react";
@@ -22,28 +22,17 @@ const YEARS = ["1st Year", "2nd Year", "3rd Year", "4th Year", "Final Year", "Gr
 const TYPES = ["Internship", "Hackathon", "Workshop", "Scholarship", "Competition"];
 
 const TYPE_STYLES = {
-  Internship: "text-emerald-300 bg-emerald-500/10 border-emerald-500/20",
-  Hackathon: "text-blue-300 bg-blue-500/10 border-blue-500/20",
-  Workshop: "text-[#C8922A] bg-[#C8922A]/10 border-[#E8E6E0]",
-  Scholarship: "text-amber-300 bg-amber-500/10 border-amber-500/20",
-  Competition: "text-[#C8922A] bg-[#C8922A]/10 border-[#C8922A]/30",
-  Other: "text-[#6B6B6B] bg-[#F3F2EE] border-[#E8E6E0]",
+  Internship: { color: "#059669", bg: "rgba(5,150,105,0.08)", border: "rgba(5,150,105,0.2)" },
+  Hackathon:  { color: "#2563EB", bg: "rgba(37,99,235,0.08)", border: "rgba(37,99,235,0.2)" },
+  Workshop:   { color: "#C8922A", bg: "rgba(200,146,42,0.08)", border: "rgba(200,146,42,0.25)" },
+  Scholarship:{ color: "#D97706", bg: "rgba(217,119,6,0.08)", border: "rgba(217,119,6,0.2)" },
+  Competition:{ color: "#C8922A", bg: "rgba(200,146,42,0.08)", border: "rgba(200,146,42,0.3)" },
+  Other:      { color: "#6B6B6B", bg: "#F3F2EE", border: "#E8E6E0" },
 };
 
-/**
- * @typedef {Object} Opportunity
- * @property {string} title
- * @property {string} organization
- * @property {string} type
- * @property {string[]} eligibleBranches
- * @property {string} location
- * @property {string} deadline
- * @property {string} description
- * @property {string} applyLink
- */
-
 const getDeadlineState = (deadline) => {
-  if (!deadline || /rolling|ongoing|not specified/i.test(deadline)) return { urgent: false, label: deadline || "Deadline not listed" };
+  if (!deadline || /rolling|ongoing|not specified/i.test(deadline))
+    return { urgent: false, label: deadline || "Deadline not listed" };
 
   const parsed = new Date(deadline);
   if (Number.isNaN(parsed.getTime())) return { urgent: false, label: deadline };
@@ -51,9 +40,9 @@ const getDeadlineState = (deadline) => {
   const now = new Date();
   const daysLeft = Math.ceil((parsed.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
-  if (daysLeft < 0) return { urgent: true, label: "Deadline passed recently" };
+  if (daysLeft < 0) return { urgent: true, label: "Deadline passed" };
   if (daysLeft === 0) return { urgent: true, label: "Closes today" };
-  if (daysLeft <= 7) return { urgent: true, label: `${daysLeft} day${daysLeft === 1 ? "" : "s"} left` };
+  if (daysLeft <= 7) return { urgent: true, label: `${daysLeft}d left` };
 
   return {
     urgent: false,
@@ -65,6 +54,30 @@ const normalizeProfileText = (value) => {
   if (!value) return "";
   return String(value).replace(/\s+/g, " ").trim();
 };
+
+/* ─── Shared input style ─────────────────────────── */
+const inputStyle = {
+  width: "100%",
+  borderRadius: 12,
+  border: "1px solid #ECE6DD",
+  background: "#FAF8F4",
+  color: "#1A1A1A",
+  fontSize: 14,
+  padding: "10px 14px",
+  outline: "none",
+  transition: "border-color 0.15s",
+};
+
+function FieldLabel({ children }) {
+  return (
+    <span
+      className="block text-[10px] font-black uppercase tracking-widest mb-2"
+      style={{ color: "#888888" }}
+    >
+      {children}
+    </span>
+  );
+}
 
 export default function OpportunityFinder({ currentUser }) {
   const inferredYear = useMemo(() => {
@@ -134,160 +147,237 @@ export default function OpportunityFinder({ currentUser }) {
   };
 
   return (
-    <section className="w-full space-y-5">
-      <div className="app-panel overflow-hidden rounded-[1.75rem]">
-        <div className="border-b border-[#E8E6E0] bg-[#F3F2EE] p-5 sm:p-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                <Sparkles size={24} />
-              </div>
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-muted">Opportunity Finder</p>
-                <h2 className="mt-1 text-2xl font-black tracking-tight text-[#1A1A1A]">Find what fits your semester.</h2>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => findOpportunities({ refresh: true })}
-              disabled={loading || !searched}
-              className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#E8E6E0] bg-[#F3F2EE] px-4 text-xs font-black uppercase tracking-widest text-muted transition hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+    <section className="w-full">
+      {/* ── Outer container ─── */}
+      <div
+        className="w-full rounded-[24px] border"
+        style={{
+          background: "#FFFFFF",
+          borderColor: "#ECE6DD",
+          boxShadow: "0 12px 40px rgba(0,0,0,0.04)",
+          overflow: "hidden",
+        }}
+      >
+        {/* ── Panel header ─── */}
+        <div
+          className="flex items-center justify-between border-b px-8 py-6"
+          style={{ borderColor: "#ECE6DD", background: "#FAF8F4" }}
+        >
+          <div className="flex items-center gap-4">
+            <div
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
+              style={{ background: "rgba(200,146,42,0.1)", color: "#C8922A" }}
             >
-              <RefreshCw size={15} className={clsx(loading && "animate-spin")} />
-              Refresh Results
-            </button>
+              <Sparkles size={22} />
+            </div>
+            <div>
+              <p
+                className="text-[10px] font-black uppercase tracking-[0.22em]"
+                style={{ color: "#888888" }}
+              >
+                Opportunity Finder
+              </p>
+              <h2
+                className="mt-0.5 text-xl font-black tracking-tight"
+                style={{ color: "#1A1A1A" }}
+              >
+                Find what fits your semester.
+              </h2>
+            </div>
           </div>
+
+          <button
+            type="button"
+            onClick={() => findOpportunities({ refresh: true })}
+            disabled={loading || !searched}
+            className="flex items-center gap-2 rounded-full border text-[11px] font-black uppercase tracking-widest transition hover:border-[#C8922A]/40 hover:text-[#C8922A] disabled:cursor-not-allowed disabled:opacity-40"
+            style={{
+              borderColor: "#ECE6DD",
+              background: "#FFFFFF",
+              color: "#888888",
+              padding: "8px 18px",
+            }}
+          >
+            <RefreshCw size={14} className={clsx(loading && "animate-spin")} />
+            Refresh Results
+          </button>
         </div>
 
-        <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              findOpportunities();
-            }}
-            className="space-y-4"
+        {/* ── 4 + 8 grid body ─── */}
+        <div
+          className="grid"
+          style={{
+            gridTemplateColumns: "1fr 2fr",
+            gap: 0,
+            minHeight: 520,
+          }}
+        >
+          {/* ══ LEFT: Student Filters (4 cols) ══ */}
+          <div
+            className="border-r flex flex-col"
+            style={{ borderColor: "#ECE6DD", padding: "32px 32px 32px" }}
           >
-            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted">
-              <Filter size={13} />
-              Student Profile
-            </div>
-
-            <label className="block space-y-2">
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#6B6B6B]">Course</span>
-              <select
-                value={form.course}
-                onChange={(event) => updateField("course", event.target.value)}
-                className="w-full rounded-xl border border-[#E8E6E0] bg-black px-3 py-3 text-sm text-[#1A1A1A] outline-none transition focus:border-primary"
+            {/* Filter header */}
+            <div className="flex items-center gap-2 mb-6">
+              <SlidersHorizontal size={14} style={{ color: "#C8922A" }} />
+              <span
+                className="text-[10px] font-black uppercase tracking-[0.2em]"
+                style={{ color: "#888888" }}
               >
-                {COURSES.map((course) => <option key={course}>{course}</option>)}
-              </select>
-            </label>
-
-            <label className="block space-y-2">
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#6B6B6B]">Branch / Stream</span>
-              <select
-                value={form.branch}
-                onChange={(event) => updateField("branch", event.target.value)}
-                className="w-full rounded-xl border border-[#E8E6E0] bg-black px-3 py-3 text-sm text-[#1A1A1A] outline-none transition focus:border-primary"
-              >
-                {BRANCHES.map((branch) => <option key={branch}>{branch}</option>)}
-              </select>
-            </label>
-
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-1">
-              <label className="block space-y-2">
-                <span className="text-[10px] font-black uppercase tracking-widest text-[#6B6B6B]">Year</span>
-                <select
-                  value={form.year}
-                  onChange={(event) => updateField("year", event.target.value)}
-                  className="w-full rounded-xl border border-[#E8E6E0] bg-black px-3 py-3 text-sm text-[#1A1A1A] outline-none transition focus:border-primary"
-                >
-                  {YEARS.map((year) => <option key={year}>{year}</option>)}
-                </select>
-              </label>
-
-              <label className="block space-y-2">
-                <span className="text-[10px] font-black uppercase tracking-widest text-[#6B6B6B]">Location</span>
-                <input
-                  value={form.location}
-                  onChange={(event) => updateField("location", event.target.value)}
-                  placeholder="India, Delhi, Remote..."
-                  className="w-full rounded-xl border border-[#E8E6E0] bg-black px-3 py-3 text-sm text-[#1A1A1A] outline-none transition focus:border-primary"
-                />
-              </label>
+                Student Profile
+              </span>
             </div>
 
-            <label className="block space-y-2">
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#6B6B6B]">Skills</span>
-              <input
-                value={form.skills}
-                onChange={(event) => updateField("skills", event.target.value)}
-                placeholder="Python, React, ML, finance..."
-                className="w-full rounded-xl border border-[#E8E6E0] bg-black px-3 py-3 text-sm text-[#1A1A1A] outline-none transition focus:border-primary"
-              />
-            </label>
-
-            <div className="space-y-2">
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#6B6B6B]">Opportunity Type</span>
-              <div className="grid grid-cols-2 gap-2">
-                {TYPES.map((type) => {
-                  const active = form.types.includes(type);
-                  return (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => toggleType(type)}
-                      className={clsx(
-                        "rounded-xl border px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider transition active:scale-95",
-                        active
-                          ? "border-primary/50 bg-primary/15 text-primary"
-                          : "border-[#E8E6E0] bg-[#F3F2EE] text-muted hover:border-[#E8E6E0] hover:text-[#1A1A1A]"
-                      )}
-                    >
-                      {type}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="primary-button flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-xs font-black uppercase tracking-widest transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+            <form
+              onSubmit={(e) => { e.preventDefault(); findOpportunities(); }}
+              className="flex flex-col gap-5 flex-1"
             >
-              {loading ? <Loader size={15} className="animate-spin" /> : <Search size={15} />}
-              {loading ? "Searching..." : "Find Opportunities"}
-            </button>
-          </form>
-
-          <div className="min-h-[28rem]">
-            {loading ? (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {[0, 1, 2, 3].map((item) => (
-                  <div key={item} className="rounded-[1.35rem] border border-[#E8E6E0] bg-[#F3F2EE] p-4">
-                    <div className="mb-4 h-4 w-24 animate-pulse rounded-full bg-[#F3F2EE]" />
-                    <div className="mb-3 h-5 w-4/5 animate-pulse rounded bg-[#F3F2EE]" />
-                    <div className="mb-2 h-3 w-2/3 animate-pulse rounded bg-[#F3F2EE]" />
-                    <div className="mb-4 h-12 w-full animate-pulse rounded bg-[#F3F2EE]" />
-                    <div className="h-10 w-full animate-pulse rounded-xl bg-[#F3F2EE]" />
-                  </div>
-                ))}
+              {/* Course */}
+              <div>
+                <FieldLabel>Course</FieldLabel>
+                <select
+                  value={form.course}
+                  onChange={(e) => updateField("course", e.target.value)}
+                  style={inputStyle}
+                  onFocus={e => (e.target.style.borderColor = "#C8922A")}
+                  onBlur={e => (e.target.style.borderColor = "#ECE6DD")}
+                >
+                  {COURSES.map((c) => <option key={c}>{c}</option>)}
+                </select>
               </div>
+
+              {/* Branch */}
+              <div>
+                <FieldLabel>Branch / Stream</FieldLabel>
+                <select
+                  value={form.branch}
+                  onChange={(e) => updateField("branch", e.target.value)}
+                  style={inputStyle}
+                  onFocus={e => (e.target.style.borderColor = "#C8922A")}
+                  onBlur={e => (e.target.style.borderColor = "#ECE6DD")}
+                >
+                  {BRANCHES.map((b) => <option key={b}>{b}</option>)}
+                </select>
+              </div>
+
+              {/* Year + Location row */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <FieldLabel>Year</FieldLabel>
+                  <select
+                    value={form.year}
+                    onChange={(e) => updateField("year", e.target.value)}
+                    style={inputStyle}
+                    onFocus={e => (e.target.style.borderColor = "#C8922A")}
+                    onBlur={e => (e.target.style.borderColor = "#ECE6DD")}
+                  >
+                    {YEARS.map((y) => <option key={y}>{y}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <FieldLabel>Location</FieldLabel>
+                  <input
+                    value={form.location}
+                    onChange={(e) => updateField("location", e.target.value)}
+                    placeholder="India, Remote…"
+                    style={inputStyle}
+                    onFocus={e => (e.target.style.borderColor = "#C8922A")}
+                    onBlur={e => (e.target.style.borderColor = "#ECE6DD")}
+                  />
+                </div>
+              </div>
+
+              {/* Skills */}
+              <div>
+                <FieldLabel>Skills</FieldLabel>
+                <input
+                  value={form.skills}
+                  onChange={(e) => updateField("skills", e.target.value)}
+                  placeholder="Python, React, ML, finance…"
+                  style={inputStyle}
+                  onFocus={e => (e.target.style.borderColor = "#C8922A")}
+                  onBlur={e => (e.target.style.borderColor = "#ECE6DD")}
+                />
+              </div>
+
+              {/* Opportunity Type */}
+              <div>
+                <FieldLabel>Opportunity Type</FieldLabel>
+                <div className="grid grid-cols-2 gap-2">
+                  {TYPES.map((type) => {
+                    const active = form.types.includes(type);
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => toggleType(type)}
+                        className="rounded-xl border px-3 py-2 text-left text-[11px] font-black uppercase tracking-wider transition active:scale-95"
+                        style={
+                          active
+                            ? {
+                                borderColor: "#C8922A",
+                                background: "rgba(200,146,42,0.1)",
+                                color: "#C8922A",
+                              }
+                            : {
+                                borderColor: "#ECE6DD",
+                                background: "#FAF8F4",
+                                color: "#888888",
+                              }
+                        }
+                      >
+                        {type}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* CTA — pinned to bottom */}
+              <div className="mt-auto pt-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-xs font-black uppercase tracking-widest text-white transition hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                  style={{
+                    background: "linear-gradient(135deg,#C8922A,#D4A843)",
+                    boxShadow: "0 4px 20px rgba(200,146,42,0.28)",
+                  }}
+                >
+                  {loading ? <Loader size={15} className="animate-spin" /> : <Search size={15} />}
+                  {loading ? "Searching…" : "Find Opportunities"}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* ══ RIGHT: Opportunity Results (8 cols) ══ */}
+          <div style={{ padding: "32px 32px 32px" }}>
+            {loading ? (
+              <LoadingSkeleton />
             ) : error ? (
               <EmptyState title="Search needs a little setup" description={error} />
             ) : opportunities.length > 0 ? (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs font-bold text-muted">
-                    {opportunities.length} result{opportunities.length === 1 ? "" : "s"} found{cached ? " from cache" : ""}
+              <div>
+                {/* Result count */}
+                <div className="flex items-center gap-3 mb-5">
+                  <p className="text-xs font-bold" style={{ color: "#888888" }}>
+                    {opportunities.length} result{opportunities.length === 1 ? "" : "s"} found
+                    {cached ? " · from cache" : ""}
                   </p>
-                  {cached && <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-300">Cached</span>}
+                  {cached && (
+                    <span
+                      className="rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-widest"
+                      style={{ borderColor: "rgba(16,185,129,0.2)", background: "rgba(16,185,129,0.08)", color: "#059669" }}
+                    >
+                      Cached
+                    </span>
+                  )}
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {opportunities.map((opportunity, index) => (
-                    <OpportunityCard key={`${opportunity.title}-${opportunity.organization}-${index}`} opportunity={opportunity} />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {opportunities.map((opp, i) => (
+                    <OpportunityCard key={`${opp.title}-${opp.organization}-${i}`} opportunity={opp} />
                   ))}
                 </div>
               </div>
@@ -299,7 +389,7 @@ export default function OpportunityFinder({ currentUser }) {
             ) : (
               <EmptyState
                 title="Ready when you are"
-                description="Choose your course, branch, year, and opportunity types to discover current openings."
+                description="Set your course, branch, year, and opportunity types — then hit Find Opportunities."
               />
             )}
           </div>
@@ -309,67 +399,153 @@ export default function OpportunityFinder({ currentUser }) {
   );
 }
 
+/* ─── Skeleton ────────────────────────────────────── */
+function LoadingSkeleton() {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      {[0, 1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className="rounded-[20px] border p-5"
+          style={{ borderColor: "#ECE6DD", background: "#FAF8F4" }}
+        >
+          <div className="mb-4 h-5 w-20 animate-pulse rounded-full" style={{ background: "#ECE6DD" }} />
+          <div className="mb-3 h-5 w-4/5 animate-pulse rounded-lg" style={{ background: "#ECE6DD" }} />
+          <div className="mb-2 h-3 w-2/3 animate-pulse rounded" style={{ background: "#ECE6DD" }} />
+          <div className="mb-5 h-12 w-full animate-pulse rounded-xl" style={{ background: "#ECE6DD" }} />
+          <div className="h-10 w-full animate-pulse rounded-2xl" style={{ background: "#ECE6DD" }} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ─── Opportunity Card ────────────────────────────── */
 function OpportunityCard({ opportunity }) {
   const deadline = getDeadlineState(opportunity.deadline);
-  const style = TYPE_STYLES[opportunity.type] || TYPE_STYLES.Other;
+  const typeStyle = TYPE_STYLES[opportunity.type] || TYPE_STYLES.Other;
 
   return (
-    <article className="group flex h-full flex-col rounded-[1.35rem] border border-[#E8E6E0] bg-[#F3F2EE] p-4 transition hover:border-primary/40">
-      <div className="mb-3 flex items-start justify-between gap-3">
-        <span className={clsx("rounded-lg border px-2.5 py-1 text-[10px] font-black uppercase tracking-widest", style)}>
+    <article
+      className="group flex h-full flex-col rounded-[20px] border transition"
+      style={{
+        borderColor: "#ECE6DD",
+        background: "#FFFFFF",
+        boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+        padding: "20px",
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.boxShadow = "0 8px 32px rgba(0,0,0,0.08)";
+        e.currentTarget.style.borderColor = "rgba(200,146,42,0.35)";
+        e.currentTarget.style.transform = "translateY(-2px)";
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.04)";
+        e.currentTarget.style.borderColor = "#ECE6DD";
+        e.currentTarget.style.transform = "translateY(0)";
+      }}
+    >
+      {/* Type + Deadline badges */}
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <span
+          className="rounded-lg px-2.5 py-1 text-[10px] font-black uppercase tracking-widest border"
+          style={{
+            color: typeStyle.color,
+            background: typeStyle.bg,
+            borderColor: typeStyle.border,
+          }}
+        >
           {opportunity.type || "Other"}
         </span>
         <span
-          className={clsx(
-            "flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-black",
+          className="flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-bold"
+          style={
             deadline.urgent
-              ? "border-red-500/30 bg-red-500/10 text-red-300"
-              : "border-[#E8E6E0] bg-[#F3F2EE] text-[#6B6B6B]"
-          )}
+              ? { borderColor: "rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.08)", color: "#DC2626" }
+              : { borderColor: "#ECE6DD", background: "#FAF8F4", color: "#888888" }
+          }
         >
           <CalendarClock size={11} />
           {deadline.label}
         </span>
       </div>
 
-      <h3 className="text-base font-black leading-tight text-[#1A1A1A]">{opportunity.title}</h3>
-      <p className="mt-1 text-xs font-bold text-muted">{opportunity.organization || "Organization not listed"}</p>
+      {/* Title + org */}
+      <h3 className="text-base font-black leading-snug" style={{ color: "#1A1A1A" }}>
+        {opportunity.title}
+      </h3>
+      <p className="mt-1 text-xs font-semibold" style={{ color: "#888888" }}>
+        {opportunity.organization || "Organization not listed"}
+      </p>
 
-      <p className="mt-3 line-clamp-3 flex-1 text-sm leading-6 text-[#6B6B6B]">{opportunity.description}</p>
+      {/* Description */}
+      <p
+        className="mt-3 flex-1 text-sm leading-relaxed line-clamp-3"
+        style={{ color: "#6B6B6B" }}
+      >
+        {opportunity.description}
+      </p>
 
+      {/* Meta pills */}
       <div className="mt-4 flex flex-wrap gap-2">
-        <span className="inline-flex items-center gap-1 rounded-lg border border-[#E8E6E0] bg-[#F3F2EE] px-2 py-1 text-[10px] font-bold text-[#888888]5">
+        <span
+          className="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[10px] font-semibold"
+          style={{ borderColor: "#ECE6DD", background: "#FAF8F4", color: "#888888" }}
+        >
           <MapPin size={11} />
           {opportunity.location || "Remote / India"}
         </span>
-        <span className="inline-flex items-center gap-1 rounded-lg border border-[#E8E6E0] bg-[#F3F2EE] px-2 py-1 text-[10px] font-bold text-[#888888]5">
+        <span
+          className="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[10px] font-semibold"
+          style={{ borderColor: "#ECE6DD", background: "#FAF8F4", color: "#888888" }}
+        >
           <GraduationCap size={11} />
           {(opportunity.eligibleBranches || []).slice(0, 2).join(", ") || "All branches"}
         </span>
       </div>
 
+      {/* Apply CTA */}
       <a
         href={opportunity.applyLink}
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-4 flex h-11 items-center justify-center gap-2 rounded-2xl bg-white text-xs font-black uppercase tracking-widest text-black transition hover:scale-[1.02]"
+        className="mt-4 flex h-11 items-center justify-center gap-2 rounded-2xl text-xs font-black uppercase tracking-widest transition hover:scale-[1.02] active:scale-95"
+        style={{
+          background: "linear-gradient(135deg,#C8922A,#D4A843)",
+          color: "#FFFFFF",
+          boxShadow: "0 2px 10px rgba(200,146,42,0.2)",
+        }}
       >
         Apply Now
-        <ExternalLink size={14} />
+        <ExternalLink size={13} />
       </a>
     </article>
   );
 }
 
+/* ─── Empty State ─────────────────────────────────── */
 function EmptyState({ title, description }) {
   return (
-    <div className="flex min-h-[28rem] flex-col items-center justify-center rounded-[1.35rem] border border-dashed border-[#E8E6E0] bg-[#F3F2EE] p-8 text-center">
-      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+    <div
+      className="flex min-h-[420px] flex-col items-center justify-center rounded-[20px] border border-dashed p-10 text-center"
+      style={{ borderColor: "#ECE6DD", background: "#FAF8F4" }}
+    >
+      <div
+        className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl"
+        style={{ background: "rgba(200,146,42,0.1)", color: "#C8922A" }}
+      >
         <Trophy size={28} />
       </div>
-      <h3 className="text-xl font-black tracking-tight text-[#1A1A1A]">{title}</h3>
-      <p className="mt-2 max-w-sm text-sm leading-6 text-muted">{description}</p>
-      <div className="mt-5 flex items-center gap-2 rounded-full border border-[#E8E6E0] bg-[#F3F2EE] px-3 py-2 text-[10px] font-black uppercase tracking-widest text-muted">
+      <h3 className="text-xl font-black tracking-tight" style={{ color: "#1A1A1A" }}>
+        {title}
+      </h3>
+      <p className="mt-2 max-w-sm text-sm leading-relaxed" style={{ color: "#888888" }}>
+        {description}
+      </p>
+      <div
+        className="mt-6 flex items-center gap-2 rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-widest"
+        style={{ borderColor: "#ECE6DD", background: "#FFFFFF", color: "#888888" }}
+      >
         <Briefcase size={13} />
         Internships · Hackathons · Scholarships
       </div>
