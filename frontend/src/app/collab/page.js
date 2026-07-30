@@ -188,28 +188,15 @@ export default function CollabPage() {
               </h2>
             </div>
             <span
-              className="rounded-full border text-sm font-medium"
-              style={{
-                borderColor: "#ECE6DD",
-                background: "#FFFFFF",
-                color: "#6F6F6F",
-                padding: "6px 16px",
-              }}
+              className="text-sm font-medium"
+              style={{ color: "#6F6F6F" }}
             >
-              Swipe to explore
+              Students looking for teammates
             </span>
           </div>
 
-          {/* Carousel container */}
-          <div
-            className="w-full rounded-[24px] border"
-            style={{
-              background: "#FFFFFF",
-              borderColor: "#ECE6DD",
-              boxShadow: "0 12px 40px rgba(0,0,0,0.04)",
-              padding: "40px 48px",
-            }}
-          >
+          {/* Grid container */}
+          <div className="w-full">
             <CollabCarousel currentUser={currentUser} onPostCard={() => setShowPostModal(true)} />
           </div>
         </section>
