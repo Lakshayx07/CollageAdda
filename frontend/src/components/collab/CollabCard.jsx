@@ -31,8 +31,8 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
       }}
       onMouseEnter={e => {
         e.currentTarget.style.transform = "translateY(-4px)";
-        e.currentTarget.style.boxShadow = "8px 8px 0px rgba(214,161,44,1)";
-        e.currentTarget.style.borderColor = "#D6A12C";
+        e.currentTarget.style.boxShadow = "8px 8px 0px rgba(27,27,27,1)";
+        e.currentTarget.style.borderColor = "#1B1B1B";
       }}
       onMouseLeave={e => {
         e.currentTarget.style.transform = "translateY(0)";
@@ -41,7 +41,7 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
       }}
     >
       {/* ── Header: Avatar, Name, Role, Urgency ── */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
         <div style={{ display: "flex", gap: 12 }}>
           {card.poster_avatar ? (
             <img src={card.poster_avatar} alt="Avatar" style={{ width: 44, height: 44, borderRadius: 14, objectFit: "cover", border: "1px solid #ECE6DD" }} />
@@ -73,8 +73,8 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
       </div>
 
       {/* ── Project Title & Desc ── */}
-      <div style={{ marginBottom: 16 }}>
-        <h3 style={{ fontSize: 20, fontWeight: 800, color: "#1B1B1B", lineHeight: 1.3, marginBottom: 6 }}>
+      <div style={{ marginBottom: 24 }}>
+        <h3 style={{ fontSize: 20, fontWeight: 800, color: "#1B1B1B", lineHeight: 1.3, marginBottom: 10 }}>
           {card.building}
         </h3>
         {card.description && (
@@ -86,13 +86,13 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
 
       {/* ── Needed Roles ── */}
       {rolesArray.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
-          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#2E3440", opacity: 0.8, marginBottom: 8 }}>
+        <div style={{ marginBottom: 24 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#2E3440", opacity: 0.8, marginBottom: 10 }}>
             Roles Needed
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {rolesArray.map((r, i) => (
-              <span key={i} style={{ fontSize: 11, fontWeight: 700, color: "#D6A12C", background: "rgba(214,161,44,0.1)", border: "1px solid rgba(214,161,44,0.2)", padding: "4px 10px", borderRadius: 8 }}>
+              <span key={i} style={{ fontSize: 11, fontWeight: 700, color: "#FFFFFF", background: "#D6A12C", padding: "4px 10px", borderRadius: 8 }}>
                 {r.trim()}
               </span>
             ))}
@@ -102,8 +102,8 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
 
       {/* ── Required Skills ── */}
       {skillsArray.length > 0 && (
-        <div style={{ marginBottom: 20 }}>
-          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#2E3440", opacity: 0.8, marginBottom: 8 }}>
+        <div style={{ marginBottom: 24 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#2E3440", opacity: 0.8, marginBottom: 10 }}>
             Required Skills
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>

@@ -105,6 +105,7 @@ const SELECT_STYLE = {
   padding: "9px 12px", outline: "none",
   transition: "border-color 0.15s, box-shadow 0.15s",
   appearance: "none",
+  cursor: "pointer",
 };
 
 /* ─── Main component ───────────────────────────────── */
@@ -212,10 +213,10 @@ export default function OpportunityFinder({ currentUser }) {
     <section className="w-full">
       {/* Outer panel — no overflow:hidden so sticky sidebar works */}
       <div
-        className="w-full rounded-[24px] border"
+        className="w-full rounded-[24px] border-4 mb-10"
         style={{
-          background: "#FFFFFF",
-          borderColor: "#ECE6DD",
+          background: "#F4F1EB",
+          borderColor: "#1B1B1B",
           boxShadow: "0 12px 40px rgba(0,0,0,0.04)",
         }}
       >
@@ -245,14 +246,14 @@ export default function OpportunityFinder({ currentUser }) {
             type="button"
             onClick={() => findOpportunities({ refresh: true })}
             disabled={loading || !searched}
-            className="flex items-center gap-2 rounded-full border transition disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex items-center gap-2 rounded-full border-[1.5px] transition disabled:cursor-not-allowed"
             style={{
-              borderColor: "#ECE6DD", background: "#FFFFFF", color: "#6F6F6F",
-              fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
+              borderColor: "#C0B8AD", background: "#FFFFFF", color: "#000000",
+              fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase",
               padding: "9px 18px",
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor="#2F3A45"; e.currentTarget.style.color="#2F3A45"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor="#ECE6DD"; e.currentTarget.style.color="#6F6F6F"; }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor="#1B1B1B"; e.currentTarget.style.background="#F4F1EB"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor="#C0B8AD"; e.currentTarget.style.background="#FFFFFF"; }}
           >
             <RefreshCw size={13} className={clsx(loading && "animate-spin")} />
             Refresh Results
@@ -413,11 +414,10 @@ export default function OpportunityFinder({ currentUser }) {
                       value={skillInput}
                       onChange={e => setSkillInput(e.target.value)}
                       onKeyDown={handleTagKeyDown}
-                      placeholder={skillTags.length === 0 ? "React, ML, Figma… Enter to add" : "Add more…"}
+                      placeholder={skillTags.length === 0 ? "React, Express, etc... Enter to add" : "Add more..."}
+                      className="!bg-transparent !outline-none !shadow-none !border-none"
                       style={{
-                        border: "none", outline: "none", background: "transparent",
                         fontSize: 14, color: "#1B1B1B", flex: 1, minWidth: 80,
-                        padding: "2px 2px",
                       }}
                     />
                   </div>
@@ -524,7 +524,7 @@ export default function OpportunityFinder({ currentUser }) {
           </div>
 
           {/* ══ RIGHT: Results ══ */}
-          <div style={{ padding: "32px 32px 32px", background: "#FFFFFF", borderRadius: "0 0 24px 0" }}>
+          <div style={{ padding: "32px 32px 32px", background: "#FFFFFF", borderRadius: "24px 0 24px 0" }}>
             {loading ? (
               <LoadingSkeleton />
             ) : error ? (
@@ -814,25 +814,26 @@ function OpportunityCard({ opportunity, matchScore = 85 }) {
 function EmptyState({ title, description }) {
   return (
     <div
-      className="flex min-h-[420px] flex-col items-center justify-center rounded-[20px] border border-dashed p-10 text-center"
-      style={{ borderColor:"#ECE6DD", background:"#F4F1EB" }}
+      className="flex min-h-[420px] flex-col items-center justify-center rounded-[24px] border p-10 text-center"
+      style={{ borderColor:"#ECE6DD", background:"#FCFAF7" }}
     >
       <div
-        className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl"
-        style={{ background:"rgba(47,58,69,0.08)", color:"#1B1B1B" }}
+        className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl"
+        style={{ background:"#FFF1E0", color:"#F97316" }}
       >
-        <Trophy size={28} />
+        <Trophy size={32} strokeWidth={1.5} />
       </div>
       <h3 className="text-2xl font-bold leading-snug" style={{ color:"#1B1B1B" }}>{title}</h3>
-      <p className="mt-3 max-w-sm text-base leading-relaxed font-medium" style={{ color:"#1B1B1B" }}>{description}</p>
+      <p className="mt-3 max-w-sm text-[15px] leading-relaxed font-medium" style={{ color:"#6F6F6F" }}>{description}</p>
       <div
-        className="mt-6 flex items-center gap-2 rounded-full border px-4 py-2"
-        style={{ fontSize:11, fontWeight:800, letterSpacing:"0.1em", textTransform:"uppercase",
-          borderColor:"#ECE6DD", background:"#FFFFFF", color:"#1B1B1B" }}
+        className="mt-7 flex items-center gap-2 rounded-full px-6 py-2.5 transition-transform hover:-translate-y-0.5"
+        style={{ fontSize:12, fontWeight:700, letterSpacing:"0.05em",
+          background:"#FFC96B", color:"#1B1B1B" }}
       >
-        <Briefcase size={13} strokeWidth={2.5} />
+        <Briefcase size={15} strokeWidth={2.5} />
         Internships · Hackathons · Scholarships
       </div>
     </div>
   );
 }
+
