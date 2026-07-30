@@ -87,14 +87,14 @@ const normalizeProfileText = (v) => !v ? "" : String(v).replace(/\s+/g," ").trim
 /* ─── Typography helpers ───────────────────────────── */
 const LABEL_STYLE = {
   fontSize: 11, fontWeight: 700, letterSpacing: "0.12em",
-  textTransform: "uppercase", color: "#6F6F6F",
+  textTransform: "uppercase", color: "#1B1B1B",
   display: "block", marginBottom: 8,
 };
 
 const GROUP_LABEL_STYLE = {
   fontSize: 10, fontWeight: 700, letterSpacing: "0.16em",
-  textTransform: "uppercase", color: "#2F3A45",
-  opacity: 0.55, marginBottom: 14,
+  textTransform: "uppercase", color: "#1B1B1B",
+  opacity: 0.8, marginBottom: 14,
 };
 
 /* ─── Shared select/input style ────────────────────── */
@@ -421,7 +421,7 @@ export default function OpportunityFinder({ currentUser }) {
                       }}
                     />
                   </div>
-                  <p style={{ fontSize: 11, color: "#AAAAAA", marginTop: 5 }}>
+                  <p style={{ fontSize: 11, color: "#1B1B1B", opacity: 0.7, marginTop: 5 }}>
                     Press Enter or comma to add a tag
                   </p>
                 </div>
@@ -819,18 +819,18 @@ function EmptyState({ title, description }) {
     >
       <div
         className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl"
-        style={{ background:"rgba(47,58,69,0.08)", color:"#2F3A45" }}
+        style={{ background:"rgba(47,58,69,0.08)", color:"#1B1B1B" }}
       >
         <Trophy size={28} />
       </div>
       <h3 className="text-2xl font-bold leading-snug" style={{ color:"#1B1B1B" }}>{title}</h3>
-      <p className="mt-3 max-w-sm text-base leading-relaxed" style={{ color:"#6F6F6F" }}>{description}</p>
+      <p className="mt-3 max-w-sm text-base leading-relaxed font-medium" style={{ color:"#1B1B1B" }}>{description}</p>
       <div
         className="mt-6 flex items-center gap-2 rounded-full border px-4 py-2"
-        style={{ fontSize:11, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase",
-          borderColor:"#ECE6DD", background:"#FFFFFF", color:"#6F6F6F" }}
+        style={{ fontSize:11, fontWeight:800, letterSpacing:"0.1em", textTransform:"uppercase",
+          borderColor:"#ECE6DD", background:"#FFFFFF", color:"#1B1B1B" }}
       >
-        <Briefcase size={13} />
+        <Briefcase size={13} strokeWidth={2.5} />
         Internships · Hackathons · Scholarships
       </div>
     </div>
