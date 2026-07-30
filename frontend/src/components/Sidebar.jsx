@@ -102,7 +102,7 @@ export default function Sidebar() {
       initial={false}
       animate={{ width: 264 }}
       transition={{ duration: SIDEBAR_DURATION, ease: SIDEBAR_EASE }}
-      className="nav-rail hidden lg:flex fixed left-0 top-0 z-50 h-full flex-col bg-white border-r border-[#E8E6E0] overflow-hidden"
+      className="nav-rail hidden lg:flex fixed left-0 top-0 z-50 h-full flex-col bg-white border-r border-2 border-[#333333] overflow-hidden"
     >
       <div className="mb-8 space-y-5 px-6 pt-7 min-w-[264px]">
         <div className="flex items-center gap-3 h-10">
@@ -224,7 +224,7 @@ export default function Sidebar() {
       <div className="mt-auto flex flex-col gap-4 pb-4 pt-10 min-w-[264px]">
         {/* Streak Card */}
         <div className={clsx(
-          "bg-[#FAFAF8] border border-[#E8E6E0] shadow-sm relative overflow-hidden transition-[width,height,border-radius,padding,margin] duration-[400ms] ease-[cubic-bezier(0.22,1,0.36,1)]",
+          "bg-[#FAFAF8] border border-2 border-[#333333] shadow-sm relative overflow-hidden transition-[width,height,border-radius,padding,margin] duration-[400ms] ease-[cubic-bezier(0.22,1,0.36,1)]",
           isExpanded
             ? "rounded-[1.25rem] p-4 mx-4 h-auto w-auto"
             : "rounded-full w-12 h-12 flex items-center justify-center p-0 ml-4"
@@ -238,14 +238,12 @@ export default function Sidebar() {
           >
             <div className="flex items-center justify-between mb-4">
               <span className="text-[12px] font-bold text-[#1A1A1A]">Your Streak</span>
-              <div className="w-4 h-4 rounded-full bg-[#E8E6E0] flex items-center justify-center text-[8px] text-[#888888] font-bold">?</div>
             </div>
             <div className="flex items-end justify-between">
               <div>
                 <p className="text-xl font-extrabold text-[#1A1A1A]">{streak} Days</p>
                 <p className="text-[11px] font-semibold text-[#888888]">Keep going!</p>
               </div>
-              <span className="text-2xl drop-shadow-md">🔥</span>
             </div>
           </motion.div>
           <motion.div
@@ -258,8 +256,7 @@ export default function Sidebar() {
             )}
             aria-hidden={isExpanded}
           >
-            <span className="text-xl drop-shadow-md">🔥</span>
-            <div className="absolute -bottom-1 -right-1 bg-white border border-[#E8E6E0] text-[9px] font-bold rounded-full px-1.5 py-0.5 shadow-sm text-[#1A1A1A]">
+            <div className="absolute -bottom-1 -right-1 bg-white border border-2 border-[#333333] text-[9px] font-bold rounded-full px-1.5 py-0.5 shadow-sm text-[#1A1A1A]">
               {streak}
             </div>
           </motion.div>

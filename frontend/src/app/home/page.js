@@ -1000,7 +1000,7 @@ export default function Home() {
           animation: shimmer-bg 6s ease infinite;
         }
       `}</style>
-      <header className="sticky top-0 z-40 w-full border-b border-[#E8E6E0] header-shimmer px-4 py-4 backdrop-blur-xl sm:px-6">
+      <header className="sticky top-0 z-40 w-full border-b-2 border-[#333333] header-shimmer px-4 py-4 backdrop-blur-xl sm:px-6">
         <div className="mx-auto flex max-w-[1440px] w-full px-2 items-center justify-between">
           <div className="relative overflow-hidden py-1">
             {(() => {
@@ -1057,7 +1057,7 @@ export default function Home() {
           <button 
             onClick={() => router.push('/collab')}
             title="Collab"
-            className="rounded-2xl border border-[#E8E6E0] bg-[#F3F2EE] p-2.5 text-[#4A4A4A] transition-colors hover:bg-[#FFF8EC] hover:text-[#C8922A]"
+            className="rounded-2xl border border-2 border-[#333333] bg-[#F3F2EE] p-2.5 text-[#4A4A4A] transition-colors hover:bg-[#FFF8EC] hover:text-[#C8922A]"
           >
             <Zap size={22} />
           </button>
@@ -1066,7 +1066,7 @@ export default function Home() {
             onClick={() => router.push('/profile')}
             className="brand-mark h-10 w-10 cursor-pointer rounded-2xl p-[2px] transition-transform hover:scale-105"
           >
-            <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-[0.95rem] bg-white border border-[#E8E6E0]">
+            <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-[0.95rem] bg-white border border-2 border-[#333333]">
               <img src={getAvatarSrc(currentUser?.profilePic, currentUser?.name, currentUser?._id || currentUser?.id)} className="w-full h-full object-cover" alt="Me" />
             </div>
           </div>
@@ -1099,8 +1099,8 @@ export default function Home() {
                   )}
                   onClick={() => hasMyStory ? setActiveStory(myStoriesGroup) : storyInputRef.current?.click()}
                 >
-                  <div className={clsx("w-full h-full rounded-full flex items-center justify-center overflow-hidden border", hasMyStory ? "bg-[#F9F8F5] border-[#E8E6E0] p-[2px]" : "bg-white border-[#E8E6E0]")}>
-                    <div className={clsx("w-full h-full rounded-full flex items-center justify-center overflow-hidden", hasMyStory ? "border border-[#E8E6E0] shadow-inner" : "")}>
+                  <div className={clsx("w-full h-full rounded-full flex items-center justify-center overflow-hidden border", hasMyStory ? "bg-[#F9F8F5] border-2 border-[#333333] p-[2px]" : "bg-white border-2 border-[#333333]")}>
+                    <div className={clsx("w-full h-full rounded-full flex items-center justify-center overflow-hidden", hasMyStory ? "border border-2 border-[#333333] shadow-inner" : "")}>
                        {isUploadingStory ? (
                          <div className="flex flex-col items-center justify-center">
                            <div className="h-4 w-4 border-2 border-[#C8922A] border-t-transparent rounded-full animate-spin"></div>
@@ -1133,7 +1133,7 @@ export default function Home() {
               >
                 <div className="w-20 h-20 rounded-full p-[3px] gradient-bg animate-rotate-gradient">
                   <div className="w-full h-full rounded-full bg-white p-[2px]">
-                    <div className="w-full h-full rounded-full bg-[#F9F8F5] flex items-center justify-center overflow-hidden border border-[#E8E6E0] shadow-inner">
+                    <div className="w-full h-full rounded-full bg-[#F9F8F5] flex items-center justify-center overflow-hidden border border-2 border-[#333333] shadow-inner">
                       <img 
                         src={getAvatarSrc(group.author.profilePic, group.author.name, group.author._id || group.author.id)} 
                         className="w-full h-full object-cover" 
@@ -1152,7 +1152,7 @@ export default function Home() {
         {/* Create Post Prompt */}
         <motion.div 
           variants={itemVariants}
-          className="relative flex min-w-0 max-w-full flex-col space-y-4 overflow-hidden bg-white border-2 border-black rounded-xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)] group sm:p-5"
+          className="relative flex min-w-0 max-w-full flex-col space-y-4 overflow-hidden bg-white border-2 border-[#333333] rounded-xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)] group sm:p-5"
         >
           <div className="absolute top-0 left-0 w-full h-1 gradient-bg opacity-30 group-focus-within:opacity-100 transition-opacity" />
           <div className="flex min-w-0 items-start space-x-3 sm:space-x-4">
@@ -1188,7 +1188,7 @@ export default function Home() {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
-                className="relative rounded-2xl overflow-hidden border border-[#E8E6E0] max-h-[400px] bg-[#F3F2EE] flex items-center justify-center"
+                className="relative rounded-2xl overflow-hidden border border-2 border-[#333333] max-h-[400px] bg-[#F3F2EE] flex items-center justify-center"
               >
                 {mediaType === 'video' ? (
                   <video src={selectedMedia} controls className="w-full h-auto max-h-[400px] object-contain" />
@@ -1210,7 +1210,7 @@ export default function Home() {
             )}
           </AnimatePresence>
 
-          <div className="flex flex-col gap-3 border-t border-black pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 border-t border-[#333333] pt-4 sm:flex-row sm:items-center sm:justify-between">
              <div className="grid grid-cols-3 gap-2 sm:flex sm:space-x-5">
                <input type="file" ref={photoInputRef} className="hidden" accept="image/*" onChange={(e) => { setIsExploreMode(false); handleMediaSelect(e, 'image'); }} />
                <input type="file" ref={videoInputRef} className="hidden" accept="video/*" onChange={(e) => { setIsExploreMode(false); handleMediaSelect(e, 'video'); }} />
@@ -1293,7 +1293,7 @@ export default function Home() {
         </motion.div>
 
         {/* Posts List */}
-        <div className="overflow-hidden rounded-[1.25rem] border-2 border-black bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+        <div className="overflow-hidden rounded-[1.25rem] border-2 border-[#333333] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
           {showFeedSkeleton && (
             <div className="divide-y divide-[#E8E6E0]">
               {[1, 2, 3].map((n) => (
@@ -1310,7 +1310,7 @@ export default function Home() {
                     <div className="h-4 bg-[#F3F2EE] rounded w-5/6" />
                   </div>
                   <div className="h-40 bg-[#F0EFE9] rounded-2xl w-full" />
-                  <div className="flex justify-between pt-2 border-t border-[#E8E6E0]">
+                  <div className="flex justify-between pt-2 border-t border-2 border-[#333333]">
                     <div className="h-6 bg-[#F0EFE9] rounded w-12" />
                     <div className="h-6 bg-[#F0EFE9] rounded w-12" />
                     <div className="h-6 bg-[#F0EFE9] rounded w-8" />
@@ -1360,7 +1360,7 @@ export default function Home() {
             <motion.article
               key={post.id} 
               variants={itemVariants}
-              className="relative min-w-0 border-b-2 border-black bg-white p-4 group last:border-b-0 sm:p-6"
+              className="relative min-w-0 border-b-2 border-[#333333] bg-white p-4 group last:border-b-0 sm:p-6"
             >
               {/* Post Header */}
               <div className="flex items-center justify-between mb-5">
@@ -1394,7 +1394,7 @@ export default function Home() {
                         whileTap={{ scale: 0.95 }}
                         onClick={() => handleConnectUser(post.authorId)}
                         disabled={connectStatus[post.authorId] === 'pending'}
-                        className="text-[11px] font-bold px-4 py-1.5 rounded-full border border-[#E8E6E0] hover:bg-[#FFF8EC] hover:border-[#C8922A]/30 transition-all text-[#4A4A4A] disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="text-[11px] font-bold px-4 py-1.5 rounded-full border border-2 border-[#333333] hover:bg-[#FFF8EC] hover:border-[#C8922A]/30 transition-all text-[#4A4A4A] disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {connectStatus[post.authorId] === 'pending' ? '...' : 'Follow'}
                       </motion.button>
@@ -1405,7 +1405,7 @@ export default function Home() {
                       <MoreVertical size={20} />
                     </button>
                     {postMenu === post.id && (
-                      <div className="absolute right-0 top-full mt-2 w-40 bg-white border border-[#E8E6E0] rounded-xl shadow-lg py-1 z-50 overflow-hidden">
+                      <div className="absolute right-0 top-full mt-2 w-40 bg-white border border-2 border-[#333333] rounded-xl shadow-lg py-1 z-50 overflow-hidden">
                         {currentUser?._id === post.authorId || currentUser?.id === post.authorId ? (
                           <button 
                             onClick={() => { handleDeletePost(post.id); setPostMenu(null); }} 
@@ -1423,7 +1423,7 @@ export default function Home() {
                             </button>
                             <button 
                               onClick={() => { handleReportPost(post.id); setPostMenu(null); }}
-                              className="w-full text-left px-4 py-2.5 text-[13px] font-bold text-red-500 hover:bg-[#FFF8EC] hover:text-red-600 transition-colors border-t border-[#E8E6E0] cursor-pointer"
+                              className="w-full text-left px-4 py-2.5 text-[13px] font-bold text-red-500 hover:bg-[#FFF8EC] hover:text-red-600 transition-colors border-t border-2 border-[#333333] cursor-pointer"
                             >
                               Report Spam
                             </button>
@@ -1443,7 +1443,7 @@ export default function Home() {
 
               {/* Poll Section */}
               {post.poll && post.poll.options && post.poll.options.length > 0 && (
-                <div className="bg-[#F9F8F5] p-5 rounded-2xl border border-[#E8E6E0] space-y-4 mb-5">
+                <div className="bg-[#F9F8F5] p-5 rounded-2xl border border-2 border-[#333333] space-y-4 mb-5">
                   <div className="flex items-center justify-between pb-2 border-b border-[#EBEBEB]">
                     <p className="text-xs font-semibold text-[#888888]">{post.poll.allowMultiple ? "Select multiple answers" : "Select one answer"}</p>
                     <span className="text-[10px] text-[#C8922A] font-bold uppercase tracking-wider bg-[#C8922A]/10 px-2.5 py-0.5 rounded">Active Poll</span>
@@ -1485,7 +1485,7 @@ export default function Home() {
                               <span className="text-[#1A1A1A] text-sm truncate">{option.text}</span>
                             </div>
                             
-                            <div className="flex items-center justify-end space-x-2 shrink-0 bg-white/80 px-2.5 py-1 rounded-lg border border-[#E8E6E0] backdrop-blur-sm w-20">
+                            <div className="flex items-center justify-end space-x-2 shrink-0 bg-white/80 px-2.5 py-1 rounded-lg border border-2 border-[#333333] backdrop-blur-sm w-20">
                               <span className="text-[#1A1A1A] font-semibold">{percentage}%</span>
                               <span className="text-[10px] font-medium text-[#888888]">({optionVotes})</span>
                             </div>
@@ -1505,7 +1505,7 @@ export default function Home() {
               )}
 
               {post.mediaUrl && (
-                <div className="rounded-2xl overflow-hidden mb-5 border border-[#E8E6E0] bg-[#F3F2EE] shadow-sm">
+                <div className="rounded-2xl overflow-hidden mb-5 border border-2 border-[#333333] bg-[#F3F2EE] shadow-sm">
                   {post.mediaType === 'video' ? (
                     <video src={post.mediaUrl} controls className="w-full h-auto max-h-[500px] object-contain" />
                   ) : (
@@ -1602,7 +1602,7 @@ export default function Home() {
                       ))}
                     </div>
                     
-                    <div className="flex items-center space-x-3 bg-[#F3F2EE] p-2 rounded-full border border-[#E8E6E0] focus-within:border-[#C8922A]/50 transition-all">
+                    <div className="flex items-center space-x-3 bg-[#F3F2EE] p-2 rounded-full border border-2 border-[#333333] focus-within:border-[#C8922A]/50 transition-all">
                       <input 
                         type="text" 
                         value={commentInputs[post.id] || ""}
@@ -1626,12 +1626,12 @@ export default function Home() {
           ))}
 
           {!showFeedSkeleton && posts.length > 0 && hasMorePosts && !selectedTopic && (
-            <div className="p-4 bg-white border-t border-black">
+            <div className="p-4 bg-white border-t border-[#333333]">
               <button
                 type="button"
                 onClick={loadMorePosts}
                 disabled={loadingMorePosts}
-                className="w-full rounded-full border border-[#E8E6E0] bg-[#F9F8F5] px-4 py-3 text-xs font-black uppercase tracking-widest text-[#1A1A1A] transition-colors hover:border-[#C8922A]/40 hover:bg-[#FFF8EC] disabled:cursor-wait disabled:opacity-60"
+                className="w-full rounded-full border border-2 border-[#333333] bg-[#F9F8F5] px-4 py-3 text-xs font-black uppercase tracking-widest text-[#1A1A1A] transition-colors hover:border-[#C8922A]/40 hover:bg-[#FFF8EC] disabled:cursor-wait disabled:opacity-60"
               >
                 {loadingMorePosts ? "Loading more..." : "Load more posts"}
               </button>
@@ -1644,7 +1644,7 @@ export default function Home() {
         <aside className="hidden xl:flex flex-col w-[280px] shrink-0 space-y-6 self-start sticky top-24">
           
           {/* College Leaderboard */}
-          <div className="bg-white border border-[#E8E6E0] border-t-[3px] border-t-amber-400 rounded-2xl p-5 shadow-sm space-y-5 relative overflow-hidden">
+          <div className="bg-white border border-2 border-[#333333] border-t-[3px] border-t-amber-400 rounded-2xl p-5 shadow-sm space-y-5 relative overflow-hidden">
             <div className="flex items-center justify-between pb-4 mb-2 border-b border-[#F3F2EE]/60 relative z-10">
               <div className="flex items-center gap-2">
                 <span className="text-2xl leading-none drop-shadow-sm">🏆</span>
@@ -1708,7 +1708,7 @@ export default function Home() {
                           idx === 0 ? "bg-gradient-to-br from-yellow-300 to-amber-500 text-white border border-amber-400 shadow-amber-200/50" :
                           idx === 1 ? "bg-gradient-to-br from-slate-200 to-slate-400 text-white border border-slate-300" :
                           idx === 2 ? "bg-gradient-to-br from-orange-300 to-orange-500 text-white border border-orange-400 shadow-orange-200/50" :
-                          "bg-[#FAFAF8] border border-[#E8E6E0] text-[#888888]"
+                          "bg-[#FAFAF8] border border-2 border-[#333333] text-[#888888]"
                         )}>
                           {idx + 1}
                         </div>
@@ -1736,7 +1736,7 @@ export default function Home() {
           </div>
 
           {/* Suggested for you */}
-          <div className="bg-white border border-[#E8E6E0] rounded-2xl p-4 shadow-sm space-y-4">
+          <div className="bg-white border border-2 border-[#333333] rounded-2xl p-4 shadow-sm space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b border-[#F3F2EE]">
               <Users size={18} className="text-[#C8922A]" />
               <h3 className="text-xs font-black uppercase tracking-wider text-[#1A1A1A]">Suggested for you</h3>
@@ -1755,7 +1755,7 @@ export default function Home() {
                     <div key={user._id} className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2 min-w-0">
                         <div 
-                          className="w-9 h-9 rounded-full overflow-hidden border border-[#E8E6E0] bg-[#F9F8F5] flex-shrink-0 cursor-pointer"
+                          className="w-9 h-9 rounded-full overflow-hidden border border-2 border-[#333333] bg-[#F9F8F5] flex-shrink-0 cursor-pointer"
                           onClick={() => router.push(`/profile/${user._id}`)}
                         >
                           <img src={getAvatarSrc(user.profilePic, user.name, user._id || user.id)} alt={user.name} className="w-full h-full object-cover" />
@@ -1807,7 +1807,7 @@ export default function Home() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-[1.75rem] border border-[#E8E6E0] p-5 shadow-xl bg-white custom-scrollbar sm:rounded-[3rem] sm:p-8"
+              className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-[1.75rem] border border-2 border-[#333333] p-5 shadow-xl bg-white custom-scrollbar sm:rounded-[3rem] sm:p-8"
               onClick={e => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-8">
@@ -1827,7 +1827,7 @@ export default function Home() {
                     placeholder="Ask something to the campus..." 
                     value={pollQuestion}
                     onChange={(e) => setPollQuestion(e.target.value)}
-                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-[1.5rem] p-5 text-sm text-[#1A1A1A] focus:outline-none focus:border-[#C8922A]/50 transition-all min-h-[100px] resize-none"
+                    className="w-full bg-[#F3F2EE] border border-2 border-[#333333] rounded-[1.5rem] p-5 text-sm text-[#1A1A1A] focus:outline-none focus:border-[#C8922A]/50 transition-all min-h-[100px] resize-none"
                   />
                 </div>
 
@@ -1844,7 +1844,7 @@ export default function Home() {
                           newOpts[i] = e.target.value;
                           setPollOptions(newOpts);
                         }}
-                        className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-2xl py-4 pl-5 pr-12 text-sm text-[#1A1A1A] focus:outline-none focus:border-[#C8922A]/50 transition-all"
+                        className="w-full bg-[#F3F2EE] border border-2 border-[#333333] rounded-2xl py-4 pl-5 pr-12 text-sm text-[#1A1A1A] focus:outline-none focus:border-[#C8922A]/50 transition-all"
                       />
                       {pollOptions.length > 2 && (
                         <button 
@@ -1860,7 +1860,7 @@ export default function Home() {
                   {pollOptions.length < 5 && (
                     <button 
                       onClick={() => setPollOptions(prev => [...prev, ""])}
-                      className="w-full py-4 rounded-2xl border border-dashed border-[#E8E6E0] text-[#AAAAAA] text-xs font-bold hover:bg-[#F9F8F5] hover:text-[#4A4A4A] transition-all flex items-center justify-center space-x-2"
+                      className="w-full py-4 rounded-2xl border border-dashed border-2 border-[#333333] text-[#AAAAAA] text-xs font-bold hover:bg-[#F9F8F5] hover:text-[#4A4A4A] transition-all flex items-center justify-center space-x-2"
                     >
                       <Plus size={14} />
                       <span>Add Option</span>
@@ -1868,7 +1868,7 @@ export default function Home() {
                   )}
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-[#F9F8F5] rounded-3xl border border-[#E8E6E0]">
+                <div className="flex items-center justify-between p-4 bg-[#F9F8F5] rounded-3xl border border-2 border-[#333333]">
                   <div className="flex items-center space-x-3">
                     <Check size={18} className={pollAllowMultiple ? "text-green-500" : "text-[#AAAAAA]"} />
                     <span className="text-sm font-bold text-[#4A4A4A]">Allow multiple answers</span>
@@ -1908,7 +1908,7 @@ export default function Home() {
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="max-h-[88dvh] w-full max-w-md overflow-y-auto rounded-[1.75rem] border border-[#E8E6E0] p-5 shadow-xl bg-white custom-scrollbar sm:rounded-[2.5rem] sm:p-6"
+            className="max-h-[88dvh] w-full max-w-md overflow-y-auto rounded-[1.75rem] border border-2 border-[#333333] p-5 shadow-xl bg-white custom-scrollbar sm:rounded-[2.5rem] sm:p-6"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-6">
@@ -1922,7 +1922,7 @@ export default function Home() {
                 placeholder="Find people to share with..." 
                 value={shareSearchTerm}
                 onChange={(e) => setShareSearchTerm(e.target.value)}
-                className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-2xl py-3 pl-12 pr-4 text-sm text-[#1A1A1A] focus:outline-none focus:border-[#C8922A]/50 transition-all"
+                className="w-full bg-[#F3F2EE] border border-2 border-[#333333] rounded-2xl py-3 pl-12 pr-4 text-sm text-[#1A1A1A] focus:outline-none focus:border-[#C8922A]/50 transition-all"
               />
             </div>
             <div className="space-y-3 max-h-72 overflow-y-auto pr-1 custom-scrollbar">
@@ -1933,9 +1933,9 @@ export default function Home() {
                 </div>
               )}
               {friendsList.filter(f => f.name.toLowerCase().includes(shareSearchTerm.toLowerCase())).map(friend => (
-                <div key={friend.id} className="flex items-center justify-between p-3 hover:bg-[#F9F8F5] rounded-2xl transition-all border border-transparent hover:border-[#E8E6E0] group">
+                <div key={friend.id} className="flex items-center justify-between p-3 hover:bg-[#F9F8F5] rounded-2xl transition-all border border-transparent hover:border-2 border-[#333333] group">
                   <div className="flex items-center space-x-4">
-                    <img src={friend.avatar} alt={friend.name} className="w-11 h-11 rounded-full object-cover border border-[#E8E6E0]" />
+                    <img src={friend.avatar} alt={friend.name} className="w-11 h-11 rounded-full object-cover border border-2 border-[#333333]" />
                     <p className="text-sm font-bold text-[#1A1A1A]">{friend.name}</p>
                   </div>
                   <button 
@@ -1990,7 +1990,7 @@ export default function Home() {
                 <div className="w-9 h-9 rounded-full p-[2px] gradient-bg">
                   <img 
                     src={getAvatarSrc(activeStory.author.profilePic, activeStory.author.name, activeStory.author._id || activeStory.author.id)} 
-                    className="w-full h-full rounded-full border border-black object-cover" 
+                    className="w-full h-full rounded-full border border-[#333333] object-cover" 
                     alt="" 
                   />
                 </div>
