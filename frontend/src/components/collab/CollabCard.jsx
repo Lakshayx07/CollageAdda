@@ -25,19 +25,19 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
     <article
       style={{
         display: "flex", flexDirection: "column", height: "100%",
-        padding: 24, borderRadius: 24, border: "1.5px solid #ECE6DD",
-        background: "#FFFFFF", boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+        padding: 24, borderRadius: 24, border: "2px solid #1B1B1B",
+        background: "#FFFFFF", boxShadow: "4px 4px 0px rgba(27,27,27,1)",
         transition: "transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease",
       }}
       onMouseEnter={e => {
-        e.currentTarget.style.transform = "scale(1.02)";
-        e.currentTarget.style.boxShadow = "0 18px 52px rgba(0,0,0,0.08)";
+        e.currentTarget.style.transform = "translateY(-4px)";
+        e.currentTarget.style.boxShadow = "8px 8px 0px rgba(214,161,44,1)";
         e.currentTarget.style.borderColor = "#D6A12C";
       }}
       onMouseLeave={e => {
-        e.currentTarget.style.transform = "scale(1)";
-        e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.04)";
-        e.currentTarget.style.borderColor = "#ECE6DD";
+        e.currentTarget.style.transform = "translateY(0)";
+        e.currentTarget.style.boxShadow = "4px 4px 0px rgba(27,27,27,1)";
+        e.currentTarget.style.borderColor = "#1B1B1B";
       }}
     >
       {/* ── Header: Avatar, Name, Role, Urgency ── */}
@@ -51,10 +51,10 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
             </div>
           )}
           <div>
-            <p style={{ fontSize: 15, fontWeight: 700, color: "#1B1B1B", lineHeight: 1.2 }}>
+            <p style={{ fontSize: 16, fontWeight: 800, color: "#1B1B1B", lineHeight: 1.2 }}>
               {card.poster_name || "Campus Student"}
             </p>
-            <p style={{ fontSize: 12, fontWeight: 600, color: "#6F6F6F", marginTop: 2 }}>
+            <p style={{ fontSize: 13, fontWeight: 600, color: "#1B1B1B", marginTop: 2, opacity: 0.8 }}>
               {card.year_major || "Student"}
             </p>
           </div>
@@ -74,11 +74,11 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
 
       {/* ── Project Title & Desc ── */}
       <div style={{ marginBottom: 16 }}>
-        <h3 style={{ fontSize: 18, fontWeight: 700, color: "#1B1B1B", lineHeight: 1.3, marginBottom: 6 }}>
+        <h3 style={{ fontSize: 20, fontWeight: 800, color: "#1B1B1B", lineHeight: 1.3, marginBottom: 6 }}>
           {card.building}
         </h3>
         {card.description && (
-          <p style={{ fontSize: 14, color: "#6F6F6F", lineHeight: 1.6, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+          <p style={{ fontSize: 15, fontWeight: 500, color: "#1B1B1B", lineHeight: 1.6, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
             {card.description}
           </p>
         )}
@@ -147,13 +147,13 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
           onClick={() => setSaved(!saved)}
           style={{
             width: 44, height: 44, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-            border: saved ? "1.5px solid #D6A12C" : "1.5px solid #ECE6DD",
+            border: saved ? "2px solid #D6A12C" : "2px solid #1B1B1B",
             background: saved ? "rgba(214,161,44,0.1)" : "#FFF",
-            color: saved ? "#D6A12C" : "#6F6F6F",
+            color: saved ? "#D6A12C" : "#1B1B1B",
             transition: "all 0.15s ease",
           }}
         >
-          {saved ? <BookmarkCheck size={18} /> : <Bookmark size={18} />}
+          {saved ? <BookmarkCheck size={18} strokeWidth={2.5} /> : <Bookmark size={18} strokeWidth={2.5} />}
         </button>
       </div>
     </article>
