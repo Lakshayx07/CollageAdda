@@ -1,27 +1,9 @@
 import React, { useState } from "react";
-import { Clock, Users, MoreVertical, Trash2, Share2, ChevronLeft, ChevronRight, Rocket, Code } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import clsx from "clsx";
-import VerifiedBadge from "@/components/VerifiedBadge";
+import { Bookmark, BookmarkCheck, Clock, CheckCircle2 } from "lucide-react";
 
-const URGENCY_COLORS = {
-  High: "text-red-400 bg-red-500/10 border-red-500/20",
-  Medium: "text-yellow-400 bg-yellow-500/10 border-yellow-500/20",
-  Low: "text-green-400 bg-green-500/10 border-green-500/20"
-};
+export default function CollabCard({ card, currentUser, hasApplied, appStatus, onContribute }) {
+  const [saved, setSaved] = useState(false);
 
-const PROJECT_TYPE_COLORS = {
-  Hackathon: "text-blue-400 bg-blue-500/10 border-blue-500/20",
-  Startup: "text-[#C8922A] bg-[#C8922A]/10 border-[#C8922A]/30",
-  Research: "text-[#C8922A] bg-[#C8922A]/10 border-[#E8E6E0]",
-  "Side Project": "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
-  Society: "text-orange-400 bg-orange-500/10 border-orange-500/20",
-  Other: "text-[#6B6B6B] bg-[#F3F2EE] border-[#E8E6E0]"
-};
-
-export default function CollabCard({ card, currentUser, hasApplied, appStatus, onContribute, onShare, onDelete, onNext, onPrev, currentIndex, totalCards }) {
-  const [showOptions, setShowOptions] = useState(false);
-  
   if (!card) return null;
   const isOwner = currentUser && (
     (currentUser?.id || "").toString() === (card?.user_id || "").toString() || 
@@ -29,138 +11,88 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
   );
   const isApplied = !!hasApplied;
 
-  // Assume card structure:
-  // {
-  //   user_id, building, year_major, project_type, urgency, skills (text[]),
-  //   roles_needed (text[]), description,
-  //   profiles: { full_name, avatar_url, university, is_verified } // joined from supabase
-  // }
-
-  // Profile is now fetched from the card directly or fallback
   const skillsArray = Array.isArray(card.skills) ? card.skills : (card.skills ? card.skills.split(",") : []);
   const rolesArray = Array.isArray(card.roles_needed) ? card.roles_needed : (card.roles_needed ? card.roles_needed.split(",") : []);
 
+  const urgencyColors = {
+    High: { color: "#DC2626", bg: "rgba(220,38,38,0.08)", border: "rgba(220,38,38,0.2)" },
+    Medium: { color: "#D97706", bg: "rgba(217,119,6,0.08)", border: "rgba(217,119,6,0.2)" },
+    Low: { color: "#059669", bg: "rgba(5,150,105,0.08)", border: "rgba(5,150,105,0.2)" }
+  };
+  const uColor = urgencyColors[card.urgency] || urgencyColors.Medium;
+
   return (
-    <div className="ca-card !p-0 flex flex-col w-full h-[520px] relative overflow-hidden ring-1 ring-white/5">
-      {/* Background glow */}
-      <div className="absolute -top-32 -right-32 w-64 h-64 bg-violet-500/20 rounded-full blur-[100px] pointer-events-none" />
-
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto p-6 scrollbar-hide relative z-10">
-        {/* Header badges & Options */}
-        <div className="flex justify-between items-start mb-5 relative">
-        <div className="flex gap-2">
-          <span className={clsx(
-            "text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border",
-            PROJECT_TYPE_COLORS[card.project_type] || PROJECT_TYPE_COLORS.Other
-          )}>
-            {card.project_type || "Project"}
-          </span>
-          <span className={clsx(
-            "text-[10px] font-bold uppercase px-2 py-1 rounded-full border",
-            URGENCY_COLORS[card.urgency] || URGENCY_COLORS.Medium
-          )}>
-            <Clock size={9} className="inline mr-1" />{card.urgency || "Medium"} Urgency
-          </span>
+    <article
+      style={{
+        display: "flex", flexDirection: "column", height: "100%",
+        padding: 24, borderRadius: 24, border: "1.5px solid #ECE6DD",
+        background: "#FFFFFF", boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+        transition: "transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease",
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.transform = "scale(1.02)";
+        e.currentTarget.style.boxShadow = "0 18px 52px rgba(0,0,0,0.08)";
+        e.currentTarget.style.borderColor = "#D6A12C";
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.transform = "scale(1)";
+        e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.04)";
+        e.currentTarget.style.borderColor = "#ECE6DD";
+      }}
+    >
+      {/* ── Header: Avatar, Name, Role, Urgency ── */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+        <div style={{ display: "flex", gap: 12 }}>
+          {card.poster_avatar ? (
+            <img src={card.poster_avatar} alt="Avatar" style={{ width: 44, height: 44, borderRadius: 14, objectFit: "cover", border: "1px solid #ECE6DD" }} />
+          ) : (
+            <div style={{ width: 44, height: 44, borderRadius: 14, background: "linear-gradient(135deg,#2F3A45,#1A2530)", color: "#FFF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800 }}>
+              {card.poster_name ? card.poster_name.charAt(0).toUpperCase() : "?"}
+            </div>
+          )}
+          <div>
+            <p style={{ fontSize: 15, fontWeight: 700, color: "#1B1B1B", lineHeight: 1.2 }}>
+              {card.poster_name || "Campus Student"}
+            </p>
+            <p style={{ fontSize: 12, fontWeight: 600, color: "#6F6F6F", marginTop: 2 }}>
+              {card.year_major || "Student"}
+            </p>
+          </div>
         </div>
         
-        <div className="relative">
-          <button 
-            onClick={() => setShowOptions(!showOptions)}
-            className="p-1.5 text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#F3F2EE] rounded-full transition-colors"
-          >
-            <MoreVertical size={18} />
-          </button>
-          
-          <AnimatePresence>
-            {showOptions && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                className="absolute right-0 top-full mt-1 w-36 bg-[#1a1a1a] border border-[#E8E6E0] shadow-2xl rounded-xl overflow-hidden z-50"
-              >
-                <button
-                  onClick={() => {
-                    setShowOptions(false);
-                    onShare(card);
-                  }}
-                  className="w-full px-4 py-3 text-left text-xs font-bold text-[#1A1A1A] hover:bg-[#F3F2EE] flex items-center gap-2 transition-colors"
-                >
-                  <Share2 size={14} /> Share
-                </button>
-                {isOwner && (
-                  <button
-                    onClick={() => {
-                      setShowOptions(false);
-                      if (window.confirm("Are you sure you want to delete this card?")) {
-                        onDelete(card.id);
-                      }
-                    }}
-                    className="w-full px-4 py-3 text-left text-xs font-bold text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors border-t border-[#E8E6E0]"
-                  >
-                    <Trash2 size={14} /> Delete
-                  </button>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+        {/* Urgency Badge */}
+        <span style={{
+          display: "flex", alignItems: "center", gap: 4,
+          padding: "4px 8px", borderRadius: 8, border: `1px solid ${uColor.border}`,
+          background: uColor.bg, color: uColor.color,
+          fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase"
+        }}>
+          <Clock size={10} />
+          {card.urgency || "Medium"}
+        </span>
       </div>
 
-      {/* Author */}
-      <div className="flex items-center gap-3 mb-4">
-        {card.poster_avatar ? (
-          <img src={card.poster_avatar} alt={card.poster_name || "Student"} className="w-12 h-12 rounded-full object-cover border border-[#E8E6E0]" />
-        ) : (
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-600 to-[#D4A843] flex items-center justify-center text-[10px] font-black text-[#1A1A1A] shrink-0 uppercase tracking-widest">
-            {card.user_id ? String(card.user_id).slice(-4) : "?"}
-          </div>
-        )}
-        
-        <div>
-          <div className="flex items-center gap-1">
-            <p className="text-sm font-black text-[#1A1A1A]">{card.poster_name || "Campus Student"}</p>
-          </div>
-          <p className="text-[11px] text-[#6B6B6B] font-medium">{card.year_major || "Student"}</p>
-        </div>
-      </div>
-
-      {/* What they're building */}
-      <div className="mb-6">
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-[#D4A843] mb-2 flex items-center gap-1.5">
-          <Rocket size={12} className="text-violet-400" /> What I&apos;m Building
-        </p>
-        <h2 className="text-base font-bold text-[#1A1A1A] leading-tight tracking-tight line-clamp-2">
+      {/* ── Project Title & Desc ── */}
+      <div style={{ marginBottom: 16 }}>
+        <h3 style={{ fontSize: 18, fontWeight: 700, color: "#1B1B1B", lineHeight: 1.3, marginBottom: 6 }}>
           {card.building}
-        </h2>
+        </h3>
+        {card.description && (
+          <p style={{ fontSize: 14, color: "#6F6F6F", lineHeight: 1.6, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+            {card.description}
+          </p>
+        )}
       </div>
 
-      {/* Skillset */}
-      {skillsArray.length > 0 && (
-        <div className="mb-5">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#6B6B6B] mb-2 flex items-center gap-1.5">
-            <Code size={12} /> My Skillset
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {(skillsArray || []).map((s, i) => (
-              <span key={i} className="text-[10px] font-bold text-violet-100 bg-violet-500/10 border border-violet-500/20 px-3 py-1 rounded-full shadow-[0_0_10px_rgba(139,92,246,0.1)] hover:bg-violet-500/20 transition-colors">
-                {s.trim()}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Roles Needed */}
+      {/* ── Needed Roles ── */}
       {rolesArray.length > 0 && (
-        <div className="mb-5">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#6B6B6B] mb-2 flex items-center gap-1.5">
-            <Users size={12} /> Roles Needed
+        <div style={{ marginBottom: 16 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#2F3A45", opacity: 0.6, marginBottom: 8 }}>
+            Roles Needed
           </p>
-          <div className="flex flex-wrap gap-2">
-            {(rolesArray || []).map((r, i) => (
-              <span key={i} className="text-[10px] font-bold text-blue-100 bg-blue-500/10 border border-blue-500/20 px-3 py-1 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.1)] hover:bg-blue-500/20 transition-colors">
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {rolesArray.map((r, i) => (
+              <span key={i} style={{ fontSize: 11, fontWeight: 700, color: "#D6A12C", background: "rgba(214,161,44,0.1)", border: "1px solid rgba(214,161,44,0.2)", padding: "4px 10px", borderRadius: 8 }}>
                 {r.trim()}
               </span>
             ))}
@@ -168,68 +100,62 @@ export default function CollabCard({ card, currentUser, hasApplied, appStatus, o
         </div>
       )}
 
-      {/* Description */}
-      {card.description && (
-        <div className="mb-6 flex-1">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#6B6B6B] mb-2">Description</p>
-          <div className="bg-[#F3F2EE] rounded-xl p-4 border border-[#E8E6E0] shadow-inner">
-            <p className="text-[13px] text-[#4A4A4A] leading-relaxed font-medium">
-              {card.description}
-            </p>
+      {/* ── Required Skills ── */}
+      {skillsArray.length > 0 && (
+        <div style={{ marginBottom: 20 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#2F3A45", opacity: 0.6, marginBottom: 8 }}>
+            Required Skills
+          </p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {skillsArray.map((s, i) => (
+              <span key={i} style={{ fontSize: 11, fontWeight: 600, color: "#2F3A45", background: "rgba(47,58,69,0.06)", padding: "4px 10px", borderRadius: 8 }}>
+                {s.trim()}
+              </span>
+            ))}
           </div>
         </div>
       )}
-      </div>
 
-      {/* Fixed footer - never scrolls away */}
-      <div className="border-t border-[#E8E6E0] p-4 space-y-3 shrink-0 bg-black/20 backdrop-blur-md relative z-20">
-        {/* Arrow navigation */}
-        {totalCards > 1 && (
-          <div className="flex items-center justify-between px-2">
-            <button onClick={onPrev} className="p-2 text-[#6B6B6B] hover:text-[#1A1A1A] transition">
-              <ChevronLeft size={20} />
-            </button>
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#6B6B6B]">
-              Card {currentIndex + 1} of {totalCards}
-            </span>
-            <button onClick={onNext} className="p-2 text-[#6B6B6B] hover:text-[#1A1A1A] transition">
-              <ChevronRight size={20} />
-            </button>
-          </div>
-        )}
-        {/* Contribute button */}
+      {/* Spacer to push buttons to bottom */}
+      <div style={{ flex: 1 }} />
+
+      {/* ── Buttons ── */}
+      <div style={{ display: "flex", gap: 10, marginTop: "auto" }}>
         {isApplied ? (
-          <div className="flex flex-col items-center gap-1.5">
-            <div className="w-full flex items-center justify-center gap-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-black text-sm py-3">
-              ✓ Applied
-            </div>
-            
-            {/* Applicant Status Tracking */}
-            {appStatus === 'pending' && (
-              <p className="text-amber-400 text-xs text-center mt-1">
-                ⏳ Application under review
-              </p>
-            )}
-            {appStatus === 'impressive' && (
-              <p className="text-emerald-400 text-xs text-center mt-1 animate-pulse">
-                ✨ Marked Impressive! Check your messages 🎉
-              </p>
-            )}
-            {appStatus === 'rejected' && (
-              <p className="text-[#6B6B6B] text-xs text-center mt-1">
-                Application not selected this time. Keep building! 💪
-              </p>
-            )}
+          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, height: 44, borderRadius: 12, background: "rgba(5,150,105,0.08)", border: "1px solid rgba(5,150,105,0.2)", color: "#059669", fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+            <CheckCircle2 size={16} /> Applied
           </div>
-        ) : isOwner ? null : (
+        ) : isOwner ? (
+          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", height: 44, borderRadius: 12, background: "#F4F1EB", color: "#6F6F6F", fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+            Your Card
+          </div>
+        ) : (
           <button
             onClick={() => onContribute(card)}
-            className="ca-btn-primary w-full rounded-2xl py-3 font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2"
+            style={{
+              flex: 1, height: 44, borderRadius: 12, border: "none", cursor: "pointer",
+              background: "linear-gradient(135deg,#D6A12C,#C28F18)", color: "#FFF",
+              fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+              boxShadow: "0 4px 14px rgba(214,161,44,0.3)",
+            }}
           >
-            ✦ Contribute Now
+            Connect
           </button>
         )}
+        
+        <button
+          onClick={() => setSaved(!saved)}
+          style={{
+            width: 44, height: 44, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+            border: saved ? "1.5px solid #D6A12C" : "1.5px solid #ECE6DD",
+            background: saved ? "rgba(214,161,44,0.1)" : "#FFF",
+            color: saved ? "#D6A12C" : "#6F6F6F",
+            transition: "all 0.15s ease",
+          }}
+        >
+          {saved ? <BookmarkCheck size={18} /> : <Bookmark size={18} />}
+        </button>
       </div>
-    </div>
+    </article>
   );
 }

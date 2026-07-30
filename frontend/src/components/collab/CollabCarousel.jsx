@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader, Briefcase, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader, Briefcase, Plus } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/utils/supabase";
 import CollabCard from "./CollabCard";
@@ -10,10 +10,9 @@ import ShareCollabModal from "./ShareCollabModal";
 
 export default function CollabCarousel({ currentUser, onPostCard }) {
   const queryClient = useQueryClient();
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [direction, setDirection] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [shareCard, setShareCard] = useState(null);
+  const [activeCard, setActiveCard] = useState(null); // For contribute modal
   const [appliedCards, setAppliedCards] = useState({});
   const [appStatusByCard, setAppStatusByCard] = useState({});
   const [toastMsg, setToastMsg] = useState("");
@@ -35,17 +34,6 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
   });
 
   useEffect(() => {
-    if (!cards || cards.length === 0) return;
-    if (typeof window !== "undefined") {
-      const cardIdParam = new URL(window.location.href).searchParams.get("cardId");
-      if (cardIdParam) {
-        const idx = cards.findIndex((c) => c.id === cardIdParam);
-        if (idx !== -1) setCurrentIndex(idx);
-      }
-    }
-  }, [cards]);
-
-  useEffect(() => {
     const subscription = supabase
       .channel("collab_cards_changes")
       .on(
@@ -56,45 +44,33 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(subscription);
-    };
+    return () => supabase.removeChannel(subscription);
   }, [queryClient]);
 
   useEffect(() => {
-    if (!currentUser) return;
-    if (!cards || !cards.length || !userId) return;
-    const currentCard = cards[currentIndex];
-    if (!currentCard) return;
-    if (appliedCards[currentCard.id] !== undefined) return;
+    if (!currentUser || !cards.length || !userId) return;
 
     const checkIfApplied = async () => {
-      const myId = (currentUser?.id || currentUser?._id || "").toString().trim();
-      if (!myId) return;
-
       const { data: allApps } = await supabase
         .from("collab_applications")
         .select("id, card_id, applicant_user_id, status");
 
-      const existingApp = (allApps || []).find(
-        (app) =>
-          String(app.card_id) === String(currentCard.id) &&
-          String(app.applicant_user_id).trim() === myId
-      );
+      const appsMap = {};
+      const statusMap = {};
+      
+      (allApps || []).forEach(app => {
+        if (String(app.applicant_user_id).trim() === String(userId).trim()) {
+          appsMap[app.card_id] = true;
+          statusMap[app.card_id] = app.status || "pending";
+        }
+      });
 
-      if (existingApp) {
-        setAppliedCards((prev) => ({ ...prev, [currentCard.id]: true }));
-        setAppStatusByCard((prev) => ({
-          ...prev,
-          [currentCard.id]: existingApp.status || "pending",
-        }));
-      } else {
-        setAppliedCards((prev) => ({ ...prev, [currentCard.id]: false }));
-      }
+      setAppliedCards(appsMap);
+      setAppStatusByCard(statusMap);
     };
 
     checkIfApplied();
-  }, [currentIndex, cards, userId, currentUser, appliedCards]);
+  }, [cards, userId, currentUser]);
 
   useEffect(() => {
     if (!userId) return;
@@ -125,16 +101,6 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
     return () => supabase.removeChannel(channel);
   }, [userId]);
 
-  const handleNext = () => {
-    setDirection(1);
-    setCurrentIndex((prev) => (prev + 1) % cards.length);
-  };
-
-  const handlePrev = () => {
-    setDirection(-1);
-    setCurrentIndex((prev) => (prev - 1 + cards.length) % cards.length);
-  };
-
   const handleDelete = async (cardId) => {
     try {
       const { error } = await supabase.from("collab_cards").delete().eq("id", cardId);
@@ -142,9 +108,6 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
       queryClient.setQueryData(["collab-cards"], (prev) =>
         (prev || []).filter((c) => c.id !== cardId)
       );
-      if (currentIndex >= cards.length - 1) {
-        setCurrentIndex(Math.max(0, cards.length - 2));
-      }
     } catch (err) {
       console.error("Failed to delete card:", err);
       alert("Failed to delete card.");
@@ -154,10 +117,10 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
   /* ── Loading ─────────────────────────────────────── */
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-16">
+      <div className="flex flex-col items-center justify-center py-24 w-full">
         <Loader size={32} className="animate-spin mb-4" style={{ color: "#D6A12C" }} />
         <p className="text-sm font-bold" style={{ color: "#6F6F6F" }}>
-          Loading campus cards…
+          Loading campus collaborations…
         </p>
       </div>
     );
@@ -166,22 +129,22 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
   /* ── Empty ───────────────────────────────────────── */
   if (!cards || cards.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="flex flex-col items-center justify-center py-24 text-center w-full bg-[#FFFFFF] border border-[#ECE6DD] rounded-[24px]" style={{ boxShadow: "0 12px 40px rgba(0,0,0,0.04)" }}>
         <div
           className="mb-5 flex h-16 w-16 items-center justify-center rounded-3xl"
           style={{ background: "rgba(47,58,69,0.08)", color: "#2F3A45" }}
         >
           <Briefcase size={34} />
         </div>
-        <h3 className="text-2xl font-black tracking-tight" style={{ color: "#1B1B1B" }}>
+        <h3 className="text-2xl font-bold leading-snug" style={{ color: "#1B1B1B" }}>
           No cards on campus yet
         </h3>
-        <p className="mt-3 max-w-sm text-sm leading-relaxed" style={{ color: "#6F6F6F" }}>
+        <p className="mt-3 max-w-sm text-base leading-relaxed" style={{ color: "#6F6F6F" }}>
           Be the first to post a collab card and find your team!
         </p>
         <button
           onClick={onPostCard}
-          className="mt-6 flex items-center gap-2 rounded-2xl px-6 py-3 text-xs font-black uppercase tracking-widest text-white transition hover:scale-[1.03] active:scale-95"
+          className="mt-6 flex items-center gap-2 rounded-2xl px-6 py-4 text-xs font-bold uppercase tracking-[0.1em] text-white transition hover:scale-[1.03] active:scale-95"
           style={{
             background: "linear-gradient(135deg,#D6A12C,#C28F18)",
             boxShadow: "0 4px 20px rgba(214,161,44,0.35)",
@@ -194,17 +157,6 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
     );
   }
 
-  const currentCard = cards[currentIndex];
-  const isCardOwner = userId && String(currentCard?.user_id) === userId;
-  const hasApplied = appliedCards[currentCard?.id] === true;
-  const appStatus = appStatusByCard[currentCard?.id] || null;
-
-  const variants = {
-    enter: (d) => ({ x: d > 0 ? 160 : -160, opacity: 0, scale: 0.95 }),
-    center: { zIndex: 1, x: 0, opacity: 1, scale: 1 },
-    exit: (d) => ({ zIndex: 0, x: d < 0 ? 160 : -160, opacity: 0, scale: 0.95 }),
-  };
-
   return (
     <div className="w-full">
       {/* ── Applicant status toast ─────────────────── */}
@@ -214,7 +166,7 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 30 }}
-            className="fixed bottom-24 left-1/2 z-[999] -translate-x-1/2 rounded-2xl px-5 py-3 text-xs font-black uppercase tracking-widest shadow-xl whitespace-nowrap"
+            className="fixed bottom-24 left-1/2 z-[999] -translate-x-1/2 rounded-2xl px-5 py-3 text-xs font-bold uppercase tracking-[0.1em] shadow-xl whitespace-nowrap"
             style={{ background: "#3AA675", color: "#FFFFFF" }}
           >
             {toastMsg}
@@ -222,103 +174,41 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
         )}
       </AnimatePresence>
 
-      {/* ── Carousel layout ───────────────────────── */}
-      <div className="flex flex-col items-center gap-6">
-        {/* Counter + arrows row */}
-        <div className="flex w-full items-center justify-between">
-          {/* Left arrow */}
-          <button
-            onClick={handlePrev}
-            className="flex h-10 w-10 items-center justify-center rounded-full border transition hover:border-[#2F3A45]/40 hover:text-[#2F3A45] active:scale-95"
-            style={{ borderColor: "#ECE6DD", background: "#F4F1EB", color: "#6F6F6F" }}
-            aria-label="Previous card"
-          >
-            <ChevronLeft size={18} />
-          </button>
-
-          {/* Counter dots */}
-          <div className="flex items-center gap-2">
-            {cards.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => {
-                  setDirection(i > currentIndex ? 1 : -1);
-                  setCurrentIndex(i);
-                }}
-                className="rounded-full transition"
-                style={{
-                  width: i === currentIndex ? 24 : 8,
-                  height: 8,
-                  background: i === currentIndex ? "#D6A12C" : "#ECE6DD",
-                }}
-                aria-label={`Go to card ${i + 1}`}
-              />
-            ))}
-          </div>
-
-          {/* Right arrow */}
-          <button
-            onClick={handleNext}
-            className="flex h-10 w-10 items-center justify-center rounded-full border transition hover:border-[#2F3A45]/40 hover:text-[#2F3A45] active:scale-95"
-            style={{ borderColor: "#ECE6DD", background: "#F4F1EB", color: "#6F6F6F" }}
-            aria-label="Next card"
-          >
-            <ChevronRight size={18} />
-          </button>
-        </div>
-
-        {/* Card stage */}
-        <div
-          className="relative w-full"
-          style={{ maxWidth: 440, minHeight: 480 }}
-        >
-          <AnimatePresence initial={false} custom={direction}>
-            <motion.div
-              key={currentCard.id}
-              custom={direction}
-              variants={variants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{
-                x: { type: "spring", stiffness: 320, damping: 30 },
-                opacity: { duration: 0.18 },
-              }}
-              className="absolute inset-0 w-full h-full flex flex-col"
-            >
-              <CollabCard
-                card={currentCard}
-                currentUser={currentUser}
-                hasApplied={hasApplied}
-                appStatus={appStatus}
-                onContribute={() => setShowModal(true)}
-                onShare={(c) => setShareCard(c)}
-                onDelete={handleDelete}
-                onNext={handleNext}
-                onPrev={handlePrev}
-                currentIndex={currentIndex}
-                totalCards={cards.length}
-              />
-            </motion.div>
-          </AnimatePresence>
-        </div>
-
-        {/* Card counter label */}
-        <p className="text-xs font-bold" style={{ color: "#6F6F6F" }}>
-          {currentIndex + 1} of {cards.length} cards
-        </p>
+      {/* ── Grid layout ────────────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+        {cards.map((card) => (
+          <CollabCard
+            key={card.id}
+            card={card}
+            currentUser={currentUser}
+            hasApplied={appliedCards[card.id]}
+            appStatus={appStatusByCard[card.id]}
+            onContribute={() => {
+              setActiveCard(card);
+              setShowModal(true);
+            }}
+            onShare={(c) => setShareCard(c)}
+            onDelete={handleDelete}
+          />
+        ))}
       </div>
 
       {/* ── Modals ────────────────────────────────── */}
       <ContributeModal
         isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        card={currentCard}
+        onClose={() => {
+          setShowModal(false);
+          setActiveCard(null);
+        }}
+        card={activeCard}
         currentUser={currentUser}
         onApplied={() => {
-          setAppliedCards((prev) => ({ ...prev, [currentCard.id]: true }));
-          setAppStatusByCard((prev) => ({ ...prev, [currentCard.id]: "pending" }));
+          if (activeCard) {
+            setAppliedCards((prev) => ({ ...prev, [activeCard.id]: true }));
+            setAppStatusByCard((prev) => ({ ...prev, [activeCard.id]: "pending" }));
+          }
           setShowModal(false);
+          setActiveCard(null);
         }}
       />
 
@@ -328,10 +218,6 @@ export default function CollabCarousel({ currentUser, onPostCard }) {
         card={shareCard}
         currentUser={currentUser}
       />
-
-      {isCardOwner && (
-        <ApplicationsPanel cardId={currentCard.id} currentUser={currentUser} />
-      )}
     </div>
   );
 }
