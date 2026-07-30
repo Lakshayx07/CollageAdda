@@ -20,7 +20,7 @@ export default function Sidebar() {
   const [streak, setStreak] = useState(0);
   const [authUser, setAuthUser] = useState(null);
   const { unreadCount } = useSocket();
-  const { isExpanded, handleMouseEnter, handleMouseLeave } = useSidebar();
+  const isExpanded = true;
 
   const navItems = useMemo(() => [
     { name: "Home", path: "/home", icon: Home },
@@ -99,21 +99,12 @@ export default function Sidebar() {
 
   return (
     <motion.aside 
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      onFocus={handleMouseEnter}
-      onBlur={(e) => {
-        // Ignore blur when focus moves between items inside the rail
-        if (!e.currentTarget.contains(e.relatedTarget)) {
-          handleMouseLeave();
-        }
-      }}
       initial={false}
-      animate={{ width: isExpanded ? 288 : 80 }}
+      animate={{ width: 264 }}
       transition={{ duration: SIDEBAR_DURATION, ease: SIDEBAR_EASE }}
-      className="nav-rail hidden lg:flex fixed left-0 top-0 z-50 h-full flex-col bg-white border-r border-[#E8E6E0] overflow-hidden will-change-[width]"
+      className="nav-rail hidden lg:flex fixed left-0 top-0 z-50 h-full flex-col bg-white border-r border-[#E8E6E0] overflow-hidden"
     >
-      <div className="mb-8 space-y-5 px-6 pt-7 min-w-[288px]">
+      <div className="mb-8 space-y-5 px-6 pt-7 min-w-[264px]">
         <div className="flex items-center gap-3 h-10">
           <div className="brand-mark flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white">
             <Zap size={20} fill="currentColor" />
@@ -140,7 +131,7 @@ export default function Sidebar() {
         </div>
       </div>
 
-      <nav className="flex flex-1 flex-col gap-2 px-3 min-w-[288px]">
+      <nav className="flex flex-1 flex-col gap-2 px-3 min-w-[264px]">
         {navItems.map((item) => {
           const isActive = pathname === item.path;
           const Icon = item.icon;
@@ -152,7 +143,7 @@ export default function Sidebar() {
               href={item.path}
               onClick={() => handleNavClick(isFriends)}
               aria-label={item.name}
-              className="relative group block w-[264px]"
+              className="relative group block w-[240px]"
             >
               <div
                 className={clsx(
@@ -230,7 +221,7 @@ export default function Sidebar() {
         </button>
       </nav>
 
-      <div className="mt-auto flex flex-col gap-4 pb-4 pt-10 min-w-[288px]">
+      <div className="mt-auto flex flex-col gap-4 pb-4 pt-10 min-w-[264px]">
         {/* Streak Card */}
         <div className={clsx(
           "bg-[#FAFAF8] border border-[#E8E6E0] shadow-sm relative overflow-hidden transition-[width,height,border-radius,padding,margin] duration-[400ms] ease-[cubic-bezier(0.22,1,0.36,1)]",
