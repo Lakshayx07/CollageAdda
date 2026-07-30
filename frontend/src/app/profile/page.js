@@ -1305,78 +1305,20 @@ export default function ProfilePage() {
 
           {activeTab === "badges" && (
             <div className="space-y-12 pb-14 pt-4">
-
-              {/* 1. Performance Snapshot */}
-              <section className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-gradient-to-br from-[#FFFAF0] via-white to-[#F0F7FF] p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6">
-                <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-amber-300/10 blur-[60px]" />
-                <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-blue-300/10 blur-[60px]" />
-                
-                <div className="relative z-10 flex items-center justify-between px-2 mb-8">
-                  <div>
-                    <h2 className="text-[17px] font-black text-[#1A1A1A] flex items-center gap-2 mb-1.5">
-                      <TrendingUp size={18} className="text-amber-500" /> Performance Snapshot
-                    </h2>
-                    <p className="text-[12px] font-semibold text-slate-500">
-                      Your recent activity highlights.
-                    </p>
-                  </div>
-                  <span className="flex items-center gap-1.5 rounded-full border border-red-200 bg-gradient-to-r from-white to-red-50 px-4 py-1.5 text-[11px] font-black uppercase tracking-widest text-red-600 shadow-sm transition-transform hover:scale-105">
-                    <span className="relative flex h-2.5 w-2.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
-                    </span>
-                    Live
-                  </span>
-                </div>
-                <div className="relative z-10 grid grid-cols-1 sm:grid-cols-3 gap-5">
-                  {/* XP Earned */}
-                  <div className="group flex items-center gap-5 rounded-3xl border border-amber-100/50 bg-gradient-to-br from-[#FFFAF0] to-amber-50 p-6 shadow-sm transition-all hover:shadow-[0_8px_30px_rgba(251,191,36,0.1)] hover:-translate-y-1">
-                    <div className="flex h-14 w-14 items-center justify-center text-4xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12">
-                      ✨
-                    </div>
-                    <div>
-                      <p className="text-[11px] font-black uppercase tracking-widest text-amber-600/80 mb-1">XP Earned</p>
-                      <p className="text-3xl font-black text-slate-800 leading-none mb-1.5">{totalXp.toLocaleString()}</p>
-                      <p className="text-[11px] font-bold text-amber-600/60">This Month</p>
-                    </div>
-                  </div>
-                  {/* Streaks */}
-                  <div className="group flex items-center gap-5 rounded-3xl border border-red-100/50 bg-gradient-to-br from-[#FFF5F5] to-red-50 p-6 shadow-sm transition-all hover:shadow-[0_8px_30px_rgba(239,68,68,0.1)] hover:-translate-y-1">
-                    <div className="flex h-14 w-14 items-center justify-center text-4xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12">
-                      🔥
-                    </div>
-                    <div>
-                      <p className="text-[11px] font-black uppercase tracking-widest text-red-600/80 mb-1">Streaks</p>
-                      <p className="text-3xl font-black text-slate-800 leading-none mb-1.5">{getDisplayStreak(user)}</p>
-                      <p className="text-[11px] font-bold text-red-600/60">Days in a row</p>
-                    </div>
-                  </div>
-                  {/* Network */}
-                  <div className="group flex items-center gap-5 rounded-3xl border border-blue-100/50 bg-gradient-to-br from-[#F0F7FF] to-blue-50 p-6 shadow-sm transition-all hover:shadow-[0_8px_30px_rgba(59,130,246,0.1)] hover:-translate-y-1">
-                    <div className="flex h-14 w-14 items-center justify-center text-4xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12">
-                      🫂
-                    </div>
-                    <div>
-                      <p className="text-[11px] font-black uppercase tracking-widest text-blue-600/80 mb-1">Network</p>
-                      <p className="text-3xl font-black text-slate-800 leading-none mb-1.5">{(followers.length + following.length).toLocaleString()}</p>
-                      <p className="text-[11px] font-bold text-blue-600/60">Total Network</p>
-                    </div>
-                  </div>
-                </div>
-              </section>
-              {/* 2. Badges Overview Hero (Premium) */}
+              {/* 1. Badges Overview Hero (Premium) */}
               <section className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-gradient-to-br from-[#FFFAF0] via-white to-[#F0F7FF] p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
                 <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-amber-300/10 blur-[60px]" />
                 <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-blue-300/10 blur-[60px]" />
 
                 <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
-                  <div>
-                    <h2 className="text-[17px] font-black text-[#1A1A1A] flex items-center gap-2 mb-1.5">
-                      <span className="text-xl">🎖️</span> Badges Overview
-                    </h2>
-                    <p className="text-[12px] font-semibold text-slate-500">
-                      Your achievements that make you stand out.
-                    </p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-sm border border-black/10">
+                      <span className="text-xl">🎖️</span>
+                    </div>
+                    <div>
+                      <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Badges Overview</h2>
+                      <p className="text-[12px] font-bold text-slate-500">Your achievements that make you stand out.</p>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2 rounded-full border border-amber-200/50 bg-white/80 backdrop-blur-md px-4 py-2 shadow-sm transition-transform hover:scale-105">
                     <Trophy size={16} className="text-amber-500 fill-amber-500" />
@@ -1391,7 +1333,7 @@ export default function ProfilePage() {
                   {(() => {
                     const featuredBadge = earnedBadges.find(b => b.earned) || earnedBadges[0];
                     return (
-                      <div className="group flex flex-col sm:flex-row items-center sm:items-start gap-6 lg:w-1/2 p-4 rounded-[1.5rem] bg-white/40 border border-white/50 backdrop-blur-xl transition-all duration-300 hover:bg-white/60 hover:shadow-lg">
+                      <div className="group flex flex-col sm:flex-row items-center sm:items-start gap-6 lg:w-1/2 p-4 rounded-[1.5rem] bg-white border-2 border-black shadow-sm transition-all duration-300 hover:shadow-md">
                         <div className="relative shrink-0 flex items-center justify-center h-40 w-40 rounded-[2rem] bg-gradient-to-br from-[#0A1128] to-[#1a2b5e] border-[3px] border-amber-400/30 shadow-[0_8px_20px_rgba(10,17,40,0.3)] p-4 transition-transform duration-500 group-hover:scale-105">
                           <div className="absolute inset-0 rounded-[2rem] bg-amber-400/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
                           <img src={featuredBadge.image} alt={featuredBadge.name} className="relative z-10 w-full h-full object-contain filter drop-shadow-[0_0_20px_rgba(251,191,36,0.3)] transition-all duration-500 group-hover:drop-shadow-[0_0_30px_rgba(251,191,36,0.5)]" />
@@ -1424,16 +1366,16 @@ export default function ProfilePage() {
                       <div
                         key={idx}
                         className={clsx(
-                          "group flex flex-col items-center justify-center h-[80px] rounded-[1.2rem] border transition-all duration-300",
+                          "group flex flex-col items-center justify-center h-[80px] rounded-[1.2rem] border-2 border-black transition-all duration-300 bg-white",
                           badge.earned
-                            ? "border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50/30 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-amber-300"
-                            : "border-slate-200/60 bg-white/50 backdrop-blur-sm opacity-90 hover:opacity-100"
+                            ? "shadow-sm hover:shadow-md hover:-translate-y-0.5"
+                            : "opacity-80 hover:opacity-100"
                         )}
                       >
                         {badge.earned ? (
                           <img src={badge.image} alt={badge.name} className="h-9 w-9 object-contain mb-1.5 filter drop-shadow-sm transition-transform duration-300 group-hover:scale-110" />
                         ) : (
-                          <div className="flex items-center justify-center text-slate-300 mb-1.5 transition-transform duration-300 group-hover:scale-110">
+                          <div className="flex items-center justify-center text-slate-400 mb-1.5 transition-transform duration-300 group-hover:scale-110">
                             <Lock size={16} />
                           </div>
                         )}
@@ -1458,11 +1400,65 @@ export default function ProfilePage() {
                 </div>
               </section>
 
+              {/* 2. Performance Snapshot */}
+              <section className="space-y-6">
+                <div className="flex items-center justify-between px-2">
+                  <div>
+                    <h3 className="text-[17px] font-black text-[#1A1A1A] flex items-center gap-2 mb-1">
+                      <TrendingUp size={18} className="text-amber-500" /> Performance Snapshot
+                    </h3>
+                    <p className="text-[12px] font-semibold text-slate-500">
+                      Your recent activity highlights.
+                    </p>
+                  </div>
+                  <span className="flex items-center gap-1.5 rounded-full border border-red-200 bg-gradient-to-r from-white to-red-50 px-4 py-1.5 text-[11px] font-black uppercase tracking-widest text-red-600 shadow-sm transition-transform hover:scale-105">
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                    </span>
+                    Live
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                  {/* XP Earned */}
+                  <div className="group flex items-center gap-5 rounded-3xl border border-amber-100/50 bg-gradient-to-br from-[#FFFAF0] to-amber-50 p-6 shadow-sm transition-all hover:shadow-[0_8px_30px_rgba(251,191,36,0.1)] hover:-translate-y-1">
+                    <div className="flex h-14 w-14 items-center justify-center text-4xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12">
+                      ✨
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-widest text-amber-600/80 mb-1">XP Earned</p>
+                      <p className="text-3xl font-black text-slate-800 leading-none mb-1.5">{totalXp.toLocaleString()}</p>
+                      <p className="text-[11px] font-bold text-amber-600/60">This Month</p>
+                    </div>
+                  </div>
+                  {/* Streaks */}
+                  <div className="group flex items-center gap-5 rounded-3xl border border-red-100/50 bg-gradient-to-br from-[#FFF5F5] to-red-50 p-6 shadow-sm transition-all hover:shadow-[0_8px_30px_rgba(239,68,68,0.1)] hover:-translate-y-1">
+                    <div className="flex h-14 w-14 items-center justify-center text-4xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12">
+                      🔥
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-widest text-red-600/80 mb-1">Streaks</p>
+                      <p className="text-3xl font-black text-slate-800 leading-none mb-1.5">{getDisplayStreak(user)}</p>
+                      <p className="text-[11px] font-bold text-red-600/60">Days in a row</p>
+                    </div>
+                  </div>
+                  {/* Network */}
+                  <div className="group flex items-center gap-5 rounded-3xl border border-blue-100/50 bg-gradient-to-br from-[#F0F7FF] to-blue-50 p-6 shadow-sm transition-all hover:shadow-[0_8px_30px_rgba(59,130,246,0.1)] hover:-translate-y-1">
+                    <div className="flex h-14 w-14 items-center justify-center text-4xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12">
+                      🫂
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-widest text-blue-600/80 mb-1">Network</p>
+                      <p className="text-3xl font-black text-slate-800 leading-none mb-1.5">{((user?.followers?.length ?? followers.length) + (user?.following?.length ?? following.length)).toLocaleString()}</p>
+                      <p className="text-[11px] font-bold text-blue-600/60">Total Network</p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
               {/* 3. How XP Works */}
-              <section className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-gradient-to-br from-[#FFFAF0] via-white to-[#F0F7FF] p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6">
-                <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-amber-300/10 blur-[60px]" />
-                <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-blue-300/10 blur-[60px]" />
-                <div className="relative z-10 flex items-center justify-between px-2">
+              <section className="space-y-6">
+                <div className="flex items-center justify-between px-2">
                   <div>
                     <h3 className="text-[17px] font-black text-[#1A1A1A] flex items-center gap-2 mb-1">
                       <span className="text-xl">⚡️</span> How XP Works
@@ -1498,7 +1494,7 @@ export default function ProfilePage() {
                     <div
                       key={item.action}
                       className={clsx(
-                        "group flex flex-col rounded-[1.5rem] border border-slate-200/60 bg-gradient-to-b from-white to-slate-50/50 p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-amber-200",
+                        "group flex flex-col rounded-[1.5rem] border-2 border-black bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md",
                         !showAllXpActions && "w-[280px] shrink-0 snap-start"
                       )}
                     >
@@ -1528,15 +1524,14 @@ export default function ProfilePage() {
                         onClick={() => {
                           const container = document.getElementById('xp-actions-container');
                           if (container) {
-                            // Scroll by approximately one card width
-                            const scrollAmount = 296 * dotIndex; // 280px width + 16px gap
+                            const scrollAmount = 296 * dotIndex;
                             container.scrollTo({ left: scrollAmount, behavior: 'smooth' });
                           }
                         }}
                         className={clsx(
                           "h-2.5 w-2.5 rounded-full transition-all duration-300 shadow-sm hover:scale-110",
                           activeXpDot === dotIndex
-                            ? "bg-amber-500 w-6" // Widen the active dot for a cool shifting animation
+                            ? "bg-amber-500 w-6"
                             : "bg-amber-200 hover:bg-amber-400 focus:bg-amber-400"
                         )}
                         aria-label={`Scroll to page ${dotIndex + 1}`}
@@ -1547,10 +1542,8 @@ export default function ProfilePage() {
               </section>
 
               {/* 4. Achievements & Badges */}
-              <section id="achievements-section" className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-gradient-to-br from-[#FFFAF0] via-white to-[#F0F7FF] p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6 scroll-mt-24">
-                <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-amber-300/10 blur-[60px]" />
-                <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-blue-300/10 blur-[60px]" />
-                <div className="relative z-10 flex items-center justify-between px-2">
+              <section id="achievements-section" className="space-y-6 scroll-mt-24">
+                <div className="flex items-center justify-between px-2">
                   <div>
                     <h3 className="text-[17px] font-black text-[#1A1A1A] flex items-center gap-2 mb-1">
                       <span className="text-xl">🏆</span> Achievements & Badges
@@ -1570,10 +1563,10 @@ export default function ProfilePage() {
                     <div
                       key={badge.id}
                       className={clsx(
-                        "group relative w-[280px] shrink-0 snap-start overflow-hidden rounded-[1.5rem] border p-6 transition-all duration-300",
+                        "group relative w-[280px] shrink-0 snap-start overflow-hidden rounded-[1.5rem] border-2 border-black p-6 transition-all duration-300 bg-white",
                         badge.earned
-                          ? "border-amber-200 bg-gradient-to-br from-white to-amber-50/30 shadow-[0_4px_20px_rgba(251,191,36,0.08)] hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(251,191,36,0.15)]"
-                          : "border-slate-200/70 bg-white/40 backdrop-blur-md opacity-90 hover:opacity-100"
+                          ? "shadow-sm hover:-translate-y-1 hover:shadow-md"
+                          : "opacity-90 hover:opacity-100"
                       )}
                     >
                       <div className="relative z-10 flex flex-col h-full justify-between">
@@ -1630,10 +1623,8 @@ export default function ProfilePage() {
               </section>
 
               {/* 5. XP Tiers */}
-              <section className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-gradient-to-br from-[#FFFAF0] via-white to-[#F0F7FF] p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6">
-                <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-amber-300/10 blur-[60px]" />
-                <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-blue-300/10 blur-[60px]" />
-                <div className="relative z-10 flex items-center justify-between px-2">
+              <section className="space-y-6">
+                <div className="flex items-center justify-between px-2">
                   <div>
                     <h3 className="text-[17px] font-black text-[#1A1A1A] flex items-center gap-2 mb-1">
                       <span className="text-xl">👑</span> XP Tiers
@@ -1655,44 +1646,44 @@ export default function ProfilePage() {
                     const inProgress = nextTick?.id === tier.id;
 
                     let tierStyles = {
-                      gradient: "from-amber-200/40 to-yellow-400/40 border-amber-300 shadow-[0_4px_15px_rgba(251,191,36,0.15)]",
+                      gradient: "from-amber-200/40 to-yellow-400/40 shadow-sm",
                       text: "text-amber-700",
                       progressBg: "bg-gradient-to-r from-amber-400 to-yellow-500",
                       iconRing: "border-amber-400/50 shadow-[0_0_15px_rgba(251,191,36,0.3)]",
-                      inProgressGradient: "from-amber-50 to-white border-amber-200"
+                      inProgressGradient: "from-amber-50 to-white"
                     };
 
                     if (tier.id === "silver") {
                       tierStyles = {
-                        gradient: "from-slate-200/60 to-slate-300/60 border-slate-300 shadow-[0_4px_15px_rgba(148,163,184,0.15)]",
+                        gradient: "from-slate-200/60 to-slate-300/60 shadow-sm",
                         text: "text-slate-700",
                         progressBg: "bg-gradient-to-r from-slate-400 to-slate-500",
                         iconRing: "border-slate-400/50 shadow-[0_0_15px_rgba(148,163,184,0.3)]",
-                        inProgressGradient: "from-slate-50 to-white border-slate-200"
+                        inProgressGradient: "from-slate-50 to-white"
                       };
                     } else if (tier.id === "purple") {
                       tierStyles = {
-                        gradient: "from-purple-200/40 to-purple-300/40 border-purple-300 shadow-[0_4px_15px_rgba(168,85,247,0.15)]",
+                        gradient: "from-purple-200/40 to-purple-300/40 shadow-sm",
                         text: "text-purple-700",
                         progressBg: "bg-gradient-to-r from-purple-400 to-purple-500",
                         iconRing: "border-purple-400/50 shadow-[0_0_15px_rgba(168,85,247,0.3)]",
-                        inProgressGradient: "from-purple-50 to-white border-purple-200"
+                        inProgressGradient: "from-purple-50 to-white"
                       };
                     } else if (tier.id === "orange") {
                       tierStyles = {
-                        gradient: "from-orange-200/40 to-orange-300/40 border-orange-300 shadow-[0_4px_15px_rgba(249,115,22,0.15)]",
+                        gradient: "from-orange-200/40 to-orange-300/40 shadow-sm",
                         text: "text-orange-700",
                         progressBg: "bg-gradient-to-r from-orange-400 to-orange-500",
                         iconRing: "border-orange-400/50 shadow-[0_0_15px_rgba(249,115,22,0.3)]",
-                        inProgressGradient: "from-orange-50 to-white border-orange-200"
+                        inProgressGradient: "from-orange-50 to-white"
                       };
                     } else if (tier.id === "gold") {
                       tierStyles = {
-                        gradient: "from-amber-200/60 to-yellow-400/60 border-yellow-400 shadow-[0_4px_20px_rgba(234,179,8,0.2)]",
+                        gradient: "from-amber-200/60 to-yellow-400/60 shadow-sm",
                         text: "text-yellow-700",
                         progressBg: "bg-gradient-to-r from-amber-400 to-yellow-500",
                         iconRing: "border-yellow-400/60 shadow-[0_0_20px_rgba(234,179,8,0.4)]",
-                        inProgressGradient: "from-yellow-50 to-white border-yellow-200"
+                        inProgressGradient: "from-yellow-50 to-white"
                       };
                     }
 
@@ -1700,10 +1691,10 @@ export default function ProfilePage() {
                       <div
                         key={tier.id}
                         className={clsx(
-                          "group relative flex flex-col overflow-hidden rounded-[1.5rem] border p-6 transition-all duration-500",
-                          reached ? `bg-gradient-to-br ${tierStyles.gradient} hover:-translate-y-1 hover:scale-[1.02]`
+                          "group relative flex flex-col overflow-hidden rounded-[1.5rem] border-2 border-black p-6 transition-all duration-300 bg-white",
+                          reached ? `bg-gradient-to-br ${tierStyles.gradient} hover:-translate-y-1`
                             : inProgress ? `bg-gradient-to-br ${tierStyles.inProgressGradient} shadow-sm hover:-translate-y-1`
-                              : "border-slate-200/60 bg-white/40 backdrop-blur-sm opacity-80 hover:opacity-100"
+                              : "opacity-85 hover:opacity-100"
                         )}
                       >
                         <div className="flex items-center gap-4 mb-6">
@@ -1728,7 +1719,7 @@ export default function ProfilePage() {
                         <div className="mt-auto">
                           {reached ? (
                             <>
-                              <div className="h-2 w-full overflow-hidden rounded-full bg-white/50 mb-2 shadow-inner">
+                              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200/80 mb-2 shadow-inner">
                                 <div className={`h-full w-full rounded-full ${tierStyles.progressBg}`}></div>
                               </div>
                               <p className={clsx("text-[11px] font-black text-center", tierStyles.text)}>COMPLETED</p>
