@@ -18,10 +18,31 @@ import {
 } from "@/utils/supabaseUploads";
 import { useApiQuery } from "@/utils/useApiQuery";
 import { useQueryClient } from "@tanstack/react-query";
+import { useSocket } from "@/context/SocketProvider";
 import { getAvatarSrc, getDefaultAvatar } from "@/utils/defaultAvatars";
+const PLACEHOLDER_PROMPTS = [
+  "What's on your mind right now?",
+  "Got a campus update? Share it here.",
+  "What's the highlight of your day so far?",
+  "Spotted something interesting? Tell us.",
+  "Any big plans for the weekend?",
+  "What are you studying today?",
+  "Share a photo of your current view.",
+  "What's the best thing that happened this week?",
+  "Need advice? Ask your campus community.",
+  "Share your current mood in one sentence.",
+  "What's the best food you had today?",
+  "Working on a cool project? Drop a sneak peek.",
+  "What song is stuck in your head right now?",
+  "Feeling proud? Share your latest win with us.",
+  "Who inspired you today?",
+  "Any upcoming events we should know about?",
+  "Drop a fun fact you recently learned."
+];
 
 export default function Home() {
   const router = useRouter();
+  const { socket } = useSocket();
 
   const queryClient = useQueryClient();
   const [connectStatus, setConnectStatus] = useState({});
@@ -30,6 +51,7 @@ export default function Home() {
   const [commentLikes, setCommentLikes] = useState({});
   const [followedUsers, setFollowedUsers] = useState({});
   const [shareModal, setShareModal] = useState(null);
+  const [sharingStatus, setSharingStatus] = useState({});
   const [postMenu, setPostMenu] = useState(null);
   const [shareSearchTerm, setShareSearchTerm] = useState("");
   const [toastMsg, setToastMsg] = useState("");
@@ -63,6 +85,7 @@ export default function Home() {
   const storyProgressKey = useRef(0); // increment to reset animation
   const [storyReplyText, setStoryReplyText] = useState("");
   const [hoveredPost, setHoveredPost] = useState(null);
+  const [highlightedPostId, setHighlightedPostId] = useState(null);
   const [isPosting, setIsPosting] = useState(false);
   const [showPollModal, setShowPollModal] = useState(false);
   const [pollQuestion, setPollQuestion] = useState("");
@@ -77,18 +100,35 @@ export default function Home() {
   const [feedPage, setFeedPage] = useState(1);
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [loadingMorePosts, setLoadingMorePosts] = useState(false);
-  const [placeholderText, setPlaceholderText] = useState(() => {
-    const prompts = [
-      "What is the unwritten rule of the night canteen?",
-      "Wrong answers only: why was the professor late today?",
-      "Best nap spot on campus nobody talks about?",
-      "Hot take: which campus building should be demolished first?",
-      "Describe your department in three words (be honest).",
-      "Name a campus trend that needs to die immediately.",
-      "What does the library WiFi password symbolize about this place?"
-    ];
-    return prompts[Math.floor(Math.random() * prompts.length)];
-  });
+  const [placeholderText, setPlaceholderText] = useState("");
+  const [promptIndex, setPromptIndex] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+
+
+  useEffect(() => {
+    const currentPrompt = PLACEHOLDER_PROMPTS[promptIndex];
+    let typingSpeed = isDeleting ? 30 : 50;
+    let timeout;
+
+    if (!isDeleting && placeholderText === currentPrompt) {
+      timeout = setTimeout(() => setIsDeleting(true), 2000);
+    } else if (isDeleting && placeholderText === "") {
+      setIsDeleting(false);
+      setPromptIndex((prev) => (prev + 1) % PLACEHOLDER_PROMPTS.length);
+      timeout = setTimeout(() => { }, 500);
+    } else {
+      timeout = setTimeout(() => {
+        setPlaceholderText(
+          isDeleting
+            ? currentPrompt.substring(0, placeholderText.length - 1)
+            : currentPrompt.substring(0, placeholderText.length + 1)
+        );
+      }, typingSpeed);
+    }
+
+    return () => clearTimeout(timeout);
+  }, [placeholderText, isDeleting, promptIndex]);
   const [selectedGradient, setSelectedGradient] = useState("from-orange-500 via-rose-500 to-[#D4A843]");
   const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001').trim();
 
@@ -113,7 +153,7 @@ export default function Home() {
         authorId: p.author?._id,
         university: p.university,
         avatar: getAvatarSrc(p.author?.profilePic, p.author?.name, p.author?._id),
-        time: new Date(p.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' }),
+        time: new Date(p.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
         content: p.content,
         likes: likesCount,
         isLiked,
@@ -130,16 +170,16 @@ export default function Home() {
         mediaType: p.mediaType,
         poll: p.poll
           ? {
-              ...p.poll,
-              options: (p.poll.options || []).map((option) => ({
-                text: option.text,
-                votesCount: typeof option.votesCount === 'number' ? option.votesCount : (option.votes?.length || 0),
-                votedByMe: typeof option.votedByMe === 'boolean'
-                  ? option.votedByMe
-                  : Boolean(option.votes?.some?.((id) => String(id) === String(userId)) || option.votes?.includes?.(userId)),
-                votes: option.votes
-              }))
-            }
+            ...p.poll,
+            options: (p.poll.options || []).map((option) => ({
+              text: option.text,
+              votesCount: typeof option.votesCount === 'number' ? option.votesCount : (option.votes?.length || 0),
+              votedByMe: typeof option.votedByMe === 'boolean'
+                ? option.votedByMe
+                : Boolean(option.votes?.some?.((id) => String(id) === String(userId)) || option.votes?.includes?.(userId)),
+              votes: option.votes
+            }))
+          }
           : p.poll,
         authorFollowers: p.author?.followers || [],
         authorFollowing: p.author?.following || [],
@@ -172,6 +212,93 @@ export default function Home() {
       setHasMorePosts(posts.length >= FEED_PAGE_SIZE);
     }
   }, [loadingPosts, posts.length, feedPage]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || loadingPosts) return;
+
+    const checkTargetPost = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const paramPostId = urlParams.get("postId");
+      const paramSearch = urlParams.get("search");
+      const paramMedia = urlParams.get("media");
+      const paramAuthor = urlParams.get("author");
+      const hashPostId = window.location.hash.replace("#post-", "");
+
+      const targetId = paramPostId || hashPostId;
+
+      if (!targetId && !paramSearch && !paramMedia) return;
+
+      // 1. Try finding target post in current loaded posts
+      let targetPost = null;
+
+      if (targetId) {
+        targetPost = posts.find(p => String(p.id) === String(targetId) || String(p._id) === String(targetId));
+      }
+
+      if (!targetPost && paramMedia) {
+        const decodedMedia = decodeURIComponent(paramMedia);
+        targetPost = posts.find(p => p.mediaUrl && (p.mediaUrl === decodedMedia || p.mediaUrl.endsWith(decodedMedia.slice(-30))));
+      }
+
+      if (!targetPost && paramSearch) {
+        const decodedSearch = decodeURIComponent(paramSearch).toLowerCase().trim();
+        if (decodedSearch.length > 2) {
+          targetPost = posts.find(p => p.content && p.content.toLowerCase().includes(decodedSearch));
+        }
+      }
+
+      if (!targetPost && paramAuthor) {
+        const decodedAuthor = decodeURIComponent(paramAuthor).toLowerCase().trim();
+        targetPost = posts.find(p => p.author && (typeof p.author === 'string' ? p.author : p.author.name)?.toLowerCase() === decodedAuthor);
+      }
+
+      // 2. If not in feed, attempt fetching from backend API by ID
+      if (!targetPost && targetId && currentUser?._id) {
+        try {
+          const token = localStorage.getItem("collegeadda_token");
+          const res = await fetch(`${apiUrl}/api/posts/${targetId}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {}
+          });
+          if (res.ok) {
+            const singlePost = await res.json();
+            targetPost = singlePost;
+            queryClient.setQueryData(["posts", "v2", currentUser._id], (old) => {
+              if (!Array.isArray(old)) return [singlePost];
+              if (old.some(p => String(p.id || p._id) === String(singlePost.id || singlePost._id))) return old;
+              return [singlePost, ...old];
+            });
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      const finalId = targetPost ? (targetPost.id || targetPost._id) : targetId;
+      if (!finalId) return;
+
+      setHighlightedPostId(String(finalId));
+
+      // 3. Poll DOM for node mount and scroll into view smoothly
+      let attempts = 0;
+      const interval = setInterval(() => {
+        attempts++;
+        const el = document.getElementById(`post-${finalId}`) || document.querySelector(`[data-post-id="${finalId}"]`);
+        if (el) {
+          clearInterval(interval);
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+
+          // Keep RED border for 5 seconds as requested by the user!
+          setTimeout(() => {
+            setHighlightedPostId(null);
+          }, 5000);
+        } else if (attempts > 35) {
+          clearInterval(interval);
+        }
+      }, 150);
+    };
+
+    checkTargetPost();
+  }, [posts, loadingPosts, currentUser?._id]);
 
   const loadMorePosts = async () => {
     if (loadingMorePosts || !hasMorePosts || !currentUser?._id) return;
@@ -302,7 +429,7 @@ export default function Home() {
   });
 
   const isTextTooShort = newPostContent.trim().length > 0 && newPostContent.trim().length < 10 && !selectedMedia;
-  
+
   const photoInputRef = useRef(null);
   const videoInputRef = useRef(null);
   const exploreInputRef = useRef(null);
@@ -415,7 +542,7 @@ export default function Home() {
       const token = localStorage.getItem("collegeadda_token");
       const res = await fetch(`${apiUrl}/api/confessions`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
@@ -482,7 +609,7 @@ export default function Home() {
       const token = localStorage.getItem("collegeadda_token");
       const res = await fetch(`${apiUrl}/api/confessions/${id}/comment`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
@@ -553,7 +680,7 @@ export default function Home() {
     const savedMediaFile = selectedMediaFile;
     const savedMediaType = mediaType;
     const wasExploreMode = isExploreMode;
-    
+
     // 1. Optimistic UI Update (only if NOT explore mode)
     if (!wasExploreMode) {
       const optimisticRawPost = {
@@ -568,12 +695,12 @@ export default function Home() {
         mediaType: savedMediaType,
         poll: null
       };
-      
+
       queryClient.setQueryData(["posts", "v2", currentUser?._id], (old) => {
         return [optimisticRawPost, ...(old || [])];
       });
     }
-    
+
     try {
       let mediaUrl = savedMedia || "";
       let uploadedPostImage = null;
@@ -585,21 +712,21 @@ export default function Home() {
 
       const res = await fetch(`${apiUrl.trim()}/api/posts`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
+          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           content: savedContent,
           mediaUrl,
           mediaType: savedMediaType,
           isMemoryOnly: wasExploreMode
         })
       });
-      
+
       if (res.ok) {
         const createdPost = await res.json();
-        
+
         if (savedMediaType === "image" && uploadedPostImage) {
           await savePostImageRecord({
             postId: createdPost._id || createdPost.id,
@@ -610,7 +737,7 @@ export default function Home() {
             createdAt: createdPost.createdAt
           });
         }
-        
+
         // Success: Reset UI states
         setNewPostContent("");
         setSelectedMedia(null);
@@ -621,7 +748,7 @@ export default function Home() {
         setFeedPage(1);
         setHasMorePosts(true);
         refetchPosts();
-        
+
         setToastMsg("Post created!");
         setTimeout(() => setToastMsg(""), 2000);
       } else {
@@ -652,11 +779,11 @@ export default function Home() {
       const token = localStorage.getItem("collegeadda_token");
       const res = await fetch(`${apiUrl}/api/posts`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
+          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           content: pollQuestion,
           poll: {
             question: pollQuestion,
@@ -686,7 +813,7 @@ export default function Home() {
       const token = localStorage.getItem("collegeadda_token");
       const res = await fetch(`${apiUrl}/api/posts/${postId}/vote`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
@@ -705,7 +832,7 @@ export default function Home() {
     const text = commentInputs[postId];
     if (!text?.trim()) return;
 
-    setPosts(currentPosts => 
+    setPosts(currentPosts =>
       currentPosts.map(post => {
         if (post.id === postId) {
           return {
@@ -729,7 +856,7 @@ export default function Home() {
       const token = localStorage.getItem("collegeadda_token");
       const res = await fetch(`${apiUrl}/api/posts/${postId}/comment`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
@@ -748,7 +875,7 @@ export default function Home() {
   };
 
   const toggleLike = async (postId) => {
-    setPosts(currentPosts => 
+    setPosts(currentPosts =>
       currentPosts.map(post => {
         if (post.id === postId) {
           const isCurrentlyLiked = post.isLiked;
@@ -761,7 +888,7 @@ export default function Home() {
         return post;
       })
     );
-    
+
     try {
       const token = localStorage.getItem("collegeadda_token");
       await fetch(`${apiUrl}/api/posts/${postId}/like`, {
@@ -804,7 +931,9 @@ export default function Home() {
 
   const handleShareToFriend = async (friendId, postId) => {
     const postToShare = posts.find(p => p.id === postId);
-    if (!postToShare) return;
+    if (!postToShare || sharingStatus[friendId] === 'sending') return;
+
+    setSharingStatus(prev => ({ ...prev, [friendId]: 'sending' }));
 
     try {
       const token = localStorage.getItem("collegeadda_token");
@@ -814,28 +943,81 @@ export default function Home() {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ participantId: friendId, isGroup: false })
       });
-      
-      if (!roomRes.ok) return;
+
+      if (!roomRes.ok) throw new Error("Failed to create chat room");
       const room = await roomRes.json();
 
-      // 2. Send message
-      let messageText = `Check out this post by ${postToShare.author}: ${postToShare.content || ""}`;
-      
-      await fetch(`${apiUrl}/api/chat/rooms/${room._id}/messages`, {
+      // 2. Prepare robust sharedPost payload
+      const authorNameStr = typeof postToShare.author === 'string' 
+        ? postToShare.author 
+        : (postToShare.author?.name || 'CampusAdda User');
+
+      let messageText = `Check out this post by ${authorNameStr}: ${postToShare.content || ""}`;
+
+      const sharedPostPayload = {
+        postId: String(postToShare.id || postToShare._id || ''),
+        authorName: authorNameStr,
+        authorAvatar: postToShare.avatar || postToShare.author?.avatar || '',
+        authorUniversity: postToShare.university || postToShare.author?.university || '',
+        authorTime: postToShare.time || 'Recently',
+        content: postToShare.content || '',
+        mediaUrl: postToShare.mediaUrl || '',
+        mediaType: postToShare.mediaType || 'none'
+      };
+
+      const msgRes = await fetch(`${apiUrl}/api/chat/rooms/${room._id}/messages`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           text: messageText,
-          mediaUrl: postToShare.mediaUrl || '',
-          mediaType: postToShare.mediaType || 'none'
+          mediaUrl: '',
+          mediaType: 'none',
+          sharedPost: sharedPostPayload
         })
       });
 
-      setShareModal(null);
+      if (msgRes.ok) {
+        const newMsg = await msgRes.json();
+
+        // Emit real-time socket event so recipient receives sharedPost instantly
+        if (socket) {
+          socket.emit("forward_message", {
+            ...newMsg,
+            room: room._id,
+            senderId: currentUser?._id || currentUser?.id,
+            senderName: currentUser?.name || "Student"
+          });
+        }
+
+        // 1. Instantly write new message into chat-messages cache
+        queryClient.setQueryData(["chat-messages", room._id], (old) => {
+          const existing = Array.isArray(old) ? old : [];
+          if (existing.some(m => String(m._id || m.id) === String(newMsg._id || newMsg.id))) return existing;
+          return [...existing, newMsg];
+        });
+
+        // 2. Instantly bump room to top of chat-rooms cache
+        queryClient.setQueryData(["chat-rooms"], (old) => {
+          if (!Array.isArray(old)) return old;
+          const otherRooms = old.filter(r => String(r._id) !== String(room._id));
+          const targetRoom = old.find(r => String(r._id) === String(room._id)) || room;
+          const updatedRoom = { ...targetRoom, lastMessage: newMsg, updatedAt: new Date().toISOString() };
+          return [updatedRoom, ...otherRooms];
+        });
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["chat-rooms"] });
+      queryClient.invalidateQueries({ queryKey: ["chat-messages", room._id] });
+      setSharingStatus(prev => ({ ...prev, [friendId]: 'sent' }));
       setToastMsg("Post shared successfully!");
-      setTimeout(() => setToastMsg(""), 2000);
+      setTimeout(() => {
+        setToastMsg("");
+        setShareModal(null);
+        setSharingStatus({});
+      }, 1000);
     } catch (err) {
       console.error(err);
+      setSharingStatus(prev => ({ ...prev, [friendId]: null }));
     }
   };
 
@@ -872,7 +1054,7 @@ export default function Home() {
     setIsUploadingStory(true);
     try {
       const { publicUrl } = await uploadAvatar(file, currentUser._id || currentUser.id);
-      
+
       const token = localStorage.getItem("collegeadda_token");
       const res = await fetch(`${apiUrl}/api/stories`, {
         method: "POST",
@@ -886,7 +1068,7 @@ export default function Home() {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.message || "Failed to post story to server");
       }
-      
+
       queryClient.invalidateQueries(["stories"]);
       setToastMsg("Story uploaded successfully!");
       setTimeout(() => setToastMsg(""), 2000);
@@ -902,7 +1084,7 @@ export default function Home() {
   const handleStoryLike = async (storyId) => {
     try {
       const token = localStorage.getItem("collegeadda_token");
-      
+
       // Optimistic update
       if (activeStory) {
         setActiveStory(prev => {
@@ -914,7 +1096,7 @@ export default function Home() {
             const targetStory = { ...newStoryGroup.stories[storyIndex] };
             const hasLiked = targetStory.likes?.some(id => id.toString() === currentUserId.toString());
             const likes = targetStory.likes || [];
-            
+
             if (hasLiked) {
               targetStory.likes = (targetStory.likes || []).filter(id => id.toString() !== currentUserId.toString());
             } else {
@@ -942,7 +1124,7 @@ export default function Home() {
 
     try {
       const token = localStorage.getItem("collegeadda_token");
-      
+
       // 1. Get or create private room
       const roomRes = await fetch(`${apiUrl}/api/chat/rooms`, {
         method: 'POST',
@@ -952,10 +1134,10 @@ export default function Home() {
         },
         body: JSON.stringify({ target: targetUserId })
       });
-      
+
       if (!roomRes.ok) throw new Error("Failed to access chat room");
       const room = await roomRes.json();
-      
+
       // 2. Send the message
       const msgRes = await fetch(`${apiUrl}/api/chat/rooms/${room._id}/messages`, {
         method: 'POST',
@@ -963,14 +1145,14 @@ export default function Home() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           text: `Replying to story: ${storyReplyText}`,
           mediaType: 'none'
         })
       });
 
       if (!msgRes.ok) throw new Error("Failed to send reply");
-      
+
       setToastMsg("Reply sent!");
       setStoryReplyText("");
       setTimeout(() => setToastMsg(""), 2000);
@@ -1022,7 +1204,7 @@ export default function Home() {
               return (
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-[#FFF8EC] to-[#FFEAD0] border border-[#FAD6A5]/60 shadow-[0_4px_12px_rgba(200,146,42,0.08)] shrink-0">
-                    <motion.div 
+                    <motion.div
                       animate={{ rotate: [0, 15, 0] }}
                       transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
                       className={greeting.color}
@@ -1031,7 +1213,7 @@ export default function Home() {
                     </motion.div>
                   </div>
                   <div className="flex flex-col justify-center">
-                    <motion.p 
+                    <motion.p
                       initial={{ opacity: 0, y: -5 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.1 }}
@@ -1039,7 +1221,7 @@ export default function Home() {
                     >
                       {greeting.text?.toLowerCase()}
                     </motion.p>
-                    <motion.h1 
+                    <motion.h1
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: 0.1, type: "spring", stiffness: 100 }}
@@ -1052,25 +1234,25 @@ export default function Home() {
               );
             })()}
           </div>
-        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4">
 
-          <button 
-            onClick={() => router.push('/collab')}
-            title="Collab"
-            className="rounded-2xl border border-[#E8E6E0] bg-[#F3F2EE] p-2.5 text-[#4A4A4A] transition-colors hover:bg-[#FFF8EC] hover:text-[#C8922A]"
-          >
-            <Zap size={22} />
-          </button>
-          <NotificationBell />
-          <div 
-            onClick={() => router.push('/profile')}
-            className="brand-mark h-10 w-10 cursor-pointer rounded-2xl p-[2px] transition-transform hover:scale-105"
-          >
-            <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-[0.95rem] bg-white border border-[#E8E6E0]">
-              <img src={getAvatarSrc(currentUser?.profilePic, currentUser?.name, currentUser?._id || currentUser?.id)} className="w-full h-full object-cover" alt="Me" />
+            <button
+              onClick={() => router.push('/collab')}
+              title="Collab"
+              className="rounded-2xl border border-[#E8E6E0] bg-[#F3F2EE] p-2.5 text-[#4A4A4A] transition-colors hover:bg-[#FFF8EC] hover:text-[#C8922A]"
+            >
+              <Zap size={22} />
+            </button>
+            <NotificationBell />
+            <div
+              onClick={() => router.push('/profile')}
+              className="brand-mark h-10 w-10 cursor-pointer rounded-2xl p-[2px] transition-transform hover:scale-105"
+            >
+              <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-[0.95rem] bg-white border border-[#E8E6E0]">
+                <img src={getAvatarSrc(currentUser?.profilePic, currentUser?.name, currentUser?._id || currentUser?.id)} className="w-full h-full object-cover" alt="Me" />
+              </div>
             </div>
           </div>
-        </div>
         </div>
       </header>
 
@@ -1081,721 +1263,757 @@ export default function Home() {
         className="mx-auto w-full max-w-[1440px] min-w-0 flex-1 px-3 py-4 sm:p-6"
       >
         <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_280px]">
-        <div className="min-w-0 space-y-7 sm:space-y-8">
-        <section className="app-panel min-w-0 max-w-full rounded-[1.6rem] border-2 border-[rgba(229,201,122,0.45)] px-4 py-2 sm:py-3 transition-colors hover:border-[rgba(229,201,122,0.68)] sm:rounded-[2rem] sm:px-5">
-          <div className="no-scrollbar flex max-w-full space-x-4 overflow-x-auto py-2 sm:space-x-5">
-            {/* Your Story */}
-            <div 
-              className="flex flex-col items-center space-y-2 flex-shrink-0 cursor-pointer group"
-            >
-              <input type="file" className="hidden" accept="image/*" ref={storyInputRef} onChange={handleStoryUpload} />
-              <div className="relative">
-                <div 
-                  className={clsx(
-                    "w-20 h-20 rounded-full p-[3px] transition-all cursor-pointer",
-                    hasMyStory 
-                      ? "gradient-bg animate-rotate-gradient" 
-                      : "bg-[#F3F2EE] group-hover:bg-[#E8E6E0]"
-                  )}
-                  onClick={() => hasMyStory ? setActiveStory(myStoriesGroup) : storyInputRef.current?.click()}
+          <div className="min-w-0 space-y-7 sm:space-y-8">
+            <section className="app-panel min-w-0 max-w-full rounded-[1.6rem] border-2 border-[rgba(229,201,122,0.45)] px-4 py-2 sm:py-3 transition-colors hover:border-[rgba(229,201,122,0.68)] sm:rounded-[2rem] sm:px-5">
+              <div className="no-scrollbar flex max-w-full space-x-4 overflow-x-auto py-2 sm:space-x-5">
+                {/* Your Story */}
+                <div
+                  className="flex flex-col items-center space-y-2 flex-shrink-0 cursor-pointer group"
                 >
-                  <div className={clsx("w-full h-full rounded-full flex items-center justify-center overflow-hidden border", hasMyStory ? "bg-[#F9F8F5] border-[#E8E6E0] p-[2px]" : "bg-white border-[#E8E6E0]")}>
-                    <div className={clsx("w-full h-full rounded-full flex items-center justify-center overflow-hidden", hasMyStory ? "border border-[#E8E6E0] shadow-inner" : "")}>
-                       {isUploadingStory ? (
-                         <div className="flex flex-col items-center justify-center">
-                           <div className="h-4 w-4 border-2 border-[#C8922A] border-t-transparent rounded-full animate-spin"></div>
-                         </div>
-                       ) : (
-                         <img src={getAvatarSrc(currentUser?.profilePic, currentUser?.name, currentUser?._id || currentUser?.id)} className="w-full h-full object-cover" alt="You" />
-                       )}
-                    </div>
-                  </div>
-                </div>
-                {(!hasMyStory || (myStoriesGroup?.stories?.length || 0) < 3) && (
-                  <div 
-                    onClick={(e) => { e.stopPropagation(); storyInputRef.current?.click(); }}
-                    className="absolute bottom-1 right-1 w-6 h-6 gradient-bg rounded-full border-2 border-white flex items-center justify-center text-white shadow-lg z-10 hover:scale-110 transition-transform cursor-pointer"
-                  >
-                    <Plus size={14} strokeWidth={3} />
-                  </div>
-                )}
-              </div>
-              <span className="text-xs text-[#6B6B6B] font-medium">Your Story</span>
-            </div>
-
-            {/* Others' Stories - all uni members except yourself */}
-            {stories.filter(group => (group.author?._id || group.author?.id) !== (currentUser?._id || currentUser?.id)).map((group) => (
-              <motion.div 
-                key={group.author._id} 
-                whileHover={{ scale: 1.05 }}
-                className="flex flex-col items-center space-y-2 flex-shrink-0 cursor-pointer"
-                onClick={() => setActiveStory(group)}
-              >
-                <div className="w-20 h-20 rounded-full p-[3px] gradient-bg animate-rotate-gradient">
-                  <div className="w-full h-full rounded-full bg-white p-[2px]">
-                    <div className="w-full h-full rounded-full bg-[#F9F8F5] flex items-center justify-center overflow-hidden border border-[#E8E6E0] shadow-inner">
-                      <img 
-                        src={getAvatarSrc(group.author.profilePic, group.author.name, group.author._id || group.author.id)} 
-                        className="w-full h-full object-cover" 
-                        alt={group.author.name} 
-                      />
-                    </div>
-                  </div>
-                </div>
-                <span className="text-xs text-[#4A4A4A] font-medium truncate w-20 text-center">{group.author.name.split(' ')[0]}</span>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-
-
-        {/* Create Post Prompt */}
-        <motion.div 
-          variants={itemVariants}
-          className="relative flex min-w-0 max-w-full flex-col space-y-4 overflow-hidden bg-white border-2 border-black rounded-xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)] group sm:p-5"
-        >
-          <div className="absolute top-0 left-0 w-full h-1 gradient-bg opacity-30 group-focus-within:opacity-100 transition-opacity" />
-          <div className="flex min-w-0 items-start space-x-3 sm:space-x-4">
-            <div className="w-12 h-12 rounded-full gradient-bg p-[2px] flex-shrink-0">
-              <div className="w-full h-full bg-background rounded-full flex items-center justify-center overflow-hidden">
-                <img src={getAvatarSrc(currentUser?.profilePic, currentUser?.name, currentUser?._id || currentUser?.id)} className="w-full h-full object-cover" alt="You" />
-              </div>
-            </div>
-            <div className="flex-1 flex flex-col gap-2 min-w-0">
-              <textarea 
-                value={newPostContent}
-                onChange={(e) => setNewPostContent(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    if (!isTextTooShort) handleCreatePost();
-                  }
-                }}
-                placeholder={placeholderText}
-                className="ca-input w-full min-w-0 resize-none sm:text-base mt-2 min-h-[60px] p-3"
-              />
-              {isTextTooShort && (
-                <div className="flex items-center space-x-2 text-orange-400 text-xs font-semibold animate-pulse">
-                  <span>⚠️ Write at least 10 characters to share a quality update!</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <AnimatePresence>
-            {selectedMedia && (
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                className="relative rounded-2xl overflow-hidden border border-[#E8E6E0] max-h-[400px] bg-[#F3F2EE] flex items-center justify-center"
-              >
-                {mediaType === 'video' ? (
-                  <video src={selectedMedia} controls className="w-full h-auto max-h-[400px] object-contain" />
-                ) : (
-                  <img src={selectedMedia} className="w-full h-auto max-h-[400px] object-contain" alt="Preview" />
-                )}
-                <button 
-                  onClick={() => {
-                    if (selectedMedia?.startsWith("blob:")) URL.revokeObjectURL(selectedMedia);
-                    setSelectedMedia(null);
-                    setSelectedMediaFile(null);
-                    setMediaType('none');
-                  }}
-                  className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white p-2 rounded-full hover:bg-black/40 transition-all border border-white/10"
-                >
-                  <X size={16} />
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <div className="flex flex-col gap-3 border-t border-black pt-4 sm:flex-row sm:items-center sm:justify-between">
-             <div className="grid grid-cols-3 gap-2 sm:flex sm:space-x-5">
-               <input type="file" ref={photoInputRef} className="hidden" accept="image/*" onChange={(e) => { setIsExploreMode(false); handleMediaSelect(e, 'image'); }} />
-               <input type="file" ref={videoInputRef} className="hidden" accept="video/*" onChange={(e) => { setIsExploreMode(false); handleMediaSelect(e, 'video'); }} />
-               <input type="file" ref={exploreInputRef} className="hidden" accept="image/*,video/*" onChange={(e) => {
-                 const file = e.target.files?.[0];
-                 if (file) {
-                   const type = file.type.startsWith('video/') ? 'video' : 'image';
-                   setIsExploreMode(true);
-                   handleMediaSelect(e, type);
-                 }
-               }} />
-               
-               <button 
-                 onClick={() => photoInputRef.current?.click()}
-                 className="flex min-w-0 items-center justify-center space-x-1.5 rounded-2xl px-2 py-2 text-[#6B6B6B] transition-colors hover:text-[#C8922A] group sm:justify-start sm:px-0 sm:space-x-2"
-               >
-                 <div className="p-2 rounded-full group-hover:bg-[#FFF8EC] transition-colors">
-                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                 </div>
-                 <span className="text-xs font-semibold">Photo</span>
-               </button>
-               <button 
-                 onClick={() => videoInputRef.current?.click()}
-                 className="flex min-w-0 items-center justify-center space-x-1.5 rounded-2xl px-2 py-2 text-[#6B6B6B] transition-colors hover:text-[#C8922A] group sm:justify-start sm:px-0 sm:space-x-2"
-               >
-                 <div className="p-2 rounded-full group-hover:bg-[#FFF8EC] transition-colors">
-                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-                 </div>
-                 <span className="text-xs font-semibold">Video</span>
-               </button>
-               <button 
-                 onClick={() => setShowPollModal(true)}
-                 className="flex min-w-0 items-center justify-center space-x-1.5 rounded-2xl px-2 py-2 text-[#6B6B6B] transition-colors hover:text-[#C8922A] group sm:justify-start sm:px-0 sm:space-x-2"
-               >
-                 <div className="p-2 rounded-full group-hover:bg-[#FFF8EC] transition-colors">
-                   <BarChart2 size={20} />
-                 </div>
-                 <span className="text-xs font-semibold">Poll</span>
-               </button>
-             </div>
-             <div className="flex gap-2 w-full sm:w-auto mt-3 sm:mt-0">
-               {(!selectedMedia || isExploreMode) && (
-                 <motion.button 
-                   whileHover={{ scale: 1.05 }}
-                   whileTap={{ scale: 0.95 }}
-                   onClick={() => {
-                     if (!selectedMedia) {
-                       exploreInputRef.current?.click();
-                     } else {
-                       handleCreatePost();
-                     }
-                   }} 
-                   disabled={isPosting}
-                   className="flex w-full sm:w-auto sm:min-w-[140px] px-5 py-3 sm:px-7 sm:py-2.5 items-center justify-center disabled:opacity-50 cursor-pointer border-2 border-[#C8922A] text-[#C8922A] rounded-full font-bold text-sm bg-white hover:bg-[#FFF8EC] transition-colors"
-                 >
-                   {isPosting ? (
-                     <div className="w-5 h-5 border-2 border-[#C8922A]/30 border-t-[#C8922A] rounded-full animate-spin" />
-                   ) : (
-                     "Post to Explore"
-                   )}
-                 </motion.button>
-               )}
-               {(!selectedMedia || !isExploreMode) && (
-                 <motion.button 
-                   whileHover={{ scale: 1.05 }}
-                   whileTap={{ scale: 0.95 }}
-                   onClick={handleCreatePost} 
-                   disabled={isPosting || isTextTooShort || (!newPostContent.trim() && !selectedMedia)}
-                   className="ca-btn-primary flex w-full sm:w-auto sm:min-w-[120px] px-5 py-3 sm:px-7 sm:py-2.5 items-center justify-center disabled:opacity-50 cursor-pointer"
-                 >
-                   {isPosting ? (
-                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                   ) : (
-                     "Post to Feed"
-                   )}
-                 </motion.button>
-               )}
-             </div>
-          </div>
-        </motion.div>
-
-        {/* Posts List */}
-        <div className="overflow-hidden rounded-[1.25rem] border-2 border-black bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-          {showFeedSkeleton && (
-            <div className="divide-y divide-[#E8E6E0]">
-              {[1, 2, 3].map((n) => (
-                <div key={n} className="p-6 space-y-4 animate-pulse bg-white">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 rounded-full bg-[#F3F2EE]" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-[#F3F2EE] rounded w-1/3" />
-                      <div className="h-3 bg-[#F0EFE9] rounded w-1/4" />
-                    </div>
-                  </div>
-                  <div className="space-y-2 pt-2">
-                    <div className="h-4 bg-[#F3F2EE] rounded w-full" />
-                    <div className="h-4 bg-[#F3F2EE] rounded w-5/6" />
-                  </div>
-                  <div className="h-40 bg-[#F0EFE9] rounded-2xl w-full" />
-                  <div className="flex justify-between pt-2 border-t border-[#E8E6E0]">
-                    <div className="h-6 bg-[#F0EFE9] rounded w-12" />
-                    <div className="h-6 bg-[#F0EFE9] rounded w-12" />
-                    <div className="h-6 bg-[#F0EFE9] rounded w-8" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {!showFeedSkeleton && posts.length === 0 && (
-            <div className="bg-white p-8 text-center flex flex-col items-center justify-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-[#FFF8EC] flex items-center justify-center text-[#C8922A]">
-                <Compass size={32} />
-              </div>
-              <h3 className="text-xl font-bold text-[#1A1A1A]">Welcome to Campus Adda!</h3>
-              <p className="text-sm text-[#6B6B6B] max-w-sm">
-                Your feed is currently empty. Follow students at your college or explore other campuses to see posts and start connecting!
-              </p>
-              <button 
-                onClick={() => router.push('/explore')}
-                className="gradient-bg text-white px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)] hover:scale-105 transition-transform animate-[pulse_2s_ease-in-out_infinite]"
-              >
-                Explore Campuses
-              </button>
-            </div>
-          )}
-
-          {!showFeedSkeleton && posts.length > 0 && filteredPosts.length === 0 && (
-            <div className="bg-white p-8 text-center flex flex-col items-center justify-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-[#FFF8EC] flex items-center justify-center text-[#C8922A]">
-                <Flame size={32} />
-              </div>
-              <h3 className="text-xl font-bold text-[#1A1A1A]">No posts for #{selectedTopic}</h3>
-              <p className="text-sm text-[#6B6B6B] max-w-sm">
-                Be the first one to post about this topic on your campus!
-              </p>
-              <button 
-                onClick={() => setSelectedTopic(null)}
-                className="gradient-bg text-white px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)] hover:scale-105 transition-transform"
-              >
-                Show All Posts
-              </button>
-            </div>
-          )}
-          
-          {!showFeedSkeleton && filteredPosts.map((post) => (
-            <motion.article
-              key={post.id} 
-              variants={itemVariants}
-              className="relative min-w-0 border-b-2 border-black bg-white p-4 group last:border-b-0 sm:p-6"
-            >
-              {/* Post Header */}
-              <div className="flex items-center justify-between mb-5">
-                <div className="flex items-center space-x-4">
+                  <input type="file" className="hidden" accept="image/*" ref={storyInputRef} onChange={handleStoryUpload} />
                   <div className="relative">
-                    <div className="w-12 h-12 rounded-full p-[2px] bg-[#F3F2EE] overflow-hidden">
-                      <img 
-                        src={post.avatar} 
-                        alt={post.author} 
-                        className="w-full h-full object-cover rounded-full" 
-                        onError={(e) => { e.target.src = getAvatarSrc("", post.author, post.authorId); }}
-                      />
+                    <div
+                      className={clsx(
+                        "w-20 h-20 rounded-full p-[3px] transition-all cursor-pointer",
+                        hasMyStory
+                          ? "gradient-bg animate-rotate-gradient"
+                          : "bg-[#F3F2EE] group-hover:bg-[#E8E6E0]"
+                      )}
+                      onClick={() => hasMyStory ? setActiveStory(myStoriesGroup) : storyInputRef.current?.click()}
+                    >
+                      <div className={clsx("w-full h-full rounded-full flex items-center justify-center overflow-hidden border", hasMyStory ? "bg-[#F9F8F5] border-[#E8E6E0] p-[2px]" : "bg-white border-[#E8E6E0]")}>
+                        <div className={clsx("w-full h-full rounded-full flex items-center justify-center overflow-hidden", hasMyStory ? "border border-[#E8E6E0] shadow-inner" : "")}>
+                          {isUploadingStory ? (
+                            <div className="flex flex-col items-center justify-center">
+                              <div className="h-4 w-4 border-2 border-[#C8922A] border-t-transparent rounded-full animate-spin"></div>
+                            </div>
+                          ) : (
+                            <img src={getAvatarSrc(currentUser?.profilePic, currentUser?.name, currentUser?._id || currentUser?.id)} className="w-full h-full object-cover" alt="You" />
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <h3 className="text-[#1A1A1A] font-semibold flex items-center gap-2">
-                      <NameWithTick name={post.author} tick={post.authorTick} />
-                    </h3>
-                    <p suppressHydrationWarning className="text-[#888888] text-sm">{post.university} • {post.time}</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-0">
-                  {currentUser?._id !== post.authorId && currentUser?.id !== post.authorId ? (
-                    friendsList.some(f => String(f.id) === String(post.authorId)) || (currentUser?.following || []).some(id => String(id) === String(post.authorId)) || connectStatus[post.authorId] === 'connected' ? (
-                      <span className="inline-flex items-center justify-center rounded-full border border-[#0ea5e9]/40 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-wide shadow-sm" style={{ color: '#0ea5e9' }}>
-                        Network
-                      </span>
-                    ) : (
-                      <motion.button 
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => handleConnectUser(post.authorId)}
-                        disabled={connectStatus[post.authorId] === 'pending'}
-                        className="text-[11px] font-bold px-4 py-1.5 rounded-full border border-[#E8E6E0] hover:bg-[#FFF8EC] hover:border-[#C8922A]/30 transition-all text-[#4A4A4A] disabled:opacity-50 disabled:cursor-not-allowed"
+                    {(!hasMyStory || (myStoriesGroup?.stories?.length || 0) < 3) && (
+                      <div
+                        onClick={(e) => { e.stopPropagation(); storyInputRef.current?.click(); }}
+                        className="absolute bottom-1 right-1 w-6 h-6 gradient-bg rounded-full border-2 border-white flex items-center justify-center text-white shadow-lg z-10 hover:scale-110 transition-transform cursor-pointer"
                       >
-                        {connectStatus[post.authorId] === 'pending' ? '...' : 'Follow'}
-                      </motion.button>
-                    )
-                  ) : null}
-                  <div className="relative">
-                    <button onClick={() => setPostMenu(postMenu === post.id ? null : post.id)} className="text-[#888888] hover:text-[#1A1A1A] p-1">
-                      <MoreVertical size={20} />
-                    </button>
-                    {postMenu === post.id && (
-                      <div className="absolute right-0 top-full mt-2 w-40 bg-white border border-[#E8E6E0] rounded-xl shadow-lg py-1 z-50 overflow-hidden">
-                        {currentUser?._id === post.authorId || currentUser?.id === post.authorId ? (
-                          <button 
-                            onClick={() => { handleDeletePost(post.id); setPostMenu(null); }} 
-                            className="w-full text-left px-4 py-2.5 text-[13px] font-bold text-red-500 hover:bg-[#FFF8EC] transition-colors cursor-pointer"
-                          >
-                            Delete Post
-                          </button>
-                        ) : (
-                          <>
-                            <button 
-                              onClick={() => { handleHidePost(post.id); setPostMenu(null); }}
-                              className="w-full text-left px-4 py-2.5 text-[13px] font-bold text-[#4A4A4A] hover:bg-[#F9F8F5] hover:text-[#1A1A1A] transition-colors cursor-pointer"
-                            >
-                              Hide Post
-                            </button>
-                            <button 
-                              onClick={() => { handleReportPost(post.id); setPostMenu(null); }}
-                              className="w-full text-left px-4 py-2.5 text-[13px] font-bold text-red-500 hover:bg-[#FFF8EC] hover:text-red-600 transition-colors border-t border-[#E8E6E0] cursor-pointer"
-                            >
-                              Report Spam
-                            </button>
-                          </>
-                        )}
+                        <Plus size={14} strokeWidth={3} />
                       </div>
                     )}
                   </div>
+                  <span className="text-xs text-[#6B6B6B] font-medium">Your Story</span>
                 </div>
-              </div>
-              
-              {post.content && (
-                <p className="text-[#1A1A1A] text-[15px] mb-5 leading-relaxed whitespace-pre-wrap">
-                  {post.content}
-                </p>
-              )}
 
-              {/* Poll Section */}
-              {post.poll && post.poll.options && post.poll.options.length > 0 && (
-                <div className="bg-[#F9F8F5] p-5 rounded-2xl border border-[#E8E6E0] space-y-4 mb-5">
-                  <div className="flex items-center justify-between pb-2 border-b border-[#EBEBEB]">
-                    <p className="text-xs font-semibold text-[#888888]">{post.poll.allowMultiple ? "Select multiple answers" : "Select one answer"}</p>
-                    <span className="text-[10px] text-[#C8922A] font-bold uppercase tracking-wider bg-[#C8922A]/10 px-2.5 py-0.5 rounded">Active Poll</span>
-                  </div>
-                  <div className="space-y-2.5">
-                    {post.poll.options.map((option, idx) => {
-                      const voteCountOf = (o) => (typeof o.votesCount === 'number' ? o.votesCount : (o.votes?.length || 0));
-                      const maxVotes = Math.max(...post.poll.options.map(voteCountOf));
-                      const totalVotes = post.poll.options.reduce((sum, opt) => sum + voteCountOf(opt), 0);
-                      const optionVotes = voteCountOf(option);
-                      const percentage = totalVotes === 0 ? 0 : Math.round((optionVotes / totalVotes) * 100);
-                      const hasVoted = typeof option.votedByMe === 'boolean'
-                        ? option.votedByMe
-                        : Boolean(option.votes?.includes?.(currentUser?._id || currentUser?.id));
-                      const isLeading = optionVotes === maxVotes && maxVotes > 0;
-                      
-                      return (
-                        <div 
-                          key={idx}
-                          onClick={() => handleVote(post.id, idx)}
-                          className="relative overflow-hidden rounded-lg bg-[#F3F2EE] transition-all hover:opacity-90 cursor-pointer group"
-                        >
-                          {/* Percentage Bar Fill */}
-                          <motion.div 
-                            initial={{ width: 0 }}
-                            animate={{ width: `${percentage}%` }}
-                            className={`absolute top-0 bottom-0 left-0 ${isLeading ? 'ca-poll-bar-leading' : 'ca-poll-bar-default'}`}
-                            transition={{ type: "spring", stiffness: 80, damping: 15 }}
+                {/* Others' Stories - all uni members except yourself */}
+                {stories.filter(group => (group.author?._id || group.author?.id) !== (currentUser?._id || currentUser?.id)).map((group) => (
+                  <motion.div
+                    key={group.author._id}
+                    whileHover={{ scale: 1.05 }}
+                    className="flex flex-col items-center space-y-2 flex-shrink-0 cursor-pointer"
+                    onClick={() => setActiveStory(group)}
+                  >
+                    <div className="w-20 h-20 rounded-full p-[3px] gradient-bg animate-rotate-gradient">
+                      <div className="w-full h-full rounded-full bg-white p-[2px]">
+                        <div className="w-full h-full rounded-full bg-[#F9F8F5] flex items-center justify-center overflow-hidden border border-[#E8E6E0] shadow-inner">
+                          <img
+                            src={getAvatarSrc(group.author.profilePic, group.author.name, group.author._id || group.author.id)}
+                            className="w-full h-full object-cover"
+                            alt={group.author.name}
                           />
-                          
-                          <div className="relative flex items-center justify-between p-4 z-10">
-                            <div className="flex items-center space-x-3 min-w-0">
-                              <div className={clsx(
-                                "w-5 h-5 rounded-md border flex items-center justify-center transition-all shrink-0",
-                                hasVoted ? "border-[#C8922A] bg-[#C8922A] text-white" : "border-[#D1CFC8]"
-                              )}>
-                                {hasVoted && <Check size={12} strokeWidth={4} />}
-                              </div>
-                              <span className="text-[#1A1A1A] text-sm truncate">{option.text}</span>
-                            </div>
-                            
-                            <div className="flex items-center justify-end space-x-2 shrink-0 bg-white/80 px-2.5 py-1 rounded-lg border border-[#E8E6E0] backdrop-blur-sm w-20">
-                              <span className="text-[#1A1A1A] font-semibold">{percentage}%</span>
-                              <span className="text-[10px] font-medium text-[#888888]">({optionVotes})</span>
-                            </div>
-                          </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                  <div className="flex items-center justify-between pt-3 border-t border-[#EBEBEB] text-[10px] font-bold uppercase tracking-wider">
-                    <button className="text-[#C8922A] border border-[#C8922A]/30 hover:bg-[#FFF8EC] flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all">
-                      <BarChart2 size={12} />
-                      View Breakdown
-                    </button>
-                    <span className="text-[#888888] text-[10px] font-bold uppercase tracking-wider">{post.poll.options.reduce((sum, opt) => sum + (typeof opt.votesCount === 'number' ? opt.votesCount : (opt.votes?.length || 0)), 0)} total votes</span>
+                      </div>
+                    </div>
+                    <span className="text-xs text-[#4A4A4A] font-medium truncate w-20 text-center">{group.author.name.split(' ')[0]}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </section>
+
+
+            {/* Create Post Prompt */}
+            <motion.div
+              variants={itemVariants}
+              className="relative flex min-w-0 max-w-full flex-col space-y-4 overflow-hidden bg-white border-2 border-black rounded-xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.06)] group sm:p-5"
+            >
+              <div className="absolute top-0 left-0 w-full h-1 gradient-bg opacity-30 group-focus-within:opacity-100 transition-opacity" />
+              <div className="flex min-w-0 items-start space-x-3 sm:space-x-4">
+                <div 
+                  className="w-12 h-12 rounded-full gradient-bg p-[2px] flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={() => router.push('/profile')}
+                >
+                  <div className="w-full h-full bg-background rounded-full flex items-center justify-center overflow-hidden">
+                    <img src={getAvatarSrc(currentUser?.profilePic, currentUser?.name, currentUser?._id || currentUser?.id)} className="w-full h-full object-cover" alt="You" />
                   </div>
                 </div>
-              )}
-
-              {post.mediaUrl && (
-                <div className="rounded-2xl overflow-hidden mb-5 border border-[#E8E6E0] bg-[#F3F2EE] shadow-sm">
-                  {post.mediaType === 'video' ? (
-                    <video src={post.mediaUrl} controls className="w-full h-auto max-h-[500px] object-contain" />
-                  ) : (
-                    <img src={post.mediaUrl} alt="Post content" className="w-full h-auto max-h-[500px] object-contain mx-auto" />
+                <div className="flex-1 flex flex-col gap-2 min-w-0">
+                  <textarea
+                    value={newPostContent}
+                    onChange={(e) => setNewPostContent(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        if (!isTextTooShort) handleCreatePost();
+                      }
+                    }}
+                    placeholder={placeholderText}
+                    className="ca-input w-full min-w-0 resize-none sm:text-base mt-2 min-h-[60px] p-3 placeholder-black placeholder-opacity-100"
+                  />
+                  {isTextTooShort && (
+                    <div className="flex items-center space-x-2 text-orange-400 text-xs font-semibold animate-pulse">
+                      <span>⚠️ Write at least 10 characters to share a quality update!</span>
+                    </div>
                   )}
                 </div>
-              )}
-
-              {/* Action Bar */}
-              <div className="flex items-center justify-between border-t border-[#EBEBEB] pt-4">
-                <div className="flex items-center space-x-6 relative">
-                  <div className="flex flex-col items-center group/like">
-                    <motion.button 
-                      whileTap={{ scale: 1.5 }}
-                      onClick={() => toggleLike(post.id)}
-                      className={clsx(
-                        "flex items-center space-x-2 transition-colors p-2 rounded-full",
-                        post.isLiked ? "text-red-500" : "text-[#888888] hover:text-red-500"
-                      )}
-                    >
-                      <Heart size={22} className={clsx("transition-all", post.isLiked && "fill-red-500")} />
-                      <span className="text-sm text-[#888888]">{post.likes}</span>
-                    </motion.button>
-                  </div>
-
-                  <button 
-                    onClick={() => setActiveCommentPost(activeCommentPost === post.id ? null : post.id)}
-                    className="flex items-center space-x-2 text-[#888888] hover:text-[#C8922A] p-2 rounded-full transition-colors"
-                  >
-                    <MessageCircle size={22} />
-                    <span className="text-sm text-[#888888]">{post.comments}</span>
-                  </button>
-                </div>
-
-                <button 
-                  onClick={() => setShareModal(post.id)}
-                  className="flex items-center space-x-2 text-[#888888] hover:text-[#C8922A] p-2 rounded-full transition-colors"
-                >
-                  <Send size={20} />
-                </button>
               </div>
 
-              {/* Inline Comments Section */}
               <AnimatePresence>
-                {activeCommentPost === post.id && (
-                  <motion.div 
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="mt-4 border-t border-[#EBEBEB] pt-4 overflow-hidden"
+                {selectedMedia && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className="relative rounded-2xl overflow-hidden border border-[#E8E6E0] max-h-[400px] bg-[#F3F2EE] flex items-center justify-center"
                   >
-                    <div className="space-y-4 mb-5 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                      {(post.commentsList || []).map(comment => (
-                        <div key={comment.id} className="flex space-x-3 items-start bg-[#F9F8F5] p-3 rounded-2xl">
-                          <div className="w-7 h-7 rounded-full gradient-bg p-[1px] flex-shrink-0">
-                            <img
-                              src={getAvatarSrc(comment.profilePic, comment.author, comment.id || comment._id)}
-                              alt={comment.author}
-                              className="w-full h-full rounded-full object-cover bg-white"
-                              onError={(e) => {
-                                e.currentTarget.onerror = null;
-                                e.currentTarget.src = getDefaultAvatar(comment.author, comment.id || comment._id);
-                              }}
-                            />
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-xs font-bold text-[#1A1A1A]"><NameWithTick name={comment.author} tick={comment.authorTick} /></p>
-                            <p className="text-xs text-[#6B6B6B] mt-0.5">{comment.text}</p>
-                          </div>
-                          <button 
-                            type="button"
-                            onClick={() => {
-                              setCommentLikes(prev => ({
-                                ...prev,
-                                [comment.id]: {
-                                  liked: !prev[comment.id]?.liked,
-                                  count: (prev[comment.id]?.count || comment.likesCount || 0) + (prev[comment.id]?.liked ? -1 : 1)
-                                }
-                              }));
-                            }}
-                            className={`flex items-center gap-1.5 flex-shrink-0 self-center p-1.5 rounded-full transition-colors group/like cursor-pointer ${
-                              commentLikes[comment.id]?.liked ? 'text-red-500' : 'text-[#AAAAAA] hover:text-red-500 hover:bg-white'
-                            }`}
-                            title="Like comment"
-                          >
-                            <Heart size={16} className={`group-active/like:scale-75 transition-transform ${commentLikes[comment.id]?.liked ? 'fill-red-500 text-red-500' : ''}`} />
-                            {((commentLikes[comment.id]?.count || comment.likesCount || 0) > 0) && (
-                              <span className="text-[11px] font-bold">
-                                {commentLikes[comment.id]?.count || comment.likesCount || 0}
-                              </span>
-                            )}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="flex items-center space-x-3 bg-[#F3F2EE] p-2 rounded-full border border-[#E8E6E0] focus-within:border-[#C8922A]/50 transition-all">
-                      <input 
-                        type="text" 
-                        value={commentInputs[post.id] || ""}
-                        onChange={(e) => setCommentInputs(prev => ({ ...prev, [post.id]: e.target.value }))}
-                        onKeyDown={(e) => e.key === "Enter" && handleComment(post.id)}
-                        placeholder={`Reply to ${post.author}...`} 
-                        className="flex-1 bg-transparent px-4 py-1.5 text-sm focus:outline-none text-[#1A1A1A] placeholder:text-[#AAAAAA]" 
-                      />
-                      <motion.button 
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => handleComment(post.id)}
-                        className="gradient-bg p-2 rounded-full text-white shadow-md"
-                      >
-                        <Send size={16} />
-                      </motion.button>
-                    </div>
+                    {mediaType === 'video' ? (
+                      <video src={selectedMedia} controls className="w-full h-auto max-h-[400px] object-contain" />
+                    ) : (
+                      <img src={selectedMedia} className="w-full h-auto max-h-[400px] object-contain" alt="Preview" />
+                    )}
+                    <button
+                      onClick={() => {
+                        if (selectedMedia?.startsWith("blob:")) URL.revokeObjectURL(selectedMedia);
+                        setSelectedMedia(null);
+                        setSelectedMediaFile(null);
+                        setMediaType('none');
+                      }}
+                      className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white p-2 rounded-full hover:bg-black/40 transition-all border border-white/10"
+                    >
+                      <X size={16} />
+                    </button>
                   </motion.div>
                 )}
               </AnimatePresence>
-            </motion.article>
-          ))}
 
-          {!showFeedSkeleton && posts.length > 0 && hasMorePosts && !selectedTopic && (
-            <div className="p-4 bg-white border-t border-black">
-              <button
-                type="button"
-                onClick={loadMorePosts}
-                disabled={loadingMorePosts}
-                className="w-full rounded-full border border-[#E8E6E0] bg-[#F9F8F5] px-4 py-3 text-xs font-black uppercase tracking-widest text-[#1A1A1A] transition-colors hover:border-[#C8922A]/40 hover:bg-[#FFF8EC] disabled:cursor-wait disabled:opacity-60"
-              >
-                {loadingMorePosts ? "Loading more..." : "Load more posts"}
-              </button>
-            </div>
-          )}
-        </div>
-        </div>
+              <div className="flex flex-col gap-3 border-t border-black pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="grid grid-cols-3 gap-2 sm:flex sm:space-x-5">
+                  <input type="file" ref={photoInputRef} className="hidden" accept="image/*" onChange={(e) => { setIsExploreMode(false); handleMediaSelect(e, 'image'); }} />
+                  <input type="file" ref={videoInputRef} className="hidden" accept="video/*" onChange={(e) => { setIsExploreMode(false); handleMediaSelect(e, 'video'); }} />
+                  <input type="file" ref={exploreInputRef} className="hidden" accept="image/*,video/*" onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const type = file.type.startsWith('video/') ? 'video' : 'image';
+                      setIsExploreMode(true);
+                      handleMediaSelect(e, type);
+                    }
+                  }} />
 
-        {/* Right Sidebar */}
-        <aside className="hidden xl:flex flex-col w-[280px] shrink-0 space-y-6 self-start sticky top-24">
-          
-          {/* College Leaderboard */}
-          <div className="bg-white border border-[#E8E6E0] border-t-[3px] border-t-amber-400 rounded-2xl p-5 shadow-sm space-y-5 relative overflow-hidden">
-            <div className="flex items-center justify-between pb-4 mb-2 border-b border-[#F3F2EE]/60 relative z-10">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl leading-none drop-shadow-sm">🏆</span>
-                <h3 className="text-[13px] font-black uppercase tracking-[0.2em] bg-gradient-to-r from-amber-600 via-yellow-500 to-orange-500 bg-clip-text text-transparent drop-shadow-sm">
-                  Leaderboard
-                </h3>
-              </div>
-              <div className="flex items-center gap-1.5 px-2 py-1 bg-red-50 border border-red-100 rounded-full shadow-sm">
-                <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_4px_rgba(239,68,68,0.8)]"></div>
-                <span className="text-[8px] font-black text-red-600 uppercase tracking-widest leading-none mt-[1px]">Live</span>
-              </div>
-            </div>
-            <div className="space-y-4">
-              {loadingLeaderboard ? (
-                <div className="text-center py-4 text-xs text-[#888888]">Loading...</div>
-              ) : leaderboard.length === 0 ? (
-                <div className="text-center py-4 text-xs text-[#888888]">No rankings yet.</div>
-              ) : (
-                leaderboard.map((item, idx) => {
-                  const name = item.college || item.name || item._id || "Unknown";
-                  const count = item.verifiedStudents ?? item.verifiedCount ?? 0;
-                  const points = item.points ?? item.score ?? 0;
-                  
-                  return (
-                    <div key={idx} className={clsx(
-                      "relative group flex items-center justify-between gap-2 text-xs p-2.5 -mx-2 rounded-2xl transition-all duration-200 cursor-default overflow-hidden",
-                      idx === 0 ? "bg-gradient-to-r from-[#FFD700]/15 to-[#FDB931]/10 border border-[#FFD700] shadow-sm" :
-                      idx === 1 ? "bg-gradient-to-r from-[#C0C0C0]/20 to-[#E8E8E8]/10 border border-[#C0C0C0] shadow-sm" :
-                      idx === 2 ? "bg-gradient-to-r from-[#CD7F32]/15 to-[#A0522D]/10 border border-[#CD7F32] shadow-sm" :
-                      "hover:bg-[#F9F8F5]"
-                    )}>
-                      {/* Particles for top 3 */}
-                      {idx < 3 && (
-                        <div className="absolute inset-0 pointer-events-none">
-                          <motion.div 
-                            animate={{ y: [0, -15, 0], opacity: [0, 0.8, 0] }} 
-                            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-                            className={clsx("absolute top-1 left-8 w-1 h-1 rounded-full", idx === 0 ? "bg-amber-400" : idx === 1 ? "bg-slate-400" : "bg-orange-400")}
-                          />
-                          <motion.div 
-                            animate={{ y: [0, -20, 0], x: [0, 10, 0], opacity: [0, 0.8, 0] }} 
-                            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-                            className={clsx("absolute bottom-1 right-20 w-1.5 h-1.5 rounded-full", idx === 0 ? "bg-yellow-500" : idx === 1 ? "bg-slate-300" : "bg-orange-500")}
-                          />
-                          <motion.div 
-                            animate={{ y: [0, -10, 0], x: [0, -5, 0], opacity: [0, 0.8, 0] }} 
-                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                            className={clsx("absolute top-3 left-1/2 w-1 h-1 rounded-full", idx === 0 ? "bg-amber-400" : idx === 1 ? "bg-slate-400" : "bg-orange-400")}
-                          />
-                          <motion.div 
-                            animate={{ y: [0, -25, 0], x: [0, -10, 0], opacity: [0, 0.6, 0] }} 
-                            transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-                            className={clsx("absolute bottom-2 left-1/4 w-1 h-1 rounded-full", idx === 0 ? "bg-yellow-300" : idx === 1 ? "bg-slate-300" : "bg-orange-300")}
-                          />
-                        </div>
+                  <button
+                    onClick={() => photoInputRef.current?.click()}
+                    className="flex min-w-0 items-center justify-center space-x-1.5 rounded-2xl px-2 py-2 text-[#6B6B6B] transition-colors hover:text-[#C8922A] group sm:justify-start sm:px-0 sm:space-x-2"
+                  >
+                    <div className="p-2 rounded-full group-hover:bg-[#FFF8EC] transition-colors">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
+                    </div>
+                    <span className="text-xs font-semibold">Photo</span>
+                  </button>
+                  <button
+                    onClick={() => videoInputRef.current?.click()}
+                    className="flex min-w-0 items-center justify-center space-x-1.5 rounded-2xl px-2 py-2 text-[#6B6B6B] transition-colors hover:text-[#C8922A] group sm:justify-start sm:px-0 sm:space-x-2"
+                  >
+                    <div className="p-2 rounded-full group-hover:bg-[#FFF8EC] transition-colors">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" /></svg>
+                    </div>
+                    <span className="text-xs font-semibold">Video</span>
+                  </button>
+                  <button
+                    onClick={() => setShowPollModal(true)}
+                    className="flex min-w-0 items-center justify-center space-x-1.5 rounded-2xl px-2 py-2 text-[#6B6B6B] transition-colors hover:text-[#C8922A] group sm:justify-start sm:px-0 sm:space-x-2"
+                  >
+                    <div className="p-2 rounded-full group-hover:bg-[#FFF8EC] transition-colors">
+                      <BarChart2 size={20} />
+                    </div>
+                    <span className="text-xs font-semibold">Poll</span>
+                  </button>
+                </div>
+                <div className="flex gap-2 w-full sm:w-auto mt-3 sm:mt-0">
+                  {(!selectedMedia || isExploreMode) && (
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        if (!selectedMedia) {
+                          exploreInputRef.current?.click();
+                        } else {
+                          handleCreatePost();
+                        }
+                      }}
+                      disabled={isPosting}
+                      className="flex w-full sm:w-auto px-3.5 py-1.5 sm:px-4 sm:py-1.5 items-center justify-center disabled:opacity-50 cursor-pointer border-2 border-[#E5E0D5] text-[#5A6270] rounded-xl font-bold text-sm bg-white hover:bg-gray-50 transition-colors"
+                    >
+                      {isPosting ? (
+                        <div className="w-4 h-4 border-2 border-[#5A6270]/30 border-t-[#5A6270] rounded-full animate-spin" />
+                      ) : (
+                        "Post to Explore"
                       )}
+                    </motion.button>
+                  )}
+                  {(!selectedMedia || !isExploreMode) && (
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={handleCreatePost}
+                      disabled={isPosting || isTextTooShort || (!newPostContent.trim() && !selectedMedia)}
+                      className="flex w-full sm:w-auto px-3.5 py-1.5 sm:px-4 sm:py-1.5 items-center justify-center disabled:opacity-50 cursor-pointer border-2 border-[#E5E0D5] bg-[#FBEBA5] text-[#5A6270] rounded-xl font-bold text-sm hover:bg-[#F3E196] transition-colors"
+                    >
+                      {isPosting ? (
+                        <div className="w-4 h-4 border-2 border-[#5A6270]/30 border-t-[#5A6270] rounded-full animate-spin" />
+                      ) : (
+                        "Post to Feed"
+                      )}
+                    </motion.button>
+                  )}
+                </div>
+              </div>
+            </motion.div>
 
-                      <div className="flex items-center gap-3 min-w-0 relative z-10">
-                        <div className={clsx(
-                          "w-6 h-6 rounded-full flex items-center justify-center font-black text-[11px] shrink-0 shadow-sm",
-                          idx === 0 ? "bg-gradient-to-br from-yellow-300 to-amber-500 text-white border border-amber-400 shadow-amber-200/50" :
-                          idx === 1 ? "bg-gradient-to-br from-slate-200 to-slate-400 text-white border border-slate-300" :
-                          idx === 2 ? "bg-gradient-to-br from-orange-300 to-orange-500 text-white border border-orange-400 shadow-orange-200/50" :
-                          "bg-[#FAFAF8] border border-[#E8E6E0] text-[#888888]"
-                        )}>
-                          {idx + 1}
-                        </div>
-                        
-                        <div className="flex flex-col min-w-0 ml-1">
-                          <span className={clsx("font-bold truncate max-w-[125px]", idx === 0 ? "text-[#1A1A1A] text-[13px]" : "text-[#1A1A1A]")} title={name}>
-                            {name}
-                          </span>
-                          <span className="text-[9px] text-[#888888] font-medium tracking-wide">
-                            {count} VERIFIED STDS
-                          </span>
+            {/* Posts List */}
+            <div className="overflow-hidden rounded-[1.25rem] border-2 border-black bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+              {showFeedSkeleton && (
+                <div className="divide-y divide-[#E8E6E0]">
+                  {[1, 2, 3].map((n) => (
+                    <div key={n} className="p-6 space-y-4 animate-pulse bg-white">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-12 h-12 rounded-full bg-[#F3F2EE]" />
+                        <div className="flex-1 space-y-2">
+                          <div className="h-4 bg-[#F3F2EE] rounded w-1/3" />
+                          <div className="h-3 bg-[#F0EFE9] rounded w-1/4" />
                         </div>
                       </div>
-                      <div className="text-right shrink-0 flex flex-col items-end relative z-10">
-                        <span className={clsx("font-black tracking-tight", idx === 0 ? "text-amber-600 text-sm" : idx === 1 ? "text-slate-600 text-sm" : idx === 2 ? "text-orange-700 text-sm" : "text-[#C8922A] text-xs")}>
-                          {points.toLocaleString()}
-                        </span>
-                        <span className="text-[9px] text-[#888888] uppercase font-bold tracking-wider leading-none">PTS</span>
+                      <div className="space-y-2 pt-2">
+                        <div className="h-4 bg-[#F3F2EE] rounded w-full" />
+                        <div className="h-4 bg-[#F3F2EE] rounded w-5/6" />
+                      </div>
+                      <div className="h-40 bg-[#F0EFE9] rounded-2xl w-full" />
+                      <div className="flex justify-between pt-2 border-t border-[#E8E6E0]">
+                        <div className="h-6 bg-[#F0EFE9] rounded w-12" />
+                        <div className="h-6 bg-[#F0EFE9] rounded w-12" />
+                        <div className="h-6 bg-[#F0EFE9] rounded w-8" />
                       </div>
                     </div>
-                  );
-                })
+                  ))}
+                </div>
+              )}
+
+              {!showFeedSkeleton && posts.length === 0 && (
+                <div className="bg-white p-8 text-center flex flex-col items-center justify-center space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-[#FFF8EC] flex items-center justify-center text-[#C8922A]">
+                    <Compass size={32} />
+                  </div>
+                  <h3 className="text-xl font-bold text-[#1A1A1A]">Welcome to Campus Adda!</h3>
+                  <p className="text-sm text-[#6B6B6B] max-w-sm">
+                    Your feed is currently empty. Follow students at your college or explore other campuses to see posts and start connecting!
+                  </p>
+                  <button
+                    onClick={() => router.push('/explore')}
+                    className="gradient-bg text-white px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)] hover:scale-105 transition-transform animate-[pulse_2s_ease-in-out_infinite]"
+                  >
+                    Explore Campuses
+                  </button>
+                </div>
+              )}
+
+              {!showFeedSkeleton && posts.length > 0 && filteredPosts.length === 0 && (
+                <div className="bg-white p-8 text-center flex flex-col items-center justify-center space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-[#FFF8EC] flex items-center justify-center text-[#C8922A]">
+                    <Flame size={32} />
+                  </div>
+                  <h3 className="text-xl font-bold text-[#1A1A1A]">No posts for #{selectedTopic}</h3>
+                  <p className="text-sm text-[#6B6B6B] max-w-sm">
+                    Be the first one to post about this topic on your campus!
+                  </p>
+                  <button
+                    onClick={() => setSelectedTopic(null)}
+                    className="gradient-bg text-white px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)] hover:scale-105 transition-transform"
+                  >
+                    Show All Posts
+                  </button>
+                </div>
+              )}
+
+              {!showFeedSkeleton && filteredPosts.map((post) => (
+                <motion.article
+                  key={post.id || post._id}
+                  id={`post-${post.id || post._id}`}
+                  data-post-id={post.id || post._id}
+                  variants={itemVariants}
+                  style={
+                    (highlightedPostId && (String(highlightedPostId) === String(post.id) || String(highlightedPostId) === String(post._id)))
+                      ? {
+                          border: '4px solid #EF4444',
+                          borderRadius: '1.25rem',
+                          boxShadow: '0 0 25px rgba(239, 68, 68, 0.45)',
+                          backgroundColor: '#FEF2F2',
+                          transition: 'all 0.5s ease-in-out'
+                        }
+                      : {}
+                  }
+                  className="relative min-w-0 border-b-2 border-black bg-white p-4 group last:border-b-0 sm:p-6 transition-all duration-500"
+                >
+                  {/* Post Header */}
+                  <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center space-x-4">
+                      <div className="relative">
+                        <div 
+                          className="w-12 h-12 rounded-full p-[2px] bg-[#F3F2EE] overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={() => post.authorId && router.push(`/profile/${post.authorId}`)}
+                        >
+                          <img
+                            src={post.avatar}
+                            alt={post.author}
+                            className="w-full h-full object-cover rounded-full"
+                            onError={(e) => { e.target.src = getAvatarSrc("", post.author, post.authorId); }}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <h3 
+                          className="text-black font-bold text-base flex items-center gap-2 cursor-pointer hover:underline"
+                          onClick={() => post.authorId && router.push(`/profile/${post.authorId}`)}
+                        >
+                          <NameWithTick name={post.author} tick={post.authorTick} />
+                        </h3>
+                        <p suppressHydrationWarning className="text-[#71717A] text-xs font-normal mt-0.5">{post.university} • {post.time}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-0">
+                      {currentUser?._id !== post.authorId && currentUser?.id !== post.authorId ? (
+                        friendsList.some(f => String(f.id) === String(post.authorId)) || (currentUser?.following || []).some(id => String(id) === String(post.authorId)) || connectStatus[post.authorId] === 'connected' ? (
+                          <span className="inline-flex items-center justify-center rounded-full border border-[#0ea5e9]/40 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-wide shadow-sm" style={{ color: '#0ea5e9' }}>
+                            Network
+                          </span>
+                        ) : (
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => handleConnectUser(post.authorId)}
+                            disabled={connectStatus[post.authorId] === 'pending'}
+                            className="text-[11px] font-bold px-4 py-1.5 rounded-full border border-[#E8E6E0] hover:bg-[#FFF8EC] hover:border-[#C8922A]/30 transition-all text-[#4A4A4A] disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {connectStatus[post.authorId] === 'pending' ? '...' : 'Follow'}
+                          </motion.button>
+                        )
+                      ) : null}
+                      <div className="relative">
+                        <button onClick={() => setPostMenu(postMenu === post.id ? null : post.id)} className="text-[#888888] hover:text-[#1A1A1A] p-1">
+                          <MoreVertical size={20} />
+                        </button>
+                        {postMenu === post.id && (
+                          <div className="absolute right-0 top-full mt-2 w-40 bg-white border border-[#E8E6E0] rounded-xl shadow-lg py-1 z-50 overflow-hidden">
+                            {currentUser?._id === post.authorId || currentUser?.id === post.authorId ? (
+                              <button
+                                onClick={() => { handleDeletePost(post.id); setPostMenu(null); }}
+                                className="w-full text-left px-4 py-2.5 text-[13px] font-bold text-red-500 hover:bg-[#FFF8EC] transition-colors cursor-pointer"
+                              >
+                                Delete Post
+                              </button>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => { handleHidePost(post.id); setPostMenu(null); }}
+                                  className="w-full text-left px-4 py-2.5 text-[13px] font-bold text-[#4A4A4A] hover:bg-[#F9F8F5] hover:text-[#1A1A1A] transition-colors cursor-pointer"
+                                >
+                                  Hide Post
+                                </button>
+                                <button
+                                  onClick={() => { handleReportPost(post.id); setPostMenu(null); }}
+                                  className="w-full text-left px-4 py-2.5 text-[13px] font-bold text-red-500 hover:bg-[#FFF8EC] hover:text-red-600 transition-colors border-t border-[#E8E6E0] cursor-pointer"
+                                >
+                                  Report Spam
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {post.content && (
+                    <p className="text-[#0F172A] font-medium text-[15px] sm:text-base mb-5 leading-relaxed whitespace-pre-wrap">
+                      {post.content}
+                    </p>
+                  )}
+
+                  {/* Poll Section */}
+                  {post.poll && post.poll.options && post.poll.options.length > 0 && (
+                    <div className="bg-[#F9F8F5] p-5 rounded-2xl border border-[#E8E6E0] space-y-4 mb-5">
+                      <div className="flex items-center justify-between pb-2 border-b border-[#EBEBEB]">
+                        <p className="text-xs font-semibold text-[#888888]">{post.poll.allowMultiple ? "Select multiple answers" : "Select one answer"}</p>
+                        <span className="text-[10px] text-[#C8922A] font-bold uppercase tracking-wider bg-[#C8922A]/10 px-2.5 py-0.5 rounded">Active Poll</span>
+                      </div>
+                      <div className="space-y-2.5">
+                        {post.poll.options.map((option, idx) => {
+                          const voteCountOf = (o) => (typeof o.votesCount === 'number' ? o.votesCount : (o.votes?.length || 0));
+                          const maxVotes = Math.max(...post.poll.options.map(voteCountOf));
+                          const totalVotes = post.poll.options.reduce((sum, opt) => sum + voteCountOf(opt), 0);
+                          const optionVotes = voteCountOf(option);
+                          const percentage = totalVotes === 0 ? 0 : Math.round((optionVotes / totalVotes) * 100);
+                          const hasVoted = typeof option.votedByMe === 'boolean'
+                            ? option.votedByMe
+                            : Boolean(option.votes?.includes?.(currentUser?._id || currentUser?.id));
+                          const isLeading = optionVotes === maxVotes && maxVotes > 0;
+
+                          return (
+                            <div
+                              key={idx}
+                              onClick={() => handleVote(post.id, idx)}
+                              className="relative overflow-hidden rounded-lg bg-[#F3F2EE] transition-all hover:opacity-90 cursor-pointer group"
+                            >
+                              {/* Percentage Bar Fill */}
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${percentage}%` }}
+                                className={`absolute top-0 bottom-0 left-0 ${isLeading ? 'ca-poll-bar-leading' : 'ca-poll-bar-default'}`}
+                                transition={{ type: "spring", stiffness: 80, damping: 15 }}
+                              />
+
+                              <div className="relative flex items-center justify-between p-4 z-10">
+                                <div className="flex items-center space-x-3 min-w-0">
+                                  <div className={clsx(
+                                    "w-5 h-5 rounded-md border flex items-center justify-center transition-all shrink-0",
+                                    hasVoted ? "border-[#C8922A] bg-[#C8922A] text-white" : "border-[#D1CFC8]"
+                                  )}>
+                                    {hasVoted && <Check size={12} strokeWidth={4} />}
+                                  </div>
+                                  <span className="text-[#1A1A1A] text-sm truncate">{option.text}</span>
+                                </div>
+
+                                <div className="flex items-center justify-end space-x-2 shrink-0 bg-white/80 px-2.5 py-1 rounded-lg border border-[#E8E6E0] backdrop-blur-sm w-20">
+                                  <span className="text-[#1A1A1A] font-semibold">{percentage}%</span>
+                                  <span className="text-[10px] font-medium text-[#888888]">({optionVotes})</span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="flex items-center justify-between pt-3 border-t border-[#EBEBEB] text-[10px] font-bold uppercase tracking-wider">
+                        <button className="text-[#C8922A] border border-[#C8922A]/30 hover:bg-[#FFF8EC] flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all">
+                          <BarChart2 size={12} />
+                          View Breakdown
+                        </button>
+                        <span className="text-[#888888] text-[10px] font-bold uppercase tracking-wider">{post.poll.options.reduce((sum, opt) => sum + (typeof opt.votesCount === 'number' ? opt.votesCount : (opt.votes?.length || 0)), 0)} total votes</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {post.mediaUrl && (
+                    <div className="rounded-2xl overflow-hidden mb-5 border border-[#E8E6E0] bg-[#F3F2EE] shadow-sm">
+                      {post.mediaType === 'video' ? (
+                        <video src={post.mediaUrl} controls className="w-full h-auto max-h-[500px] object-contain" />
+                      ) : (
+                        <img src={post.mediaUrl} alt="Post content" className="w-full h-auto max-h-[500px] object-contain mx-auto" />
+                      )}
+                    </div>
+                  )}
+
+                  {/* Action Bar */}
+                  <div className="flex items-center justify-between border-t border-[#EBEBEB] pt-4">
+                    <div className="flex items-center space-x-2.5">
+                      <motion.button
+                        whileTap={{ scale: 0.92 }}
+                        onClick={() => toggleLike(post.id)}
+                        className={clsx(
+                          "flex items-center space-x-2 px-3.5 py-1.5 rounded-xl border transition-all text-sm font-bold cursor-pointer",
+                          post.isLiked
+                            ? "bg-[#FFF0ED] border-[#FADCD6] text-[#1A1A1A]"
+                            : "bg-white border-[#E5E0D5] text-[#1A1A1A] hover:bg-gray-50"
+                        )}
+                      >
+                        <Heart
+                          size={18}
+                          className={clsx(
+                            "transition-all",
+                            post.isLiked ? "fill-rose-500 text-rose-500" : "text-[#5A6270]"
+                          )}
+                        />
+                        <span>{post.likes}</span>
+                      </motion.button>
+
+                      <button
+                        onClick={() => setActiveCommentPost(activeCommentPost === post.id ? null : post.id)}
+                        className="flex items-center space-x-2 px-3.5 py-1.5 rounded-xl border border-[#E5E0D5] bg-white text-[#1A1A1A] text-sm font-bold transition-all hover:bg-gray-50 cursor-pointer"
+                      >
+                        <MessageCircle size={18} className="text-[#5A6270]" />
+                        <span>{post.comments}</span>
+                      </button>
+                    </div>
+
+                    <button
+                      onClick={() => setShareModal(post.id)}
+                      className="flex items-center justify-center p-2 rounded-xl border border-[#E5E0D5] bg-white text-[#5A6270] transition-all hover:bg-gray-50 cursor-pointer"
+                    >
+                      <Send size={18} />
+                    </button>
+                  </div>
+
+                  {/* Inline Comments Section */}
+                  <AnimatePresence>
+                    {activeCommentPost === post.id && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="mt-4 border-t border-[#EBEBEB] pt-4 overflow-hidden"
+                      >
+                        <div className="space-y-4 mb-5 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                          {(post.commentsList || []).map(comment => (
+                            <div key={comment.id} className="flex space-x-3 items-start bg-[#F9F8F5] p-3 rounded-2xl">
+                              <div 
+                                className="w-7 h-7 rounded-full gradient-bg p-[1px] flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
+                                onClick={() => comment.userId && router.push(`/profile/${comment.userId}`)}
+                              >
+                                <img
+                                  src={getAvatarSrc(comment.profilePic, comment.author, comment.id || comment._id)}
+                                  alt={comment.author}
+                                  className="w-full h-full rounded-full object-cover bg-white"
+                                  onError={(e) => {
+                                    e.currentTarget.onerror = null;
+                                    e.currentTarget.src = getDefaultAvatar(comment.author, comment.id || comment._id);
+                                  }}
+                                />
+                              </div>
+                              <div className="flex-1">
+                                <p 
+                                  className="text-xs font-bold text-[#1A1A1A] cursor-pointer hover:underline"
+                                  onClick={() => comment.userId && router.push(`/profile/${comment.userId}`)}
+                                >
+                                  <NameWithTick name={comment.author} tick={comment.authorTick} />
+                                </p>
+                                <p className="text-xs text-[#6B6B6B] mt-0.5">{comment.text}</p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setCommentLikes(prev => ({
+                                    ...prev,
+                                    [comment.id]: {
+                                      liked: !prev[comment.id]?.liked,
+                                      count: (prev[comment.id]?.count || comment.likesCount || 0) + (prev[comment.id]?.liked ? -1 : 1)
+                                    }
+                                  }));
+                                }}
+                                className={`flex items-center gap-1.5 flex-shrink-0 self-center p-1.5 rounded-full transition-colors group/like cursor-pointer ${commentLikes[comment.id]?.liked ? 'text-red-500' : 'text-[#AAAAAA] hover:text-red-500 hover:bg-white'
+                                  }`}
+                                title="Like comment"
+                              >
+                                <Heart size={16} className={`group-active/like:scale-75 transition-transform ${commentLikes[comment.id]?.liked ? 'fill-red-500 text-red-500' : ''}`} />
+                                {((commentLikes[comment.id]?.count || comment.likesCount || 0) > 0) && (
+                                  <span className="text-[11px] font-bold">
+                                    {commentLikes[comment.id]?.count || comment.likesCount || 0}
+                                  </span>
+                                )}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="flex items-center space-x-3 bg-[#F3F2EE] p-2 rounded-full border border-[#E8E6E0] focus-within:border-[#C8922A]/50 transition-all">
+                          <input
+                            type="text"
+                            value={commentInputs[post.id] || ""}
+                            onChange={(e) => setCommentInputs(prev => ({ ...prev, [post.id]: e.target.value }))}
+                            onKeyDown={(e) => e.key === "Enter" && handleComment(post.id)}
+                            placeholder={`Reply to ${post.author}...`}
+                            className="flex-1 bg-transparent px-4 py-1.5 text-sm focus:outline-none text-[#1A1A1A] placeholder:text-[#AAAAAA]"
+                          />
+                          <motion.button
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => handleComment(post.id)}
+                            className="gradient-bg p-2 rounded-full text-white shadow-md"
+                          >
+                            <Send size={16} />
+                          </motion.button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.article>
+              ))}
+
+              {!showFeedSkeleton && posts.length > 0 && hasMorePosts && !selectedTopic && (
+                <div className="p-4 bg-white border-t border-black">
+                  <button
+                    type="button"
+                    onClick={loadMorePosts}
+                    disabled={loadingMorePosts}
+                    className="w-full rounded-full border border-[#E8E6E0] bg-[#F9F8F5] px-4 py-3 text-xs font-black uppercase tracking-widest text-[#1A1A1A] transition-colors hover:border-[#C8922A]/40 hover:bg-[#FFF8EC] disabled:cursor-wait disabled:opacity-60"
+                  >
+                    {loadingMorePosts ? "Loading more..." : "Load more posts"}
+                  </button>
+                </div>
               )}
             </div>
           </div>
 
-          {/* Suggested for you */}
-          <div className="bg-white border border-[#E8E6E0] rounded-2xl p-4 shadow-sm space-y-4">
-            <div className="flex items-center gap-2 pb-2 border-b border-[#F3F2EE]">
-              <Users size={18} className="text-[#C8922A]" />
-              <h3 className="text-xs font-black uppercase tracking-wider text-[#1A1A1A]">Suggested for you</h3>
-            </div>
-            <div className="space-y-4">
-              {loadingSuggested ? (
-                <div className="text-center py-4 text-xs text-[#888888]">Loading...</div>
-              ) : suggestedUsers.length === 0 ? (
-                <div className="text-center py-4 text-xs text-[#888888]">No suggestions right now.</div>
-              ) : (
-                suggestedUsers.slice(0, 5).map((user) => {
-                  const isPending = connectStatus[user._id] === 'pending';
-                  const isConnected = connectStatus[user._id] === 'connected';
-                  
-                  return (
-                    <div key={user._id} className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div 
-                          className="w-9 h-9 rounded-full overflow-hidden border border-[#E8E6E0] bg-[#F9F8F5] flex-shrink-0 cursor-pointer"
-                          onClick={() => router.push(`/profile/${user._id}`)}
-                        >
-                          <img src={getAvatarSrc(user.profilePic, user.name, user._id || user.id)} alt={user.name} className="w-full h-full object-cover" />
+          {/* Right Sidebar */}
+          <aside className="hidden xl:flex flex-col w-[280px] shrink-0 space-y-6 self-start sticky top-24">
+
+            {/* College Leaderboard */}
+            <div className="bg-white border border-[#E8E6E0] border-t-[3px] border-t-amber-400 rounded-2xl p-5 shadow-sm space-y-5 relative overflow-hidden">
+              <div className="flex items-center justify-between pb-4 mb-2 border-b border-[#F3F2EE]/60 relative z-10">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl leading-none drop-shadow-sm">🏆</span>
+                  <h3 className="text-[13px] font-black uppercase tracking-[0.2em] bg-gradient-to-r from-amber-600 via-yellow-500 to-orange-500 bg-clip-text text-transparent drop-shadow-sm">
+                    Leaderboard
+                  </h3>
+                </div>
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-red-50 border border-red-100 rounded-full shadow-sm">
+                  <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_4px_rgba(239,68,68,0.8)]"></div>
+                  <span className="text-[8px] font-black text-red-600 uppercase tracking-widest leading-none mt-[1px]">Live</span>
+                </div>
+              </div>
+              <div className="space-y-4">
+                {loadingLeaderboard ? (
+                  <div className="text-center py-4 text-xs text-[#888888]">Loading...</div>
+                ) : leaderboard.length === 0 ? (
+                  <div className="text-center py-4 text-xs text-[#888888]">No rankings yet.</div>
+                ) : (
+                  leaderboard.map((item, idx) => {
+                    const name = item.college || item.name || item._id || "Unknown";
+                    const count = item.verifiedStudents ?? item.verifiedCount ?? 0;
+                    const points = item.points ?? item.score ?? 0;
+
+                    return (
+                      <div key={idx} className={clsx(
+                        "relative group flex items-center justify-between gap-2 text-xs p-2.5 -mx-2 rounded-2xl transition-all duration-200 cursor-default overflow-hidden",
+                        idx === 0 ? "bg-gradient-to-r from-[#FFD700]/15 to-[#FDB931]/10 border border-[#FFD700] shadow-sm" :
+                          idx === 1 ? "bg-gradient-to-r from-[#C0C0C0]/20 to-[#E8E8E8]/10 border border-[#C0C0C0] shadow-sm" :
+                            idx === 2 ? "bg-gradient-to-r from-[#CD7F32]/15 to-[#A0522D]/10 border border-[#CD7F32] shadow-sm" :
+                              "hover:bg-[#F9F8F5]"
+                      )}>
+                        {/* Particles for top 3 */}
+                        {idx < 3 && (
+                          <div className="absolute inset-0 pointer-events-none">
+                            <motion.div
+                              animate={{ y: [0, -15, 0], opacity: [0, 0.8, 0] }}
+                              transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                              className={clsx("absolute top-1 left-8 w-1 h-1 rounded-full", idx === 0 ? "bg-amber-400" : idx === 1 ? "bg-slate-400" : "bg-orange-400")}
+                            />
+                            <motion.div
+                              animate={{ y: [0, -20, 0], x: [0, 10, 0], opacity: [0, 0.8, 0] }}
+                              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+                              className={clsx("absolute bottom-1 right-20 w-1.5 h-1.5 rounded-full", idx === 0 ? "bg-yellow-500" : idx === 1 ? "bg-slate-300" : "bg-orange-500")}
+                            />
+                            <motion.div
+                              animate={{ y: [0, -10, 0], x: [0, -5, 0], opacity: [0, 0.8, 0] }}
+                              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                              className={clsx("absolute top-3 left-1/2 w-1 h-1 rounded-full", idx === 0 ? "bg-amber-400" : idx === 1 ? "bg-slate-400" : "bg-orange-400")}
+                            />
+                            <motion.div
+                              animate={{ y: [0, -25, 0], x: [0, -10, 0], opacity: [0, 0.6, 0] }}
+                              transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+                              className={clsx("absolute bottom-2 left-1/4 w-1 h-1 rounded-full", idx === 0 ? "bg-yellow-300" : idx === 1 ? "bg-slate-300" : "bg-orange-300")}
+                            />
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-3 min-w-0 relative z-10">
+                          <div className={clsx(
+                            "w-6 h-6 rounded-full flex items-center justify-center font-black text-[11px] shrink-0 shadow-sm",
+                            idx === 0 ? "bg-gradient-to-br from-yellow-300 to-amber-500 text-white border border-amber-400 shadow-amber-200/50" :
+                              idx === 1 ? "bg-gradient-to-br from-slate-200 to-slate-400 text-white border border-slate-300" :
+                                idx === 2 ? "bg-gradient-to-br from-orange-300 to-orange-500 text-white border border-orange-400 shadow-orange-200/50" :
+                                  "bg-[#FAFAF8] border border-[#E8E6E0] text-[#888888]"
+                          )}>
+                            {idx + 1}
+                          </div>
+
+                          <div className="flex flex-col min-w-0 ml-1">
+                            <span className={clsx("font-bold truncate max-w-[125px]", idx === 0 ? "text-[#1A1A1A] text-[13px]" : "text-[#1A1A1A]")} title={name}>
+                              {name}
+                            </span>
+                            <span className="text-[9px] text-[#888888] font-medium tracking-wide">
+                              {count} VERIFIED STDS
+                            </span>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1">
-                            <p 
-                              className="text-xs font-bold text-[#1A1A1A] truncate cursor-pointer hover:underline"
+                        <div className="text-right shrink-0 flex flex-col items-end relative z-10">
+                          <span className={clsx("font-black tracking-tight", idx === 0 ? "text-amber-600 text-sm" : idx === 1 ? "text-slate-600 text-sm" : idx === 2 ? "text-orange-700 text-sm" : "text-[#C8922A] text-xs")}>
+                            {points.toLocaleString()}
+                          </span>
+                          <span className="text-[9px] text-[#888888] uppercase font-bold tracking-wider leading-none">PTS</span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* Suggested for you */}
+            <div className="bg-white border border-[#E8E6E0] rounded-2xl p-4 shadow-sm space-y-3">
+              <div className="flex items-center gap-2.5 pb-3 border-b border-[#E5E0D5]">
+                <div className="w-8 h-8 rounded-xl bg-[#EFF6FF] text-[#2563EB] flex items-center justify-center shrink-0">
+                  <Users size={16} />
+                </div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A]">Suggested Connects</h3>
+              </div>
+              <div className="space-y-2.5">
+                {loadingSuggested ? (
+                  <div className="text-center py-4 text-xs text-[#888888]">Loading...</div>
+                ) : suggestedUsers.length === 0 ? (
+                  <div className="text-center py-4 text-xs text-[#888888]">No suggestions right now.</div>
+                ) : (
+                  suggestedUsers.slice(0, 5).map((user) => {
+                    const isPending = connectStatus[user._id] === 'pending';
+                    const isConnected = connectStatus[user._id] === 'connected';
+                    const isFriend = friendsList.some(f => String(f.id) === String(user._id) || String(f.id) === String(user.id)) || (currentUser?.following || []).some(id => String(id) === String(user._id) || String(id) === String(user.id)) || isConnected;
+
+                    return (
+                      <div key={user._id} className="flex items-center justify-between gap-3 p-3 rounded-2xl border border-[#E5E0D5] bg-white transition-all hover:bg-gray-50/50">
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                          <div
+                            className="w-10 h-10 rounded-full overflow-hidden border border-[#E8E6E0] bg-[#F9F8F5] flex-shrink-0 cursor-pointer"
+                            onClick={() => router.push(`/profile/${user._id}`)}
+                          >
+                            <img src={getAvatarSrc(user.profilePic, user.name, user._id || user.id)} alt={user.name} className="w-full h-full object-cover" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p
+                              className="text-xs sm:text-sm font-bold text-[#1A1A1A] cursor-pointer hover:underline leading-snug"
                               onClick={() => router.push(`/profile/${user._id}`)}
                             >
                               {user.name}
                             </p>
+                            <p className="text-[11px] text-[#71717A] truncate mt-0.5">
+                              {user.university || "CampusAdda User"}
+                            </p>
                           </div>
-                          <p className="text-[10px] text-[#888888] truncate max-w-[120px]">
-                            {user.university || "CampusAdda User"}
-                          </p>
                         </div>
-                      </div>
-                      
-                      {friendsList.some(f => String(f.id) === String(user._id) || String(f.id) === String(user.id)) || (currentUser?.following || []).some(id => String(id) === String(user._id) || String(id) === String(user.id)) || isConnected ? (
-                        <span className="inline-flex shrink-0 items-center justify-center rounded-full border border-[#0ea5e9]/40 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-wide shadow-sm" style={{ color: '#0ea5e9' }}>
-                          Network
-                        </span>
-                      ) : (
-                        <button
-                          onClick={() => handleConnectUser(user._id)}
-                          disabled={isPending}
-                          className="text-[10px] font-bold px-3 py-1.5 rounded-full border bg-white border-[#C8922A]/40 text-[#C8922A] hover:bg-[#FFF8EC] transition-all shrink-0"
-                        >
-                          {isPending ? "Connecting..." : "Connect"}
-                        </button>
-                      )}
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
 
-        </aside>
+                        {isFriend ? (
+                          <span className="inline-flex shrink-0 items-center justify-center rounded-full border-2 border-[#E8E6E0] bg-white px-3.5 py-1 text-[10px] font-black uppercase tracking-wider shadow-sm" style={{ color: '#38BDF8' }}>
+                            NETWORK
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleConnectUser(user._id)}
+                            disabled={isPending}
+                            className="text-xs font-bold px-3.5 py-1.5 rounded-full border border-[#E5E0D5] bg-white text-[#1A1A1A] hover:bg-gray-50 transition-all shrink-0 cursor-pointer disabled:opacity-50"
+                          >
+                            {isPending ? "..." : "Connect"}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+          </aside>
         </div>
       </motion.div>
 
@@ -1823,8 +2041,8 @@ export default function Home() {
               <div className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-[11px] font-black uppercase tracking-[0.2em] text-[#888888] ml-2">Question</label>
-                  <textarea 
-                    placeholder="Ask something to the campus..." 
+                  <textarea
+                    placeholder="Ask something to the campus..."
                     value={pollQuestion}
                     onChange={(e) => setPollQuestion(e.target.value)}
                     className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-[1.5rem] p-5 text-sm text-[#1A1A1A] focus:outline-none focus:border-[#C8922A]/50 transition-all min-h-[100px] resize-none"
@@ -1835,8 +2053,8 @@ export default function Home() {
                   <label className="text-[11px] font-black uppercase tracking-[0.2em] text-[#888888] ml-2">Options</label>
                   {pollOptions.map((opt, i) => (
                     <div key={i} className="relative group">
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         placeholder={`Option ${i + 1}`}
                         value={opt}
                         onChange={(e) => {
@@ -1847,7 +2065,7 @@ export default function Home() {
                         className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-2xl py-4 pl-5 pr-12 text-sm text-[#1A1A1A] focus:outline-none focus:border-[#C8922A]/50 transition-all"
                       />
                       {pollOptions.length > 2 && (
-                        <button 
+                        <button
                           onClick={() => setPollOptions(prev => prev.filter((_, idx) => idx !== i))}
                           className="absolute right-4 top-1/2 -translate-y-1/2 text-[#AAAAAA] hover:text-red-500 p-1"
                         >
@@ -1856,9 +2074,9 @@ export default function Home() {
                       )}
                     </div>
                   ))}
-                  
+
                   {pollOptions.length < 5 && (
-                    <button 
+                    <button
                       onClick={() => setPollOptions(prev => [...prev, ""])}
                       className="w-full py-4 rounded-2xl border border-dashed border-[#E8E6E0] text-[#AAAAAA] text-xs font-bold hover:bg-[#F9F8F5] hover:text-[#4A4A4A] transition-all flex items-center justify-center space-x-2"
                     >
@@ -1873,7 +2091,7 @@ export default function Home() {
                     <Check size={18} className={pollAllowMultiple ? "text-green-500" : "text-[#AAAAAA]"} />
                     <span className="text-sm font-bold text-[#4A4A4A]">Allow multiple answers</span>
                   </div>
-                  <button 
+                  <button
                     onClick={() => setPollAllowMultiple(!pollAllowMultiple)}
                     className={clsx(
                       "w-12 h-6 rounded-full p-1 transition-all duration-300",
@@ -1887,7 +2105,7 @@ export default function Home() {
                   </button>
                 </div>
 
-                <motion.button 
+                <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleCreatePoll}
@@ -1917,35 +2135,75 @@ export default function Home() {
             </div>
             <div className="relative mb-6">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#AAAAAA]" size={18} />
-              <input 
-                type="text" 
-                placeholder="Find people to share with..." 
+              <input
+                type="text"
+                placeholder="Find people to share with..."
                 value={shareSearchTerm}
                 onChange={(e) => setShareSearchTerm(e.target.value)}
                 className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-2xl py-3 pl-12 pr-4 text-sm text-[#1A1A1A] focus:outline-none focus:border-[#C8922A]/50 transition-all"
               />
             </div>
             <div className="space-y-3 max-h-72 overflow-y-auto pr-1 custom-scrollbar">
+              {/* Copy Link Option */}
+              <div className="flex items-center justify-between p-3 bg-[#F9F8F5] rounded-2xl border border-[#E5E0D5]">
+                <div className="flex items-center space-x-3">
+                  <div className="w-9 h-9 rounded-full bg-[#FFF8EC] border border-[#C8922A]/30 flex items-center justify-center text-[#C8922A]">
+                    <Share2 size={16} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-[#1A1A1A]">Copy Link</p>
+                    <p className="text-[10px] text-[#888888]">Share link anywhere</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/home#post-${shareModal}`);
+                    setToastMsg("Link copied to clipboard! 📋");
+                    setTimeout(() => setToastMsg(""), 2500);
+                    setShareModal(null);
+                  }}
+                  className="bg-white border border-[#E5E0D5] hover:bg-gray-50 text-[#1A1A1A] text-xs font-bold px-3.5 py-1.5 rounded-full transition-all shrink-0 cursor-pointer shadow-sm"
+                >
+                  Copy
+                </button>
+              </div>
+
               {friendsList.length === 0 && (
-                <div className="text-center py-10 space-y-2">
+                <div className="text-center py-6 space-y-2">
                   <p className="text-[#888888] text-sm">No connections found yet.</p>
                   <button onClick={() => router.push('/friends')} className="text-[#C8922A] text-xs font-bold hover:underline">Find Campus Network</button>
                 </div>
               )}
-              {friendsList.filter(f => f.name.toLowerCase().includes(shareSearchTerm.toLowerCase())).map(friend => (
-                <div key={friend.id} className="flex items-center justify-between p-3 hover:bg-[#F9F8F5] rounded-2xl transition-all border border-transparent hover:border-[#E8E6E0] group">
-                  <div className="flex items-center space-x-4">
-                    <img src={friend.avatar} alt={friend.name} className="w-11 h-11 rounded-full object-cover border border-[#E8E6E0]" />
-                    <p className="text-sm font-bold text-[#1A1A1A]">{friend.name}</p>
+              {friendsList.filter(f => f.name.toLowerCase().includes(shareSearchTerm.toLowerCase())).map(friend => {
+                const status = sharingStatus[friend.id];
+
+                return (
+                  <div key={friend.id} className="flex items-center justify-between p-3 hover:bg-[#F9F8F5] rounded-2xl transition-all border border-[#E8E6E0]">
+                    <div className="flex items-center space-x-3.5 min-w-0 flex-1">
+                      <img src={friend.avatar} alt={friend.name} className="w-10 h-10 rounded-full object-cover border border-[#E8E6E0] shrink-0" />
+                      <p className="text-xs sm:text-sm font-bold text-[#1A1A1A] truncate">{friend.name}</p>
+                    </div>
+                    {status === 'sending' ? (
+                      <div className="flex items-center justify-center px-4 py-2 shrink-0">
+                        <div className="w-5 h-5 border-2 border-[#C8922A] border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    ) : status === 'sent' ? (
+                      <span className="flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-3.5 py-1.5 rounded-full border border-emerald-200 shrink-0">
+                        <Check size={14} />
+                        <span>Sent</span>
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => handleShareToFriend(friend.id, shareModal)}
+                        className="flex items-center gap-1.5 bg-[#C8922A] hover:bg-[#B07D20] text-white text-xs font-bold px-4 py-2 rounded-full shadow-sm transition-all shrink-0 cursor-pointer"
+                      >
+                        <Send size={13} />
+                        <span>Send</span>
+                      </button>
+                    )}
                   </div>
-                  <button 
-                    onClick={() => handleShareToFriend(friend.id, shareModal)}
-                    className="gradient-bg text-white text-[11px] font-bold px-5 py-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    Send Now
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </motion.div>
         </div>
@@ -1958,136 +2216,135 @@ export default function Home() {
         const goNext = (e) => { e?.stopPropagation(); if (currentStoryIndex < totalStories - 1) { storyProgressKey.current++; setCurrentStoryIndex(i => i + 1); setIsStoryPaused(false); } else { setActiveStory(null); } };
         const goPrev = (e) => { e?.stopPropagation(); if (currentStoryIndex > 0) { storyProgressKey.current++; setCurrentStoryIndex(i => i - 1); setIsStoryPaused(false); } };
         return (
-        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/90" onClick={() => setActiveStory(null)}>
-          <style>{`
+          <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/90" onClick={() => setActiveStory(null)}>
+            <style>{`
             @keyframes story-progress-30s { from { width: 0%; } to { width: 100%; } }
             .story-bar-active { animation: story-progress-30s 30s linear forwards; }
             .story-bar-active.paused { animation-play-state: paused; }
             .story-bar-done { width: 100%; background: white; }
             .story-bar-pending { width: 0%; }
           `}</style>
-          <div className="relative h-[100dvh] w-full max-w-lg overflow-hidden bg-black shadow-2xl sm:aspect-[9/16] sm:h-auto md:rounded-3xl" onClick={e => e.stopPropagation()}>
+            <div className="relative h-[100dvh] w-full max-w-lg overflow-hidden bg-black shadow-2xl sm:aspect-[9/16] sm:h-auto md:rounded-3xl" onClick={e => e.stopPropagation()}>
 
-            {/* Progress Bars */}
-            <div className="absolute top-4 left-4 right-4 flex space-x-1 z-30">
-              {activeStory.stories.map((s, i) => (
-                <div key={`${s._id}-${storyProgressKey.current}`} className="h-[3px] bg-white/30 flex-1 rounded-full overflow-hidden">
-                  <div 
-                    onAnimationEnd={() => goNext()}
-                    className={`h-full bg-white rounded-full ${
-                      i < currentStoryIndex ? 'story-bar-done' :
-                      i === currentStoryIndex ? `story-bar-active ${isStoryPaused ? 'paused' : ''}` :
-                      'story-bar-pending'
-                    }`}
-                  />
-                </div>
-              ))}
-            </div>
+              {/* Progress Bars */}
+              <div className="absolute top-4 left-4 right-4 flex space-x-1 z-30">
+                {activeStory.stories.map((s, i) => (
+                  <div key={`${s._id}-${storyProgressKey.current}`} className="h-[3px] bg-white/30 flex-1 rounded-full overflow-hidden">
+                    <div
+                      onAnimationEnd={() => goNext()}
+                      className={`h-full bg-white rounded-full ${i < currentStoryIndex ? 'story-bar-done' :
+                          i === currentStoryIndex ? `story-bar-active ${isStoryPaused ? 'paused' : ''}` :
+                            'story-bar-pending'
+                        }`}
+                    />
+                  </div>
+                ))}
+              </div>
 
-            {/* Header */}
-            <div className="absolute top-10 left-4 right-4 flex justify-between items-center z-30">
-              <div className="flex items-center space-x-3">
-                <div className="w-9 h-9 rounded-full p-[2px] gradient-bg">
-                  <img 
-                    src={getAvatarSrc(activeStory.author.profilePic, activeStory.author.name, activeStory.author._id || activeStory.author.id)} 
-                    className="w-full h-full rounded-full border border-black object-cover" 
-                    alt="" 
-                  />
+              {/* Header */}
+              <div className="absolute top-10 left-4 right-4 flex justify-between items-center z-30">
+                <div className="flex items-center space-x-3">
+                  <div className="w-9 h-9 rounded-full p-[2px] gradient-bg">
+                    <img
+                      src={getAvatarSrc(activeStory.author.profilePic, activeStory.author.name, activeStory.author._id || activeStory.author.id)}
+                      className="w-full h-full rounded-full border border-black object-cover"
+                      alt=""
+                    />
+                  </div>
+                  <div>
+                    <p className="!text-white font-bold text-sm leading-tight">{activeStory.author.name}</p>
+                    <p className="!text-white/60 text-[10px] uppercase tracking-wider">
+                      {new Date(currentStory.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · {currentStoryIndex + 1}/{totalStories}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="!text-white font-bold text-sm leading-tight">{activeStory.author.name}</p>
-                  <p className="!text-white/60 text-[10px] uppercase tracking-wider">
-                    {new Date(currentStory.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} · {currentStoryIndex + 1}/{totalStories}
-                  </p>
+                <div className="flex items-center space-x-1">
+                  <button onClick={(e) => { e.stopPropagation(); setIsStoryPaused(p => !p); }} className="!text-white p-2 !bg-white/10 hover:!bg-white/20 rounded-full transition-all">
+                    {isStoryPaused ? <Play size={18} /> : <Pause size={18} />}
+                  </button>
+                  <button onClick={() => setActiveStory(null)} className="!text-white p-2 !bg-white/10 hover:!bg-white/20 rounded-full transition-all">
+                    <X size={20} />
+                  </button>
                 </div>
               </div>
-              <div className="flex items-center space-x-1">
-                <button onClick={(e) => { e.stopPropagation(); setIsStoryPaused(p => !p); }} className="!text-white p-2 !bg-white/10 hover:!bg-white/20 rounded-full transition-all">
-                  {isStoryPaused ? <Play size={18} /> : <Pause size={18} />}
-                </button>
-                <button onClick={() => setActiveStory(null)} className="!text-white p-2 !bg-white/10 hover:!bg-white/20 rounded-full transition-all">
-                  <X size={20} />
-                </button>
+
+              {/* Content */}
+              <div className="w-full h-full flex items-center justify-center bg-black relative">
+                {currentStory.mediaType === 'video' ? (
+                  <video ref={storyVideoRef} src={currentStory.mediaUrl} autoPlay playsInline className="w-full h-full object-cover" />
+                ) : (
+                  <img src={currentStory.mediaUrl} className="w-full h-full object-cover" alt="" />
+                )}
+                {/* Top & Bottom Gradients */}
+                <div className="absolute inset-x-0 top-0 h-36 bg-gradient-to-b from-black/70 to-transparent z-10" />
+                <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/80 to-transparent z-10" />
+
+                {/* Tap zones: left = prev, right = next */}
+                <div className="absolute inset-y-0 left-0 w-1/3 z-20 cursor-pointer" onClick={goPrev} />
+                <div className="absolute inset-y-0 right-0 w-1/3 z-20 cursor-pointer" onClick={goNext} />
               </div>
-            </div>
 
-            {/* Content */}
-            <div className="w-full h-full flex items-center justify-center bg-black relative">
-              {currentStory.mediaType === 'video' ? (
-                <video ref={storyVideoRef} src={currentStory.mediaUrl} autoPlay playsInline className="w-full h-full object-cover" />
-              ) : (
-                <img src={currentStory.mediaUrl} className="w-full h-full object-cover" alt="" />
-              )}
-              {/* Top & Bottom Gradients */}
-              <div className="absolute inset-x-0 top-0 h-36 bg-gradient-to-b from-black/70 to-transparent z-10" />
-              <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/80 to-transparent z-10" />
-
-              {/* Tap zones: left = prev, right = next */}
-              <div className="absolute inset-y-0 left-0 w-1/3 z-20 cursor-pointer" onClick={goPrev} />
-              <div className="absolute inset-y-0 right-0 w-1/3 z-20 cursor-pointer" onClick={goNext} />
-            </div>
-
-            {/* Prev / Next Arrow Buttons */}
-            {currentStoryIndex > 0 && (
-              <button
-                onClick={goPrev}
-                className="absolute left-3 top-1/2 -translate-y-1/2 z-30 p-2 !bg-white/15 hover:!bg-white/30 !text-white rounded-full backdrop-blur-sm transition-all"
-              >
-                <ChevronLeft size={24} />
-              </button>
-            )}
-            {currentStoryIndex < totalStories - 1 && (
-              <button
-                onClick={goNext}
-                className="absolute right-3 top-1/2 -translate-y-1/2 z-30 p-2 !bg-white/15 hover:!bg-white/30 !text-white rounded-full backdrop-blur-sm transition-all"
-              >
-                <ChevronRight size={24} />
-              </button>
-            )}
-
-            {/* Story Actions */}
-            <div className="absolute bottom-8 left-4 right-4 flex items-center space-x-3 z-30">
-              <form 
-                onSubmit={(e) => handleStoryReply(e, currentStory._id, activeStory.author._id || activeStory.author.id)}
-                className="flex-1 flex space-x-2"
-                onClick={e => e.stopPropagation()}
-              >
-                <div className="flex-1 rounded-full flex items-center px-4 py-3 border !border-white/30 !bg-black/40 backdrop-blur-md">
-                  <input 
-                    type="text" 
-                    value={storyReplyText}
-                    onChange={(e) => setStoryReplyText(e.target.value)}
-                    placeholder={`Reply to ${activeStory.author.name.split(' ')[0]}...`} 
-                    className="!bg-transparent !text-white text-sm focus:outline-none w-full placeholder:!text-white/60"
-                  />
-                </div>
-                <button 
-                  type="submit"
-                  className="p-3 gradient-bg rounded-full !text-white shadow-lg shrink-0"
-                  disabled={!storyReplyText.trim()}
+              {/* Prev / Next Arrow Buttons */}
+              {currentStoryIndex > 0 && (
+                <button
+                  onClick={goPrev}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 z-30 p-2 !bg-white/15 hover:!bg-white/30 !text-white rounded-full backdrop-blur-sm transition-all"
                 >
-                  <Send size={18} />
+                  <ChevronLeft size={24} />
                 </button>
-              </form>
-              <button 
-                onClick={(e) => { e.stopPropagation(); handleStoryLike(currentStory._id); }}
-                className="p-3 rounded-full !text-white !bg-black/40 border !border-white/30 backdrop-blur-md shrink-0"
-              >
-                <Heart 
-                  size={22} 
-                  className={(currentStory.likes || []).some(id => id.toString() === (currentUser?._id || currentUser?.id)?.toString()) ? "fill-red-500 text-red-500" : ""}
-                />
-              </button>
+              )}
+              {currentStoryIndex < totalStories - 1 && (
+                <button
+                  onClick={goNext}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 z-30 p-2 !bg-white/15 hover:!bg-white/30 !text-white rounded-full backdrop-blur-sm transition-all"
+                >
+                  <ChevronRight size={24} />
+                </button>
+              )}
+
+              {/* Story Actions */}
+              <div className="absolute bottom-8 left-4 right-4 flex items-center space-x-3 z-30">
+                <form
+                  onSubmit={(e) => handleStoryReply(e, currentStory._id, activeStory.author._id || activeStory.author.id)}
+                  className="flex-1 flex space-x-2"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <div className="flex-1 rounded-full flex items-center px-4 py-3 border !border-white/30 !bg-black/40 backdrop-blur-md">
+                    <input
+                      type="text"
+                      value={storyReplyText}
+                      onChange={(e) => setStoryReplyText(e.target.value)}
+                      placeholder={`Reply to ${activeStory.author.name.split(' ')[0]}...`}
+                      className="!bg-transparent !text-white text-sm focus:outline-none w-full placeholder:!text-white/60"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="p-3 gradient-bg rounded-full !text-white shadow-lg shrink-0"
+                    disabled={!storyReplyText.trim()}
+                  >
+                    <Send size={18} />
+                  </button>
+                </form>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleStoryLike(currentStory._id); }}
+                  className="p-3 rounded-full !text-white !bg-black/40 border !border-white/30 backdrop-blur-md shrink-0"
+                >
+                  <Heart
+                    size={22}
+                    className={(currentStory.likes || []).some(id => id.toString() === (currentUser?._id || currentUser?.id)?.toString()) ? "fill-red-500 text-red-500" : ""}
+                  />
+                </button>
+              </div>
             </div>
           </div>
-        </div>
         );
       })()}
 
       {/* Premium Toast */}
       <AnimatePresence>
         {toastMsg && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.9 }}

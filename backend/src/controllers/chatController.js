@@ -13,7 +13,7 @@ export const getRooms = async (req, res) => {
   try {
     const rooms = await ChatRoom.find({ participants: req.user._id })
       .populate('participants', 'name university isVerified updatedAt')
-      .populate('lastMessage', 'text mediaType poll deletedAt createdAt sender')
+      .populate('lastMessage', 'text mediaType poll sharedPost deletedAt createdAt sender')
       .sort({ updatedAt: -1 })
       .limit(50)
       .lean();
@@ -151,7 +151,7 @@ export const getOrCreatePrivateRoom = async (req, res) => {
 
 // Create a message via HTTP
 export const sendMessage = async (req, res) => {
-  const { text, mediaUrl, mediaType, replyTo, poll } = req.body;
+  const { text, mediaUrl, mediaType, replyTo, poll, sharedPost } = req.body;
   const roomId = req.params.id;
 
   try {
@@ -182,7 +182,8 @@ export const sendMessage = async (req, res) => {
         text: replyTo.text || '',
         senderName: replyTo.senderName || 'Student'
       } : undefined,
-      poll: cleanPoll?.options?.length >= 2 ? cleanPoll : undefined
+      poll: cleanPoll?.options?.length >= 2 ? cleanPoll : undefined,
+      sharedPost: sharedPost?.authorName ? sharedPost : undefined
     });
 
     // Update last message in room and unread counts

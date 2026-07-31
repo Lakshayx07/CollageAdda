@@ -23,6 +23,16 @@ const messageSchema = mongoose.Schema({
       votes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
     }]
   },
+  sharedPost: {
+    postId: { type: String },
+    authorName: { type: String },
+    authorAvatar: { type: String },
+    authorUniversity: { type: String },
+    authorTime: { type: String },
+    content: { type: String },
+    mediaUrl: { type: String },
+    mediaType: { type: String }
+  },
   isPinned: { type: Boolean, default: false },
   editedAt: { type: Date },
   deletedAt: { type: Date },

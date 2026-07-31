@@ -37,6 +37,23 @@ router.get('/', protect, async (req, res) => {
   }
 });
 
+// @route   GET /api/posts/:id
+// @desc    Get single post by ID
+router.get('/:id', protect, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id)
+      .select('content mediaType hashtags university createdAt updatedAt author likes comments poll isMemoryOnly')
+      .populate('author', 'name university isVerified xp points currentTick')
+      .populate('comments.user', 'name isVerified')
+      .lean();
+
+    if (!post) return res.status(404).json({ message: 'Post not found' });
+    res.json(slimPost(post, req.user._id));
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // @route   GET /api/posts/:id/media
 // @desc    Serve inline base64 post media without embedding it in the feed JSON
 // Public like avatars so <img>/<video> tags can load without Authorization headers.

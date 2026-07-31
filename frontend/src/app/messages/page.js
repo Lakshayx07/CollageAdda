@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Search, Send, Users, ChevronLeft, MessageSquare, Plus, Image as ImageIcon, Smile, MoreVertical, X, LogOut, UserPlus, FileText, BarChart3, Pencil, Trash2, Reply, Pin, PinOff } from "lucide-react";
+import { Search, Send, Users, ChevronLeft, MessageSquare, Plus, Image as ImageIcon, Smile, MoreVertical, X, LogOut, UserPlus, FileText, BarChart3, Pencil, Trash2, Reply, Pin, PinOff, Share2, ChevronRight } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import clsx from "clsx";
 import { useSocket } from "@/context/SocketProvider";
@@ -50,6 +50,7 @@ function MessagesContent() {
       mediaType: m.mediaType || "none",
       replyTo: m.replyTo || null,
       poll: m.poll || null,
+      sharedPost: m.sharedPost || null,
       isPinned: Boolean(m.isPinned),
       editedAt: m.editedAt,
       deletedAt: m.deletedAt,
@@ -63,7 +64,8 @@ function MessagesContent() {
     activeChat ? `/api/chat/rooms/${activeChat.id}/messages` : null,
     {
       enabled: !!activeChat && !!user,
-      staleTime: 60 * 1000 // 1 minute
+      staleTime: 0,
+      refetchOnMount: true
     }
   );
 
@@ -178,7 +180,8 @@ function MessagesContent() {
     "/api/chat/rooms",
     {
       enabled: !!user,
-      staleTime: 5 * 60 * 1000 // 5 minutes
+      staleTime: 0,
+      refetchOnMount: true
     }
   );
 
@@ -1413,13 +1416,15 @@ function MessagesContent() {
                     if (msg.isSystem) {
                       return (
                         <div key={msg.id} className="flex justify-center w-full my-4">
-                          <span className="text-[10px] bg-[#F9F8F5] border border-[#E8E6E0] px-4 py-1.5 rounded-full text-[#6B6B6B] font-bold uppercase tracking-[0.2em] border border-[#E8E6E0]">
+                          <span className="text-[10px] bg-[#F9F8F5] border border-[#E8E6E0] px-4 py-1.5 rounded-full text-[#6B6B6B] font-bold uppercase tracking-[0.2em]">
                             {msg.text}
                           </span>
                         </div>
                       );
                     }
-                    
+
+                    const isLastInGroup = idx === arr.length - 1 || arr[idx + 1]?.sender !== msg.sender;
+
                     return (
                     <motion.div 
                       key={msg.id}
@@ -1495,75 +1500,196 @@ function MessagesContent() {
                           >
                             {msg.text}
                           </motion.div>
-                        ) : (
-                          <div className={clsx(
-                            "w-fit max-w-full px-3.5 py-2.5 text-[14px] leading-relaxed shadow-2xl relative break-words",
-                            isMe 
-                              ? "ca-chat-sent" 
-                              : "ca-chat-received"
-                          )}>
-                            {msg.isPinned && (
-                              <div className="mb-1 flex items-center gap-1 text-[10px] font-black opacity-80">
-                                <Pin size={11} /> Pinned
-                              </div>
-                            )}
-                            {msg.replyTo && (
-                              <div className={clsx(
-                                "mb-2 rounded-xl border-l-4 px-3 py-2 text-xs",
-                                isMe ? "bg-white/20 border-white/70" : "bg-[#F3F2EE] border-[#C8922A]"
-                              )}>
-                                <div className="font-black">{msg.replyTo.senderName}</div>
-                                <div className="line-clamp-1 opacity-80">{msg.replyTo.text}</div>
-                              </div>
-                            )}
-                            {msg.mediaUrl && (
-                              <div className="mb-2 rounded-xl overflow-hidden border border-[#E8E6E0] bg-black/5 flex items-center justify-center">
-                                {msg.mediaType === 'video' ? (
-                                  <video src={msg.mediaUrl} controls className="max-w-full h-auto max-h-[350px] object-contain" />
-                                ) : msg.mediaType === 'file' ? (
-                                  <a href={msg.mediaUrl} download className="flex items-center gap-2 bg-white/30 px-3 py-2 text-sm font-black">
-                                    <FileText size={18} /> Document
-                                  </a>
-                                ) : (
-                                  <img src={msg.mediaUrl} alt="" className="max-w-full h-auto max-h-[350px] object-contain" />
-                                )}
-                              </div>
-                            )}
-                            {msg.poll?.question && (
-                              <div className="relative z-10 w-64 max-w-[70vw] space-y-2">
-                                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest opacity-80">
-                                  <BarChart3 size={14} /> Poll
+                        ) : (() => {
+                          const hasSharedObj = Boolean(msg.sharedPost && (msg.sharedPost.authorName || msg.sharedPost.content || msg.sharedPost.postId));
+                          const hasSharedText = typeof msg.text === 'string' && msg.text.includes('Check out this post by');
+                          const isSharedPost = hasSharedObj || hasSharedText;
+
+                          let sharedData = null;
+
+                          if (hasSharedObj) {
+                            sharedData = {
+                              postId: msg.sharedPost.postId || '',
+                              authorName: msg.sharedPost.authorName || 'CampusAdda User',
+                              authorAvatar: msg.sharedPost.authorAvatar || '',
+                              authorUniversity: msg.sharedPost.authorUniversity || '',
+                              authorTime: msg.sharedPost.authorTime || '',
+                              content: msg.sharedPost.content || '',
+                              mediaUrl: msg.sharedPost.mediaUrl || msg.mediaUrl || '',
+                              mediaType: msg.sharedPost.mediaType || msg.mediaType || 'none'
+                            };
+                          } else if (hasSharedText) {
+                            const parts = msg.text.split('Check out this post by');
+                            const rest = parts[1] || '';
+                            const firstColonIndex = rest.indexOf(':');
+                            
+                            let authorName = "CampusAdda User";
+                            let content = rest.trim();
+                            
+                            if (firstColonIndex !== -1) {
+                              authorName = rest.substring(0, firstColonIndex).trim() || "CampusAdda User";
+                              content = rest.substring(firstColonIndex + 1).trim();
+                            }
+
+                            sharedData = {
+                              postId: '',
+                              authorName: authorName,
+                              authorAvatar: '',
+                              authorUniversity: '',
+                              authorTime: '',
+                              content: content,
+                              mediaUrl: msg.mediaUrl || '',
+                              mediaType: msg.mediaType || 'none'
+                            };
+                          }
+
+                          if (isSharedPost && sharedData) {
+                            return (
+                              <div className="w-72 sm:w-80 max-w-[82vw] p-3.5 rounded-2xl bg-white border border-[#E5E0D5] text-[#1A1A1A] shadow-md my-1">
+                                <div className="flex items-center gap-1.5 pb-2 mb-2.5 border-b border-[#EBEBEB] text-[10px] font-bold uppercase tracking-wider text-[#C8922A]">
+                                  <Share2 size={12} />
+                                  <span>Shared Post</span>
                                 </div>
-                                <div className="font-black">{msg.poll.question}</div>
-                                {msg.poll.options?.map((option, optionIndex) => {
-                                  const totalVotes = msg.poll.options.reduce((sum, item) => sum + (item.votes?.length || 0), 0);
-                                  const votes = option.votes?.length || 0;
-                                  const percent = totalVotes ? Math.round((votes / totalVotes) * 100) : 0;
-                                  const didVote = option.votes?.some(vote => String(vote) === String(user._id || user.id));
-                                  return (
-                                    <button
-                                      key={`${msg.id}-poll-${optionIndex}`}
-                                      type="button"
-                                      onClick={() => votePoll(msg, optionIndex)}
-                                      className={clsx(
-                                        "relative w-full overflow-hidden rounded-xl border px-3 py-2 text-left text-xs font-black",
-                                        didVote ? "border-white bg-white/30" : "border-white/60 bg-white/10"
-                                      )}
-                                    >
-                                      <span className="absolute inset-y-0 left-0 bg-white/20" style={{ width: `${percent}%` }} />
-                                      <span className="relative flex items-center justify-between gap-3">
-                                        <span>{option.text}</span>
-                                        <span>{votes}</span>
-                                      </span>
-                                    </button>
-                                  );
-                                })}
+                                
+                                <div className="flex items-center gap-2.5 mb-2.5">
+                                  <div className="w-8 h-8 rounded-full overflow-hidden border border-[#E8E6E0] bg-[#F3F2EE] shrink-0">
+                                    <img 
+                                      src={getAvatarSrc(sharedData.authorAvatar, sharedData.authorName, sharedData.postId || 'post')} 
+                                      alt={sharedData.authorName || 'Author'} 
+                                      className="w-full h-full object-cover" 
+                                    />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-xs font-bold text-[#1A1A1A] truncate">{sharedData.authorName || 'CampusAdda User'}</p>
+                                    {sharedData.authorUniversity && (
+                                      <p className="text-[10px] text-[#71717A] truncate">{sharedData.authorUniversity}</p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {sharedData.content && (
+                                  <p className="text-xs text-[#27272A] font-medium leading-relaxed mb-2.5 whitespace-pre-wrap line-clamp-3">
+                                    {sharedData.content}
+                                  </p>
+                                )}
+
+                                {sharedData.mediaUrl && (
+                                  <div className="rounded-xl overflow-hidden border border-[#E8E6E0] max-h-40 bg-black/5 mb-2.5">
+                                    {sharedData.mediaType === 'video' ? (
+                                      <video src={sharedData.mediaUrl} controls className="w-full h-auto max-h-40 object-contain" />
+                                    ) : (
+                                      <img src={sharedData.mediaUrl} alt="" className="w-full h-auto max-h-40 object-cover" />
+                                    )}
+                                  </div>
+                                )}
+
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const pid = sharedData?.postId || '';
+                                    const searchStr = sharedData?.content ? encodeURIComponent(sharedData.content.slice(0, 30)) : '';
+                                    const mediaStr = sharedData?.mediaUrl ? encodeURIComponent(sharedData.mediaUrl) : '';
+                                    const authorStr = sharedData?.authorName ? encodeURIComponent(sharedData.authorName) : '';
+                                    window.location.href = `/home?postId=${pid}&search=${searchStr}&media=${mediaStr}&author=${authorStr}#post-${pid}`;
+                                  }}
+                                  className="w-full py-2 bg-[#FAF4E8] hover:bg-[#FFF2D6] text-[#C8922A] text-[11px] font-bold rounded-xl border border-[#E5E0D5] flex items-center justify-center gap-1 transition-all cursor-pointer shadow-sm mt-1"
+                                >
+                                  <span>View Post</span>
+                                  <ChevronRight size={13} />
+                                </button>
                               </div>
-                            )}
-                            {!msg.poll?.question && <div className="relative z-10 font-medium">{msg.text}</div>}
-                            {msg.editedAt && !msg.deletedAt && <div className="mt-1 text-[10px] font-bold opacity-70">edited</div>}
-                          </div>
-                        )}
+                            );
+                          }
+
+                          return (
+                            <div className={clsx(
+                              "w-fit max-w-full px-3.5 py-2.5 text-[14px] leading-relaxed shadow-2xl relative break-words",
+                              isMe 
+                                ? "ca-chat-sent" 
+                                : "ca-chat-received"
+                            )}>
+                              {msg.isPinned && (
+                                <div className="mb-1 flex items-center gap-1 text-[10px] font-black opacity-80">
+                                  <Pin size={11} /> Pinned
+                                </div>
+                              )}
+                              {msg.replyTo && (
+                                <div className={clsx(
+                                  "mb-2 rounded-xl border-l-4 px-3 py-2 text-xs",
+                                  isMe ? "bg-white/20 border-white/70" : "bg-[#F3F2EE] border-[#C8922A]"
+                                )}>
+                                  <div className="font-black">{msg.replyTo.senderName}</div>
+                                  <div className="line-clamp-1 opacity-80">{msg.replyTo.text}</div>
+                                </div>
+                              )}
+                              {msg.mediaUrl && (
+                                <div className="mb-2 rounded-xl overflow-hidden border border-[#E8E6E0] bg-[#F8F7F4] flex items-center justify-center">
+                                  {msg.mediaType === 'video' ? (
+                                    <video src={msg.mediaUrl} controls className="max-w-full h-auto max-h-[350px] object-contain" />
+                                  ) : msg.mediaType === 'file' ? (
+                                    <a href={msg.mediaUrl} download className="flex items-center gap-2 bg-white/30 px-3 py-2 text-sm font-black">
+                                      <FileText size={18} /> Document
+                                    </a>
+                                  ) : (
+                                    <img src={msg.mediaUrl} alt="" className="max-w-full h-auto max-h-[350px] object-contain" />
+                                  )}
+                                </div>
+                              )}
+                              {msg.poll?.question && (
+                                <div className="relative z-10 w-64 max-w-[70vw] space-y-2">
+                                  <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest opacity-80">
+                                    <BarChart3 size={14} /> Poll
+                                  </div>
+                                  <div className="font-black">{msg.poll.question}</div>
+                                  {msg.poll.options?.map((option, optionIndex) => {
+                                    const totalVotes = msg.poll.options.reduce((sum, item) => sum + (item.votes?.length || 0), 0);
+                                    const votes = option.votes?.length || 0;
+                                    const percent = totalVotes ? Math.round((votes / totalVotes) * 100) : 0;
+                                    const currentUserId = user?._id || user?.id;
+                                    const didVote = Boolean(option.votes?.some(vote => String(vote._id || vote.id || vote) === String(currentUserId)));
+
+                                    return (
+                                      <button
+                                        key={`${msg.id}-poll-${optionIndex}`}
+                                        type="button"
+                                        onClick={() => votePoll(msg, optionIndex)}
+                                        className={clsx(
+                                          "relative w-full overflow-hidden rounded-xl px-3.5 py-2.5 text-left text-xs transition-all duration-300 shadow-sm",
+                                          didVote 
+                                            ? "bg-[#C8922A] text-white border-2 border-white ring-2 ring-[#C8922A]/50 shadow-md font-black" 
+                                            : "bg-white text-[#1A1A1A] border border-[#E5E0D5] hover:bg-[#FAF8F5] font-bold"
+                                        )}
+                                      >
+                                        <span 
+                                          className={clsx(
+                                            "absolute inset-y-0 left-0 transition-all duration-500",
+                                            didVote ? "bg-white/25" : "bg-[#C8922A]/15"
+                                          )} 
+                                          style={{ width: `${percent}%` }} 
+                                        />
+                                        <span className="relative flex items-center justify-between gap-3 z-10">
+                                          <span className="flex items-center gap-2 font-extrabold">
+                                            {didVote && (
+                                              <span className="w-4 h-4 rounded-full bg-white text-[#C8922A] flex items-center justify-center text-[10px] font-black shrink-0 shadow-sm">
+                                                ✓
+                                              </span>
+                                            )}
+                                            <span>{option.text}</span>
+                                          </span>
+                                          <span className={clsx("text-xs font-extrabold shrink-0 ml-2", didVote ? "text-white" : "text-[#888888]")}>
+                                            {votes} {totalVotes > 0 && `(${percent}%)`}
+                                          </span>
+                                        </span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                              {!msg.poll?.question && <div className="relative z-10 font-medium">{msg.text}</div>}
+                              {msg.editedAt && !msg.deletedAt && <div className="mt-1 text-[10px] font-bold opacity-70">edited</div>}
+                            </div>
+                          );
+                        })()}
                         {!isMe && !msg.deletedAt && (
                           <div className="relative flex-shrink-0">
                             <button
@@ -1590,15 +1716,17 @@ function MessagesContent() {
                         )}
                         </div>
                         
-                        <div className="flex items-center space-x-1 mt-1">
-                          <span className="text-[11px] text-[#6B6B6B] font-semibold">{msg.time}</span>
-                          {isMe && (
-                            <div className={clsx(
-                              "w-1 h-1 rounded-full",
-                              msg.status === 'sending' ? "bg-[#F3F2EE] animate-pulse" : "bg-cyan-400 shadow-[0_0_5px_rgba(34,211,238,0.5)]"
-                            )} />
-                          )}
-                        </div>
+                        {isLastInGroup && (
+                          <div className="flex items-center space-x-1 mt-1">
+                            <span className="text-[11px] text-[#6B6B6B] font-semibold">{msg.time}</span>
+                            {isMe && (
+                              <div className={clsx(
+                                "w-1.5 h-1.5 rounded-full",
+                                msg.status === 'sending' ? "bg-[#F3F2EE] animate-pulse" : "bg-cyan-400 shadow-[0_0_5px_rgba(34,211,238,0.5)]"
+                              )} />
+                            )}
+                          </div>
+                        )}
                       </div>
                     </motion.div>
                   );
