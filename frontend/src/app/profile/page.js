@@ -1008,7 +1008,7 @@ export default function ProfilePage() {
               onClick={stat.action}
               disabled={!stat.action}
               className={`flex flex-col items-center py-5 px-2 gap-1.5 transition-colors group ${stat.action ? 'hover:bg-[#F9F8F5] cursor-pointer' : 'cursor-default'
-                } ${i < arr.length - 1 ? 'border-r border-[#F3F2EE]' : ''
+                } ${i < arr.length - 1 ? 'border-r border-[#E8E6E0]' : ''
                 }`}
             >
               <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${stat.iconBg} group-hover:scale-110 transition-transform`}>
@@ -1309,7 +1309,63 @@ export default function ProfilePage() {
 
           {activeTab === "badges" && (
             <div className="space-y-12 pb-14 pt-4">
-              {/* 1. Badges Overview Hero (Premium) */}
+              {/* 1. Performance Snapshot */}
+              <section className="relative overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-6">
+                <div className="flex items-center justify-between px-2">
+                  <div>
+                    <h3 className="text-[17px] font-black text-[#1A1A1A] flex items-center gap-2 mb-1">
+                      <TrendingUp size={18} className="text-amber-500" /> Performance Snapshot
+                    </h3>
+                    <p className="text-[12px] font-semibold text-slate-500">
+                      Your recent activity highlights.
+                    </p>
+                  </div>
+                  <span className="flex items-center gap-1.5 rounded-full border border-red-200 bg-gradient-to-r from-white to-red-50 px-4 py-1.5 text-[11px] font-black uppercase tracking-widest text-red-600 shadow-sm transition-transform hover:scale-105">
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                    </span>
+                    Live
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                  {/* XP Earned */}
+                  <div className="group flex items-center gap-5 rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 via-amber-100/60 to-orange-50 p-6 shadow-sm transition-all hover:shadow-[0_8px_24px_rgba(245,158,11,0.2)] hover:-translate-y-1">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/90 shadow-sm text-3xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12">
+                      ✨
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-widest text-amber-700 mb-1">XP Earned</p>
+                      <p className="text-3xl font-black text-slate-900 leading-none mb-1.5">{totalXp.toLocaleString()}</p>
+                      <p className="text-[11px] font-bold text-amber-600">This Month</p>
+                    </div>
+                  </div>
+                  {/* Streaks */}
+                  <div className="group flex items-center gap-5 rounded-3xl border border-red-200 bg-gradient-to-br from-red-50 via-red-100/60 to-rose-50 p-6 shadow-sm transition-all hover:shadow-[0_8px_24px_rgba(239,68,68,0.2)] hover:-translate-y-1">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/90 shadow-sm text-3xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12">
+                      🔥
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-widest text-red-700 mb-1">Streaks</p>
+                      <p className="text-3xl font-black text-slate-900 leading-none mb-1.5">{getDisplayStreak(user)}</p>
+                      <p className="text-[11px] font-bold text-red-600">Days in a row</p>
+                    </div>
+                  </div>
+                  {/* Network */}
+                  <div className="group flex items-center gap-5 rounded-3xl border border-blue-200 bg-gradient-to-br from-blue-50 via-blue-100/60 to-sky-50 p-6 shadow-sm transition-all hover:shadow-[0_8px_24px_rgba(59,130,246,0.2)] hover:-translate-y-1">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/90 shadow-sm text-3xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12">
+                      🫂
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-widest text-blue-700 mb-1">Network</p>
+                      <p className="text-3xl font-black text-slate-900 leading-none mb-1.5">{((user?.followers?.length ?? followers.length) + (user?.following?.length ?? following.length)).toLocaleString()}</p>
+                      <p className="text-[11px] font-bold text-blue-600">Total Network</p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* 2. Badges Overview Hero (Premium) */}
               <section className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-gradient-to-br from-[#FFFAF0] via-white to-[#F0F7FF] p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
                 <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-amber-300/10 blur-[60px]" />
                 <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-blue-300/10 blur-[60px]" />
@@ -1403,64 +1459,8 @@ export default function ProfilePage() {
                 </div>
               </section>
 
-              {/* 2. Performance Snapshot */}
-              <section className="space-y-6">
-                <div className="flex items-center justify-between px-2">
-                  <div>
-                    <h3 className="text-[17px] font-black text-[#1A1A1A] flex items-center gap-2 mb-1">
-                      <TrendingUp size={18} className="text-amber-500" /> Performance Snapshot
-                    </h3>
-                    <p className="text-[12px] font-semibold text-slate-500">
-                      Your recent activity highlights.
-                    </p>
-                  </div>
-                  <span className="flex items-center gap-1.5 rounded-full border border-red-200 bg-gradient-to-r from-white to-red-50 px-4 py-1.5 text-[11px] font-black uppercase tracking-widest text-red-600 shadow-sm transition-transform hover:scale-105">
-                    <span className="relative flex h-2.5 w-2.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
-                    </span>
-                    Live
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                  {/* XP Earned */}
-                  <div className="group flex items-center gap-5 rounded-3xl border border-amber-100/50 bg-gradient-to-br from-[#FFFAF0] to-amber-50 p-6 shadow-sm transition-all hover:shadow-[0_8px_30px_rgba(251,191,36,0.1)] hover:-translate-y-1">
-                    <div className="flex h-14 w-14 items-center justify-center text-4xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12">
-                      ✨
-                    </div>
-                    <div>
-                      <p className="text-[11px] font-black uppercase tracking-widest text-amber-600/80 mb-1">XP Earned</p>
-                      <p className="text-3xl font-black text-slate-800 leading-none mb-1.5">{totalXp.toLocaleString()}</p>
-                      <p className="text-[11px] font-bold text-amber-600/60">This Month</p>
-                    </div>
-                  </div>
-                  {/* Streaks */}
-                  <div className="group flex items-center gap-5 rounded-3xl border border-red-100/50 bg-gradient-to-br from-[#FFF5F5] to-red-50 p-6 shadow-sm transition-all hover:shadow-[0_8px_30px_rgba(239,68,68,0.1)] hover:-translate-y-1">
-                    <div className="flex h-14 w-14 items-center justify-center text-4xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12">
-                      🔥
-                    </div>
-                    <div>
-                      <p className="text-[11px] font-black uppercase tracking-widest text-red-600/80 mb-1">Streaks</p>
-                      <p className="text-3xl font-black text-slate-800 leading-none mb-1.5">{getDisplayStreak(user)}</p>
-                      <p className="text-[11px] font-bold text-red-600/60">Days in a row</p>
-                    </div>
-                  </div>
-                  {/* Network */}
-                  <div className="group flex items-center gap-5 rounded-3xl border border-blue-100/50 bg-gradient-to-br from-[#F0F7FF] to-blue-50 p-6 shadow-sm transition-all hover:shadow-[0_8px_30px_rgba(59,130,246,0.1)] hover:-translate-y-1">
-                    <div className="flex h-14 w-14 items-center justify-center text-4xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12">
-                      🫂
-                    </div>
-                    <div>
-                      <p className="text-[11px] font-black uppercase tracking-widest text-blue-600/80 mb-1">Network</p>
-                      <p className="text-3xl font-black text-slate-800 leading-none mb-1.5">{((user?.followers?.length ?? followers.length) + (user?.following?.length ?? following.length)).toLocaleString()}</p>
-                      <p className="text-[11px] font-bold text-blue-600/60">Total Network</p>
-                    </div>
-                  </div>
-                </div>
-              </section>
-
               {/* 3. How XP Works */}
-              <section className="space-y-6">
+              <section className="relative overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-6">
                 <div className="flex items-center justify-between px-2">
                   <div>
                     <h3 className="text-[17px] font-black text-[#1A1A1A] flex items-center gap-2 mb-1">
@@ -1546,7 +1546,7 @@ export default function ProfilePage() {
               </section>
 
               {/* 4. Achievements & Badges */}
-              <section id="achievements-section" className="space-y-6 scroll-mt-24">
+              <section id="achievements-section" className="relative overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-6 scroll-mt-24">
                 <div className="flex items-center justify-between px-2">
                   <div>
                     <h3 className="text-[17px] font-black text-[#1A1A1A] flex items-center gap-2 mb-1">
@@ -1627,7 +1627,7 @@ export default function ProfilePage() {
               </section>
 
               {/* 5. XP Tiers */}
-              <section className="space-y-6">
+              <section className="relative overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-6">
                 <div className="flex items-center justify-between px-2">
                   <div>
                     <h3 className="text-[17px] font-black text-[#1A1A1A] flex items-center gap-2 mb-1">
@@ -1796,31 +1796,52 @@ export default function ProfilePage() {
                 {(modal === "followers" ? followers : following).length === 0 ? (
                   <div className="py-10 text-center text-[#888888] font-bold uppercase tracking-widest text-[10px]">No connections yet</div>
                 ) : (
-                  (modal === "followers" ? followers : following).map((f, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 hover:bg-[#F3F2EE] rounded-[2rem] transition-all">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 rounded-full p-[1.5px] gradient-bg">
-                          <img
-                            src={getAvatarSrc(f.profilePic, f.name, f._id || f.id)}
-                            className="w-full h-full rounded-full object-cover border-2 border-[#0A0A0F]"
-                          />
+                  (modal === "followers" ? followers : following).map((f, i) => {
+                    const targetId = f._id || f.id;
+                    return (
+                      <div
+                        key={targetId ? `${targetId}-${i}` : i}
+                        onClick={() => {
+                          setModal(null);
+                          if (targetId) {
+                            router.push(`/profile/${targetId}`);
+                          }
+                        }}
+                        className="flex items-center justify-between p-3.5 sm:p-4 rounded-[1.5rem] border border-[#E8E6E0] bg-white hover:bg-[#FFF9E6] hover:border-[#C8922A]/30 shadow-sm transition-all cursor-pointer group"
+                      >
+                        <div className="flex items-center space-x-3.5 min-w-0">
+                          <div className="w-12 h-12 rounded-full p-[1.5px] gradient-bg shrink-0">
+                            <img
+                              src={getAvatarSrc(f.profilePic, f.name, targetId)}
+                              className="w-full h-full rounded-full object-cover border-2 border-[#0A0A0F]"
+                              onError={(e) => { e.target.src = getAvatarSrc("", f.name, targetId); }}
+                              alt={f.name}
+                            />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-black text-[#1A1A1A] flex items-center truncate">
+                              <span className="truncate">{f.name}</span> <VerifiedBadge user={f} size={14} className="ml-1 shrink-0" />
+                            </p>
+                            <p className="text-[10px] text-[#6B6B6B] font-bold uppercase truncate mt-0.5">{f.university}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-black text-[#1A1A1A] flex items-center">{f.name} <VerifiedBadge user={f} size={14} className="ml-1" /></p>
-                          <p className="text-[10px] text-[#6B6B6B] font-bold uppercase">{f.university}</p>
-                        </div>
+                        {modal === "following" ? (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUnfollow(f._id);
+                            }}
+                            disabled={unfollowingId === f._id}
+                            className="px-4 py-2 bg-[#F9F8F5] border border-[#E8E6E0] rounded-xl text-[10px] font-black uppercase text-red-500 hover:bg-red-50 hover:border-red-200 transition-all disabled:opacity-50 shrink-0 ml-2"
+                          >
+                            {unfollowingId === f._id ? "..." : "Unfollow"}
+                          </button>
+                        ) : (
+                          <ChevronRight size={18} className="text-[#888888] shrink-0 ml-2 group-hover:text-[#1A1A1A] group-hover:translate-x-0.5 transition-all" />
+                        )}
                       </div>
-                      {modal === "following" && (
-                        <button
-                          onClick={() => handleUnfollow(f._id)}
-                          disabled={unfollowingId === f._id}
-                          className="px-4 py-2 bg-[#F9F8F5] border border-[#E8E6E0] rounded-xl text-[10px] font-black uppercase text-red-400 border border-red-500/10 disabled:opacity-50"
-                        >
-                          {unfollowingId === f._id ? "..." : "Unfollow"}
-                        </button>
-                      )}
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </motion.div>

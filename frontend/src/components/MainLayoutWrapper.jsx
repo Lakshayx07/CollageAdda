@@ -26,6 +26,25 @@ export default function MainLayoutWrapper({ children }) {
     );
   }
 
+  // Community chat pages manage their own internal scrolling — use a fixed-height container
+  // so that h-screen / h-full chains work correctly inside the chat layout.
+  const isCommunityChat = /^\/community\/[^/]+/.test(pathname);
+  if (isCommunityChat) {
+    return (
+      <main
+        className={clsx(
+          "app-surface flex flex-col overflow-hidden",
+          // On mobile use full height minus bottom-nav; on desktop use full viewport height
+          "h-[calc(100dvh-4rem)] lg:h-screen",
+          "lg:transition-[margin-left] lg:duration-400 lg:ease-[cubic-bezier(0.22,1,0.36,1)]",
+          isExpanded ? "lg:ml-[288px]" : "lg:ml-20"
+        )}
+      >
+        {children}
+      </main>
+    );
+  }
+
   // Other pages ease the content margin in sync with the sidebar width
   return (
     <main

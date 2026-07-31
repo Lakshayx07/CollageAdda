@@ -21,16 +21,19 @@ const hasCustomProfilePic = (src = '') => {
 // Convert custom profilePic to avatar API URL to drastically reduce payload size
 export const transformUser = (u) => {
   if (!u) return u;
+  if (u._transformed) return u;
+  u._transformed = true;
+
   const originalProfilePic = u.profilePic;
-  
+
   if (originalProfilePic === undefined) {
     u.profilePic = `/api/users/${u._id}/avatar?v=${u.updatedAt ? new Date(u.updatedAt).getTime() : 'current'}`;
-    return u;
+  } else {
+    u.profilePic = hasCustomProfilePic(originalProfilePic)
+      ? `/api/users/${u._id}/avatar?v=${hashText(`${originalProfilePic}-${u.updatedAt || ''}`)}`
+      : `/default-avatars/${defaultAvatarFileFor(u.name, u._id)}`;
   }
 
-  u.profilePic = hasCustomProfilePic(originalProfilePic)
-    ? `/api/users/${u._id}/avatar?v=${hashText(`${originalProfilePic}-${u.updatedAt || ''}`)}`
-    : `/default-avatars/${defaultAvatarFileFor(u.name, u._id)}`;
   return u;
 };
 
@@ -161,7 +164,7 @@ router.get('/leaderboard', protect, async (req, res) => {
       lastUpdated: new Date().toISOString(),
       leaderboard
     };
-    
+
     leaderboardCache.set("leaderboard_data", payload);
     res.json(payload);
   } catch (error) {
@@ -178,7 +181,7 @@ router.get('/profile', protect, async (req, res) => {
     const wasVerified = user.isVerified;
     syncVerificationStatus(user);
     if (wasVerified !== user.isVerified) await user.save();
-    
+
     // Transform profile to avoid sending huge base64 string
     const userObj = user.toObject();
 
@@ -191,7 +194,7 @@ router.get('/profile', protect, async (req, res) => {
       { $count: "higherScoringUsers" }
     ]);
     userObj.campusRank = (rankAgg[0]?.higherScoringUsers || 0) + 1;
-    
+
     // Get post count instantly for the profile stats
     userObj.postsCount = await Post.countDocuments({ author: req.user._id });
 
@@ -228,10 +231,10 @@ router.get('/:id/avatar', async (req, res) => {
     if (cached.redirect && !isGeneratedInitialsAvatar(cached.redirect)) return res.redirect(cached.redirect);
     if (cached.redirect) avatarCache.delete(cacheKey);
     else {
-    res.setHeader('Content-Type', cached.mime);
-    res.setHeader('Cache-Control', 'public, max-age=86400, immutable');
-    res.setHeader('ETag', `"${cacheKey}"`);
-    return res.send(cached.buffer);
+      res.setHeader('Content-Type', cached.mime);
+      res.setHeader('Cache-Control', 'public, max-age=86400, immutable');
+      res.setHeader('ETag', `"${cacheKey}"`);
+      return res.send(cached.buffer);
     }
   }
 
@@ -301,10 +304,10 @@ router.put('/profile', protect, async (req, res) => {
     } = req.body;
 
     const coreFieldsChanged = (name !== undefined && name !== user.name) ||
-                              (passOutBatch !== undefined && passOutBatch !== user.passOutBatch) ||
-                              (studyYear !== undefined && studyYear !== user.studyYear) ||
-                              (course !== undefined && course !== user.course) ||
-                              (branch !== undefined && branch !== user.branch);
+      (passOutBatch !== undefined && passOutBatch !== user.passOutBatch) ||
+      (studyYear !== undefined && studyYear !== user.studyYear) ||
+      (course !== undefined && course !== user.course) ||
+      (branch !== undefined && branch !== user.branch);
 
     let coreRestricted = false;
 
@@ -326,7 +329,7 @@ router.put('/profile', protect, async (req, res) => {
         user.lastCoreProfileEditDate = new Date();
       }
     }
-    
+
     if (name !== undefined) user.name = name;
     if (bio !== undefined) user.bio = bio;
     if (profilePic !== undefined) {
@@ -360,7 +363,7 @@ router.put('/profile', protect, async (req, res) => {
     syncVerificationStatus(user);
 
     const updated = await user.save();
-    
+
     // Ensure user joins their university group if they changed it
     if (university) {
       await ensureUniversityGroup(updated);
@@ -383,7 +386,7 @@ router.get('/search/query', protect, async (req, res) => {
   try {
     const { q, filter } = req.query;
     let query = { _id: { $ne: req.user._id } };
-    
+
     if (filter === 'same_interest') {
       query.university = req.user.university;
       query.interests = { $in: req.user.interests || [] };
@@ -402,7 +405,7 @@ router.get('/search/query', protect, async (req, res) => {
         { interests: { $regex: escapedQuery, $options: 'i' } }
       ];
     }
-    
+
     const users = await User.find(query)
       .select('name university bio interests year studyYear passOutBatch course branch isVerified xp points currentTick streak createdAt updatedAt')
       .sort({ createdAt: -1 })
@@ -424,7 +427,7 @@ router.get('/search/query', protect, async (req, res) => {
         { $project: { followersCount: { $size: { $ifNull: ['$followers', []] } }, followingCount: { $size: { $ifNull: ['$following', []] } } } }
       ])
     ]);
-    
+
     const countMap = new Map(postCounts.map(pc => [pc._id.toString(), pc.count]));
     const followMap = new Map(followCounts.map(fc => [fc._id.toString(), { followersCount: fc.followersCount, followingCount: fc.followingCount }]));
 
@@ -442,7 +445,7 @@ router.get('/search/query', protect, async (req, res) => {
     const usersWithPostsCount = users.map(u => {
       const fc = followMap.get(u._id.toString()) || {};
       const transformed = transformUser(u);
-      
+
       const myScore = (fc.followersCount || 0) + (fc.followingCount || 0);
       let campusRank = null;
       if (u.university && scoresByUni[u.university]) {
@@ -504,7 +507,7 @@ router.get('/daily-drop', protect, async (req, res) => {
       ]);
       const countMap = new Map(postCounts.map(pc => [pc._id.toString(), pc.count]));
       const followMap = new Map(followCounts.map(fc => [fc._id.toString(), { followersCount: fc.followersCount, followingCount: fc.followingCount }]));
-      
+
       const cachedWithPostsCount = me.dailyDropUsers.map(u => {
         const uObj = u.toObject ? u.toObject() : { ...u };
         delete uObj.followers;
@@ -560,9 +563,15 @@ router.get('/daily-drop', protect, async (req, res) => {
     // ── PRIORITY 3: Popular users (highest follower count) ─────────────────
     if (suggested.length < 5) {
       const popular = await User.aggregate([
-        { $match: { _id: { $nin: notAlreadyPicked().map(id => {
-          try { return new mongoose.Types.ObjectId(id); } catch { return null; }
-        }).filter(Boolean) } } },
+        {
+          $match: {
+            _id: {
+              $nin: notAlreadyPicked().map(id => {
+                try { return new mongoose.Types.ObjectId(id); } catch { return null; }
+              }).filter(Boolean)
+            }
+          }
+        },
         { $sample: { size: 200 } },
         { $addFields: { score: { $add: [{ $size: { $ifNull: ['$followers', []] } }, { $size: { $ifNull: ['$following', []] } }] } } },
         { $sort: { score: -1 } },
@@ -661,7 +670,7 @@ router.get('/me/followers/new', protect, async (req, res) => {
     const since = req.query.since ? new Date(Number(req.query.since)) : new Date(0);
     // Populate followers with their joinedAt / updatedAt so we can filter
     const user = await User.findById(req.user._id).populate('followers', 'name university profilePic _id createdAt isVerified xp points currentTick');
-    
+
     // Return all followers if no since param, otherwise filter by createdAt after 'since'
     const allFollowers = user.followers || [];
     const newFollowers = req.query.since
@@ -679,6 +688,34 @@ router.get('/me/followers/new', protect, async (req, res) => {
 router.get('/me/following', protect, async (req, res) => {
   try {
     const user = await User.findById(req.user._id).populate('following', 'name university profilePic _id isVerified xp points currentTick createdAt');
+    res.json((user.following || []).map(following => transformUser(following.toObject ? following.toObject() : following)));
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @route   GET /api/users/:id/followers
+// @desc    Get any user's public followers list
+router.get('/:id/followers', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id)
+      .populate('followers', 'name university profilePic _id isVerified xp points currentTick createdAt updatedAt');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    res.json((user.followers || []).map(follower => transformUser(follower.toObject ? follower.toObject() : follower)));
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @route   GET /api/users/:id/following
+// @desc    Get any user's public following list
+router.get('/:id/following', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id)
+      .populate('following', 'name university profilePic _id isVerified xp points currentTick createdAt updatedAt');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
     res.json((user.following || []).map(following => transformUser(following.toObject ? following.toObject() : following)));
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -768,12 +805,12 @@ router.get('/me/xp-progress', protect, async (req, res) => {
 
     const progress = {};
     for (const badge of BADGES) {
-      const actionType = badge.type === 'posts' ? 'CREATE_POST' 
-                       : badge.type === 'stories' ? 'CREATE_STORY'
-                       : badge.type === 'comments' ? 'COMMENT_POST'
-                       : badge.type === 'likes_received' ? 'LIKE_POST'
-                       : 'CONNECT_USER';
-                       
+      const actionType = badge.type === 'posts' ? 'CREATE_POST'
+        : badge.type === 'stories' ? 'CREATE_STORY'
+          : badge.type === 'comments' ? 'COMMENT_POST'
+            : badge.type === 'likes_received' ? 'LIKE_POST'
+              : 'CONNECT_USER';
+
       let query = { user: user._id, actionType };
       if (badge.window === 'week') {
         query.createdAt = { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) };
@@ -784,7 +821,7 @@ router.get('/me/xp-progress', protect, async (req, res) => {
       const count = await XpLog.countDocuments(query);
       progress[badge.id] = { current: count, target: badge.target };
     }
-    
+
     res.json({
       xp: user.xp,
       points: user.points,
@@ -802,7 +839,7 @@ router.get('/me/xp-progress', protect, async (req, res) => {
 router.get('/network/leaderboard', protect, async (req, res) => {
   try {
     const { filter } = req.query; // 'my_campus' or 'global'
-    
+
     let matchStage = {};
     if (filter === 'my_campus') {
       matchStage.university = req.user.university;
@@ -810,21 +847,25 @@ router.get('/network/leaderboard', protect, async (req, res) => {
 
     const topUsers = await User.aggregate([
       { $match: matchStage },
-      { $addFields: { 
-          score: { 
+      {
+        $addFields: {
+          score: {
             $add: [
-              { $size: { $ifNull: ['$followers', []] } }, 
+              { $size: { $ifNull: ['$followers', []] } },
               { $size: { $ifNull: ['$following', []] } }
-            ] 
-          } 
-      } },
+            ]
+          }
+        }
+      },
       { $sort: { score: -1, createdAt: -1 } },
       { $limit: 10 },
-      { $project: { 
+      {
+        $project: {
           name: 1, university: 1, bio: 1, interests: 1, year: 1, studyYear: 1, passOutBatch: 1, course: 1, branch: 1, isVerified: 1, xp: 1, points: 1, currentTick: 1, streak: 1, createdAt: 1, updatedAt: 1,
           followersCount: { $size: { $ifNull: ['$followers', []] } },
           followingCount: { $size: { $ifNull: ['$following', []] } }
-      } }
+        }
+      }
     ]);
 
     // Format with transformUser to add avatar API URLs
@@ -835,31 +876,70 @@ router.get('/network/leaderboard', protect, async (req, res) => {
   }
 });
 
+// @route   GET /api/users/network/lookup
+// @desc    Lightweight lookup for follower/following modal rows
+router.get('/network/lookup', protect, async (req, res) => {
+  try {
+    const ids = String(req.query.ids || '')
+      .split(',')
+      .map(id => id.trim())
+      .filter(id => /^[a-f\d]{24}$/i.test(id))
+      .filter(Boolean)
+      .slice(0, 80);
+
+    if (ids.length === 0) return res.json([]);
+
+    const users = await User.find({ _id: { $in: ids } })
+      .select('name profilePic university course branch isVerified currentTick xp points updatedAt')
+      .lean();
+
+    const order = new Map(ids.map((id, index) => [id, index]));
+    const payload = users
+      .map(user => transformUser(user))
+      .sort((a, b) => (order.get(a._id.toString()) ?? 0) - (order.get(b._id.toString()) ?? 0));
+
+    res.json(payload);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // @route   GET /api/users/:id
 // @desc    Get another user's public profile
 router.get('/:id', protect, async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select('-password -email -verificationToken -verificationTokenExpires -collegeEmail -idPhotoUrl -adminNotes');
+    const user = await User.findById(req.params.id)
+      .select('-password -email -verificationToken -verificationTokenExpires -collegeEmail -idPhotoUrl -adminNotes');
     if (!user) return res.status(404).json({ message: 'User not found' });
-    
+
     const userObj = user.toObject();
+    const followerIds = (userObj.followers || []).map(id => id.toString()).filter(Boolean);
+    const followingIds = (userObj.following || []).map(id => id.toString()).filter(Boolean);
+    userObj.followers = followerIds;
+    userObj.following = followingIds;
+    userObj.followersCount = followerIds.length;
+    userObj.followingCount = followingIds.length;
+
     if (userObj.phonePrivacy === 'private' && req.user.id !== userObj._id.toString()) {
       delete userObj.phone;
     }
-    
-    const myScore = (userObj.followers?.length || 0) + (userObj.following?.length || 0);
-    const rankAgg = await User.aggregate([
-      { $match: { university: userObj.university } },
-      { $project: { score: { $add: [{ $size: { $ifNull: ['$followers', []] } }, { $size: { $ifNull: ['$following', []] } }] } } },
-      { $match: { score: { $gt: myScore } } },
-      { $count: "higherScoringUsers" }
-    ]);
-    userObj.campusRank = (rankAgg[0]?.higherScoringUsers || 0) + 1;
-    
-    // Get post count instantly for the profile stats
-    userObj.postsCount = await Post.countDocuments({ author: req.params.id });
 
-    res.json(userObj);
+    const myScore = userObj.followersCount + userObj.followingCount;
+
+    const [rankAgg, postsCount] = await Promise.all([
+      User.aggregate([
+        { $match: { university: userObj.university } },
+        { $project: { score: { $add: [{ $size: { $ifNull: ['$followers', []] } }, { $size: { $ifNull: ['$following', []] } }] } } },
+        { $match: { score: { $gt: myScore } } },
+        { $count: "higherScoringUsers" }
+      ]),
+      Post.countDocuments({ author: req.params.id })
+    ]);
+
+    userObj.campusRank = (rankAgg[0]?.higherScoringUsers || 0) + 1;
+    userObj.postsCount = postsCount;
+
+    res.json(transformUser(userObj));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

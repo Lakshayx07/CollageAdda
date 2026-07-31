@@ -218,15 +218,18 @@ export default function CommunityPage() {
         .insert([{ community_id: community.id, user_id: currentUserId, role: 'member' }]);
         
       if (memberError && memberError.code !== '23505') throw memberError;
+      const alreadyJoined = memberError?.code === '23505';
 
-      await authSupabase
-        .from("communities")
-        .update({ member_count: (community.member_count || 1) + 1 })
-        .eq("id", community.id);
+      if (!alreadyJoined) {
+        await authSupabase
+          .from("communities")
+          .update({ member_count: (community.member_count || 0) + 1 })
+          .eq("id", community.id);
+      }
 
       queryClient.setQueryData(['community-memberships'], (prev) => new Set([...(prev || []), community.id]));
       queryClient.setQueryData(['community-list'], (prev) => (prev || []).map(c => 
-        c.id === community.id ? { ...c, member_count: (c.member_count || 1) + 1 } : c
+        c.id === community.id && !alreadyJoined ? { ...c, member_count: (c.member_count || 0) + 1 } : c
       ));
       
       showToast('success', community.privacy === 'invite_only' ? 'Request sent! 🎉' : `Joined ${community.name}! 🎉`);
@@ -495,7 +498,7 @@ export default function CommunityPage() {
 
                           {isMember ? (
                             <button
-                              onClick={() => router.push(`/community/${comm.id}`)}
+                              onClick={() => router.push(`/community/${comm.id}?at=latest`)}
                               className={clsx(
                                 "relative w-full flex items-center justify-center gap-2 rounded-2xl border bg-transparent px-4 py-2 text-sm font-black transition-all cursor-pointer hover:bg-black/[0.02] group",
                                 theme.text,

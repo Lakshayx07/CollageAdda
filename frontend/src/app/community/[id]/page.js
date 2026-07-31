@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, Fragment } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { 
   ArrowLeft, Users2, Send, Loader2, Globe, CheckCircle2, 
   AlertCircle, LogOut, MoreVertical, Plus, ArrowRight, Smile,
@@ -52,7 +52,9 @@ function JoinSparkles({ active }) {
 export default function CommunityChatPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const id = params.id;
+  const openAtLatest = searchParams.get("at") === "latest";
   const [activeCommunityId, setActiveCommunityId] = useState(id);
 
   const [isMounted, setIsMounted] = useState(false);
@@ -104,10 +106,22 @@ export default function CommunityChatPage() {
   const videoInputRef = useRef(null);
   const messageRefs = useRef({});
   const didInitialScrollRef = useRef(false);
+  const pendingScrollToBottomRef = useRef(openAtLatest);
 
   const showToastMsg = (type, msg) => {
     setToast({ type, msg });
     setTimeout(() => setToast(null), 3000);
+  };
+
+  const scrollChatToBottom = (behavior = "smooth", delay = 50) => {
+    window.setTimeout(() => {
+      if (chatContainerRef.current) {
+        chatContainerRef.current.scrollTo({
+          top: chatContainerRef.current.scrollHeight,
+          behavior,
+        });
+      }
+    }, delay);
   };
 
   const communityThemes = {
@@ -185,9 +199,22 @@ export default function CommunityChatPage() {
     };
   };
 
-  const supportsOptionalColumns = (error) => {
+  const isRecoverableSchemaError = (error) => {
     const msg = `${error?.message || ""} ${error?.details || ""}`.toLowerCase();
-    return !msg.includes("column") && !msg.includes("schema cache");
+    return msg.includes("column") || msg.includes("schema cache");
+  };
+
+  const getSenderAvatar = () => user?.profilePic || user?.profilePicture || "";
+
+  const replaceOrAppendMessage = (incoming) => {
+    const normalized = normalizeLegacyMessage(incoming);
+    setMessages((prev) => {
+      if (prev.some((m) => m.id === normalized.id)) {
+        return prev.map((m) => (m.id === normalized.id ? normalized : m));
+      }
+      return [...prev, normalized];
+    });
+    return normalized;
   };
 
   const buildUnreadCounts = (rows, userId, openCommunityId = activeCommunityId) => {
@@ -208,12 +235,8 @@ export default function CommunityChatPage() {
     }
     if (showPageLoader) setLoading(true);
     try {
-      const { client: authSupabase, user: authUser } = await getAuthenticatedSupabaseClient();
-      setCurrentUserId(authUser.id);
-      setIsMember(false);
-      setRole(null);
-      // Fetch community details
-      const { data: comm, error: commErr } = await authSupabase
+      // Use anon client for public data reads (communities table has public SELECT policy)
+      const { data: comm, error: commErr } = await supabase
         .from("communities")
         .select("*")
         .eq("id", targetId)
@@ -226,34 +249,14 @@ export default function CommunityChatPage() {
       }
       setCommunity(comm);
 
-      const { data: allCommunities } = await authSupabase
+      const { data: allCommunities } = await supabase
         .from("communities")
         .select("*")
         .order("created_at", { ascending: false });
       if (allCommunities) setCommunities(allCommunities);
 
-      const { data: memberships } = await authSupabase
-        .from("community_members")
-        .select("community_id")
-        .eq("user_id", authUser.id);
-      const nextMembershipSet = new Set(memberships?.map(m => m.community_id) || []);
-      setMembershipSet(nextMembershipSet);
-
-      // Check membership
-      const { data: member } = await authSupabase
-        .from("community_members")
-        .select("*")
-        .eq("community_id", targetId)
-        .eq("user_id", authUser.id)
-        .maybeSingle();
-
-      if (member) {
-        setIsMember(true);
-        setRole(member.role);
-      }
-
-      // Fetch messages history
-      const { data: msgs } = await authSupabase
+      // Fetch messages
+      const { data: msgs } = await supabase
         .from("community_messages")
         .select("*")
         .eq("community_id", targetId)
@@ -267,67 +270,144 @@ export default function CommunityChatPage() {
       }
 
       if ((allCommunities || []).length > 0) {
-        const { data: recentMessages } = await authSupabase
+        const { data: recentMessages } = await supabase
           .from("community_messages")
           .select("community_id,sender_id,created_at")
           .in("community_id", allCommunities.map(c => c.id))
           .order("created_at", { ascending: false })
           .limit(500);
-        setUnreadCounts(buildUnreadCounts(recentMessages, authUser.id, targetId));
-      }
+        // We'll set unread counts after getting userId below
+        const tempUnread = recentMessages;
 
-      // Subscribe to Realtime messages
-      if (channelRef.current) {
-        authSupabase.removeChannel(channelRef.current);
+        // Now get authenticated user for membership check
+        try {
+          const { client: authSupabase, user: authUser } = await getAuthenticatedSupabaseClient();
+          setCurrentUserId(authUser.id);
+          setIsMember(false);
+          setRole(null);
+
+          const { data: memberships } = await authSupabase
+            .from("community_members")
+            .select("community_id")
+            .eq("user_id", authUser.id);
+          const nextMembershipSet = new Set(memberships?.map(m => m.community_id) || []);
+          setMembershipSet(nextMembershipSet);
+
+          // Check membership for this specific community
+          const { data: member } = await authSupabase
+            .from("community_members")
+            .select("*")
+            .eq("community_id", targetId)
+            .eq("user_id", authUser.id)
+            .maybeSingle();
+
+          if (member) {
+            setIsMember(true);
+            setRole(member.role);
+          }
+
+          setUnreadCounts(buildUnreadCounts(tempUnread, authUser.id, targetId));
+
+          // Subscribe to Realtime messages using auth client
+          if (channelRef.current) {
+            authSupabase.removeChannel(channelRef.current);
+          }
+          const channel = authSupabase
+            .channel(`community:${targetId}`)
+            .on(
+              "postgres_changes",
+              {
+                event: "INSERT",
+                schema: "public",
+                table: "community_messages",
+                filter: `community_id=eq.${targetId}`,
+              },
+              (payload) => {
+                setMessages((prev) => {
+                  if (prev.some((m) => m.id === payload.new.id)) return prev;
+                  return [...prev, normalizeLegacyMessage(payload.new)];
+                });
+                localStorage.setItem(`community_seen_${targetId}`, payload.new.created_at);
+              }
+            )
+            .on(
+              "postgres_changes",
+              {
+                event: "UPDATE",
+                schema: "public",
+                table: "community_messages",
+                filter: `community_id=eq.${targetId}`,
+              },
+              (payload) => {
+                setMessages((prev) => prev.map((m) => (m.id === payload.new.id ? normalizeLegacyMessage(payload.new) : m)));
+              }
+            )
+            .on("broadcast", { event: "typing" }, ({ payload }) => {
+              if (!payload?.userId || payload.userId === authUser.id) return;
+              setTypingUsers((prev) => ({
+                ...prev,
+                [payload.userId]: payload.name || "Someone",
+              }));
+              window.clearTimeout(remoteTypingTimersRef.current[payload.userId]);
+              remoteTypingTimersRef.current[payload.userId] = window.setTimeout(() => {
+                setTypingUsers((prev) => {
+                  const next = { ...prev };
+                  delete next[payload.userId];
+                  return next;
+                });
+              }, 1800);
+            })
+            .subscribe();
+          channelRef.current = channel;
+        } catch (authErr) {
+          // Auth failed — community data still loaded, user just can't send messages
+          console.warn("Auth client unavailable, community shown in read-only mode:", authErr.message);
+        }
+      } else {
+        // No communities yet — still try to set up auth for membership
+        try {
+          const { client: authSupabase, user: authUser } = await getAuthenticatedSupabaseClient();
+          setCurrentUserId(authUser.id);
+          setIsMember(false);
+          setRole(null);
+
+          const { data: member } = await authSupabase
+            .from("community_members")
+            .select("*")
+            .eq("community_id", targetId)
+            .eq("user_id", authUser.id)
+            .maybeSingle();
+
+          if (member) {
+            setIsMember(true);
+            setRole(member.role);
+          }
+
+          if (channelRef.current) {
+            authSupabase.removeChannel(channelRef.current);
+          }
+          const channel = authSupabase
+            .channel(`community:${targetId}`)
+            .on("postgres_changes", { event: "INSERT", schema: "public", table: "community_messages", filter: `community_id=eq.${targetId}` },
+              (payload) => {
+                setMessages((prev) => {
+                  if (prev.some((m) => m.id === payload.new.id)) return prev;
+                  return [...prev, normalizeLegacyMessage(payload.new)];
+                });
+                localStorage.setItem(`community_seen_${targetId}`, payload.new.created_at);
+              }
+            )
+            .on("postgres_changes", { event: "UPDATE", schema: "public", table: "community_messages", filter: `community_id=eq.${targetId}` },
+              (payload) => {
+                setMessages((prev) => prev.map((m) => (m.id === payload.new.id ? normalizeLegacyMessage(payload.new) : m)));
+              }
+            )
+            .subscribe();
+          channelRef.current = channel;
+        } catch (authErr) {
+          console.warn("Auth client unavailable:", authErr.message);
+        }
       }
-      const channel = authSupabase
-        .channel(`community:${targetId}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "community_messages",
-            filter: `community_id=eq.${targetId}`,
-          },
-          (payload) => {
-            setMessages((prev) => {
-              // Avoid duplicates
-              if (prev.some((m) => m.id === payload.new.id)) return prev;
-              return [...prev, normalizeLegacyMessage(payload.new)];
-            });
-            localStorage.setItem(`community_seen_${targetId}`, payload.new.created_at);
-          }
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "UPDATE",
-            schema: "public",
-            table: "community_messages",
-            filter: `community_id=eq.${targetId}`,
-          },
-          (payload) => {
-            setMessages((prev) => prev.map((m) => (m.id === payload.new.id ? normalizeLegacyMessage(payload.new) : m)));
-          }
-        )
-        .on("broadcast", { event: "typing" }, ({ payload }) => {
-          if (!payload?.userId || payload.userId === authUser.id) return;
-          setTypingUsers((prev) => ({
-            ...prev,
-            [payload.userId]: payload.name || "Someone",
-          }));
-          window.clearTimeout(remoteTypingTimersRef.current[payload.userId]);
-          remoteTypingTimersRef.current[payload.userId] = window.setTimeout(() => {
-            setTypingUsers((prev) => {
-              const next = { ...prev };
-              delete next[payload.userId];
-              return next;
-            });
-          }, 1800);
-        })
-        .subscribe();
-      channelRef.current = channel;
     } catch (err) {
       console.error("Error fetching community info:", err);
     } finally {
@@ -350,8 +430,9 @@ export default function CommunityChatPage() {
     setActiveCommunityId(id);
     initialScrollDone.current = false;
     didInitialScrollRef.current = false;
+    pendingScrollToBottomRef.current = openAtLatest;
     setPinnedJumpIndex(0);
-  }, [id]);
+  }, [id, openAtLatest]);
 
   useEffect(() => {
     if (!supabase || !currentUserId) return;
@@ -396,28 +477,14 @@ export default function CommunityChatPage() {
     // Scroll to bottom when messages update
     if (chatContainerRef.current && messages.length > 0) {
       const isInitial = !initialScrollDone.current;
+      const shouldForceBottom = pendingScrollToBottomRef.current;
       
-      if (isInitial) {
+      if (isInitial || shouldForceBottom) {
         initialScrollDone.current = true;
-        // Wait slightly for DOM to settle, then animate smoothly to bottom
-        setTimeout(() => {
-          if (chatContainerRef.current) {
-            chatContainerRef.current.scrollTo({
-              top: chatContainerRef.current.scrollHeight,
-              behavior: "smooth"
-            });
-          }
-        }, 150);
+        pendingScrollToBottomRef.current = false;
+        scrollChatToBottom(shouldForceBottom ? "auto" : "smooth", 150);
       } else {
-        // Normal smooth scroll for new messages
-        setTimeout(() => {
-          if (chatContainerRef.current) {
-            chatContainerRef.current.scrollTo({
-              top: chatContainerRef.current.scrollHeight,
-              behavior: "smooth"
-            });
-          }
-        }, 50);
+        scrollChatToBottom("smooth", 50);
       }
     }
   }, [messages]);
@@ -432,7 +499,7 @@ export default function CommunityChatPage() {
     if (!inputText.trim() || sending || !isMember || !supabase) return;
 
     const senderName = user?.name || "Anonymous Student";
-    const senderAvatar = user?.profilePicture || "";
+    const senderAvatar = getSenderAvatar();
 
     const content = inputText.trim();
     setInputText("");
@@ -478,7 +545,7 @@ export default function CommunityChatPage() {
             .single();
 
       let { data, error } = await request;
-      if (editingMessage && error && !supportsOptionalColumns(error)) {
+      if (editingMessage && error && isRecoverableSchemaError(error)) {
         const fallback = await authSupabase
           .from("community_messages")
           .update({ content })
@@ -486,10 +553,10 @@ export default function CommunityChatPage() {
           .eq("sender_id", senderId)
           .select()
           .single();
-        data = { ...fallback.data, edited_at: new Date().toISOString() };
+        data = fallback.data ? { ...fallback.data, edited_at: new Date().toISOString() } : null;
         error = fallback.error;
       }
-      if (!editingMessage && error && !supportsOptionalColumns(error)) {
+      if (!editingMessage && error && isRecoverableSchemaError(error)) {
         const fallback = await authSupabase
           .from("community_messages")
           .insert([legacyPayload])
@@ -503,13 +570,8 @@ export default function CommunityChatPage() {
         showToastMsg("error", editingMessage ? "Edit needs the chat database update." : "Failed to send message.");
         setInputText(content); // restore content
       } else if (data) {
-        const normalized = normalizeLegacyMessage(data);
-        setMessages((prev) => {
-          if (editingMessage) return prev.map((m) => (m.id === normalized.id ? normalized : m));
-          if (prev.some((m) => m.id === normalized.id)) return prev;
-          return [...prev, normalized];
-        });
-        if (editingMessage) showToastMsg("success", "Chat database updated.");
+        replaceOrAppendMessage(data);
+        if (editingMessage) showToastMsg("success", "Message edited.");
         setReplyTo(null);
         setEditingMessage(null);
       }
@@ -542,16 +604,17 @@ export default function CommunityChatPage() {
 
   const handleDeleteMessage = async (msg) => {
     if (!supabase || msg.sender_id !== currentUserId) return;
+    const deletedAt = new Date().toISOString();
     try {
       const { client: authSupabase, user: authUser } = await getAuthenticatedSupabaseClient();
       let { data, error } = await authSupabase
         .from("community_messages")
-        .update({ content: "This message was deleted", deleted_at: new Date().toISOString() })
+        .update({ content: "This message was deleted", deleted_at: deletedAt })
         .eq("id", msg.id)
         .eq("sender_id", authUser.id)
         .select()
         .single();
-      if (error && !supportsOptionalColumns(error)) {
+      if (error && isRecoverableSchemaError(error)) {
         const fallback = await authSupabase
           .from("community_messages")
           .update({ content: "This message was deleted" })
@@ -559,13 +622,13 @@ export default function CommunityChatPage() {
           .eq("sender_id", authUser.id)
           .select()
           .single();
-        data = { ...fallback.data, deleted_at: new Date().toISOString() };
+        data = fallback.data ? { ...fallback.data, deleted_at: deletedAt } : null;
         error = fallback.error;
       }
       if (error) throw error;
-      setMessages((prev) => prev.map((m) => (m.id === msg.id ? normalizeLegacyMessage(data) : m)));
+      if (data) replaceOrAppendMessage(data);
       setActiveMessageId(null);
-      showToastMsg("success", "Chat database updated.");
+      showToastMsg("success", "Message deleted.");
     } catch (err) {
       showToastMsg("error", "Delete needs the chat database update.");
     }
@@ -581,7 +644,7 @@ export default function CommunityChatPage() {
         .eq("id", msg.id)
         .select()
         .single();
-      if (error && !supportsOptionalColumns(error)) {
+      if (error && isRecoverableSchemaError(error)) {
         setLocalPinnedId(msg.community_id, msg.id, !msg.is_pinned);
         setMessages((prev) => prev.map((m) => (
           m.id === msg.id ? { ...m, is_pinned: !msg.is_pinned } : m
@@ -591,7 +654,7 @@ export default function CommunityChatPage() {
         return;
       }
       if (error) throw error;
-      setMessages((prev) => prev.map((m) => (m.id === msg.id ? normalizeLegacyMessage(data) : m)));
+      if (data) replaceOrAppendMessage(data);
       setActiveMessageId(null);
       showToastMsg("success", msg.is_pinned ? "Message unpinned." : "Message pinned.");
     } catch (err) {
@@ -613,7 +676,7 @@ export default function CommunityChatPage() {
         community_id: activeCommunityId,
         sender_id: authUser.id,
         sender_name: user?.name || "Anonymous Student",
-        sender_avatar: user?.profilePicture || "",
+        sender_avatar: getSenderAvatar(),
         content,
       };
       const richPayload = {
@@ -631,7 +694,7 @@ export default function CommunityChatPage() {
         .insert([richPayload])
         .select()
         .single();
-      if (error && !supportsOptionalColumns(error)) {
+      if (error && isRecoverableSchemaError(error)) {
         if (mediaUrl || poll) {
           throw new Error("Run Supabase chat SQL to save this attachment.");
         }
@@ -644,8 +707,7 @@ export default function CommunityChatPage() {
         error = fallback.error;
       }
       if (error) throw error;
-      const normalized = normalizeLegacyMessage(data);
-      setMessages((prev) => (prev.some((m) => m.id === normalized.id) ? prev : [...prev, normalized]));
+      const normalized = replaceOrAppendMessage(data);
       setReplyTo(null);
       return normalized;
     } finally {
@@ -735,13 +797,16 @@ export default function CommunityChatPage() {
         .insert([{ community_id: activeCommunityId, user_id: memberUserId, role: 'member' }]);
 
       if (memberError && memberError.code !== '23505') throw memberError;
+      const alreadyJoined = memberError?.code === '23505';
 
       // Update community member count
-      const newCount = (community?.member_count || 0) + 1;
-      await authSupabase
-        .from("communities")
-        .update({ member_count: newCount })
-        .eq("id", activeCommunityId);
+      const newCount = alreadyJoined ? (community?.member_count || 0) : (community?.member_count || 0) + 1;
+      if (!alreadyJoined) {
+        await authSupabase
+          .from("communities")
+          .update({ member_count: newCount })
+          .eq("id", activeCommunityId);
+      }
 
       setCommunity((prev) => ({ ...prev, member_count: newCount }));
       setMembershipSet(prev => new Set([...prev, activeCommunityId]));
@@ -760,7 +825,7 @@ export default function CommunityChatPage() {
         .select("*")
         .eq("community_id", activeCommunityId)
         .order("created_at", { ascending: true });
-      if (msgs) setMessages(msgs);
+      if (msgs) setMessages(msgs.map(normalizeLegacyMessage));
     } catch (err) {
       showToastMsg("error", "Failed to join community.");
     } finally {
@@ -783,12 +848,15 @@ export default function CommunityChatPage() {
         .insert([{ community_id: targetCommunity.id, user_id: memberUserId, role: 'member' }]);
 
       if (memberError && memberError.code !== '23505') throw memberError;
+      const alreadyJoined = memberError?.code === '23505';
 
-      const newCount = (targetCommunity.member_count || 0) + 1;
-      await authSupabase
-        .from("communities")
-        .update({ member_count: newCount })
-        .eq("id", targetCommunity.id);
+      const newCount = alreadyJoined ? (targetCommunity.member_count || 0) : (targetCommunity.member_count || 0) + 1;
+      if (!alreadyJoined) {
+        await authSupabase
+          .from("communities")
+          .update({ member_count: newCount })
+          .eq("id", targetCommunity.id);
+      }
 
       localStorage.setItem(`community_seen_${targetCommunity.id}`, new Date().toISOString());
       setMembershipSet(prev => new Set([...prev, targetCommunity.id]));
@@ -811,7 +879,8 @@ export default function CommunityChatPage() {
 
   const handleOpenCommunity = (targetId) => {
     if (!targetId || targetId === activeCommunityId) return;
-    window.history.pushState(null, "", `/community/${targetId}`);
+    pendingScrollToBottomRef.current = true;
+    window.history.pushState(null, "", `/community/${targetId}?at=latest`);
     setActiveCommunityId(targetId);
     setUnreadCounts(prev => ({ ...prev, [targetId]: 0 }));
     localStorage.setItem(`community_seen_${targetId}`, new Date().toISOString());
@@ -947,8 +1016,23 @@ export default function CommunityChatPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F9F8F5] flex items-center justify-center pt-[70px] lg:pt-0">
+      <div className="h-full bg-[#F9F8F5] flex items-center justify-center pt-[70px] lg:pt-0">
         <Loader2 className="animate-spin text-[#C8922A]" size={32} />
+      </div>
+    );
+  }
+
+  if (!community) {
+    return (
+      <div className="h-full bg-[#F9F8F5] flex flex-col items-center justify-center gap-4">
+        <AlertCircle size={36} className="text-[#C8922A]" />
+        <p className="text-[#333333] font-bold">Community not found.</p>
+        <button
+          onClick={() => router.push("/community")}
+          className="px-5 py-2 rounded-2xl bg-amber-100 text-amber-800 font-black text-sm cursor-pointer hover:bg-amber-200 transition-colors"
+        >
+          Back to Communities
+        </button>
       </div>
     );
   }
@@ -962,7 +1046,7 @@ export default function CommunityChatPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#F9F8F5] pt-[70px] lg:pt-0 h-screen lg:grid lg:grid-cols-[330px_minmax(0,1fr)]">
+    <div className="h-full bg-[#F9F8F5] pt-[70px] lg:pt-0 flex flex-col lg:grid lg:grid-cols-[330px_minmax(0,1fr)]">
       <aside className="hidden lg:flex min-h-0 flex-col border-r border-[#E8E6E0] bg-white/70 backdrop-blur-sm">
         <div className="px-5 py-5 flex items-center gap-3 shrink-0">
           <button
@@ -1052,7 +1136,7 @@ export default function CommunityChatPage() {
         </div>
       </aside>
 
-      <section className="min-h-0 h-full flex flex-col">
+      <section className="min-h-0 h-full flex-1 flex flex-col overflow-hidden">
       {/* Community Header */}
       <div className="bg-white border-b border-[#E8E6E0] px-4 py-3 flex items-center justify-between shadow-sm shrink-0">
         <div className="flex items-center gap-3 min-w-0">

@@ -134,7 +134,7 @@ const BANNER_BY_NAME = {
   'NIFT New Delhi':
     'https://iirfranking2.s3.ap-south-1.amazonaws.com/upload__1620895522963.webp',
   'O.P. Jindal Global University (JGU), Sonipat':
-    'https://www.admissionwala.in/storage/productimages/Banner4-1.jpg',
+    'https://www.deccanchronicle.com/h-upload/2024/08/20/1832251-op-jindal-global-university-.webp',
   'Pearl Academy, Delhi':
     'https://campuspro.co.in/collage-image/1737943310_row_406.jpg',
   'Pearl Academy, Gurugram':

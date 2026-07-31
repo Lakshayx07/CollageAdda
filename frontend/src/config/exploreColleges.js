@@ -148,11 +148,10 @@ export function getExploreColleges(allColleges, filters = {}) {
     search = "",
     filterCity = "All",
     filterCategory = "All",
-    filterStream = "All",
-    streamMap = {},
+    sortBy = "Default",
   } = filters;
 
-  return buildExplorePool(allColleges).filter((college) => {
+  let filtered = buildExplorePool(allColleges).filter((college) => {
     if (search && !college.name.toLowerCase().includes(search.toLowerCase())) {
       return false;
     }
@@ -162,12 +161,18 @@ export function getExploreColleges(allColleges, filters = {}) {
     if (filterCategory !== "All" && (college.category || "General") !== filterCategory) {
       return false;
     }
-    if (filterStream !== "All") {
-      const collegeStream = streamMap[college.category || "General"] || "Engineering";
-      if (collegeStream !== filterStream) {
-        return false;
-      }
-    }
     return true;
   });
+
+  if (sortBy === "Most Students") {
+    filtered.sort((a, b) => (b.realStudentCount || b.studentsData?.length || 0) - (a.realStudentCount || a.studentsData?.length || 0));
+  } else if (sortBy === "Most Active") {
+    filtered.sort((a, b) => (b.postsData?.length || 0) - (a.postsData?.length || 0));
+  } else if (sortBy === "Trending This Week") {
+    filtered.sort((a, b) => ((b.postsData?.length || 0) * 2 + (b.studentsData?.length || 0)) - ((a.postsData?.length || 0) * 2 + (a.studentsData?.length || 0)));
+  } else if (sortBy === "Newest Added") {
+    filtered.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  }
+
+  return filtered;
 }

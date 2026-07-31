@@ -159,11 +159,11 @@ export default function Sidebar() {
                   "relative z-10 flex items-center h-12 rounded-[1rem] overflow-hidden w-full px-3.5 transition-all duration-200",
                   isActive 
                     ? "bg-[#FFF7E8] text-black" 
-                    : "text-[#64748B] hover:text-[#1A1A1A] hover:bg-[#F9F8F5]"
+                    : "text-[#4A4A4A] hover:text-[#1A1A1A] hover:bg-[#F9F8F5]"
                 )}
               >
                 <div className="relative flex h-8 w-8 shrink-0 items-center justify-center">
-                  <Icon size={20} strokeWidth={isActive ? 3 : 1.75} className={isActive ? "text-black" : "text-[#64748B] group-hover:text-[#1A1A1A]"} />
+                  <Icon size={20} strokeWidth={isActive ? 3 : 1.75} className={isActive ? "text-black" : "text-[#4A4A4A] group-hover:text-[#1A1A1A]"} />
                   {isFriends && hasRequest && (
                     <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-white bg-orange-400 shadow-[0_0_14px_rgba(251,146,60,0.65)]" />
                   )}
@@ -187,7 +187,7 @@ export default function Sidebar() {
                 >
                   <p className={clsx(
                     "text-[16px] transition-colors duration-200",
-                    isActive ? "text-black font-[900]" : "text-[#64748B] font-medium group-hover:text-[#1A1A1A]"
+                    isActive ? "text-black font-[900]" : "text-[#4A4A4A] font-bold group-hover:text-[#1A1A1A]"
                   )}>
                     {item.name}
                   </p>
@@ -199,12 +199,18 @@ export default function Sidebar() {
 
         <button
           onClick={() => {
-            const editor = document.querySelector('.post-editor-textarea');
-            if (editor) {
-              editor.focus();
-              window.scrollTo({ top: 0, behavior: 'smooth' });
+            if (pathname === '/home' || pathname === '/') {
+              const editor = document.querySelector('.post-editor-textarea');
+              if (editor) {
+                editor.focus();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                editor.classList.add('ring-4', 'ring-[#C8922A]/50', 'transition-all', 'duration-500');
+                setTimeout(() => {
+                  editor.classList.remove('ring-4', 'ring-[#C8922A]/50');
+                }, 1000);
+              }
             } else {
-              router.push('/');
+              router.push('/home?focusPost=true');
             }
           }}
           aria-label="Create Post"

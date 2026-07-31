@@ -163,7 +163,8 @@ router.get('/:id/students', protect, async (req, res) => {
 });
 
 // @route   GET /api/colleges/:id
-// @desc    Get college details + recent posts (students loaded separately)
+// @desc    Get college details + paginated posts (students loaded separately)
+// @query   page (default 1), limit (default 20)
 router.get('/:id', protect, async (req, res) => {
   try {
     const college = await College.findById(req.params.id);
@@ -171,6 +172,11 @@ router.get('/:id', protect, async (req, res) => {
 
     const universityNames = getUniversityNameVariants(college.name);
     const universityFilter = { university: { $in: universityNames } };
+
+    // Pagination params
+    const page  = Math.max(1, parseInt(req.query.page)  || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 20));
+    const skip  = (page - 1) * limit;
 
     // Posts tab must not wait on heavy student documents.
     // Slim posts like the home feed so base64 media is not embedded in JSON.
@@ -180,7 +186,8 @@ router.get('/:id', protect, async (req, res) => {
         .populate('author', 'name university isVerified xp points currentTick')
         .populate('comments.user', 'name isVerified')
         .sort({ createdAt: -1 })
-        .limit(12)
+        .skip(skip)
+        .limit(limit)
         .lean(),
       User.countDocuments(universityFilter),
       Post.countDocuments(universityFilter),
@@ -195,6 +202,11 @@ router.get('/:id', protect, async (req, res) => {
       realStudentCount,
       realPostCount,
       followersCount: college.followers ? college.followers.length : 0,
+      // Pagination meta
+      page,
+      limit,
+      hasMore: skip + posts.length < realPostCount,
+      totalPosts: realPostCount,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -39,6 +39,9 @@ import {
   SearchX,
   X,
   Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Trash2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useApiQuery } from "../../utils/useApiQuery";
@@ -67,6 +70,92 @@ const handleBannerError = (event) => {
   img.src = COLLEGE_BANNER_FALLBACK;
 };
 
+const ConfettiSparkles = ({ active }) => {
+  const [pieces, setPieces] = useState([]);
+
+  useEffect(() => {
+    if (!active) {
+      setPieces([]);
+      return;
+    }
+
+    const colors = [
+      '#C8922A', // Theme Amber Gold
+      '#7C3AED', // Theme Purple
+      '#10B981', // Emerald
+      '#EC4899', // Pink
+      '#3B82F6', // Blue
+      '#FBBF24', // Yellow
+    ];
+
+    const newPieces = Array.from({ length: 80 }).map((_, i) => {
+      const isSparkle = Math.random() > 0.5;
+      return {
+        id: i,
+        x: Math.random() * 100, // percentage
+        color: colors[Math.floor(Math.random() * colors.length)],
+        size: isSparkle ? Math.random() * 8 + 6 : Math.random() * 12 + 6,
+        height: isSparkle ? null : Math.random() * 8 + 10,
+        isSparkle,
+        delay: Math.random() * 1.5,
+        duration: Math.random() * 2.5 + 2.5,
+        sway: Math.random() * 80 - 40,
+        rotateSpeed: Math.random() * 720 + 360,
+      };
+    });
+
+    setPieces(newPieces);
+  }, [active]);
+
+  if (!active) return null;
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
+      {pieces.map(p => (
+        <motion.div
+          key={p.id}
+          initial={{
+            x: `${p.x}vw`,
+            y: "-10vh",
+            rotate: 0,
+            opacity: 1
+          }}
+          animate={{
+            y: "110vh",
+            x: `${p.x + (p.sway / 10)}vw`,
+            rotate: p.rotateSpeed,
+            opacity: [1, 1, 0.8, 0]
+          }}
+          transition={{
+            duration: p.duration,
+            delay: p.delay,
+            ease: "linear",
+          }}
+          style={{
+            position: "absolute",
+            width: p.size,
+            height: p.isSparkle ? p.size : p.height,
+            backgroundColor: p.isSparkle ? "transparent" : p.color,
+            borderRadius: p.isSparkle ? "50%" : "2px",
+            backgroundImage: p.isSparkle
+              ? `radial-gradient(circle, ${p.color} 20%, transparent 60%)`
+              : "none",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }}
+        >
+          {p.isSparkle && (
+            <svg viewBox="0 0 24 24" className="w-full h-full" style={{ fill: p.color }}>
+              <path d="M12 0L14.6 9.4L24 12L14.6 14.6L12 24L9.4 14.6L0 12L9.4 9.4Z" />
+            </svg>
+          )}
+        </motion.div>
+      ))}
+    </div>
+  );
+};
+
 function timeAgo(dateStr) {
   if (!dateStr) return "";
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -86,10 +175,13 @@ export default function ExplorePage() {
   );
 }
 
+const EMPTY_ARRAY = [];
+
 function ExploreContent() {
   const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
@@ -116,12 +208,44 @@ function ExploreContent() {
   const [toastMessage, setToastMessage] = useState(null);
   const [dragX, setDragX] = useState(0);
   const [viewMode, setViewMode] = useState("cards"); // 'cards' or 'list'
-  const [selectedMemoryPhoto, setSelectedMemoryPhoto] = useState(null);
+  const [selectedMemoryIndex, setSelectedMemoryIndex] = useState(null);
+
+  const [spinGameQuestionIndex, setSpinGameQuestionIndex] = useState(0);
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [spinResultStudent, setSpinResultStudent] = useState(null);
+
+  const SPIN_QUESTIONS = [
+    "Who is your next gym buddy? 💪",
+    "Who is the best coder on campus? 💻",
+    "Who is most likely to become a CEO? 🚀",
+    "Who throws the best parties? 🎉",
+    "Who gives the best startup advice? 💡",
+    "Who should you start a band with? 🎸",
+    "Who is always late to class? ⏰",
+    "Who takes the best aesthetic photos? 📸",
+    "Who is the ultimate debate champion? 🎤",
+    "Who has the best music taste? 🎧",
+  ];
+
+  const handleSpinNow = () => {
+    setIsSpinning(true);
+    setSpinResultStudent(null);
+    setSpinGameQuestionIndex(Math.floor(Math.random() * SPIN_QUESTIONS.length));
+    
+    const collegeStudents = selectedCollege?.studentsData || [];
+    const randomStudent = collegeStudents[Math.floor(Math.random() * collegeStudents.length)];
+    
+    setTimeout(() => {
+      setSpinResultStudent(randomStudent);
+      setIsSpinning(false);
+    }, 2500); 
+  };
 
   // ── Filter bar state ────────────────────────────────────────────────────────
   const [filterCity, setFilterCity] = useState("All");
   const [filterCategory, setFilterCategory] = useState("All");
   const [filterStream, setFilterStream] = useState("All");
+  const [sortBy, setSortBy] = useState("Default");
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
   const queryClient = useQueryClient();
@@ -132,8 +256,12 @@ function ExploreContent() {
   const [refreshCountdown, setRefreshCountdown] = useState("Auto-refreshes daily");
   const [discoveryConnectStatus, setDiscoveryConnectStatus] = useState({});
   const [spinRotation, setSpinRotation] = useState(0);
+  // ── Pagination for college posts ───────────────────────────────────────────
+  const [postsHasMore, setPostsHasMore] = useState(false);
+  const [postsLoadingMore, setPostsLoadingMore] = useState(false);
+  const [postsCurrentPage, setPostsCurrentPage] = useState(1);
   // ── TanStack Query: Colleges ──────────────────────────────────────────────
-  const { data: colleges = [], isLoading: collegesLoading } = useApiQuery(
+  const { data: colleges = EMPTY_ARRAY, isLoading: collegesLoading } = useApiQuery(
     "explore-colleges",
     "/api/colleges",
     {
@@ -143,7 +271,7 @@ function ExploreContent() {
   );
 
   // ── TanStack Query: Following list ────────────────────────────────────────
-  const { data: myFollowingRaw = [] } = useApiQuery(
+  const { data: myFollowingRaw = EMPTY_ARRAY } = useApiQuery(
     "explore-following",
     "/api/users/me/following",
     {
@@ -174,7 +302,7 @@ function ExploreContent() {
 
   // ── TanStack Query: Daily Discovery ───────────────────────────────────────
   const TWELVE_HOURS = 12 * 60 * 60 * 1000;
-  const { data: dailyDiscoveryRaw = [], isLoading: dailyDiscoveryLoading } = useApiQuery(
+  const { data: dailyDiscoveryRaw = EMPTY_ARRAY, isLoading: dailyDiscoveryLoading } = useApiQuery(
     "explore-daily-discovery",
     "/api/users/daily-drop",
     {
@@ -233,7 +361,7 @@ function ExploreContent() {
           break;
         }
       }
-      return isDifferent ? { ...initStatus, ...prev } : prev;
+      return isDifferent ? { ...prev, ...initStatus } : prev;
     });
   }, [dailyDiscovery, myFollowing]);
 
@@ -259,6 +387,29 @@ function ExploreContent() {
     } catch (err) {
       console.error("Connect error:", err);
       setDiscoveryConnectStatus(prev => ({ ...prev, [uid]: 'idle' }));
+    }
+  };
+
+  const handleDeleteMemory = async (postId) => {
+    if (!window.confirm("Are you sure you want to delete this post?")) return;
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const res = await fetch(`${apiUrl}/api/posts/${postId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        queryClient.invalidateQueries({ queryKey: ["explore-colleges"] });
+        setSelectedMemoryIndex(null);
+        setToastMessage("Post deleted successfully");
+        setTimeout(() => setToastMessage(null), 3000);
+      } else {
+        const err = await res.json();
+        alert(err.message || "Failed to delete post");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error deleting post");
     }
   };
 
@@ -364,33 +515,84 @@ function ExploreContent() {
     }
   };
 
-  const sortStudentsByFollowing = useCallback((students) => {
-    if (!Array.isArray(students) || students.length === 0) return students || [];
-    return [...students].sort((a, b) => {
-      const aFollowed = myFollowing.includes(a._id || a.id);
-      const bFollowed = myFollowing.includes(b._id || b.id);
-      if (aFollowed === bFollowed) {
-        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-      }
-      return aFollowed ? 1 : -1;
-    });
-  }, [myFollowing]);
+  const generateStudentDeck = useCallback((students, currentFollowing) => {
+    if (!Array.isArray(students) || students.length === 0) return [];
+    
+    // Create a pool where each student appears exactly twice
+    let pool = [...students, ...students];
+    
+    // Find unconnected students based on currentFollowing array
+    const unconnected = students.filter(s => !currentFollowing.includes(s._id || s.id));
+    
+    let firstCard = null;
+    if (unconnected.length > 0) {
+      // Pick a random unconnected student for the very first card
+      const randomIndex = Math.floor(Math.random() * unconnected.length);
+      firstCard = unconnected[randomIndex];
+      // Remove one instance of this student from the pool
+      const poolIndex = pool.findIndex(s => (s._id || s.id) === (firstCard._id || firstCard.id));
+      if (poolIndex !== -1) pool.splice(poolIndex, 1);
+    } else {
+      // If all are connected, pick any random card
+      const randomIndex = Math.floor(Math.random() * pool.length);
+      firstCard = pool[randomIndex];
+      pool.splice(randomIndex, 1);
+    }
+    
+    // Shuffle the rest of the pool
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    
+    return [firstCard, ...pool];
+  }, []);
 
   const collegeIdParam = searchParams.get("collegeId");
 
-  // Cached college detail (slim posts) — avoids re-downloading on reopen
+  // Always fetch fresh college detail so posts are never stale (staleTime: 0)
   const {
     data: collegeDetail,
     isLoading: collegeDetailLoading,
     isFetching: collegeDetailFetching,
   } = useApiQuery(
     ["college-detail", collegeIdParam],
-    collegeIdParam ? `/api/colleges/${collegeIdParam}` : null,
+    collegeIdParam ? `/api/colleges/${collegeIdParam}?page=1&limit=20` : null,
     {
       enabled: isMounted && !!getToken() && !!collegeIdParam,
-      staleTime: 3 * 60 * 1000,
+      staleTime: 0,  // always fetch fresh posts
     }
   );
+
+  // Load additional pages of posts for the currently selected college
+  const loadMorePosts = useCallback(async () => {
+    if (postsLoadingMore || !postsHasMore || !selectedCollege) return;
+    const collegeId = selectedCollege._id || selectedCollege.id;
+    if (!collegeId) return;
+    const nextPage = postsCurrentPage + 1;
+    setPostsLoadingMore(true);
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('collegeadda_token') : null;
+      const res = await fetch(`${apiUrl}/api/colleges/${collegeId}?page=${nextPage}&limit=20`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const newPosts = data.postsData || [];
+      setSelectedCollege((prev) => {
+        if (!prev || String(prev._id || prev.id) !== String(collegeId)) return prev;
+        const existingIds = new Set((prev.postsData || []).map(p => String(p._id)));
+        const deduplicated = newPosts.filter(p => !existingIds.has(String(p._id)));
+        return { ...prev, postsData: [...(prev.postsData || []), ...deduplicated] };
+      });
+      setPostsCurrentPage(nextPage);
+      setPostsHasMore(data.hasMore ?? false);
+    } catch (err) {
+      console.error('Error loading more posts:', err);
+    } finally {
+      setPostsLoadingMore(false);
+    }
+  }, [postsLoadingMore, postsHasMore, selectedCollege, postsCurrentPage, apiUrl]);
 
   // Optimistic shell from colleges list while detail loads
   useEffect(() => {
@@ -401,27 +603,38 @@ function ExploreContent() {
     }
 
     setActiveTab("posts");
+    // Reset pagination whenever we switch to a different college
+    setPostsCurrentPage(1);
+    setPostsHasMore(false);
+
     const listMatch =
       colleges.find((c) => String(c._id || c.id) === String(collegeIdParam)) || null;
 
     setSelectedCollege((prev) => {
+      // Build an optimistic shell for immediate UI feedback
+      // (the real postsData will arrive from the API via useApiQuery)
       const prevId = prev?._id || prev?.id;
-      if (prevId && String(prevId) === String(collegeIdParam) && prev.postsData?.length) {
+      if (prevId && String(prevId) === String(collegeIdParam)) {
+        // same college — keep what we have as a shell; API will overwrite
         return prev;
       }
       if (!listMatch) return prev;
       return {
         ...listMatch,
         studentsData: listMatch.studentsData || [],
-        postsData: listMatch.postsData || [],
+        postsData: [], // intentionally empty — let API provide real posts
       };
     });
   }, [collegeIdParam, colleges]);
 
   // Merge fetched detail into selected college (preserve lazy-loaded students)
+  // Also sync hasMore from the first-page response
   useEffect(() => {
     if (!collegeDetail || !collegeIdParam) return;
     if (String(collegeDetail._id || collegeDetail.id) !== String(collegeIdParam)) return;
+
+    setPostsHasMore(collegeDetail.hasMore ?? false);
+    setPostsCurrentPage(1);
 
     setSelectedCollege((prev) => {
       const sameCollege =
@@ -475,7 +688,7 @@ function ExploreContent() {
           if (!prev || String(prev._id || prev.id) !== String(collegeId)) return prev;
           return {
             ...prev,
-            studentsData: sortStudentsByFollowing(data.studentsData || []),
+            studentsData: generateStudentDeck(data.studentsData || [], myFollowing),
             realStudentCount: data.realStudentCount ?? prev.realStudentCount,
           };
         });
@@ -492,18 +705,14 @@ function ExploreContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, selectedCollege?._id, selectedCollege?.id, apiUrl]);
 
-  // Re-sort students when following list changes — do not re-fetch college details
-  useEffect(() => {
-    setSelectedCollege((prev) => {
-      if (!prev?.studentsData?.length) return prev;
-      return { ...prev, studentsData: sortStudentsByFollowing(prev.studentsData) };
-    });
-  }, [myFollowing, sortStudentsByFollowing]);
+
 
   const handleSwipe = async (collegeId, direction, student) => {
     setSwipeDirection(direction);
 
     if (direction === 'right') {
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 5000);
       try {
         const token = localStorage.getItem("collegeadda_token");
         // Follow the user
@@ -537,8 +746,11 @@ function ExploreContent() {
       }
       setTimeout(() => setToastMessage(null), 3000);
     } else {
-      setToastMessage("Skipped! Next up");
-      setTimeout(() => setToastMessage(null), 2000);
+      const isAlreadyConnected = myFollowing.includes(student._id || student.id);
+      if (!isAlreadyConnected) {
+        setToastMessage("Skipped! Next up");
+        setTimeout(() => setToastMessage(null), 2000);
+      }
     }
 
     // Instantly increment index and trigger 1 full smooth clockwise spin (+360 deg)
@@ -551,6 +763,26 @@ function ExploreContent() {
     setDragX(0);
   };
 
+  // Auto-skip "ALREADY NETWORK" users after 5 seconds
+  useEffect(() => {
+    if (activeTab !== "students" || viewMode !== "cards" || !selectedCollege?.studentsData) return;
+    
+    const collegeId = selectedCollege._id || selectedCollege.id;
+    const currentIndex = currentStudentIndices[collegeId] || 0;
+    
+    if (currentIndex >= selectedCollege.studentsData.length) return;
+    
+    const currentStudent = selectedCollege.studentsData[currentIndex];
+    const isConnected = myFollowing.includes(currentStudent._id || currentStudent.id);
+    
+    if (isConnected) {
+      const timer = setTimeout(() => {
+        handleSwipe(collegeId, 'left', currentStudent);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [activeTab, viewMode, selectedCollege, currentStudentIndices, myFollowing, handleSwipe]);
+
   // ── Category → Stream mapping ────────────────────────────────────────────
   const STREAM_MAP = {
     IIT: "Engineering",
@@ -561,7 +793,7 @@ function ExploreContent() {
     Law: "Law",
     Design: "Design & Architecture",
   };
-  const STREAM_OPTIONS = ["All", "Engineering", "Medicine", "Law", "Design & Architecture"];
+  const SORT_OPTIONS = ["Default", "Most Students", "Most Active", "Trending This Week", "Newest Added"];
   const CATEGORY_OPTIONS = ["All", "IIT", "NIT", "Engineering", "Medical", "Law", "Design", "General"];
 
   // ── Dynamic city list derived from all colleges ──────────────────────────
@@ -591,16 +823,18 @@ function ExploreContent() {
         filterCategory,
         filterStream,
         streamMap: STREAM_MAP,
+        sortBy,
       }),
-    [search, colleges, filterCity, filterCategory, filterStream]
+    [search, colleges, filterCity, filterCategory, filterStream, sortBy]
   );
 
-  const hasActiveFilters = filterCity !== "All" || filterCategory !== "All" || filterStream !== "All";
+  const hasActiveFilters = filterCity !== "All" || filterCategory !== "All" || filterStream !== "All" || sortBy !== "Default";
 
   const clearFilters = () => {
     setFilterCity("All");
     setFilterCategory("All");
     setFilterStream("All");
+    setSortBy("Default");
   };
 
   const toggleFollow = async (id) => {
@@ -674,8 +908,13 @@ function ExploreContent() {
 
 
 
+  const memoryPosts = useMemo(() => {
+    return (selectedCollege?.postsData || []).filter(p => p.mediaUrl || p.image);
+  }, [selectedCollege?.postsData]);
+
   return (
     <div className="page-shell flex flex-col overflow-x-hidden">
+      <ConfettiSparkles active={showConfetti} />
       <AnimatePresence mode="wait">
         {!selectedCollege ? (
           /* --- EXPLORE GRID VIEW --- */
@@ -723,34 +962,22 @@ function ExploreContent() {
                       className="explore-search-input ca-input w-full py-2.5 pl-10 pr-3.5 text-sm font-medium rounded-xl"
                     />
                   </div>
-                  <motion.button
-                    type="button"
-                    whileTap={{ scale: 0.97 }}
-                    whileHover={{ y: -1 }}
-                    onClick={() => {
-                      setExploreMode(exploreMode === "colleges" ? "arena" : "colleges");
-                      setSearch("");
-                      setArenaSportFilter("All");
-                    }}
-                    className={clsx(
-                      "explore-mode-switch flex shrink-0 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 font-bold transition-all cursor-pointer",
-                      exploreMode === "colleges"
-                        ? "explore-mode-switch--arena bg-gradient-to-r from-[#C8922A] to-[#D4A843] border-transparent shadow-sm"
-                        : "explore-mode-switch--colleges bg-white border-[#E8E6E0] shadow-sm hover:border-[#C8922A]/55 hover:bg-[#FFF8EC]"
-                    )}
-                  >
-                    {exploreMode === "colleges" ? (
-                      <>
-                        <Swords size={16} strokeWidth={2.4} />
-                        <span className="tracking-wider uppercase text-[11px]">Arena</span>
-                      </>
-                    ) : (
-                      <>
-                        <Building2 size={16} strokeWidth={2.4} />
-                        <span className="tracking-wider uppercase text-[11px]">Colleges</span>
-                      </>
-                    )}
-                  </motion.button>
+                  {exploreMode === "arena" && (
+                    <motion.button
+                      type="button"
+                      whileTap={{ scale: 0.97 }}
+                      whileHover={{ y: -1 }}
+                      onClick={() => {
+                        setExploreMode("colleges");
+                        setSearch("");
+                        setArenaSportFilter("All");
+                      }}
+                      className="explore-mode-switch flex shrink-0 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 font-bold transition-all cursor-pointer bg-white border-[#E8E6E0] shadow-sm hover:border-[#C8922A]/55 hover:bg-[#FFF8EC]"
+                    >
+                      <Building2 size={16} strokeWidth={2.4} className="text-[#C8922A]" />
+                      <span className="tracking-wider uppercase text-[11px] text-[#C8922A]">Colleges</span>
+                    </motion.button>
+                  )}
                 </div>
               </div>
 
@@ -829,22 +1056,19 @@ function ExploreContent() {
                         </select>
                       </div>
 
-                      {/* Stream filter */}
-                      <div className="min-w-0">
-                        <label className="mb-2 flex items-center gap-1.5 pl-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#6B6B6B]">
-                          <BookOpen size={12} strokeWidth={2.4} className="text-[#C8922A]" />
-                          Stream
-                        </label>
-                        <select
-                          value={filterStream}
-                          onChange={e => setFilterStream(e.target.value)}
-                          aria-label="Filter by stream"
-                          className="explore-filter-select ca-input w-full py-2.5 pl-3.5 pr-9 text-xs font-semibold appearance-none cursor-pointer rounded-xl"
+                      {/* Enter Arena Button */}
+                      <div className="min-w-0 flex flex-col justify-end">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setExploreMode("arena");
+                            setSearch("");
+                          }}
+                          className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#C8922A] to-[#D4A843] py-3 text-[11px] font-black uppercase tracking-widest text-white shadow-[0_4px_14px_rgba(200,146,42,0.28)] hover:scale-[1.02] active:scale-[0.98] transition-all"
                         >
-                          {STREAM_OPTIONS.map(s => (
-                            <option key={s} value={s}>{s === "All" ? "All Streams" : s}</option>
-                          ))}
-                        </select>
+                          <Swords size={14} strokeWidth={2.5} />
+                          Enter Arena
+                        </button>
                       </div>
                     </div>
 
@@ -878,11 +1102,6 @@ function ExploreContent() {
                                 {filterCategory}
                               </span>
                             )}
-                            {filterStream !== "All" && (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-[#FFF8EC] border border-[#E8D9B0] px-2.5 py-1 text-[9px] font-black text-[#B07D20] uppercase tracking-wider">
-                                {filterStream}
-                              </span>
-                            )}
                             <button
                               type="button"
                               onClick={clearFilters}
@@ -899,73 +1118,70 @@ function ExploreContent() {
                 </section>
 
                 <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-5 px-4 pb-12 sm:grid-cols-2 sm:gap-6 sm:px-5 xl:grid-cols-3">
-              {loading && (
-                <div className="col-span-full flex justify-center py-20">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
-                </div>
-              )}
-
-              {filteredColleges.map((college, index) => (
-                <motion.div
-                  key={college._id || college.id}
-                  initial={{ opacity: 0, y: 14 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.35, delay: Math.min(index * 0.04, 0.24) }}
-                  whileHover={{ y: -4 }}
-                  className="explore-college-card relative flex flex-col rounded-[1.6rem] overflow-hidden text-left group shadow-[0_8px_28px_rgba(26,26,26,0.12)] hover:shadow-[0_14px_36px_rgba(26,26,26,0.18)] transition-shadow duration-300 cursor-default ring-1 ring-black/5"
-                  style={{ height: "420px" }}
-                >
-                  {/* Full-bleed background image */}
-                  <img
-                    src={college.banner || COLLEGE_BANNER_FALLBACK}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.06]"
-                    alt={college.name}
-                    referrerPolicy="no-referrer"
-                    onError={handleBannerError}
-                  />
-
-                  {/* Dark gradient overlay — richer depth at bottom */}
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      background:
-                        "linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.55) 42%, rgba(0,0,0,0.18) 70%, rgba(0,0,0,0.05) 100%)",
-                    }}
-                  />
-                  <div
-                    className="absolute inset-x-0 top-0 h-24 pointer-events-none"
-                    style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.28), transparent)" }}
-                  />
-
-                  {/* Content overlaid on image */}
-                  <div className="absolute inset-0 flex flex-col justify-end p-5 space-y-3.5">
-                    {/* College name + followers badge */}
-                    <div className="flex items-start justify-between gap-2">
-                      <h3
-                        className="font-black text-[1.05rem] leading-snug line-clamp-2 flex-1 tracking-tight"
-                        style={{ color: "white", textShadow: "0 2px 10px rgba(0,0,0,0.55)" }}
-                      >
-                        {college.name}
-                      </h3>
-                      {(college.followersCount ?? 0) > 0 && (
-                        <div className="flex items-center gap-1 shrink-0 rounded-full border border-white/15 bg-black/45 px-2.5 py-1 backdrop-blur-md">
-                          <Users size={10} color="white" />
-                          <span className="text-[10px] font-bold" style={{ color: "white" }}>
-                            {college.followersCount}
-                          </span>
-                        </div>
-                      )}
+                  {loading && (
+                    <div className="col-span-full flex justify-center py-20">
+                      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
                     </div>
-                        {/* Location & students pills */}
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <div className="flex items-center gap-1.5 rounded-full border border-white/12 px-3 py-1.5 backdrop-blur-md" style={{ backgroundColor: "rgba(0,0,0,0.42)" }}>
-                            <MapPin size={11} color="white" />
-                            <span className="text-[11px] font-semibold truncate max-w-[120px]" style={{ color: "white" }}>{college.location}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 rounded-full border border-white/12 px-3 py-1.5 backdrop-blur-md" style={{ backgroundColor: "rgba(0,0,0,0.42)" }}>
-                            <Users size={11} color="white" />
-                            <span className="text-[11px] font-semibold" style={{ color: "white" }}>{college.students} Students</span>
-                          </div>
+                  )}
+
+                  {filteredColleges.map((college, index) => (
+                    <motion.div
+                      key={college._id || college.id}
+                      initial={{ opacity: 0, y: 14 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.35, delay: Math.min(index * 0.04, 0.24) }}
+                      whileHover={{ y: -4 }}
+                      className="explore-college-card relative flex flex-col rounded-[1.6rem] overflow-hidden text-left group shadow-[0_8px_28px_rgba(26,26,26,0.12)] hover:shadow-[0_14px_36px_rgba(26,26,26,0.18)] transition-shadow duration-300 cursor-default ring-1 ring-black/5"
+                      style={{ height: "420px" }}
+                    >
+                      {/* Full-bleed background image */}
+                      <img
+                        src={college.banner || COLLEGE_BANNER_FALLBACK}
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.06]"
+                        alt={college.name}
+                        referrerPolicy="no-referrer"
+                        onError={handleBannerError}
+                      />
+
+                      {/* Dark gradient overlay — richer depth at bottom */}
+                      <div
+                        className="absolute inset-0"
+                        style={{
+                          background:
+                            "linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.55) 42%, rgba(0,0,0,0.18) 70%, rgba(0,0,0,0.05) 100%)",
+                        }}
+                      />
+                      <div
+                        className="absolute inset-x-0 top-0 h-24 pointer-events-none"
+                        style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.28), transparent)" }}
+                      />
+
+                      {/* Location pill (Top-left) */}
+                      <div className="absolute top-5 left-5 right-5 flex items-center gap-2 flex-wrap z-10">
+                        <div className="flex items-center gap-1.5 rounded-full border border-white/12 px-3 py-1.5 backdrop-blur-md shadow-sm" style={{ backgroundColor: "rgba(0,0,0,0.42)" }}>
+                          <MapPin size={11} color="white" />
+                          <span className="text-[11px] font-semibold truncate max-w-[120px]" style={{ color: "white" }}>{college.location}</span>
+                        </div>
+                      </div>
+
+                      {/* Content overlaid on image */}
+                      <div className="absolute inset-0 flex flex-col justify-end p-5 space-y-4">
+                        {/* College name + followers badge */}
+                        <div className="flex items-start justify-between gap-2">
+                          <h3
+                            className="font-black text-[1.05rem] leading-snug line-clamp-2 flex-1 tracking-tight"
+                            style={{ color: "white", textShadow: "0 2px 10px rgba(0,0,0,0.55)" }}
+                          >
+                            {college.name}
+                          </h3>
+                          {(college.followersCount ?? 0) > 0 && (
+                            <div className="flex items-center gap-1 shrink-0 rounded-full border border-white/15 bg-black/45 px-2.5 py-1 backdrop-blur-md mt-1">
+                              <Users size={10} color="white" />
+                              <span className="text-[10px] font-bold" style={{ color: "white" }}>
+                                {college.followersCount}
+                              </span>
+                            </div>
+                          )}
                         </div>
 
                         {/* Explore Now button — only interactive hotspot on the card */}
@@ -990,47 +1206,19 @@ function ExploreContent() {
 
                 </div>
 
-            {!loading && filteredColleges.length === 0 && (
-              <div className="flex-1 flex flex-col items-center justify-center py-16 px-6 text-center">
-                <div className="explore-empty-panel app-panel mx-auto max-w-sm rounded-[1.75rem] p-9 flex flex-col items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl brand-mark shadow-sm">
-                    <SearchX size={24} className="text-white" strokeWidth={2.25} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-[#1A1A1A] mb-1.5">
-                      {hasActiveFilters
-                        ? "No colleges match these filters"
-                        : `No colleges found matching "${search}"`}
-                    </p>
-                    <p className="text-xs text-[#6B6B6B] leading-relaxed">
-                      {hasActiveFilters
-                        ? "Try adjusting or clearing your filters."
-                        : "Try a different search term."}
-                    </p>
-                  </div>
-                  {hasActiveFilters && (
-                    <button
-                      type="button"
-                      onClick={clearFilters}
-                      className="mt-1 rounded-2xl bg-gradient-to-r from-[#C8922A] to-[#D4A843] px-5 py-2.5 text-[11px] font-black uppercase tracking-widest text-[#1A1A1A] shadow-[0_4px_14px_rgba(200,146,42,0.28)] hover:opacity-95 active:scale-95 transition-all"
-                    >
-                      Reset Filters
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
                 {!loading && filteredColleges.length === 0 && (
                   <div className="flex-1 flex flex-col items-center justify-center py-16 px-6 text-center">
-                    <div className="app-panel mx-auto max-w-sm rounded-[1.6rem] p-8 flex flex-col items-center gap-4">
-                      <span className="text-4xl">🔍</span>
+                    <div className="explore-empty-panel app-panel mx-auto max-w-sm rounded-[1.75rem] p-9 flex flex-col items-center gap-4">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl brand-mark shadow-sm">
+                        <SearchX size={24} className="text-white" strokeWidth={2.25} />
+                      </div>
                       <div>
-                        <p className="text-sm font-black text-[#4A4A4A] mb-1">
+                        <p className="text-sm font-black text-[#1A1A1A] mb-1.5">
                           {hasActiveFilters
                             ? "No colleges match these filters"
                             : `No colleges found matching "${search}"`}
                         </p>
-                        <p className="text-xs text-[#6B6B6B]">
+                        <p className="text-xs text-[#6B6B6B] leading-relaxed">
                           {hasActiveFilters
                             ? "Try adjusting or clearing your filters."
                             : "Try a different search term."}
@@ -1038,8 +1226,9 @@ function ExploreContent() {
                       </div>
                       {hasActiveFilters && (
                         <button
+                          type="button"
                           onClick={clearFilters}
-                          className="mt-1 rounded-xl bg-gradient-to-r from-[#C8922A] to-[#C8922A] px-5 py-2.5 text-[11px] font-black uppercase tracking-widest text-[#1A1A1A] shadow-lg shadow-[0_4px_14px_rgba(200,146,42,0.15)] hover:opacity-90 active:scale-95 transition-all"
+                          className="mt-1 rounded-2xl bg-gradient-to-r from-[#C8922A] to-[#D4A843] px-5 py-2.5 text-[11px] font-black uppercase tracking-widest text-[#1A1A1A] shadow-[0_4px_14px_rgba(200,146,42,0.28)] hover:opacity-95 active:scale-95 transition-all"
                         >
                           Reset Filters
                         </button>
@@ -1134,7 +1323,7 @@ function ExploreContent() {
                           <Gamepad2 size={24} className="text-[#C8922A]" />
                         </div>
                         <div>
-                          <p className="text-sm font-black text-[#1A1A1A]">
+                          <p className="text-sm font-black text-[#1A1A1A] text-center">
                             Be the first on the board
                           </p>
                           <p className="text-[11px] text-[#888888] font-medium mt-1 max-w-xs">
@@ -1279,7 +1468,7 @@ function ExploreContent() {
                   className={clsx(
                     "px-5 py-2.5 rounded-2xl text-sm font-bold transition-all active:scale-95",
                     followed[selectedCollege._id || selectedCollege.id]
-                      ? "bg-[#F3F2EE] text-[#6B6B6B] border border-[#E8E6E0]"
+                      ? "bg-white text-[#1A1A1A] border border-[#E8E6E0] shadow-sm"
                       : "text-white shadow-md"
                   )}
                   style={
@@ -1508,6 +1697,30 @@ function ExploreContent() {
                         );
                       });
                     })()}
+
+                    {/* Load More Posts Button */}
+                    {postsHasMore && (
+                      <div className="flex justify-center pt-2 pb-4">
+                        <button
+                          type="button"
+                          onClick={loadMorePosts}
+                          disabled={postsLoadingMore}
+                          className="flex items-center gap-2 rounded-2xl border border-[#E8D9B0] bg-[#FFF8EC] px-6 py-3 text-sm font-bold text-[#B07D20] shadow-sm transition-all hover:bg-[#FFF0CC] hover:shadow-md active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+                        >
+                          {postsLoadingMore ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Loading…
+                            </>
+                          ) : (
+                            <>
+                              <Plus size={16} strokeWidth={2.5} />
+                              Load More Posts
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )}
                   </motion.div>
                 )}
 
@@ -1529,18 +1742,18 @@ function ExploreContent() {
                         {/* Top Bar */}
                         <div className="w-full flex items-center justify-between mb-6">
                           <div className="flex flex-col">
-                            <h4 className="text-sm font-bold text-foreground">
+                            <h4 className="text-lg md:text-xl font-bold text-foreground tracking-tight">
                               {viewMode === 'cards' ? 'Discover Students' : 'Student Directory'}
                             </h4>
-                            <p className="text-[10px] text-muted font-medium mt-0.5">
-                              {(selectedCollege.studentsData?.length || 0)} students found
+                            <p className="text-xs md:text-sm text-muted font-medium mt-0.5">
+                              {((selectedCollege.studentsData?.length || 0) / 2)} students found
                             </p>
                           </div>
                           <div className="flex bg-surface-hover p-1 rounded-xl border border-border/50">
                             <button
                               onClick={() => setViewMode('cards')}
                               className={clsx(
-                                "px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all",
+                                "px-4 py-2 rounded-lg text-xs font-bold transition-all",
                                 viewMode === 'cards' ? "bg-primary text-[#1A1A1A] shadow-sm" : "text-muted hover:text-foreground"
                               )}
                             >
@@ -1549,7 +1762,7 @@ function ExploreContent() {
                             <button
                               onClick={() => setViewMode('list')}
                               className={clsx(
-                                "px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all",
+                                "px-4 py-2 rounded-lg text-xs font-bold transition-all",
                                 viewMode === 'list' ? "bg-primary text-[#1A1A1A] shadow-sm" : "text-muted hover:text-foreground"
                               )}
                             >
@@ -1587,159 +1800,210 @@ function ExploreContent() {
                         {/* 3D Roulette Cylinder Stack */}
                         {viewMode === 'cards' ? (
                           <div className="relative w-full max-w-[900px] flex flex-col items-center justify-center mb-10 mx-auto overflow-visible" style={{ perspective: "1200px" }}>
-                            
+
                             {/* The Static Wheel Container */}
-                            <div 
-                              className="relative w-[320px] sm:w-[350px] h-[580px] flex items-center justify-center" 
+                            <div
+                              className="relative w-[320px] sm:w-[350px] h-[580px] flex items-center justify-center"
                               style={{ transformStyle: "preserve-3d" }}
                             >
-                              {/* Empty State */}
-                            {(currentStudentIndices[selectedCollege?._id || selectedCollege?.id] || 0) >= selectedCollege.studentsData.length && (
-                              <motion.div
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="flex flex-col items-center justify-center text-center p-6 space-y-5 bg-surface rounded-[32px] w-full h-full border border-border/50 shadow-lg absolute"
-                              >
-                                <div className="bg-primary/10 p-5 rounded-full mb-2">
-                                  <GraduationCap size={48} className="text-primary" />
-                                </div>
-                                <h3 className="font-bold text-foreground text-xl">You've seen everyone at {selectedCollege.name}!</h3>
-                                <div className="space-y-3 w-full mt-4">
-                                  <button onClick={() => setViewMode('list')} className="w-full py-3 bg-primary/10 text-primary font-bold rounded-xl text-sm hover:bg-primary/20 transition-colors shadow-sm flex items-center justify-center space-x-2">
-                                    <span>Switch to List View</span>
-                                    <Users size={16} />
-                                  </button>
-                                </div>
-                              </motion.div>
-                            )}
+                              {/* Empty State / Spin Game */}
+                              {(currentStudentIndices[selectedCollege?._id || selectedCollege?.id] || 0) >= selectedCollege.studentsData.length && (
+                                <motion.div
+                                  initial={{ opacity: 0, scale: 0.8 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  className="flex flex-col items-center justify-center text-center p-6 space-y-5 bg-gradient-to-b from-[#FFF8EC] to-white rounded-[32px] w-full h-full border border-[#F3E8D3] shadow-xl absolute z-10 overflow-hidden"
+                                >
+                                  {!spinResultStudent && !isSpinning ? (
+                                    <>
+                                      <div className="w-24 h-24 rounded-full bg-white shadow-sm border border-border/50 flex items-center justify-center mb-4">
+                                        <span className="text-5xl">🎰</span>
+                                      </div>
+                                      <div>
+                                        <h3 className="text-2xl font-black text-foreground tracking-tight px-4 leading-snug">Let's check who fits for you!</h3>
+                                        <p className="text-sm text-muted font-medium mt-3 px-4">
+                                          {SPIN_QUESTIONS[spinGameQuestionIndex]}
+                                        </p>
+                                      </div>
+                                      <button
+                                        onClick={handleSpinNow}
+                                        className="mt-6 px-8 py-3.5 bg-[#C8922A] text-white font-black text-sm uppercase tracking-widest rounded-full shadow-lg hover:scale-105 transition-all"
+                                      >
+                                        SPIN NOW
+                                      </button>
+                                    </>
+                                  ) : isSpinning ? (
+                                    <div className="flex flex-col items-center justify-center space-y-6">
+                                      <Loader2 className="h-12 w-12 text-[#C8922A] animate-spin" />
+                                      <h3 className="text-xl font-black text-foreground animate-pulse text-center px-4">{SPIN_QUESTIONS[spinGameQuestionIndex]}</h3>
+                                      <p className="text-xs font-bold text-muted uppercase tracking-widest">Finding the perfect match...</p>
+                                    </div>
+                                  ) : (
+                                    <div className="flex flex-col items-center justify-center w-full h-full relative">
+                                      <div className="absolute top-4 w-full px-4 text-center z-20">
+                                        <h3 className="text-lg font-black text-[#C8922A] drop-shadow-sm leading-tight bg-white/80 backdrop-blur-md rounded-xl py-2 px-4 shadow-sm border border-[#F3E8D3]">
+                                          {SPIN_QUESTIONS[spinGameQuestionIndex]}
+                                        </h3>
+                                      </div>
+                                      
+                                      <div className="w-32 h-32 rounded-full border-[6px] border-white shadow-xl bg-muted z-20 mt-8">
+                                        <img
+                                          src={getAvatarSrc(spinResultStudent.profilePic, spinResultStudent.name, spinResultStudent._id || spinResultStudent.id)}
+                                          alt=""
+                                          className="w-full h-full object-cover rounded-full bg-white text-transparent"
+                                        />
+                                      </div>
+                                      <h2 className="text-2xl font-black text-[#1A1A1A] tracking-tight mt-4">{spinResultStudent.name}</h2>
+                                      <p className="text-xs font-bold text-muted mt-1 uppercase tracking-wider text-center px-4">{spinResultStudent.course} • {spinResultStudent.studyYear}</p>
+                                      
+                                      <button
+                                        onClick={() => setSpinResultStudent(null)}
+                                        className="mt-8 px-6 py-2.5 bg-surface-hover text-muted font-bold text-xs uppercase tracking-widest rounded-full border border-border/50 hover:bg-white hover:shadow-sm transition-all"
+                                      >
+                                        Spin Again
+                                      </button>
+                                    </div>
+                                  )}
+                                </motion.div>
+                              )}
 
-                            {/* Cards */}
-                            <AnimatePresence>
-                              {selectedCollege.studentsData.map((student, idx) => {
-                                const currentIndex = currentStudentIndices[selectedCollege?._id || selectedCollege?.id] || 0;
-                                // Render up to 8 cards around the cylinder for a continuous wheel look
-                                if (Math.abs(idx - currentIndex) > 4) return null;
+                              {/* Cards */}
+                              <AnimatePresence>
+                                {selectedCollege.studentsData.map((student, idx) => {
+                                  const currentIndex = currentStudentIndices[selectedCollege?._id || selectedCollege?.id] || 0;
+                                  // Render up to 8 cards around the cylinder for a continuous wheel look
+                                  if (Math.abs(idx - currentIndex) > 4) return null;
 
-                                const isTop = idx === currentIndex;
-                                const absOffset = Math.abs(idx - currentIndex);
-                                
-                                // Cards physically orbit the center point!
-                                const targetRotateY = ((idx - currentIndex) * -45) + spinRotation; 
-                                
-                                return (
-                                  <motion.div
-                                    key={student._id || student.id}
-                                    drag={isTop ? "x" : false}
-                                    dragConstraints={{ left: 0, right: 0 }}
-                                    onDrag={(e, info) => isTop && setDragX(info.offset.x)}
-                                    onDragEnd={(e, info) => {
-                                      if (!isTop) return;
-                                      setDragX(0);
-                                      if (info.offset.x > 80) handleSwipe(selectedCollege?._id || selectedCollege?.id, 'right', student);
-                                      else if (info.offset.x < -80) handleSwipe(selectedCollege?._id || selectedCollege?.id, 'left', student);
-                                    }}
-                                    initial={false}
-                                    animate={{
-                                      rotateY: targetRotateY + (isTop ? dragX * 0.1 : 0),
-                                      x: isTop ? dragX : 0,
-                                      scale: isTop ? 1.05 : 0.85,
-                                      opacity: absOffset <= 3 ? 1 : 0 
-                                    }}
-                                    transition={{ type: "spring", bounce: 0, duration: 1.2 }} // Ultra-smooth natural physics deceleration
-                                    className={`absolute w-full h-[95%] bg-surface border border-border/50 rounded-[32px] overflow-hidden flex flex-col ${isTop ? 'cursor-grab active:cursor-grabbing shadow-[0_20px_60px_-10px_rgba(var(--primary),0.4)]' : 'shadow-none pointer-events-none'}`}
-                                    style={{ transformOrigin: "50% 50% -450px" }} // Large radius prevents intersection!
-                                  >
-                                    {/* Student Profile Photo Area - Top Banner */}
-                                    <div className="relative w-full h-[28%] bg-[#F3F2EE] shrink-0 pointer-events-none">
-                                      <img src={selectedCollege.banner || COLLEGE_BANNER_FALLBACK} alt="Banner" className="w-full h-full object-cover opacity-60 mix-blend-multiply" />
+                                  const isTop = idx === currentIndex;
+                                  const absOffset = Math.abs(idx - currentIndex);
 
-                                      {/* Verified Badge */}
-                                      {student.isVerified && (
-                                        <div className="absolute top-4 left-4 bg-white px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm border border-green-100 z-20">
-                                          <div className="bg-green-500 rounded-full p-0.5"><Check size={10} className="text-white" strokeWidth={3} /></div>
-                                          <span className="text-[10px] font-black text-green-700 tracking-wider">VERIFIED</span>
+                                  const isAlreadyConnected = myFollowing.includes(student._id || student.id);
+                                  
+                                  // Cards physically orbit the center point!
+                                  const targetRotateY = ((idx - currentIndex) * -45) + spinRotation;
+
+                                  return (
+                                    <motion.div
+                                      key={`${student._id || student.id}-${idx}`}
+                                      drag={isTop && !isAlreadyConnected ? "x" : false}
+                                      dragConstraints={{ left: 0, right: 0 }}
+                                      onDrag={(e, info) => isTop && !isAlreadyConnected && setDragX(info.offset.x)}
+                                      onDragEnd={(e, info) => {
+                                        if (!isTop || isAlreadyConnected) return;
+                                        setDragX(0);
+                                        if (info.offset.x > 80) handleSwipe(selectedCollege?._id || selectedCollege?.id, 'right', student);
+                                        else if (info.offset.x < -80) handleSwipe(selectedCollege?._id || selectedCollege?.id, 'left', student);
+                                      }}
+                                      initial={false}
+                                      animate={{
+                                        rotateY: targetRotateY + (isTop ? dragX * 0.1 : 0),
+                                        x: isTop ? dragX : 0,
+                                        scale: isTop ? 1.05 : 0.85,
+                                        opacity: absOffset <= 3 ? 1 : 0
+                                      }}
+                                      transition={{ type: "spring", bounce: 0, duration: 1.2 }} // Ultra-smooth natural physics deceleration
+                                      className={`absolute w-full h-[95%] bg-surface border border-border/50 rounded-[32px] overflow-hidden flex flex-col ${isTop ? (isAlreadyConnected ? 'shadow-sm pointer-events-none' : 'cursor-grab active:cursor-grabbing shadow-[0_20px_60px_-10px_rgba(var(--primary),0.4)]') : 'shadow-none pointer-events-none'}`}
+                                      style={{ transformOrigin: "50% 50% -450px" }} // Large radius prevents intersection!
+                                    >
+                                      {/* ALREADY NETWORK Overlay */}
+                                      {isTop && isAlreadyConnected && (
+                                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none w-[90%] max-w-[280px]">
+                                          <div className="bg-white/90 backdrop-blur-md px-6 py-3 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex items-center justify-center gap-3 border border-border/50 animate-bounce">
+                                            <span className="text-2xl">🤝</span>
+                                            <span className="text-[#1A1A1A] font-black tracking-widest text-[11px] uppercase" style={{ color: '#1A1A1A' }}>Already Network</span>
+                                          </div>
                                         </div>
                                       )}
-                                    </div>
+                                      {/* Student Profile Photo Area - Top Banner */}
+                                      <div className="relative w-full h-[28%] bg-[#F3F2EE] shrink-0 pointer-events-none">
+                                        <img src={selectedCollege.banner || COLLEGE_BANNER_FALLBACK} alt="Banner" className="w-full h-full object-cover opacity-60 mix-blend-multiply" />
 
-                                    {/* Details Area */}
-                                    <div className="flex-1 flex flex-col items-center px-4 pt-14 pb-4 text-center bg-white relative">
-                                      {/* Circular Profile Picture */}
-                                      <div className="absolute -top-14 left-1/2 -translate-x-1/2">
-                                        <div className="relative w-[110px] h-[110px] rounded-full border-[5px] border-white shadow-sm bg-muted z-20">
-                                          <img
-                                            src={getAvatarSrc(student.profilePic, student.name, student._id || student.id)}
-                                            alt=""
-                                            className="w-full h-full object-cover rounded-full bg-white text-transparent"
-                                            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getDefaultAvatar(student.name, student._id || student.id); }}
-                                          />
-                                        </div>
-                                      </div>
-
-                                      {/* Name & Contributor Badge */}
-                                      <div className="mt-1 w-full">
-                                        <h2 className="text-2xl font-black text-[#1A1A1A] tracking-tight truncate px-2">
-                                          {student.name}
-                                        </h2>
-                                        {((student.postsCount || student.posts?.length || 0) > 10) && (
-                                          <div className="mt-1.5 flex justify-center">
-                                            <span className="inline-flex items-center gap-1.5 bg-[#FFF8EC] text-[#C8922A] px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border border-[#F3E8D3]">
-                                              <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                                              Campus Contributor
-                                            </span>
+                                        {/* Verified Badge */}
+                                        {student.isVerified && (
+                                          <div className="absolute top-4 left-4 bg-white px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm border border-green-100 z-20">
+                                            <div className="bg-green-500 rounded-full p-0.5"><Check size={10} className="text-white" strokeWidth={3} /></div>
+                                            <span className="text-[10px] font-black text-green-700 tracking-wider">VERIFIED</span>
                                           </div>
                                         )}
                                       </div>
 
-                                      {/* Bio Block */}
-                                      <div className="mt-4 w-full bg-[#FFF8EC] border border-[#F3E8D3] rounded-2xl p-3.5 flex gap-2.5 text-left">
-                                        <div className="text-[#C8922A] shrink-0 font-serif text-3xl leading-none pt-1.5">“</div>
-                                        <p className="text-xs text-[#4A4A4A] font-medium italic leading-relaxed line-clamp-3">
-                                          {student.bio || "No bio yet."}
-                                        </p>
-                                      </div>
+                                      {/* Details Area */}
+                                      <div className="flex-1 flex flex-col items-center px-4 pt-14 pb-4 text-center bg-white relative">
+                                        {/* Circular Profile Picture */}
+                                        <div className="absolute -top-14 left-1/2 -translate-x-1/2">
+                                          <div className="relative w-[110px] h-[110px] rounded-full border-[5px] border-white shadow-sm bg-muted z-20">
+                                            <img
+                                              src={getAvatarSrc(student.profilePic, student.name, student._id || student.id)}
+                                              alt=""
+                                              className="w-full h-full object-cover rounded-full bg-white text-transparent"
+                                              onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getDefaultAvatar(student.name, student._id || student.id); }}
+                                            />
+                                          </div>
+                                        </div>
 
-                                      {/* Education Details Block */}
-                                      <div className="mt-3 w-full bg-[#FAFAF8] border border-[#E8E6E0] rounded-2xl p-3.5 flex flex-col gap-2.5 text-left">
-                                        <div className="flex justify-between items-center text-[11px] font-bold text-[#4A4A4A]">
-                                          <span className="truncate pr-2">🏫 {student.university || selectedCollege.name}</span>
-                                          <span className="shrink-0">👨🏻‍🎓 {student.course || "B.Tech"}, {student.branch || "CSE"}</span>
+                                        {/* Name & Contributor Badge */}
+                                        <div className="mt-1 w-full">
+                                          <h2 className="text-2xl font-black text-[#1A1A1A] tracking-tight truncate px-2">
+                                            {student.name}
+                                          </h2>
+                                          {((student.postsCount || student.posts?.length || 0) > 10) && (
+                                            <div className="mt-1.5 flex justify-center">
+                                              <span className="inline-flex items-center gap-1.5 bg-[#FFF8EC] text-[#C8922A] px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border border-[#F3E8D3]">
+                                                <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                                                Campus Contributor
+                                              </span>
+                                            </div>
+                                          )}
                                         </div>
-                                        <div className="flex justify-between items-center text-[11px] font-bold text-[#4A4A4A]">
-                                          <span>📚 {student.studyYear || "1st Year"}</span>
-                                          <span>🏛️ Class of {student.passOutBatch || "2028"}</span>
-                                        </div>
-                                      </div>
 
-                                      {/* Rank & Badge Pills */}
-                                      <div className="mt-2.5 w-full flex flex-wrap items-center gap-2 justify-center">
-                                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FFF8EC] border border-[#F3E8D3] rounded-full text-[10px] font-bold text-[#1A1A1A]">
-                                          <span>🏆</span>
-                                          <span>Campus Rank #{student.campusRank || student.rank || Math.max(1, 100 - Math.floor((student.xp || 0) / 10))}</span>
+                                        {/* Bio Block */}
+                                        <div className="mt-4 w-full bg-[#FFF8EC] border border-[#F3E8D3] rounded-2xl p-3.5 flex gap-2.5 text-left">
+                                          <div className="text-[#C8922A] shrink-0 font-serif text-3xl leading-none pt-1.5">“</div>
+                                          <p className="text-xs text-[#4A4A4A] font-medium italic leading-relaxed line-clamp-3">
+                                            {student.bio || "No bio yet."}
+                                          </p>
                                         </div>
-                                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FFF8EC] border border-[#F3E8D3] rounded-full text-[10px] font-bold text-[#1A1A1A] uppercase tracking-wider">
-                                          <span>🏅</span>
-                                          <span>{student.unlockedBadges && student.unlockedBadges.length > 0 ? student.unlockedBadges[0].badgeId : "Networker"}</span>
-                                        </div>
-                                      </div>
 
-                                      {/* Footer Badges */}
-                                      <div className="mt-auto pt-3 w-full flex flex-wrap justify-center items-center gap-x-2 gap-y-1.5 bg-[#F9F8F5] border border-[#E8E6E0] rounded-xl py-2 px-1 text-[9px] font-bold text-[#6B6B6B] uppercase tracking-wider">
-                                        <span className="flex items-center gap-1 shrink-0">📌 <span className="truncate max-w-[80px]">{student.hometownDistrict || student.hometownState || "Delhi, India"}</span></span>
-                                        <div className="w-[1px] h-2.5 bg-[#D4D4D4] shrink-0" />
-                                        <span className="flex items-center gap-1 shrink-0">📅 Joined {new Date(student.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
-                                        {((student.xp || 0) > 150) && (
-                                          <>
-                                            <div className="w-[1px] h-2.5 bg-[#D4D4D4] shrink-0" />
-                                            <span className="flex items-center gap-1 shrink-0 text-[#1A1A1A]">🤝 Active Member</span>
-                                          </>
-                                        )}
+                                        {/* Education Details Block */}
+                                        <div className="mt-3 w-full bg-[#FAFAF8] border border-[#E8E6E0] rounded-2xl p-3.5 flex flex-col gap-2.5 text-left">
+                                          <div className="flex justify-between items-center text-[11px] font-bold text-[#4A4A4A]">
+                                            <span className="truncate pr-2">🏫 {student.university || selectedCollege.name}</span>
+                                            <span className="shrink-0">👨🏻‍🎓 {student.course || "B.Tech"}, {student.branch || "CSE"}</span>
+                                          </div>
+                                          <div className="flex justify-between items-center text-[11px] font-bold text-[#4A4A4A]">
+                                            <span>📚 {student.studyYear || "1st Year"}</span>
+                                            <span>🏛️ Class of {student.passOutBatch || "2028"}</span>
+                                          </div>
+                                        </div>
+
+                                        {/* Rank & Badge Pills */}
+                                        <div className="mt-2.5 w-full flex flex-wrap items-center gap-2 justify-center">
+                                          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FFF8EC] border border-[#F3E8D3] rounded-full text-[10px] font-bold text-[#1A1A1A]">
+                                            <span>🏆</span>
+                                            <span>Campus Rank #{student.campusRank || student.rank || Math.max(1, 100 - Math.floor((student.xp || 0) / 10))}</span>
+                                          </div>
+                                          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FFF8EC] border border-[#F3E8D3] rounded-full text-[10px] font-bold text-[#1A1A1A] uppercase tracking-wider">
+                                            <span>🏅</span>
+                                            <span>{student.unlockedBadges && student.unlockedBadges.length > 0 ? student.unlockedBadges[0].badgeId : "Networker"}</span>
+                                          </div>
+                                        </div>
+
+                                        {/* Footer Badges */}
+                                        <div className="mt-auto pt-3 w-full flex flex-wrap justify-center items-center gap-x-2 gap-y-1.5 bg-[#F9F8F5] border border-[#E8E6E0] rounded-xl py-2 px-1 text-[9px] font-bold text-[#6B6B6B] uppercase tracking-wider">
+                                          <span className="flex items-center gap-1 shrink-0">📌 <span className="truncate max-w-[80px]">{student.hometownDistrict || student.hometownState || "Delhi, India"}</span></span>
+                                          <div className="w-[1px] h-2.5 bg-[#D4D4D4] shrink-0" />
+                                          <span className="flex items-center gap-1 shrink-0">📅 Joined {new Date(student.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
+                                          {((student.xp || 0) > 150) && (
+                                            <>
+                                              <div className="w-[1px] h-2.5 bg-[#D4D4D4] shrink-0" />
+                                              <span className="flex items-center gap-1 shrink-0 text-[#1A1A1A]">🤝 Active Member</span>
+                                            </>
+                                          )}
+                                        </div>
                                       </div>
-                                    </div>
-                                  </motion.div>
-                                );
-                              }).reverse()}
-                            </AnimatePresence>
+                                    </motion.div>
+                                  );
+                                }).reverse()}
+                              </AnimatePresence>
                             </div>
 
 
@@ -1747,7 +2011,7 @@ function ExploreContent() {
                         ) : (
                           /* --- LIST VIEW --- */
                           <div className="w-full space-y-3 pb-10">
-                            {selectedCollege.studentsData
+                            {Array.from(new Map(selectedCollege.studentsData.map(s => [s._id || s.id, s])).values())
                               .filter(s =>
                                 s.name.toLowerCase().includes(studentSearch.toLowerCase()) ||
                                 s.interests?.some(i => i.toLowerCase().includes(studentSearch.toLowerCase()))
@@ -1798,23 +2062,24 @@ function ExploreContent() {
 
                         {/* Action Buttons - Only show in Card View and if not finished */}
                         {viewMode === 'cards' && (currentStudentIndices[selectedCollege?._id || selectedCollege?.id] || 0) < (selectedCollege?.studentsData?.length || 0) && (
-                          <div className="flex items-center justify-center space-x-8 mt-8 w-full">
+                          <div className={`flex items-center justify-center space-x-4 mt-2 w-full max-w-xs mx-auto transition-opacity duration-300 ${myFollowing.includes(selectedCollege.studentsData[currentStudentIndices[selectedCollege?._id || selectedCollege?.id] || 0]?._id || selectedCollege.studentsData[currentStudentIndices[selectedCollege?._id || selectedCollege?.id] || 0]?.id) ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
                             <motion.button
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
                               onClick={() => handleSwipe(selectedCollege?._id || selectedCollege?.id, 'left', selectedCollege.studentsData[currentStudentIndices[selectedCollege?._id || selectedCollege?.id] || 0])}
-                              className="w-[76px] h-[76px] rounded-full bg-white border-2 border-orange-500/20 flex items-center justify-center shadow-[0_0_20px_rgba(249,115,22,0.15)] hover:shadow-[0_0_30px_rgba(249,115,22,0.3)] transition-shadow leading-none pb-1"
+                              className="flex-1 py-3.5 bg-white border border-[#E8E6E0] rounded-[20px] text-[13px] font-black text-[#1A1A1A] flex items-center justify-center gap-2 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:bg-[#F9F8F5] transition-all"
                             >
-                              <span className="text-[40px]">🤪</span>
+                              SKIP
                             </motion.button>
 
                             <motion.button
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
                               onClick={() => handleSwipe(selectedCollege?._id || selectedCollege?.id, 'right', selectedCollege.studentsData[currentStudentIndices[selectedCollege?._id || selectedCollege?.id] || 0])}
-                              className="w-[76px] h-[76px] rounded-full bg-white border-2 border-pink-500/20 flex items-center justify-center shadow-[0_0_25px_rgba(236,72,153,0.2)] hover:shadow-[0_0_40px_rgba(236,72,153,0.4)] transition-shadow leading-none pb-1"
+                              className="relative flex-1 py-3.5 bg-blue-500 rounded-[20px] text-[13px] font-black text-white flex items-center justify-center gap-2 shadow-md hover:bg-blue-600 transition-all overflow-hidden"
+                              style={{ color: '#ffffff' }}
                             >
-                              <span className="text-[40px]">😍</span>
+                              <span className="relative z-10 flex items-center gap-2" style={{ color: '#ffffff' }}>⚡ CONNECT</span>
                             </motion.button>
                           </div>
                         )}
@@ -1831,53 +2096,44 @@ function ExploreContent() {
                     exit={{ opacity: 0, y: -10 }}
                     className="w-full"
                   >
-                    {(() => {
-                      const memoryPosts = (selectedCollege.postsData || []).filter(
-                        (p) =>
-                          (p.mediaUrl || p.image)
-                      );
-                      if (memoryPosts.length === 0) {
-                        return (
-                          <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-                            <div className="w-14 h-14 rounded-2xl bg-[#F9F8F5] border border-[#E8E6E0] flex items-center justify-center mb-4">
-                              <Bookmark size={24} className="text-[#C8922A]" />
-                            </div>
-                            <p className="text-sm font-semibold text-[#1A1A1A]">No memories yet</p>
-                            <p className="text-xs text-[#888888] mt-1 max-w-xs">
-                              Photo posts from this campus will show up here.
-                            </p>
-                          </div>
-                        );
-                      }
-                      return (
-                        <div className="grid grid-cols-3 gap-1.5 md:gap-2">
-                          {memoryPosts.map((post, i) => (
-                            <div
-                              key={post._id || i}
-                              onClick={() => setSelectedMemoryPhoto(post.mediaUrl || post.image)}
-                              className="aspect-square relative group overflow-hidden bg-[#F3F2EE] rounded-xl border border-[#E8E6E0] p-1.5 cursor-pointer"
-                            >
-                              {post.mediaType === "video" ? (
-                                <video
-                                  src={post.mediaUrl}
-                                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                  autoPlay
-                                  loop
-                                  muted
-                                  playsInline
-                                />
-                              ) : (
-                                <img
-                                  src={post.mediaUrl || post.image}
-                                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                  alt=""
-                                />
-                              )}
-                            </div>
-                          ))}
+                    {memoryPosts.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+                        <div className="w-14 h-14 rounded-2xl bg-[#F9F8F5] border border-[#E8E6E0] flex items-center justify-center mb-4">
+                          <Bookmark size={24} className="text-[#C8922A]" />
                         </div>
-                      );
-                    })()}
+                        <p className="text-sm font-semibold text-[#1A1A1A]">No memories yet</p>
+                        <p className="text-xs text-[#888888] mt-1 max-w-xs">
+                          Photo posts from this campus will show up here.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-3 gap-1.5 md:gap-2">
+                        {memoryPosts.map((post, i) => (
+                          <div
+                            key={post._id || i}
+                            onClick={() => setSelectedMemoryIndex(i)}
+                            className="aspect-square relative group overflow-hidden bg-[#F3F2EE] rounded-xl border border-[#E8E6E0] p-1.5 cursor-pointer"
+                          >
+                            {post.mediaType === "video" ? (
+                              <video
+                                src={post.mediaUrl}
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
+                              />
+                            ) : (
+                              <img
+                                src={post.mediaUrl || post.image}
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                alt=""
+                              />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -1989,30 +2245,104 @@ function ExploreContent() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {selectedMemoryPhoto && (
+        {selectedMemoryIndex !== null && memoryPosts[selectedMemoryIndex] && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4"
-            onClick={() => setSelectedMemoryPhoto(null)}
+            onClick={() => setSelectedMemoryIndex(null)}
           >
-            <button
-              onClick={() => setSelectedMemoryPhoto(null)}
-              className="absolute top-6 right-6 text-white/80 hover:text-white p-2 z-10 transition-colors"
-            >
-              <X size={32} strokeWidth={2.5} />
-            </button>
-            <motion.img
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              src={selectedMemoryPhoto}
-              className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl"
-              alt="Memory"
+            <div className="absolute top-6 left-6 z-40 flex items-center">
+              <span
+                className="font-bold text-base md:text-lg tracking-wide drop-shadow-xl pointer-events-auto"
+                style={{ color: '#ffffff' }}
+              >
+                @{memoryPosts[selectedMemoryIndex].author?.name?.toLowerCase().replace(/\s+/g, '') || "student"}
+              </span>
+            </div>
+
+            <div className="absolute top-5 right-6 z-40 flex items-center gap-2">
+              {String(memoryPosts[selectedMemoryIndex].author?._id || memoryPosts[selectedMemoryIndex].author?.id) === String(currentUserId) && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteMemory(memoryPosts[selectedMemoryIndex]._id || memoryPosts[selectedMemoryIndex].id);
+                  }}
+                  className="text-red-500 hover:text-red-400 p-2 transition-colors pointer-events-auto"
+                >
+                  <Trash2 color="#ef4444" size={24} strokeWidth={2.5} />
+                </button>
+              )}
+              <button
+                onClick={() => setSelectedMemoryIndex(null)}
+                className="text-white/80 hover:text-white p-2 transition-colors pointer-events-auto"
+              >
+                <X color="#FFFFFF" size={26} strokeWidth={2.5} />
+              </button>
+            </div>
+
+            <div className="absolute bottom-8 left-0 right-0 flex items-center justify-center gap-12 z-30 pointer-events-none">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (selectedMemoryIndex > 0) setSelectedMemoryIndex(selectedMemoryIndex - 1);
+                }}
+                disabled={selectedMemoryIndex === 0}
+                className={`text-white p-4 pointer-events-auto transition-all drop-shadow-xl ${selectedMemoryIndex === 0 ? "opacity-30 cursor-not-allowed" : "hover:text-white/80 hover:scale-110 active:scale-95"
+                  }`}
+              >
+                <ChevronLeft color="#FFFFFF" size={44} strokeWidth={3} />
+              </button>
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (selectedMemoryIndex < memoryPosts.length - 1) setSelectedMemoryIndex(selectedMemoryIndex + 1);
+                }}
+                disabled={selectedMemoryIndex === memoryPosts.length - 1}
+                className={`text-white p-4 pointer-events-auto transition-all drop-shadow-xl ${selectedMemoryIndex === memoryPosts.length - 1 ? "opacity-30 cursor-not-allowed" : "hover:text-white/80 hover:scale-110 active:scale-95"
+                  }`}
+              >
+                <ChevronRight color="#FFFFFF" size={44} strokeWidth={3} />
+              </button>
+            </div>
+
+            <motion.div
+              key={selectedMemoryIndex}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="relative max-w-full max-h-[90vh] flex items-center justify-center"
               onClick={(e) => e.stopPropagation()}
-            />
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.2}
+              onDragEnd={(e, { offset }) => {
+                if (offset.x < -50 && selectedMemoryIndex < memoryPosts.length - 1) {
+                  setSelectedMemoryIndex(selectedMemoryIndex + 1);
+                } else if (offset.x > 50 && selectedMemoryIndex > 0) {
+                  setSelectedMemoryIndex(selectedMemoryIndex - 1);
+                }
+              }}
+            >
+              {memoryPosts[selectedMemoryIndex].mediaType === "video" ? (
+                <video
+                  src={memoryPosts[selectedMemoryIndex].mediaUrl}
+                  className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl pointer-events-auto"
+                  autoPlay
+                  controls
+                  playsInline
+                />
+              ) : (
+                <img
+                  src={memoryPosts[selectedMemoryIndex].mediaUrl || memoryPosts[selectedMemoryIndex].image}
+                  className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl pointer-events-none"
+                  alt="Memory"
+                />
+              )}
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

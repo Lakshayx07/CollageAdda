@@ -63,6 +63,23 @@ export default function Home() {
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
     setIsMounted(true);
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('focusPost') === 'true') {
+        setTimeout(() => {
+          const editor = document.querySelector('.post-editor-textarea');
+          if (editor) {
+            editor.focus();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            editor.classList.add('ring-4', 'ring-[#C8922A]/50', 'transition-all', 'duration-500');
+            setTimeout(() => {
+              editor.classList.remove('ring-4', 'ring-[#C8922A]/50');
+            }, 1000);
+          }
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }, 300);
+      }
+    }
   }, []);
   // Hydrate from localStorage on first paint so the posts query uses the right cache key immediately
   const [currentUser, setCurrentUser] = useState(() => {
@@ -1357,7 +1374,7 @@ export default function Home() {
                       }
                     }}
                     placeholder={placeholderText}
-                    className="ca-input w-full min-w-0 resize-none sm:text-base mt-2 min-h-[60px] p-3 placeholder-black placeholder-opacity-100"
+                    className="post-editor-textarea ca-input w-full min-w-0 resize-none sm:text-base mt-2 min-h-[60px] p-3 placeholder-black placeholder-opacity-100"
                   />
                   {isTextTooShort && (
                     <div className="flex items-center space-x-2 text-orange-400 text-xs font-semibold animate-pulse">
@@ -1464,10 +1481,10 @@ export default function Home() {
                       whileTap={{ scale: 0.95 }}
                       onClick={handleCreatePost}
                       disabled={isPosting || isTextTooShort || (!newPostContent.trim() && !selectedMedia)}
-                      className="flex w-full sm:w-auto px-3.5 py-1.5 sm:px-4 sm:py-1.5 items-center justify-center disabled:opacity-50 cursor-pointer border-2 border-[#E5E0D5] bg-[#FBEBA5] text-[#5A6270] rounded-xl font-bold text-sm hover:bg-[#F3E196] transition-colors"
+                      className="flex w-full sm:w-auto px-3.5 py-1.5 sm:px-4 sm:py-1.5 items-center justify-center disabled:opacity-50 cursor-pointer bg-[#D4A843] text-white rounded-xl font-bold text-sm hover:bg-[#C8922A] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-sm"
                     >
                       {isPosting ? (
-                        <div className="w-4 h-4 border-2 border-[#5A6270]/30 border-t-[#5A6270] rounded-full animate-spin" />
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       ) : (
                         "Post to Feed"
                       )}
