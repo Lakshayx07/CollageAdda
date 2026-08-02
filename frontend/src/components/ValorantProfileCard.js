@@ -115,7 +115,7 @@ export default function ValorantProfileCard({ formData }) {
 
                 <div className="relative group cursor-pointer">
                   <div className="w-24 h-24 rounded-full p-1 border-2 border-[#FF4655] relative shadow-[0_0_20px_rgba(255,70,85,0.4)]">
-                    <img src={photo_url} alt="Profile" className="w-full h-full rounded-full object-cover grayscale hover:grayscale-0 transition-all" />
+                    <img src={photo_url || 'https://i.pravatar.cc/300?u=val'} alt="Profile" className="w-full h-full rounded-full object-cover grayscale hover:grayscale-0 transition-all" />
                   </div>
                   <div className="absolute -bottom-1 -right-1 bg-[#12171D] border border-[#2B3240] p-1.5 rounded-full text-white">
                     <Edit2 size={12} />

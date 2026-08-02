@@ -126,10 +126,10 @@ function PreviewCard({ name, game, photo, skills, skillRatings, accent, accentMu
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function PlayerCardForm({ onClose, initialCategory = 'esports' }) {
+export default function PlayerCardForm({ onClose, initialCategory = 'esports', onSubmit, viewOnlyData }) {
   const [category, setCategory] = useState(initialCategory);
   const [step, setStep] = useState(1);
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(!!viewOnlyData);
 
   // Auto-fill name from localStorage
   const [autoName, setAutoName] = useState('');
@@ -144,7 +144,7 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
   }, []);
 
   // Form state — keep all fields so submit payload doesn't change
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState(viewOnlyData || {
     username: '',
     game_or_sport: '',
     role_or_position: '',
@@ -237,6 +237,8 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
       category,
     };
     console.log('PlayerCard submit:', payload);
+    
+    if (onSubmit) onSubmit(payload);
     
     if (isBGMI || isValorant || isFreeFire || isChess) {
       setIsSubmitted(true);

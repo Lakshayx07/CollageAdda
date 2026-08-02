@@ -215,47 +215,36 @@ body {
 
 
 /* All cards and panels */
-.card, [class*="card"], 
-[class*="panel"], [class*="modal"],
-[class*="dropdown"], [class*="popup"],
-[class*="container"]:not(#root):not(.app) {
+:where(.card, [class*="card"], [class*="panel"], [class*="modal"], [class*="dropdown"], [class*="popup"], [class*="container"]:not(#root):not(.app)) {
   background-color: var(--color-bg-card);
   border-color: var(--color-border);
   color: var(--color-text-primary);
 }
 
 /* All text elements */
-h1, h2, h3, h4, h5, h6,
-p, span, label, li, a,
-[class*="title"], [class*="name"],
-[class*="heading"], [class*="text"] {
+:where(h1, h2, h3, h4, h5, h6, p, span, label, li, a, [class*="title"], [class*="name"], [class*="heading"], [class*="text"]) {
   color: var(--color-text-primary);
 }
 
 /* Muted / secondary text */
-[class*="subtitle"], [class*="secondary"],
-[class*="muted"], [class*="meta"],
-[class*="label"], [class*="caption"],
-[class*="description"], [class*="hint"] {
-  color: var(--color-text-secondary) !important;
+:where([class*="subtitle"], [class*="secondary"], [class*="muted"], [class*="meta"], [class*="label"], [class*="caption"], [class*="description"], [class*="hint"]) {
+  color: var(--color-text-secondary);
 }
 
 /* All inputs and textareas */
-input, textarea, select,
-[class*="input"], [class*="textarea"] {
-  background-color: var(--color-input-bg) !important;
-  color: var(--color-text-primary) !important;
-  border-color: var(--color-border) !important;
+:where(input, textarea, select, [class*="input"], [class*="textarea"]) {
+  background-color: var(--color-input-bg);
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
 }
 
-input::placeholder, textarea::placeholder {
-  color: var(--color-text-placeholder) !important;
+:where(input::placeholder, textarea::placeholder) {
+  color: var(--color-text-placeholder);
 }
 
 /* All borders */
-[class*="border"], hr,
-[class*="divider"], [class*="separator"] {
-  border-color: var(--color-border) !important;
+:where([class*="border"], hr, [class*="divider"], [class*="separator"]) {
+  border-color: var(--color-border);
 }
 
 /* Sidebar specifically */

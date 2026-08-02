@@ -205,6 +205,8 @@ function ExploreContent() {
   const [arenaSportFilter, setArenaSportFilter] = useState("All");
   const [arenaTab, setArenaTab] = useState("posts"); // legacy fallback
   const [showPlayerCardForm, setShowPlayerCardForm] = useState(false);
+  const [topPlayers, setTopPlayers] = useState([]);
+  const [viewingPlayerCard, setViewingPlayerCard] = useState(null);
   const [followed, setFollowed] = useState({});
   const [addedStudents, setAddedStudents] = useState({});
   const [likes, setLikes] = useState({});
@@ -1332,26 +1334,63 @@ function ExploreContent() {
                       <h3 className="text-[#1A1A1A] font-black uppercase tracking-wider mb-3 flex items-center text-sm">
                         <Target className="mr-2 text-[#C8922A]" size={16} /> Top Players
                       </h3>
-                      <div className="rounded-[1.5rem] border border-[#E8E6E0] bg-gradient-to-b from-[#FFF8EC]/70 to-[#F9F8F5] px-6 py-12 flex flex-col items-center text-center gap-3">
-                        <div className="w-14 h-14 rounded-2xl bg-white border border-[#E8D9B0] shadow-sm flex items-center justify-center">
-                          <Gamepad2 size={24} className="text-[#C8922A]" />
+                      {topPlayers.length === 0 ? (
+                        <div className="rounded-[1.5rem] border border-[#E8E6E0] bg-gradient-to-b from-[#FFF8EC]/70 to-[#F9F8F5] px-6 py-12 flex flex-col items-center text-center gap-3">
+                          <div className="w-14 h-14 rounded-2xl bg-white border border-[#E8D9B0] shadow-sm flex items-center justify-center">
+                            <Gamepad2 size={24} className="text-[#C8922A]" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-black text-[#1A1A1A] text-center">
+                              Be the first on the board
+                            </p>
+                            <p className="text-[11px] text-[#888888] font-medium mt-1 max-w-xs">
+                              Create your player card and show up in Top Players for your campus.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setShowPlayerCardForm(true)}
+                            className="mt-1 ca-btn-primary px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest cursor-pointer"
+                          >
+                            Create My Card
+                          </button>
                         </div>
-                        <div>
-                          <p className="text-sm font-black text-[#1A1A1A] text-center">
-                            Be the first on the board
-                          </p>
-                          <p className="text-[11px] text-[#888888] font-medium mt-1 max-w-xs">
-                            Create your player card and show up in Top Players for your campus.
-                          </p>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {topPlayers.map((player, idx) => (
+                            <div 
+                              key={idx} 
+                              onClick={() => setViewingPlayerCard(player)}
+                              className="group bg-white border border-[#E8E6E0] rounded-[1.5rem] p-4 flex items-center gap-4 cursor-pointer hover:border-[#C8922A] hover:shadow-lg transition-all"
+                            >
+                              <div className="w-16 h-16 rounded-2xl bg-gray-100 overflow-hidden shrink-0 border border-gray-200">
+                                {player.photo_url ? (
+                                  <img src={player.photo_url} alt={player.username} className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-400 font-bold text-xl">
+                                    {(player.username || 'A')[0].toUpperCase()}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="text-[#1A1A1A] font-black text-lg truncate">{player.username}</h4>
+                                <div className="text-xs font-bold text-[#C8922A] uppercase tracking-wider mt-0.5">{player.game_or_sport}</div>
+                                <div className="text-xs text-gray-500 font-medium truncate mt-1">{player.tagline || 'Ready to play'}</div>
+                              </div>
+                              <div className="w-8 h-8 rounded-full bg-gray-50 group-hover:bg-[#FFF8EC] text-gray-400 group-hover:text-[#C8922A] flex items-center justify-center transition-colors">
+                                <Target size={16} />
+                              </div>
+                            </div>
+                          ))}
+                          <div 
+                            onClick={() => setShowPlayerCardForm(true)}
+                            className="bg-transparent border border-dashed border-gray-300 rounded-[1.5rem] p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-[#C8922A] hover:bg-[#FFF8EC]/50 transition-all min-h-[100px]"
+                          >
+                            <Gamepad2 size={24} className="text-gray-400" />
+                            <span className="text-xs font-black text-gray-500 uppercase tracking-widest">Create Yours</span>
+                          </div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => setShowPlayerCardForm(true)}
-                          className="mt-1 ca-btn-primary px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest cursor-pointer"
-                        >
-                          Create My Card
-                        </button>
-                      </div>
+                      )}
                     </section>
                   </motion.div>
                 </div>
@@ -1362,6 +1401,16 @@ function ExploreContent() {
                     <PlayerCardForm
                       initialCategory={arenaCategory}
                       onClose={() => setShowPlayerCardForm(false)}
+                      onSubmit={(data) => {
+                        setTopPlayers(prev => [data, ...prev]);
+                      }}
+                    />
+                  )}
+                  {viewingPlayerCard && (
+                    <PlayerCardForm
+                      initialCategory={arenaCategory}
+                      viewOnlyData={viewingPlayerCard}
+                      onClose={() => setViewingPlayerCard(null)}
                     />
                   )}
                 </AnimatePresence>

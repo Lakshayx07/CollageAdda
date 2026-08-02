@@ -76,7 +76,7 @@ export default function BGMIProfileCard({ formData }) {
             >
               <div 
                 className="w-full h-full bg-cover bg-center"
-                style={{ backgroundImage: `url(${photo_url})`, clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}
+                style={{ backgroundImage: `url(${photo_url || 'https://i.pravatar.cc/300'})`, clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}
               />
             </div>
             {/* Level/Rating badge at bottom of hexagon */}
