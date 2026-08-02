@@ -42,6 +42,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Trash2,
+  Flame,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useApiQuery } from "../../utils/useApiQuery";
@@ -58,6 +59,7 @@ const COLLEGE_BANNER_FALLBACK =
 
 const ESPORTS_NETWORKS = [
   { name: "BGMI", key: "bgmi", icon: Gamepad2, accent: "#39FF82" },
+  { name: "Free Fire", key: "freefire", icon: Flame, accent: "#FF8C00" },
   { name: "Valorant", key: "valorant", icon: Crosshair, accent: "#FF4655" },
   { name: "FIFA", key: "fifa", icon: Trophy, accent: "#00A3FF" },
   { name: "Chess", key: "chess", icon: Medal, accent: "#C8922A" },
@@ -189,7 +191,16 @@ function ExploreContent() {
   const [search, setSearch] = useState("");
   const [selectedCollege, setSelectedCollege] = useState(null);
   const [activeTab, setActiveTab] = useState("posts");
-  const [exploreMode, setExploreMode] = useState("colleges"); // "colleges" | "arena"
+  const modeParam = searchParams.get('mode');
+  const [exploreMode, setExploreMode] = useState(modeParam === "arena" ? "arena" : "colleges");
+
+  useEffect(() => {
+    if (modeParam === "arena") {
+      setExploreMode("arena");
+    } else {
+      setExploreMode("colleges");
+    }
+  }, [modeParam]);
   const arenaCategory = "esports";
   const [arenaSportFilter, setArenaSportFilter] = useState("All");
   const [arenaTab, setArenaTab] = useState("posts"); // legacy fallback
@@ -971,6 +982,7 @@ function ExploreContent() {
                         setExploreMode("colleges");
                         setSearch("");
                         setArenaSportFilter("All");
+                        router.push("/explore", { scroll: false });
                       }}
                       className="explore-mode-switch flex shrink-0 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 font-bold transition-all cursor-pointer bg-white border-[#E8E6E0] shadow-sm hover:border-[#C8922A]/55 hover:bg-[#FFF8EC]"
                     >
@@ -986,6 +998,7 @@ function ExploreContent() {
                   {[
                     { id: "All", label: "All Games" },
                     { id: "BGMI", label: "BGMI" },
+                    { id: "Free Fire", label: "Free Fire" },
                     { id: "Valorant", label: "Valorant" },
                     { id: "FIFA", label: "FIFA" },
                     { id: "Chess", label: "Chess" },
@@ -1063,6 +1076,7 @@ function ExploreContent() {
                           onClick={() => {
                             setExploreMode("arena");
                             setSearch("");
+                            router.push("/explore?mode=arena", { scroll: false });
                           }}
                           className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#C8922A] to-[#D4A843] py-3 text-[11px] font-black uppercase tracking-widest text-white shadow-[0_4px_14px_rgba(200,146,42,0.28)] hover:scale-[1.02] active:scale-[0.98] transition-all"
                         >

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Heart, MessageCircle, Share2, MoreVertical, Send, X, Check, Plus, Flame, TrendingUp, Search, Zap, BarChart2, Compass, ShieldCheck, Flag, Globe, GraduationCap, ChevronLeft, ChevronRight, Users, Trophy, Sun, Sunset, Moon, Pause, Play } from "lucide-react";
 import Image from "next/image";
@@ -98,6 +98,32 @@ export default function Home() {
   const [activeStory, setActiveStory] = useState(null);
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const [isStoryPaused, setIsStoryPaused] = useState(false);
+  const [viewedStoryIds, setViewedStoryIds] = useState([]);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("collegeadda_viewed_stories");
+      if (stored) {
+        setViewedStoryIds(JSON.parse(stored));
+      }
+    } catch (err) {
+      console.error("Failed to load viewed stories from localStorage", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeStory && activeStory.stories[currentStoryIndex]) {
+      const storyId = activeStory.stories[currentStoryIndex]._id || activeStory.stories[currentStoryIndex].id;
+      setViewedStoryIds(prev => {
+        if (!prev.includes(storyId)) {
+          const next = [...prev, storyId];
+          localStorage.setItem("collegeadda_viewed_stories", JSON.stringify(next));
+          return next;
+        }
+        return prev;
+      });
+    }
+  }, [activeStory, currentStoryIndex]);
   const storyVideoRef = useRef(null);
   const storyProgressKey = useRef(0); // increment to reset animation
   const [storyReplyText, setStoryReplyText] = useState("");
@@ -308,6 +334,15 @@ export default function Home() {
           setTimeout(() => {
             setHighlightedPostId(null);
           }, 5000);
+          
+          // Clear URL parameters so they don't re-trigger on back navigations
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.delete("postId");
+          newUrl.searchParams.delete("search");
+          newUrl.searchParams.delete("media");
+          newUrl.searchParams.delete("author");
+          newUrl.hash = "";
+          window.history.replaceState({}, document.title, newUrl.pathname + newUrl.search + newUrl.hash);
         } else if (attempts > 35) {
           clearInterval(interval);
         }
@@ -1183,6 +1218,20 @@ export default function Home() {
   const myStoriesGroup = stories.find(s => (s.author?._id || s.author?.id) === (currentUser?._id || currentUser?.id));
   const hasMyStory = myStoriesGroup && myStoriesGroup.stories && myStoriesGroup.stories.length > 0;
 
+  const otherStories = useMemo(() => {
+    const others = stories.filter(group => (group.author?._id || group.author?.id) !== (currentUser?._id || currentUser?.id));
+    return others.map(group => {
+      const hasUnseen = group.stories.some(s => !viewedStoryIds.includes(s._id || s.id));
+      return { ...group, hasUnseen };
+    }).sort((a, b) => {
+      if (a.hasUnseen && !b.hasUnseen) return -1;
+      if (!a.hasUnseen && b.hasUnseen) return 1;
+      const latestA = new Date(a.stories[a.stories.length - 1]?.createdAt || 0).getTime();
+      const latestB = new Date(b.stories[b.stories.length - 1]?.createdAt || 0).getTime();
+      return latestB - latestA;
+    });
+  }, [stories, currentUser, viewedStoryIds]);
+
   if (!isMounted || !isAuthenticated) return null;
 
   return (
@@ -1323,14 +1372,14 @@ export default function Home() {
                 </div>
 
                 {/* Others' Stories - all uni members except yourself */}
-                {stories.filter(group => (group.author?._id || group.author?.id) !== (currentUser?._id || currentUser?.id)).map((group) => (
+                {otherStories.map((group) => (
                   <motion.div
                     key={group.author._id}
                     whileHover={{ scale: 1.05 }}
                     className="flex flex-col items-center space-y-2 flex-shrink-0 cursor-pointer"
                     onClick={() => setActiveStory(group)}
                   >
-                    <div className="w-20 h-20 rounded-full p-[3px] gradient-bg animate-rotate-gradient">
+                    <div className={clsx("w-20 h-20 rounded-full p-[3px] transition-all", group.hasUnseen ? "gradient-bg animate-rotate-gradient" : "bg-[#E8E6E0]")}>
                       <div className="w-full h-full rounded-full bg-white p-[2px]">
                         <div className="w-full h-full rounded-full bg-[#F9F8F5] flex items-center justify-center overflow-hidden border border-[#E8E6E0] shadow-inner">
                           <img
@@ -1341,7 +1390,7 @@ export default function Home() {
                         </div>
                       </div>
                     </div>
-                    <span className="text-xs text-[#4A4A4A] font-medium truncate w-20 text-center">{group.author.name.split(' ')[0]}</span>
+                    <span className={clsx("text-xs font-medium truncate w-20 text-center", group.hasUnseen ? "text-[#1A1A1A]" : "text-[#8A8A8A]")}>{group.author.name.split(' ')[0]}</span>
                   </motion.div>
                 ))}
               </div>

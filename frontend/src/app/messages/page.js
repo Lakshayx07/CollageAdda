@@ -576,7 +576,7 @@ function MessagesContent() {
   }, [activeChat, socket, setActiveRoom, applyRoomMessagePreview]);
 
   useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+    scrollRef.current?.scrollIntoView({ behavior: "auto" });
   }, [messages, activeChat]);
 
   const handleMediaSelect = (e, forcedType = null) => {

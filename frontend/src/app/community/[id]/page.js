@@ -482,7 +482,7 @@ export default function CommunityChatPage() {
       if (isInitial || shouldForceBottom) {
         initialScrollDone.current = true;
         pendingScrollToBottomRef.current = false;
-        scrollChatToBottom(shouldForceBottom ? "auto" : "smooth", 150);
+        scrollChatToBottom("auto", 150);
       } else {
         scrollChatToBottom("smooth", 50);
       }

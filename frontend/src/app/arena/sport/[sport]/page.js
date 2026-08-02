@@ -22,6 +22,7 @@ const SPORT_CONFIG = {
   tennis:      { limit: 4,  icon: '🎾', tagline: 'Court challenge' },
   swimming:    { limit: 8,  icon: '🏊', tagline: 'Relay & freestyle' },
   bgmi:        { limit: 5,  icon: '🎮', tagline: 'Network up. Drop in.' },
+  freefire:    { limit: 4,  icon: '🔥', tagline: 'Survival of the fittest' },
   valorant:    { limit: 5,  icon: '🔫', tagline: '5v5 agent battles' },
   fifa:        { limit: 2,  icon: '⚽', tagline: '1v1 & co-op' },
   chess:       { limit: 2,  icon: '♟️', tagline: 'Mind games' },
@@ -171,96 +172,16 @@ export default function SportTeamsPage() {
       </header>
 
       <div className="relative z-10 p-4 max-w-3xl mx-auto space-y-6">
-
-        {/* ── MY TEAM / LOBBY HERO ─────────────────────────────────────────── */}
-        {!hasMyTeam ? (
-          <motion.section
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="relative overflow-hidden rounded-[1.75rem] border-2 border-[#E8E6E0] bg-white shadow-[0_8px_28px_rgba(0,0,0,0.05)]"
-          >
-            <div
-              className="h-1.5 w-full"
-              style={{ background: `linear-gradient(90deg, ${APP_ACCENT}, ${APP_ACCENT_SOFT})` }}
-            />
-            <div className="p-6 sm:p-8 flex flex-col items-center text-center">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 border-2 border-[#E8D9B0] bg-[#FFF8EC] shadow-sm">
-                <Users size={28} className="text-[#C8922A]" />
-              </div>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 text-[#C8922A]">
-                Open Lobby
-              </p>
-              <h2 className="text-xl font-black tracking-tight text-[#1A1A1A] mb-2">
-                No team yet for {userCollege}
-              </h2>
-              <p className="text-sm text-[#6B6B6B] mb-6 font-medium max-w-sm leading-relaxed">
-                Be the first to register a {sportName} network. Invite campus players and start challenging other colleges.
-              </p>
-              <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
-                <span className="rounded-full bg-[#F9F8F5] border border-[#E8E6E0] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#6B6B6B]">
-                  Max {sportData.limit} players
-                </span>
-                <span className="rounded-full bg-[#F9F8F5] border border-[#E8E6E0] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#6B6B6B]">
-                  College vs college
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => { setNewTeam({ letter: 'A', captainId: '', players: [] }); setShowRegisterModal(true); }}
-                className="sport-lobby-cta w-full sm:w-auto min-w-[240px] font-black uppercase tracking-widest text-xs px-6 py-3.5 rounded-2xl transition hover:opacity-95 cursor-pointer shadow-[0_6px_18px_rgba(200,146,42,0.28)]"
-                style={{
-                  background: `linear-gradient(135deg, ${APP_ACCENT}, ${APP_ACCENT_SOFT})`,
-                  color: '#1A1A1A',
-                }}
-              >
-                + Register Your College Team
-              </button>
-            </div>
-          </motion.section>
-        ) : (
-          <div className="space-y-4">
-            <h3 className="text-[10px] text-[#6B6B6B] font-black uppercase tracking-widest pl-1">Your Network</h3>
-            <div className="relative overflow-hidden rounded-[1.5rem] border-2 border-[#E8E6E0] bg-white shadow-[0_6px_20px_rgba(0,0,0,0.05)]">
-              <div
-                className="h-1.5 w-full"
-                style={{ background: `linear-gradient(90deg, ${APP_ACCENT}, ${APP_ACCENT_SOFT})` }}
-              />
-              <div className="absolute top-3 right-3 text-[9px] font-black uppercase px-2.5 py-1 rounded-full bg-[#FFF8EC] text-[#1A1A1A] border border-[#E8D9B0]">
-                Your Team
-              </div>
-              <div className="p-4 sm:p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                  <h4 className="font-black text-base text-[#1A1A1A] tracking-tight">{myTeamName}</h4>
-                  <div className="flex items-center gap-2 mt-2">
-                    <StatusPill count={newTeam.players.length} max={sportData.limit} />
-                    <span className="text-[10px] text-[#6B6B6B] uppercase tracking-widest font-bold">Max {sportData.limit}</span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowSeeTeamModal(true)}
-                  className="w-full sm:w-auto py-2.5 px-4 rounded-xl border border-[#E8E6E0] bg-[#F9F8F5] hover:bg-white text-[#1A1A1A] text-[10px] font-black uppercase tracking-widest transition cursor-pointer"
-                >
-                  See Team
-                </button>
-              </div>
-            </div>
-
-            {myTeamFull && (
-              <button
-                type="button"
-                onClick={() => { setNewTeam({ letter: 'B', captainId: '', players: [] }); setShowRegisterModal(true); }}
-                className="w-full py-3 rounded-xl border border-dashed border-[#E8E6E0] text-[#6B6B6B] hover:bg-[#F9F8F5] text-[10px] font-black uppercase tracking-widest transition cursor-pointer"
-              >
-                + Register 2nd Team (Team B)
-              </button>
-            )}
+        <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-[2rem] border-2 border-[#E8E6E0] shadow-sm">
+          <div className="w-24 h-24 bg-[#FFF9E6] rounded-full flex items-center justify-center mb-6 border-4 border-[#FFFDF8] shadow-sm">
+            <Swords size={40} className="text-[#C8922A]" />
           </div>
-        )}
-
-        {/* ── OTHER COLLEGES — real data from /api/colleges ────────────── */}
-        <OtherColleges sportName={sportName} sportData={sportData} apiUrl={apiUrl} />
-
+          <h2 className="text-2xl font-black text-[#1A1A1A] mb-3 uppercase tracking-wide">Arena Coming Soon</h2>
+          <p className="text-[#6B6B6B] max-w-sm mx-auto text-sm font-medium leading-relaxed">
+            We are working hard to build the ultimate competitive experience for {sportName}. 
+            Stay tuned to build your team and challenge other colleges!
+          </p>
+        </div>
       </div>
 
       {/* ══ REGISTER MODAL ══════════════════════════════════════════════════ */}

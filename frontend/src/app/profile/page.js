@@ -36,6 +36,7 @@ import { getAvatarSrc } from "@/utils/defaultAvatars";
 import { useApiQuery } from "../../utils/useApiQuery";
 import { useQueryClient } from "@tanstack/react-query";
 import { indiaStatesDistricts } from "@/utils/indiaStatesDistricts";
+import { getInterestEmoji } from "@/utils/emojis";
 
 const INTEREST_OPTIONS = [
   { name: "Hackathons", icon: <Trophy size={12} /> },
@@ -172,6 +173,9 @@ const ACHIEVEMENT_BADGES = [
   { id: "veteran-poster", name: "Veteran Poster", condition: "500 lifetime posts", icon: "🛡️", image: "/badges/posts-lifetime.png", stat: "postsLifetime", target: 500, glow: "rgba(168, 85, 247, 0.18)" },
   { id: "storyteller", name: "Storyteller", condition: "500 lifetime stories", icon: "📖", image: "/badges/stories-lifetime.png", stat: "storiesLifetime", target: 500, glow: "rgba(16, 185, 129, 0.18)" },
 ];
+
+const EMPTY_ARRAY = [];
+
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -323,7 +327,7 @@ export default function ProfilePage() {
   }, [profileData, modal]);
 
   // -- TanStack Query: My Posts --
-  const { data: myPostsRaw = [] } = useApiQuery(
+  const { data: myPostsRaw = EMPTY_ARRAY } = useApiQuery(
     ["user-posts", user?._id || user?.id],
     `/api/posts?author=${user?._id || user?.id}&limit=100`,
     {
@@ -333,7 +337,7 @@ export default function ProfilePage() {
   );
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !myPostsRaw) return;
     const filtered = myPostsRaw.filter(p => p.author?._id === user._id || p.author?._id === user.id);
     setUserPosts(filtered.map(p => ({
       id: p._id,
@@ -459,7 +463,7 @@ export default function ProfilePage() {
   };
 
   // -- TanStack Query: Followers --
-  const { data: followers = [] } = useApiQuery(
+  const { data: followers = EMPTY_ARRAY } = useApiQuery(
     "user-followers",
     "/api/users/me/followers",
     {
@@ -469,7 +473,7 @@ export default function ProfilePage() {
   );
 
   // -- TanStack Query: Following --
-  const { data: following = [] } = useApiQuery(
+  const { data: following = EMPTY_ARRAY } = useApiQuery(
     "user-following",
     "/api/users/me/following",
     {
@@ -482,7 +486,7 @@ export default function ProfilePage() {
   const networksCount = connections.length;
 
   // -- TanStack Query: Colleges (for banner image) --
-  const { data: colleges = [] } = useApiQuery(
+  const { data: colleges = EMPTY_ARRAY } = useApiQuery(
     "profile-colleges",
     "/api/colleges",
     { staleTime: 30 * 60 * 1000 }
@@ -1045,175 +1049,176 @@ export default function ProfilePage() {
 
           {/* Tab Contents */}
           {activeTab === "about" && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Left Column: Details */}
-              <div className="lg:col-span-2">
-                <div className="bg-[#FFFDF8] rounded-[2.5rem] border border-[#F3F2EE] p-8 shadow-[0_4px_20px_rgba(0,0,0,0.03)] relative overflow-hidden h-full flex flex-col">
-                  {/* Decorative blob */}
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFF8E6] rounded-full blur-[80px] -translate-y-1/2 translate-x-1/3 opacity-80 pointer-events-none"></div>
-
-                  <div className="flex items-center gap-4 mb-6 relative z-10">
-                    <div className="w-16 h-16 rounded-full bg-[#FFF9E6] border-4 border-white shadow-sm flex items-center justify-center shrink-0">
-                      <span className="text-2xl">🎓</span>
-                    </div>
-                    <h3 className="text-2xl font-black text-[#1A1A1A]">About <span className="text-[#C8922A]">{user.name}</span></h3>
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col gap-6 pt-4 pb-10"
+            >
+              {/* Bio Card - Hero Style */}
+              <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-[#FFFDF8] via-white to-[#F5F8FF] border border-[#F3F2EE] p-8 md:p-10 shadow-[0_8px_30px_rgba(0,0,0,0.04)] group">
+                {/* Decorative Elements */}
+                <div className="absolute top-0 right-0 -mr-10 -mt-10 w-64 h-64 rounded-full bg-[#C8922A]/10 blur-3xl pointer-events-none group-hover:scale-110 transition-transform duration-700"></div>
+                <div className="absolute bottom-0 left-0 -ml-10 -mb-10 w-64 h-64 rounded-full bg-[#4A7DFF]/10 blur-3xl pointer-events-none group-hover:scale-110 transition-transform duration-700"></div>
+                
+                <div className="relative z-10 flex flex-col items-center text-center">
+                  <div className="w-20 h-20 rounded-[1.5rem] bg-white border border-[#F3F2EE] shadow-sm flex items-center justify-center shrink-0 mb-6 rotate-3 hover:rotate-0 transition-all duration-300">
+                    <span className="text-4xl">👋</span>
                   </div>
-
-                  <p className="text-[#4A4A4A] font-medium leading-relaxed mb-8 relative z-10">
+                  <h3 className="text-3xl font-black mb-4 tracking-tight text-[#1A1A1A]">
+                    About <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#C8922A] to-[#E6A835]">{user.name}</span>
+                  </h3>
+                  <p className="text-lg font-bold leading-relaxed text-[#4A4A4A] max-w-3xl">
                     {user.bio || "No description provided."}
                   </p>
-
-                  <div className="mt-auto space-y-3 relative z-10">
-                    {user.university && (
-                      <div className="bg-white rounded-2xl p-4 border border-[#F3F2EE] flex items-center justify-between shadow-sm hover:border-[#E8E6E0] transition-colors">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-xl bg-[#FFF9E6] flex items-center justify-center text-lg">🏫</div>
-                          <span className="text-sm font-semibold text-[#1A1A1A]">{user.university}</span>
-                        </div>
-                      </div>
-                    )}
-                    {(user.course || user.branch) && (
-                      <div className="bg-white rounded-2xl p-4 border border-[#F3F2EE] flex items-center justify-between shadow-sm hover:border-[#E8E6E0] transition-colors">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-xl bg-[#FFF5F5] flex items-center justify-center text-lg">👨🏻‍🎓</div>
-                          <span className="text-sm font-semibold text-[#1A1A1A]">{[user.course, user.branch, user.studyYear].filter(Boolean).join(" · ")}</span>
-                        </div>
-                      </div>
-                    )}
-                    {(user.hometownState || collegeLocation) && (
-                      <div className="bg-white rounded-2xl p-4 border border-[#F3F2EE] flex items-center justify-between shadow-sm hover:border-[#E8E6E0] transition-colors">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-xl bg-[#F5F8FF] flex items-center justify-center text-lg">📌</div>
-                          <span className="text-sm font-semibold text-[#1A1A1A]">
-                            {user.hometownState ? `${user.hometownState}${user.hometownDistrict ? `, ${user.hometownDistrict}` : ''}` : collegeLocation}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                    {user.phone && (
-                      <div className="bg-white rounded-2xl p-4 border border-[#F3F2EE] flex items-center justify-between shadow-sm hover:border-[#E8E6E0] transition-colors">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-xl bg-[#F4FBFA] flex items-center justify-center text-lg">📞</div>
-                          <span className="text-sm font-semibold text-[#1A1A1A]">
-                            {user.phonePrivacy === 'private'
-                              ? `${user.phone.substring(0, 3)}... (Private)`
-                              : user.phone}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
                 </div>
               </div>
 
-              {/* Right Column: Badges, Socials, Interests */}
-              <div className="lg:col-span-1 space-y-6">
-
-                {/* Badges */}
-                <div className="bg-white rounded-[2rem] border border-[#F3F2EE] p-6 shadow-sm">
-                  <div className="flex items-center gap-3 mb-5">
-                    <div className="w-8 h-8 rounded-full bg-[#FFF9E6] flex items-center justify-center text-[#C8922A]">
-                      <Award size={16} className="text-[#C8922A] fill-[#C8922A]" />
+              {/* Details Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                {/* Academic Info */}
+                <div className="bg-white rounded-[2rem] p-6 border border-[#F3F2EE] shadow-sm hover:shadow-md transition-shadow group">
+                  <div className="flex items-center gap-4 mb-5">
+                    <div className="w-12 h-12 rounded-2xl bg-[#FFF9E6] flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                      🎓
                     </div>
-                    <h4 className="text-xs font-black text-[#1A1A1A] uppercase tracking-widest">Badges</h4>
+                    <h4 className="font-black text-[#1A1A1A] text-lg tracking-wide">Academics</h4>
                   </div>
-                  <div className="flex flex-wrap gap-3">
+                  <div className="space-y-4">
+                    {user.university && (
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black text-[#8A8A8A] uppercase tracking-widest mb-1">University</span>
+                        <span className="text-sm font-semibold text-[#1A1A1A]">{user.university}</span>
+                      </div>
+                    )}
+                    {(user.course || user.branch) && (
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black text-[#8A8A8A] uppercase tracking-widest mb-1">Course</span>
+                        <span className="text-sm font-semibold text-[#1A1A1A]">{[user.course, user.branch, user.studyYear].filter(Boolean).join(" · ")}</span>
+                      </div>
+                    )}
+                    {!user.university && !user.course && !user.branch && (
+                      <span className="text-sm font-medium text-gray-400 italic">No academic details added.</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Personal Info */}
+                <div className="bg-white rounded-[2rem] p-6 border border-[#F3F2EE] shadow-sm hover:shadow-md transition-shadow group">
+                  <div className="flex items-center gap-4 mb-5">
+                    <div className="w-12 h-12 rounded-2xl bg-[#F5F8FF] flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                      📍
+                    </div>
+                    <h4 className="font-black text-[#1A1A1A] text-lg tracking-wide">Personal</h4>
+                  </div>
+                  <div className="space-y-4">
+                    {(user.hometownState || collegeLocation) && (
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black text-[#8A8A8A] uppercase tracking-widest mb-1">Location</span>
+                        <span className="text-sm font-semibold text-[#1A1A1A]">
+                          {user.hometownState ? `${user.hometownState}${user.hometownDistrict ? `, ${user.hometownDistrict}` : ''}` : collegeLocation}
+                        </span>
+                      </div>
+                    )}
+                    {user.phone && (
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black text-[#8A8A8A] uppercase tracking-widest mb-1">Phone</span>
+                        <span className="text-sm font-semibold text-[#1A1A1A]">
+                          {user.phonePrivacy === 'private' ? `${user.phone.substring(0, 3)}... (Private)` : user.phone}
+                        </span>
+                      </div>
+                    )}
+                    {!user.hometownState && !collegeLocation && !user.phone && (
+                      <span className="text-sm font-medium text-gray-400 italic">No personal details added.</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Badges & Highlights */}
+                <div className="bg-white rounded-[2rem] p-6 border border-[#F3F2EE] shadow-sm hover:shadow-md transition-shadow group">
+                  <div className="flex items-center gap-4 mb-5">
+                    <div className="w-12 h-12 rounded-2xl bg-[#FFF9E6] flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Award size={24} className="text-[#C8922A] fill-[#C8922A]" />
+                    </div>
+                    <h4 className="font-black text-[#1A1A1A] text-lg tracking-wide">Highlights</h4>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
                     <UniversityBadges userId={user.id || user.email} />
                     <span className="ca-badge bg-[#FFF9E6] text-[#C8922A] border border-[#C8922A]/20 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold">
                       🔥 {getDisplayStreak(user)}
                     </span>
                     {user.isVerified && (
-                      <span className="ca-badge bg-[#FFF9E6] text-[#C8922A] border border-[#C8922A]/20 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold">
+                      <span className="ca-badge bg-[#F5F8FF] text-[#4A7DFF] border border-[#4A7DFF]/20 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold">
                         🏅 Verified User
                       </span>
                     )}
                   </div>
                 </div>
+              </div>
 
-                {/* User Socials */}
-                <div className="bg-white rounded-[2rem] border border-[#F3F2EE] p-6 shadow-sm relative overflow-hidden">
-                  <div className="absolute right-[-10%] top-[10%] text-[#F5F8FF] pointer-events-none w-32 h-32 flex items-center justify-center">
-                    <Globe size={120} strokeWidth={1} />
-                  </div>
-                  <div className="flex items-center gap-3 mb-5 relative z-10">
-                    <div className="w-8 h-8 rounded-full bg-[#F5F8FF] flex items-center justify-center text-[#4A7DFF]">
-                      <Users size={16} className="text-[#4A7DFF] fill-[#4A7DFF]" />
-                    </div>
-                    <h4 className="text-xs font-black text-[#1A1A1A] uppercase tracking-widest">User Socials</h4>
-                  </div>
-                  <div className="flex items-center gap-3 relative z-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Socials */}
+                <div className="bg-white rounded-[2.5rem] p-8 border border-[#F3F2EE] shadow-sm relative overflow-hidden group">
+                  <div className="absolute right-0 top-0 -mr-10 -mt-10 w-40 h-40 bg-[#F5F8FF] rounded-full blur-3xl opacity-60 group-hover:bg-[#E0E7FF] transition-colors"></div>
+                  <h4 className="font-black text-[#1A1A1A] text-xl tracking-wide mb-6 relative z-10 flex items-center gap-3">
+                    <Globe size={24} className="text-[#4A7DFF]" /> Let's Connect
+                  </h4>
+                  <div className="flex items-center gap-4 relative z-10">
                     {user.instagram && (
-                      <a
-                        href={user.instagram.includes('http') ? user.instagram : `https://instagram.com/${user.instagram}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-10 h-10 rounded-full bg-[#FCF8F9] flex items-center justify-center text-[#E1306C] hover:bg-[#E1306C] hover:text-white transition-all shadow-sm border border-[#E1306C]/10"
-                      >
-                        <InstagramIcon size={18} />
+                      <a href={user.instagram.includes('http') ? user.instagram : `https://instagram.com/${user.instagram}`} target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-full bg-[#FCF8F9] flex items-center justify-center text-[#E1306C] border border-[#E1306C]/10 hover:scale-110 transition-transform">
+                        <InstagramIcon size={22} />
                       </a>
                     )}
                     {user.linkedin && (
-                      <a
-                        href={user.linkedin}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-10 h-10 rounded-full bg-[#F3F8FC] flex items-center justify-center text-[#229ED9] hover:bg-[#229ED9] hover:text-white transition-all shadow-sm border border-[#229ED9]/10"
-                      >
-                        <Send size={16} />
+                      <a href={user.linkedin} target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-full bg-[#F3F8FC] flex items-center justify-center text-[#229ED9] border border-[#229ED9]/10 hover:scale-110 transition-transform">
+                        <Briefcase size={20} />
                       </a>
                     )}
                     {user.github && (
-                      <a
-                        href={user.github}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-10 h-10 rounded-full bg-[#F5F8FF] flex items-center justify-center text-[#4A7DFF] hover:bg-[#4A7DFF] hover:text-white transition-all shadow-sm border border-[#4A7DFF]/10"
-                      >
-                        <Code size={16} />
+                      <a href={user.github} target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-full bg-[#F5F8FF] flex items-center justify-center text-[#4A7DFF] border border-[#4A7DFF]/10 hover:scale-110 transition-transform">
+                        <Code size={20} />
                       </a>
                     )}
                     {user.snapchat && (
-                      <a
-                        href={`https://snapchat.com/add/${user.snapchat}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-10 h-10 rounded-full bg-[#F5F8FF] flex items-center justify-center text-[#4A7DFF] hover:bg-[#4A7DFF] hover:text-white transition-all shadow-sm border border-[#4A7DFF]/10"
-                      >
-                        <Ghost size={18} />
+                      <a href={`https://snapchat.com/add/${user.snapchat}`} target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-full bg-[#FFFDE6] flex items-center justify-center text-[#D4B500] border border-[#D4B500]/10 hover:scale-110 transition-transform">
+                        <Ghost size={22} />
                       </a>
                     )}
                     {!user.instagram && !user.linkedin && !user.github && !user.snapchat && (
-                      <span className="text-xs text-[#888888]">No social links added.</span>
+                      <span className="text-sm font-medium text-gray-400 italic">No social links added.</span>
                     )}
                   </div>
                 </div>
 
-                {/* Interests & Sports */}
-                <div className="bg-white rounded-[2rem] border border-[#F3F2EE] p-6 shadow-sm">
-                  <div className="flex items-center gap-3 mb-5">
-                    <div className="w-8 h-8 rounded-full bg-[#FBF5FF] flex items-center justify-center text-[#A855F7]">
-                      <Heart size={16} className="text-[#A855F7] fill-[#A855F7]" />
-                    </div>
-                    <h4 className="text-xs font-black text-[#1A1A1A] uppercase tracking-widest">Interests & Sports</h4>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {(user.interests || []).map((i, idx) => (
-                      <span key={idx} className="bg-[#F5F8FF] px-4 py-2 rounded-full text-xs font-semibold text-[#4A7DFF] border border-transparent hover:border-[#4A7DFF]/20 transition-all cursor-default">
-                        {i}
-                      </span>
-                    ))}
-                    {(user.sports || []).map((s, idx) => (
-                      <span key={idx} className="bg-[#FFF9E6] px-4 py-2 rounded-full text-xs font-semibold text-[#C8922A] border border-[#C8922A]/10 cursor-default">
-                        {s}
-                      </span>
-                    ))}
-                    {(user.interests || []).length === 0 && (user.sports || []).length === 0 && (
-                      <span className="text-xs text-[#888888]">No interests or sports added.</span>
+                {/* Interests */}
+                <div className="bg-white rounded-[2.5rem] p-8 border border-[#F3F2EE] shadow-sm relative overflow-hidden group">
+                  <div className="absolute right-0 top-0 -mr-10 -mt-10 w-40 h-40 bg-[#FBF5FF] rounded-full blur-3xl opacity-60 group-hover:bg-[#F3E8FF] transition-colors"></div>
+                  <h4 className="font-black text-[#1A1A1A] text-xl tracking-wide mb-6 relative z-10 flex items-center gap-3">
+                    <Heart size={24} className="text-[#A855F7] fill-[#A855F7]" /> Interests & Vibes
+                  </h4>
+                  <div className="flex flex-wrap gap-2 relative z-10">
+                    {(user.interests || []).length > 0 || (user.sports || []).length > 0 ? (
+                      <>
+                        {user.interests?.map((interest, i) => (
+                          <span key={`int-${i}`} className="px-4 py-2 bg-[#FBF5FF] text-[#A855F7] rounded-xl text-sm font-bold shadow-sm border border-[#F3E8FF] flex items-center gap-1.5">
+                            <span>{getInterestEmoji(interest)}</span>
+                            <span>{interest}</span>
+                          </span>
+                        ))}
+                        {user.sports?.map((sport, i) => (
+                          <span key={`spt-${i}`} className="px-4 py-2 bg-[#F5F8FF] text-[#4A7DFF] rounded-xl text-sm font-bold shadow-sm border border-[#E0E7FF] flex items-center gap-1.5">
+                            <span>{getInterestEmoji(sport)}</span>
+                            <span>{sport}</span>
+                          </span>
+                        ))}
+                      </>
+                    ) : (
+                      <span className="text-sm font-medium text-gray-400 italic">No interests added.</span>
                     )}
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {activeTab === "posts" && (

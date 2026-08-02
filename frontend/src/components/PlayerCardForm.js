@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Upload, ChevronRight, ChevronLeft, Gamepad2, Dumbbell, Check } from 'lucide-react';
 import clsx from 'clsx';
+import BGMIProfileCard from './BGMIProfileCard';
+import ValorantProfileCard from './ValorantProfileCard';
+import FreeFireProfileCard from './FreeFireProfileCard';
+import ChessProfileCard from './ChessProfileCard';
 
 // ─── Game → 3 relevant skills mapping ────────────────────────────────────────
 const SKILL_MAP = {
@@ -32,11 +36,11 @@ const SKILL_LEVELS = [
 // ─── Tab accent colors ────────────────────────────────────────────────────────
 const THEME = {
   esports: {
-    accent: '#39FF82',
-    accentMuted: 'rgba(57,255,130,0.15)',
-    accentBorder: 'rgba(57,255,130,0.35)',
-    gradient: 'linear-gradient(135deg, #C8922A, #FFFFFF)',
-    glow: '0 4px 24px rgba(108,58,255,0.4)',
+    accent: '#C8922A',
+    accentMuted: 'rgba(200, 146, 42, 0.15)',
+    accentBorder: 'rgba(200, 146, 42, 0.35)',
+    gradient: 'linear-gradient(135deg, #C8922A, #D4A843)',
+    glow: '0 4px 24px rgba(200, 146, 42, 0.25)',
     tabLabel: '🎮 Esports',
   },
   sports: {
@@ -50,14 +54,14 @@ const THEME = {
 };
 
 // ─── Step progress bar ────────────────────────────────────────────────────────
-function StepBar({ step, accent }) {
+function StepBar({ step, accent, totalSteps = 4 }) {
   return (
     <div className="flex items-center gap-2 mb-1">
-      {[1, 2, 3].map(s => (
+      {Array.from({ length: totalSteps }, (_, i) => i + 1).map(s => (
         <React.Fragment key={s}>
           <div
             className="h-1.5 flex-1 rounded-full transition-all duration-400"
-            style={{ background: step >= s ? accent : 'rgba(255,255,255,0.08)' }}
+            style={{ background: step >= s ? accent : '#F3F2EE' }}
           />
         </React.Fragment>
       ))}
@@ -125,6 +129,7 @@ function PreviewCard({ name, game, photo, skills, skillRatings, accent, accentMu
 export default function PlayerCardForm({ onClose, initialCategory = 'esports' }) {
   const [category, setCategory] = useState(initialCategory);
   const [step, setStep] = useState(1);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   // Auto-fill name from localStorage
   const [autoName, setAutoName] = useState('');
@@ -148,7 +153,39 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
     availability: 'Both',
     bio: '',
     photo_url: '',
-    skills: { s1: null, s2: null, s3: null, s4: null, s5: null }
+    skills: { s1: null, s2: null, s3: null, s4: null, s5: null },
+    display_name: '',
+    highest_rank: '',
+    current_rp: '',
+    kd_ratio: '',
+    matches_played: '',
+    top_10_rate: '',
+    preferred_roles: [],
+    playstyles: [],
+    looking_for: '',
+    // Valorant specific
+    tagline: '',
+    current_rr: '',
+    win_rate: '',
+    acs: '',
+    agents: ['', '', ''],
+    val_playstyle: [],
+    val_looking_for: [],
+    // Free Fire specific
+    ff_rank_score: '',
+    booyah_rate: '',
+    ff_preferred_roles: [],
+    ff_playstyles: [],
+    ff_looking_for: [],
+    // Chess specific
+    chess_play_format: 'Rapid',
+    chess_current_rating: '',
+    chess_highest_rating: '',
+    chess_games_played: '',
+    chess_win_rate: '',
+    chess_good_game: '',
+    chess_playstyles: [],
+    chess_looking_for: [],
   });
 
   const isEsports = category === 'esports';
@@ -194,25 +231,125 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
 
   const handleSubmit = () => {
     // Emit full payload matching existing backend shape
-    // name is auto-filled from user profile
     const payload = {
       name: autoName,
       ...formData,
       category,
     };
     console.log('PlayerCard submit:', payload);
-    alert('Card Created Successfully! 🎉');
-    onClose();
+    
+    if (isBGMI || isValorant || isFreeFire || isChess) {
+      setIsSubmitted(true);
+    } else {
+      alert('Card Created Successfully! 🎉');
+      onClose();
+    }
   };
 
+  const isBGMI = formData.game_or_sport === 'BGMI';
+  const isValorant = formData.game_or_sport === 'Valorant';
+  const isFreeFire = formData.game_or_sport === 'Free Fire';
+  const isChess = formData.game_or_sport === 'Chess';
+  const totalSteps = (isBGMI || isValorant || isFreeFire) ? 7 : (isChess ? 6 : 4);
+
   // ── Step validation ──────────────────────────────────────────────────────
-  const canGoStep2 = !!formData.game_or_sport;  // game/sport must be selected
-  const canSubmit = skillKeys.every((_, i) => formData.skills[skillKeys[i]] !== null); // all 3 skills rated
+  const canGoNext = () => {
+    if (step === 1) return !!formData.game_or_sport;
+    if (isBGMI) {
+      if (step === 2) return !!formData.username && !!formData.display_name;
+      if (step === 3) return !!formData.current_rank && !!formData.highest_rank;
+      if (step === 4) return true;
+      if (step === 5) return formData.preferred_roles.length > 0;
+      if (step === 6) return formData.playstyles.length > 0;
+      if (step === 7) return formData.looking_for !== '';
+    } else if (isValorant) {
+      if (step === 2) return !!formData.username;
+      if (step === 3) return !!formData.current_rank && !!formData.highest_rank; // current_rank and peak rank
+      if (step === 4) return !!formData.kd_ratio && !!formData.win_rate && !!formData.acs;
+      if (step === 5) return true; // optional agent pool
+      if (step === 6) return formData.val_playstyle.length > 0;
+      if (step === 7) return formData.val_looking_for.length > 0;
+    } else if (isFreeFire) {
+      if (step === 2) return !!formData.username;
+      if (step === 3) return !!formData.current_rank;
+      if (step === 4) return !!formData.kd_ratio && !!formData.matches_played && !!formData.booyah_rate;
+      if (step === 5) return formData.ff_preferred_roles.length > 0;
+      if (step === 6) return formData.ff_playstyles.length > 0;
+      if (step === 7) return formData.ff_looking_for.length > 0;
+    } else if (isChess) {
+      if (step === 2) return !!formData.username;
+      if (step === 3) return !!formData.chess_current_rating && !!formData.chess_highest_rating;
+      if (step === 4) return !!formData.chess_games_played && !!formData.chess_win_rate;
+      if (step === 5) return formData.chess_playstyles.length > 0;
+      if (step === 6) return formData.chess_looking_for.length > 0;
+    } else {
+      if (step === 2) return true;
+      if (step === 3) return true;
+      if (step === 4) return skillKeys.every((_, i) => formData.skills[skillKeys[i]] !== null);
+    }
+    return true;
+  };
 
   // ── Games / Sports lists ─────────────────────────────────────────────────
   const gameList = isEsports
     ? ['BGMI', 'Valorant', 'Free Fire', 'Chess', 'FIFA']
     : ['Cricket', 'Football', 'Badminton', 'Basketball', 'Tennis'];
+
+  if (isSubmitted && isBGMI) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl overflow-y-auto">
+        <button
+          onClick={onClose}
+          className="absolute top-6 right-6 p-2 bg-white/10 rounded-full text-white hover:bg-white/20 transition-colors z-50"
+        >
+          <X size={24} />
+        </button>
+        <BGMIProfileCard formData={formData} />
+      </div>
+    );
+  }
+
+  if (isSubmitted && isValorant) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#0F1923]/90 backdrop-blur-xl overflow-y-auto">
+        <button
+          onClick={onClose}
+          className="absolute top-6 right-6 p-2 bg-white/10 rounded-full text-white hover:bg-[#FF4655] transition-colors z-50"
+        >
+          <X size={24} />
+        </button>
+        <ValorantProfileCard formData={formData} />
+      </div>
+    );
+  }
+
+  if (isSubmitted && isFreeFire) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#0E1015]/90 backdrop-blur-xl overflow-y-auto">
+        <button
+          onClick={onClose}
+          className="absolute top-6 right-6 p-2 bg-white/10 rounded-full text-white hover:bg-[#FBBF24] transition-colors z-50"
+        >
+          <X size={24} />
+        </button>
+        <FreeFireProfileCard formData={formData} />
+      </div>
+    );
+  }
+
+  if (isSubmitted && isChess) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#0A0D14]/90 backdrop-blur-xl overflow-y-auto">
+        <button
+          onClick={onClose}
+          className="absolute top-6 right-6 p-2 bg-white/10 rounded-full text-white hover:bg-[#CD8C38] transition-colors z-50"
+        >
+          <X size={24} />
+        </button>
+        <ChessProfileCard formData={formData} />
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-xl">
@@ -236,7 +373,17 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
                 Create Player Card
               </h2>
               <p className="text-[10px] text-[#6B6B6B] font-bold mt-0.5">
-                Step {step} of 3 · {['Identity', 'Details', 'Skills'][step - 1]}
+                Step {step} of {totalSteps} · {
+                  isBGMI
+                  ? ['Game', 'Basic Info', 'Current Rank', 'Core Stats', 'Preferred Role', 'Playstyle', 'Looking For'][step - 1]
+                  : isValorant
+                  ? ['Game', 'Basic Info', 'Current Rank', 'Core Stats', 'Agent Pool', 'Playstyle', 'Looking For'][step - 1]
+                  : isFreeFire
+                  ? ['Game', 'Basic Info', 'Current Rank', 'Core Stats', 'Preferred Role', 'Playstyle', 'Looking For'][step - 1]
+                  : isChess
+                  ? ['Game', 'Basic Info', 'Current Rating', 'Core Stats', 'Play Style', 'Looking For'][step - 1]
+                  : ['Game', 'Identity', 'Details', 'Skills'][step - 1]
+                }
               </p>
             </div>
             <button
@@ -248,30 +395,7 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
           </div>
 
           {/* Progress bar */}
-          <StepBar step={step} accent={accent} />
-
-          {/* Tab switcher */}
-          <div className="flex gap-1.5 mt-4 bg-black/50 p-1 rounded-xl border border-[#E8E6E0]">
-            {(['esports', 'sports'] ).map(cat => {
-              const t = THEME[cat];
-              const active = category === cat;
-              return (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => { handleCategorySwitch(cat); setStep(1); }}
-                  className="flex-1 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all"
-                  style={
-                    active
-                      ? { background: t.gradient, color: '#fff', boxShadow: t.glow }
-                      : { color: 'rgba(255,255,255,0.35)' }
-                  }
-                >
-                  {t.tabLabel}
-                </button>
-              );
-            })}
-          </div>
+          <StepBar step={step} accent={accent} totalSteps={totalSteps} />
 
           {/* Auto-name display */}
           <p className="text-[10px] text-[#888888] font-bold mt-3 flex items-center gap-1">
@@ -284,10 +408,1018 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
         <div className="flex-1 overflow-y-auto custom-scrollbar px-6 pb-4">
           <AnimatePresence mode="wait">
 
-            {/* ── STEP 1: Identity ─────────────────────────────────────── */}
+            {/* ── STEP 1: Game Selection ─────────────────────────────────────── */}
             {step === 1 && (
               <motion.div
                 key="step1"
+                initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-5 pt-2"
+              >
+                {/* Select Game / Sport */}
+                <div>
+                  <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">
+                    {isEsports ? 'Are you interested in which Game?' : 'Are you interested in which Sport?'}
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {gameList.map(g => {
+                      const active = formData.game_or_sport === g;
+                      return (
+                        <button
+                          key={g}
+                          type="button"
+                          onClick={() => setFormData(p => ({
+                            ...p,
+                            game_or_sport: g,
+                            // reset skills when game changes
+                            skills: { s1: null, s2: null, s3: null, s4: null, s5: null }
+                          }))}
+                          className="py-3 px-3 rounded-xl text-sm font-black text-left transition-all"
+                          style={
+                            active
+                              ? { background: accentMuted, color: accent, border: `1.5px solid ${accentBorder}` }
+                              : { background: '#F3F2EE', color: '#6B6B6B', border: '1.5px solid #E8E6E0' }
+                          }
+                        >
+                          {active && <Check size={12} className="inline mr-1.5 mb-0.5" />}
+                          {g}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── BGMI STEP 2: Basic Info ─────────────────────────────────────── */}
+            {isBGMI && step === 2 && (
+              <motion.div
+                key="bgmi_step2"
+                initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-5 pt-2"
+              >
+                <div>
+                  <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">In-Game Name (IGN) <span className="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    placeholder="Enter your in-game name"
+                    value={formData.username}
+                    onChange={e => setFormData(p => ({ ...p, username: e.target.value }))}
+                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:outline-none transition"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Display Name <span className="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    placeholder="Name to show on your card"
+                    value={formData.display_name}
+                    onChange={e => setFormData(p => ({ ...p, display_name: e.target.value }))}
+                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:outline-none transition"
+                  />
+                </div>
+                <div className="flex flex-col w-full">
+                  <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Profile Picture</label>
+                  <label
+                    className="relative w-full h-24 rounded-2xl overflow-hidden cursor-pointer flex flex-col items-center justify-center border border-dashed border-[#E8E6E0] bg-[#F3F2EE] transition hover:opacity-80"
+                  >
+                    {formData.photo_url
+                      ? <img src={formData.photo_url} alt="photo" className="absolute inset-0 w-full h-full object-cover" />
+                      : (
+                        <div className="flex flex-col items-center gap-1">
+                          <Upload size={22} style={{ color: '#0B4D3C' }} />
+                          <span className="text-[12px] text-[#1A1A1A] font-bold">Upload Image</span>
+                          <span className="text-[10px] text-[#888888]">JPG, PNG (Max 5MB)</span>
+                        </div>
+                      )
+                    }
+                    <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+                  </label>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── BGMI STEP 3: Current Rank ─────────────────────────────────────── */}
+            {isBGMI && step === 3 && (
+              <motion.div
+                key="bgmi_step3"
+                initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-5 pt-2"
+              >
+                <div>
+                  <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Current Rank <span className="text-red-500">*</span></label>
+                  <select
+                    value={formData.current_rank}
+                    onChange={e => setFormData(p => ({ ...p, current_rank: e.target.value }))}
+                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:outline-none transition appearance-none"
+                  >
+                    <option value="" disabled>Select Current Rank</option>
+                    {['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Crown', 'Ace', 'Ace Master', 'Ace Dominator', 'Conqueror'].map(r => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Highest Rank Achieved <span className="text-red-500">*</span></label>
+                  <select
+                    value={formData.highest_rank}
+                    onChange={e => setFormData(p => ({ ...p, highest_rank: e.target.value }))}
+                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:outline-none transition appearance-none"
+                  >
+                    <option value="" disabled>Select Highest Rank</option>
+                    {['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Crown', 'Ace', 'Ace Master', 'Ace Dominator', 'Conqueror'].map(r => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Current RP / Points</label>
+                  <input
+                    type="text"
+                    placeholder="Enter your current RP"
+                    value={formData.current_rp}
+                    onChange={e => setFormData(p => ({ ...p, current_rp: e.target.value }))}
+                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:outline-none transition"
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── BGMI STEP 4: Core Stats ─────────────────────────────────────── */}
+            {isBGMI && step === 4 && (
+              <motion.div
+                key="bgmi_step4"
+                initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-5 pt-2"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="flex-1">
+                    <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">K/D Ratio</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 4.82"
+                      value={formData.kd_ratio}
+                      onChange={e => setFormData(p => ({ ...p, kd_ratio: e.target.value }))}
+                      className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:outline-none transition"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Matches Played</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 1240"
+                      value={formData.matches_played}
+                      onChange={e => setFormData(p => ({ ...p, matches_played: e.target.value }))}
+                      className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:outline-none transition"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Top 10 Rate (%)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 71"
+                    value={formData.top_10_rate}
+                    onChange={e => setFormData(p => ({ ...p, top_10_rate: e.target.value }))}
+                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:outline-none transition"
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── BGMI STEP 5: Preferred Role ─────────────────────────────────────── */}
+            {isBGMI && step === 5 && (
+              <motion.div
+                key="bgmi_step5"
+                initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-4 pt-2"
+              >
+                <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Select your main role (up to 2)</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {['IGL', 'Assaulter', 'Sniper', 'Support', 'Entry Fragger', 'Scout'].map(role => {
+                    const active = formData.preferred_roles.includes(role);
+                    return (
+                      <button
+                        key={role}
+                        type="button"
+                        onClick={() => setFormData(p => {
+                          if (active) return { ...p, preferred_roles: p.preferred_roles.filter(r => r !== role) };
+                          if (p.preferred_roles.length < 2) return { ...p, preferred_roles: [...p.preferred_roles, role] };
+                          return p;
+                        })}
+                        className="py-3 px-3 rounded-xl text-sm font-black text-center transition-all flex items-center justify-center gap-2"
+                        style={
+                          active
+                            ? { background: accentMuted, color: accent, border: `1.5px solid ${accentBorder}` }
+                            : { background: '#F3F2EE', color: '#6B6B6B', border: '1.5px solid #E8E6E0' }
+                        }
+                      >
+                        {role}
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── BGMI STEP 6: Playstyle ─────────────────────────────────────── */}
+            {isBGMI && step === 6 && (
+              <motion.div
+                key="bgmi_step6"
+                initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-4 pt-2"
+              >
+                <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Select all that apply</label>
+                <div className="flex flex-wrap gap-2">
+                  {['Aggressive', 'Competitive', 'Team Player', 'Tournament Ready', 'Mic ON'].map(style => {
+                    const active = formData.playstyles.includes(style);
+                    return (
+                      <button
+                        key={style}
+                        type="button"
+                        onClick={() => setFormData(p => {
+                          if (active) return { ...p, playstyles: p.playstyles.filter(s => s !== style) };
+                          return { ...p, playstyles: [...p.playstyles, style] };
+                        })}
+                        className="py-2.5 px-4 rounded-xl text-xs font-black text-center transition-all flex items-center justify-center gap-2"
+                        style={
+                          active
+                            ? { background: accentMuted, color: accent, border: `1.5px solid ${accentBorder}` }
+                            : { background: '#F3F2EE', color: '#6B6B6B', border: '1.5px solid #E8E6E0' }
+                        }
+                      >
+                        {style}
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── BGMI STEP 7: Looking For ─────────────────────────────────────── */}
+            {isBGMI && step === 7 && (
+              <motion.div
+                key="bgmi_step7"
+                initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-4 pt-2"
+              >
+                <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Select what you are looking for</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {['Rank Push', 'Tournament Team', 'Scrims', 'Classic', 'Esports Org', 'Casual'].map(option => {
+                    const active = formData.looking_for === option;
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => setFormData(p => ({ ...p, looking_for: option }))}
+                        className="py-3 px-3 rounded-xl text-sm font-black text-center transition-all flex items-center justify-center gap-2"
+                        style={
+                          active
+                            ? { background: accentMuted, color: accent, border: `1.5px solid ${accentBorder}` }
+                            : { background: '#F3F2EE', color: '#6B6B6B', border: '1.5px solid #E8E6E0' }
+                        }
+                      >
+                        {option}
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── VALORANT STEP 2: Basic Info ─────────────────────────────────────── */}
+            {isValorant && step === 2 && (
+              <motion.div
+                key="val_step2"
+                initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-5 pt-2"
+              >
+                <div>
+                  <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">In-Game Name (IGN) <span className="text-[#FF4655]">*</span></label>
+                  <input
+                    type="text"
+                    placeholder="Enter your IGN"
+                    value={formData.username}
+                    onChange={e => setFormData(p => ({ ...p, username: e.target.value }))}
+                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:outline-none transition"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Tagline (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="E.g. Comeback is my habit."
+                    value={formData.tagline}
+                    onChange={e => setFormData(p => ({ ...p, tagline: e.target.value }))}
+                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:outline-none transition"
+                  />
+                </div>
+                <div className="flex flex-col w-full">
+                  <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Profile Picture</label>
+                  <label
+                    className="relative w-full h-24 rounded-2xl overflow-hidden cursor-pointer flex flex-col items-center justify-center border border-dashed border-[#E8E6E0] bg-[#F3F2EE] transition hover:opacity-80"
+                  >
+                    {formData.photo_url
+                      ? <img src={formData.photo_url} alt="photo" className="absolute inset-0 w-full h-full object-cover" />
+                      : (
+                        <div className="flex flex-col items-center gap-1">
+                          <Upload size={22} style={{ color: '#FF4655' }} />
+                          <span className="text-[12px] text-[#1A1A1A] font-bold">Upload Image</span>
+                          <span className="text-[10px] text-[#888888]">JPG, PNG (Max 5MB)</span>
+                        </div>
+                      )
+                    }
+                    <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+                  </label>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── VALORANT STEP 3: Current Rank ─────────────────────────────────────── */}
+            {isValorant && step === 3 && (
+              <motion.div
+                key="val_step3"
+                initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-5 pt-2"
+              >
+                <div>
+                  <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Current Rank <span className="text-[#FF4655]">*</span></label>
+                  <select
+                    value={formData.current_rank}
+                    onChange={e => setFormData(p => ({ ...p, current_rank: e.target.value }))}
+                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:outline-none transition appearance-none"
+                  >
+                    <option value="" disabled>Select Current Rank</option>
+                    {['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Ascendant', 'Immortal', 'Radiant'].map(r => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Peak Rank <span className="text-[#FF4655]">*</span></label>
+                  <select
+                    value={formData.highest_rank}
+                    onChange={e => setFormData(p => ({ ...p, highest_rank: e.target.value }))}
+                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:outline-none transition appearance-none"
+                  >
+                    <option value="" disabled>Select Peak Rank</option>
+                    {['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Ascendant', 'Immortal', 'Radiant'].map(r => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="relative">
+                  <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Current RR (Optional)</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="e.g. 68"
+                      value={formData.current_rr}
+                      onChange={e => setFormData(p => ({ ...p, current_rr: e.target.value }))}
+                      className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:outline-none transition"
+                    />
+                    <span className="text-xs font-black text-[#6B6B6B]">/100</span>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── VALORANT STEP 4: Core Stats ─────────────────────────────────────── */}
+            {isValorant && step === 4 && (
+              <motion.div
+                key="val_step4"
+                initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-5 pt-2"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="flex-1">
+                    <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">K/D Ratio <span className="text-[#FF4655]">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 1.68"
+                      value={formData.kd_ratio}
+                      onChange={e => setFormData(p => ({ ...p, kd_ratio: e.target.value }))}
+                      className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:outline-none transition"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Win Rate (%) <span className="text-[#FF4655]">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 52"
+                      value={formData.win_rate}
+                      onChange={e => setFormData(p => ({ ...p, win_rate: e.target.value }))}
+                      className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:outline-none transition"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">ACS <span className="text-[#FF4655]">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 238"
+                      value={formData.acs}
+                      onChange={e => setFormData(p => ({ ...p, acs: e.target.value }))}
+                      className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:outline-none transition"
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── VALORANT STEP 5: Agent Pool ─────────────────────────────────────── */}
+            {isValorant && step === 5 && (
+              <motion.div
+                key="val_step5"
+                initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-5 pt-2"
+              >
+                <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Select Top 3 Agents</label>
+                <div className="flex items-center gap-2">
+                  {[0, 1, 2].map(idx => (
+                    <select
+                      key={idx}
+                      value={formData.agents[idx]}
+                      onChange={e => {
+                        const newAgents = [...formData.agents];
+                        newAgents[idx] = e.target.value;
+                        setFormData(p => ({ ...p, agents: newAgents }));
+                      }}
+                      className="flex-1 bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-2 py-3 text-[#1A1A1A] text-xs font-bold focus:outline-none transition appearance-none"
+                    >
+                      <option value="">Agent {idx + 1}</option>
+                      {['Jett', 'Reyna', 'Raze', 'Phoenix', 'Yoru', 'Neon', 'Iso', 'Sova', 'Breach', 'Skye', 'KAY/O', 'Fade', 'Gekko', 'Omen', 'Brimstone', 'Astra', 'Viper', 'Harbor', 'Clove', 'Killjoy', 'Cypher', 'Sage', 'Chamber', 'Deadlock'].map(a => (
+                        <option key={a} value={a}>{a}</option>
+                      ))}
+                    </select>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── VALORANT STEP 6: Playstyle ─────────────────────────────────────── */}
+            {isValorant && step === 6 && (
+              <motion.div
+                key="val_step6"
+                initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-4 pt-2"
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest">Select up to 3</label>
+                  <span className="text-[10px] font-bold text-[#FF4655]">{formData.val_playstyle.length}/3</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {['Aggressive', 'Entry Fragger', 'Clutch Player', 'Team Player', 'Comms On', 'Supportive'].map(style => {
+                    const active = formData.val_playstyle.includes(style);
+                    const disabled = !active && formData.val_playstyle.length >= 3;
+                    return (
+                      <button
+                        key={style}
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => setFormData(p => {
+                          if (active) return { ...p, val_playstyle: p.val_playstyle.filter(s => s !== style) };
+                          if (p.val_playstyle.length >= 3) return p;
+                          return { ...p, val_playstyle: [...p.val_playstyle, style] };
+                        })}
+                        className={clsx("py-2.5 px-4 rounded-xl text-xs font-black text-center transition-all flex items-center justify-center gap-2", disabled && "opacity-50 cursor-not-allowed")}
+                        style={
+                          active
+                            ? { background: 'rgba(255, 70, 85, 0.1)', color: '#FF4655', border: `1.5px solid rgba(255, 70, 85, 0.4)` }
+                            : { background: '#F3F2EE', color: '#6B6B6B', border: '1.5px solid #E8E6E0' }
+                        }
+                      >
+                        {style}
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── VALORANT STEP 7: Looking For ─────────────────────────────────────── */}
+            {isValorant && step === 7 && (
+              <motion.div
+                key="val_step7"
+                initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-4 pt-2"
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest">Select up to 3</label>
+                  <span className="text-[10px] font-bold text-[#FF4655]">{formData.val_looking_for.length}/3</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {['Competitive', 'Ranked Duo/Trio', 'Scrims', 'Tournament Team', 'Esports Org', 'Casual'].map(option => {
+                    const active = formData.val_looking_for.includes(option);
+                    const disabled = !active && formData.val_looking_for.length >= 3;
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => setFormData(p => {
+                          if (active) return { ...p, val_looking_for: p.val_looking_for.filter(s => s !== option) };
+                          if (p.val_looking_for.length >= 3) return p;
+                          return { ...p, val_looking_for: [...p.val_looking_for, option] };
+                        })}
+                        className={clsx("py-3 px-3 rounded-xl text-[11px] font-black text-center transition-all flex items-center justify-center gap-2", disabled && "opacity-50 cursor-not-allowed")}
+                        style={
+                          active
+                            ? { background: 'rgba(255, 70, 85, 0.1)', color: '#FF4655', border: `1.5px solid rgba(255, 70, 85, 0.4)` }
+                            : { background: '#F3F2EE', color: '#6B6B6B', border: '1.5px solid #E8E6E0' }
+                        }
+                      >
+                        {option}
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── FREE FIRE STEP 2: Basic Info ─────────────────────────────────────── */}
+            {isFreeFire && step === 2 && (
+              <motion.div
+                key="ff_step2"
+                initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-5 pt-2"
+              >
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 mb-2">In-Game Name (IGN) <span className="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    placeholder="Enter your IGN"
+                    value={formData.username}
+                    onChange={e => setFormData(p => ({ ...p, username: e.target.value }))}
+                    className="w-full bg-[#111318] border border-[#2B3240] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#FBBF24] transition"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 mb-2">Tagline (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. I don't chase, I eliminate."
+                    value={formData.tagline}
+                    onChange={e => setFormData(p => ({ ...p, tagline: e.target.value }))}
+                    className="w-full bg-[#111318] border border-[#2B3240] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#FBBF24] transition"
+                  />
+                </div>
+                <div className="flex flex-col w-full">
+                  <label className="block text-xs font-bold text-gray-300 mb-2">Profile Picture</label>
+                  <label
+                    className="relative w-full h-20 rounded-2xl overflow-hidden cursor-pointer flex flex-col items-center justify-center border-2 border-dashed border-gray-400 bg-white/5 transition hover:border-white hover:bg-white/10"
+                  >
+                    {formData.photo_url
+                      ? <img src={formData.photo_url} alt="photo" className="absolute inset-0 w-full h-full object-cover" />
+                      : (
+                        <div className="flex items-center gap-2 text-white">
+                          <Upload size={18} />
+                          <span className="text-sm font-bold">Upload Image</span>
+                        </div>
+                      )
+                    }
+                    <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+                  </label>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── FREE FIRE STEP 3: Current Rank ─────────────────────────────────────── */}
+            {isFreeFire && step === 3 && (
+              <motion.div
+                key="ff_step3"
+                initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-5 pt-2"
+              >
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 mb-2">Current Rank <span className="text-red-500">*</span></label>
+                  <select
+                    value={formData.current_rank}
+                    onChange={e => setFormData(p => ({ ...p, current_rank: e.target.value }))}
+                    className="w-full bg-[#111318] border border-[#2B3240] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#FBBF24] transition appearance-none"
+                  >
+                    <option value="" disabled>Select Current Rank</option>
+                    {['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Heroic', 'Master', 'Grandmaster'].map(r => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 mb-2">Rank Score (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 9856"
+                    value={formData.ff_rank_score}
+                    onChange={e => setFormData(p => ({ ...p, ff_rank_score: e.target.value }))}
+                    className="w-full bg-[#111318] border border-[#2B3240] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#FBBF24] transition"
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── FREE FIRE STEP 4: Core Stats ─────────────────────────────────────── */}
+            {isFreeFire && step === 4 && (
+              <motion.div
+                key="ff_step4"
+                initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-5 pt-2"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="flex-1">
+                    <label className="block text-[10px] font-bold text-gray-300 mb-2">K/D Ratio <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 3.45"
+                      value={formData.kd_ratio}
+                      onChange={e => setFormData(p => ({ ...p, kd_ratio: e.target.value }))}
+                      className="w-full bg-[#111318] border border-[#2B3240] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#FBBF24] transition"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-[10px] font-bold text-gray-300 mb-2">Matches Played <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 1250"
+                      value={formData.matches_played}
+                      onChange={e => setFormData(p => ({ ...p, matches_played: e.target.value }))}
+                      className="w-full bg-[#111318] border border-[#2B3240] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#FBBF24] transition"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-[10px] font-bold text-gray-300 mb-2">Booyah Rate (%) <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 28.6"
+                      value={formData.booyah_rate}
+                      onChange={e => setFormData(p => ({ ...p, booyah_rate: e.target.value }))}
+                      className="w-full bg-[#111318] border border-[#2B3240] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#FBBF24] transition"
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── FREE FIRE STEP 5: Preferred Role ─────────────────────────────────────── */}
+            {isFreeFire && step === 5 && (
+              <motion.div
+                key="ff_step5"
+                initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-4 pt-2"
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-xs font-bold text-gray-300">Select up to 2</label>
+                  <span className="text-xs font-bold text-[#FBBF24]">{formData.ff_preferred_roles.length}/2</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {['Rusher', 'Sniper', 'Support', 'Bomber', 'Igl', 'Flanker'].map(role => {
+                    const active = formData.ff_preferred_roles.includes(role);
+                    const disabled = !active && formData.ff_preferred_roles.length >= 2;
+                    return (
+                      <button
+                        key={role}
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => setFormData(p => {
+                          if (active) return { ...p, ff_preferred_roles: p.ff_preferred_roles.filter(r => r !== role) };
+                          if (p.ff_preferred_roles.length >= 2) return p;
+                          return { ...p, ff_preferred_roles: [...p.ff_preferred_roles, role] };
+                        })}
+                        className={clsx(
+                          "py-3 px-4 rounded-xl text-sm font-bold transition-all flex items-center gap-3 border text-left",
+                          disabled ? "opacity-50 cursor-not-allowed border-[#2B3240] text-gray-500 bg-[#111318]" 
+                          : active ? "border-[#FBBF24] text-white shadow-[0_0_15px_rgba(251,191,36,0.15)] bg-[#111318]" : "border-[#2B3240] text-gray-400 bg-[#111318] hover:border-gray-500"
+                        )}
+                      >
+                        <div className={clsx("w-4 h-4 rounded-[4px] border flex items-center justify-center transition-colors", active ? "bg-[#FBBF24] border-[#FBBF24]" : "border-gray-500")}>
+                          {active && <Check size={12} className="text-black" />}
+                        </div>
+                        {role}
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── FREE FIRE STEP 6: Playstyle ─────────────────────────────────────── */}
+            {isFreeFire && step === 6 && (
+              <motion.div
+                key="ff_step6"
+                initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-4 pt-2"
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-xs font-bold text-gray-300">Select all that apply</label>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {['Aggressive', 'Competitive', 'Team Player', 'Tournament Ready', 'Mic On'].map(style => {
+                    const active = formData.ff_playstyles.includes(style);
+                    return (
+                      <button
+                        key={style}
+                        type="button"
+                        onClick={() => setFormData(p => {
+                          if (active) return { ...p, ff_playstyles: p.ff_playstyles.filter(s => s !== style) };
+                          return { ...p, ff_playstyles: [...p.ff_playstyles, style] };
+                        })}
+                        className={clsx(
+                          "py-2.5 px-4 rounded-xl text-sm font-bold transition-all flex items-center gap-2 border",
+                          active ? "border-[#FBBF24] text-white shadow-[0_0_15px_rgba(251,191,36,0.15)] bg-[#111318]" : "border-[#2B3240] text-gray-400 bg-[#111318] hover:border-gray-500"
+                        )}
+                      >
+                        <div className={clsx("w-4 h-4 rounded-[4px] border flex items-center justify-center transition-colors", active ? "bg-[#FBBF24] border-[#FBBF24]" : "border-gray-500")}>
+                          {active && <Check size={12} className="text-black" />}
+                        </div>
+                        {style}
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── FREE FIRE STEP 7: Looking For ─────────────────────────────────────── */}
+            {isFreeFire && step === 7 && (
+              <motion.div
+                key="ff_step7"
+                initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-4 pt-2"
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-xs font-bold text-gray-300">Select all that apply</label>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {['Rank Push', 'Clash Squad', 'Tournament', 'Guild', 'Casual'].map(option => {
+                    const active = formData.ff_looking_for.includes(option);
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => setFormData(p => {
+                          if (active) return { ...p, ff_looking_for: p.ff_looking_for.filter(s => s !== option) };
+                          return { ...p, ff_looking_for: [...p.ff_looking_for, option] };
+                        })}
+                        className={clsx(
+                          "py-3 px-3 rounded-xl text-[13px] font-bold transition-all flex items-center gap-2 border text-left",
+                          active ? "border-[#FBBF24] text-white shadow-[0_0_15px_rgba(251,191,36,0.15)] bg-[#111318]" : "border-[#2B3240] text-gray-400 bg-[#111318] hover:border-gray-500"
+                        )}
+                      >
+                        <div className={clsx("w-4 h-4 rounded-[4px] border flex-shrink-0 flex items-center justify-center transition-colors", active ? "bg-[#FBBF24] border-[#FBBF24]" : "border-gray-500")}>
+                          {active && <Check size={12} className="text-black" />}
+                        </div>
+                        <span className="truncate">{option}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── CHESS STEP 2: Basic Info ─────────────────────────────────────── */}
+            {isChess && step === 2 && (
+              <motion.div
+                key="chess_step2"
+                initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-5 pt-2"
+              >
+                <div>
+                  <label className="block text-xs font-bold text-gray-800 mb-2">In-Game Name (IGN) <span className="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    placeholder="Enter your in-game name"
+                    value={formData.username}
+                    onChange={e => setFormData(p => ({ ...p, username: e.target.value }))}
+                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-black text-sm focus:outline-none focus:border-[#CD8C38] transition"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-800 mb-2">Tagline (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Every move has a purpose."
+                    value={formData.tagline}
+                    onChange={e => setFormData(p => ({ ...p, tagline: e.target.value }))}
+                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-black text-sm focus:outline-none focus:border-[#CD8C38] transition"
+                  />
+                </div>
+                <div className="flex flex-col w-full">
+                  <label className="block text-xs font-bold text-gray-800 mb-2">Profile Picture</label>
+                  <label
+                    className="relative w-full h-20 rounded-2xl overflow-hidden cursor-pointer flex flex-col items-center justify-center border border-dashed border-gray-300 bg-[#FAFAFA] transition hover:border-[#CD8C38]"
+                  >
+                    {formData.photo_url
+                      ? <img src={formData.photo_url} alt="photo" className="absolute inset-0 w-full h-full object-cover" />
+                      : (
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <Upload size={18} />
+                          <span className="text-sm font-bold">Upload Image</span>
+                        </div>
+                      )
+                    }
+                    <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+                  </label>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── CHESS STEP 3: Current Rating ─────────────────────────────────────── */}
+            {isChess && step === 3 && (
+              <motion.div
+                key="chess_step3"
+                initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-5 pt-2"
+              >
+                <div>
+                  <label className="block text-xs font-bold text-gray-800 mb-2">Play Format <span className="text-red-500">*</span></label>
+                  <div className="flex items-center gap-2 bg-[#FAFAFA] p-1 border border-gray-200 rounded-xl">
+                    {['Rapid', 'Blitz', 'Bullet', 'Classic'].map(format => {
+                      const active = formData.chess_play_format === format;
+                      return (
+                        <button
+                          key={format}
+                          type="button"
+                          onClick={() => setFormData(p => ({ ...p, chess_play_format: format }))}
+                          className={clsx(
+                            "flex-1 py-2 rounded-lg text-sm font-bold transition-all",
+                            active ? "bg-white text-[#CD8C38] shadow-[0_2px_4px_rgba(0,0,0,0.05)] border border-[#CD8C38]" : "text-gray-600 hover:text-black border border-transparent"
+                          )}
+                        >
+                          {format}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-800 mb-2">Current Rating <span className="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 1824"
+                    value={formData.chess_current_rating}
+                    onChange={e => setFormData(p => ({ ...p, chess_current_rating: e.target.value }))}
+                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-black text-sm focus:outline-none focus:border-[#CD8C38] transition"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-800 mb-2">Highest Rating Achieved <span className="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 1943"
+                    value={formData.chess_highest_rating}
+                    onChange={e => setFormData(p => ({ ...p, chess_highest_rating: e.target.value }))}
+                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-black text-sm focus:outline-none focus:border-[#CD8C38] transition"
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── CHESS STEP 4: Core Stats ─────────────────────────────────────── */}
+            {isChess && step === 4 && (
+              <motion.div
+                key="chess_step4"
+                initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-5 pt-2"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="flex-1">
+                    <label className="block text-[10px] font-bold text-gray-800 mb-2">Games Played <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 842"
+                      value={formData.chess_games_played}
+                      onChange={e => setFormData(p => ({ ...p, chess_games_played: e.target.value }))}
+                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-black text-sm focus:outline-none focus:border-[#CD8C38] transition"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-[10px] font-bold text-gray-800 mb-2">Win Rate (%) <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 58"
+                      value={formData.chess_win_rate}
+                      onChange={e => setFormData(p => ({ ...p, chess_win_rate: e.target.value }))}
+                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-black text-sm focus:outline-none focus:border-[#CD8C38] transition"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-[10px] font-bold text-gray-800 mb-2">Good Game %</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 92"
+                      value={formData.chess_good_game}
+                      onChange={e => setFormData(p => ({ ...p, chess_good_game: e.target.value }))}
+                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-black text-sm focus:outline-none focus:border-[#CD8C38] transition"
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── CHESS STEP 5: Play Style ─────────────────────────────────────── */}
+            {isChess && step === 5 && (
+              <motion.div
+                key="chess_step5"
+                initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-4 pt-2"
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-xs font-bold text-gray-800">Select up to 3</label>
+                  <span className="text-xs font-bold text-[#CD8C38]">{formData.chess_playstyles.length}/3</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {['Aggressive', 'Tactical', 'Positional', 'Calculative', 'Endgame Focused', 'Balanced'].map(style => {
+                    const active = formData.chess_playstyles.includes(style);
+                    const disabled = !active && formData.chess_playstyles.length >= 3;
+                    return (
+                      <button
+                        key={style}
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => setFormData(p => {
+                          if (active) return { ...p, chess_playstyles: p.chess_playstyles.filter(s => s !== style) };
+                          if (p.chess_playstyles.length >= 3) return p;
+                          return { ...p, chess_playstyles: [...p.chess_playstyles, style] };
+                        })}
+                        className={clsx(
+                          "py-3 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between border text-left",
+                          disabled ? "opacity-50 cursor-not-allowed border-gray-200 text-gray-400 bg-white" 
+                          : active ? "border-[#CD8C38] text-[#CD8C38] shadow-[0_2px_8px_rgba(205,140,56,0.15)] bg-white" : "border-gray-200 text-gray-700 bg-white hover:border-gray-300"
+                        )}
+                      >
+                        <span className="truncate">{style}</span>
+                        <div className={clsx("w-4 h-4 rounded-[4px] border flex-shrink-0 flex items-center justify-center transition-colors", active ? "bg-[#CD8C38] border-[#CD8C38]" : "border-gray-300")}>
+                          {active && <Check size={12} className="text-white" />}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── CHESS STEP 6: Looking For ─────────────────────────────────────── */}
+            {isChess && step === 6 && (
+              <motion.div
+                key="chess_step6"
+                initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-4 pt-2"
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-xs font-bold text-gray-800">Select all that apply</label>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {['Practice', 'Improve', 'Tournaments', 'Casual', 'Serious Matches', 'Clubs / Teams'].map(option => {
+                    const active = formData.chess_looking_for.includes(option);
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => setFormData(p => {
+                          if (active) return { ...p, chess_looking_for: p.chess_looking_for.filter(s => s !== option) };
+                          return { ...p, chess_looking_for: [...p.chess_looking_for, option] };
+                        })}
+                        className={clsx(
+                          "py-3 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between border text-left",
+                          active ? "border-[#CD8C38] text-[#CD8C38] shadow-[0_2px_8px_rgba(205,140,56,0.15)] bg-white" : "border-gray-200 text-gray-700 bg-white hover:border-gray-300"
+                        )}
+                      >
+                        <span className="truncate">{option}</span>
+                        <div className={clsx("w-4 h-4 rounded-[4px] border flex-shrink-0 flex items-center justify-center transition-colors", active ? "bg-[#CD8C38] border-[#CD8C38]" : "border-gray-300")}>
+                          {active && <Check size={12} className="text-white" />}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── GENERIC STEP 2: Identity ─────────────────────────────────────── */}
+            {!isBGMI && !isValorant && !isFreeFire && !isChess && step === 2 && (
+              <motion.div
+                key="step2"
                 initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
                 transition={{ duration: 0.22 }}
                 className="space-y-5 pt-2"
@@ -326,46 +1458,13 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
                     style={{ focusBorderColor: accent }}
                   />
                 </div>
-
-                {/* Select Game / Sport */}
-                <div>
-                  <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">
-                    {isEsports ? 'Select Game' : 'Select Sport'}
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {gameList.map(g => {
-                      const active = formData.game_or_sport === g;
-                      return (
-                        <button
-                          key={g}
-                          type="button"
-                          onClick={() => setFormData(p => ({
-                            ...p,
-                            game_or_sport: g,
-                            // reset skills when game changes
-                            skills: { s1: null, s2: null, s3: null, s4: null, s5: null }
-                          }))}
-                          className="py-3 px-3 rounded-xl text-sm font-black text-left transition-all"
-                          style={
-                            active
-                              ? { background: accentMuted, color: accent, border: `1.5px solid ${accentBorder}` }
-                              : { background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.5)', border: '1.5px solid rgba(255,255,255,0.08)' }
-                          }
-                        >
-                          {active && <Check size={12} className="inline mr-1.5 mb-0.5" />}
-                          {g}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
               </motion.div>
             )}
 
-            {/* ── STEP 2: Details ──────────────────────────────────────── */}
-            {step === 2 && (
+            {/* ── GENERIC STEP 3: Details ──────────────────────────────────────── */}
+            {!isBGMI && !isValorant && !isFreeFire && !isChess && step === 3 && (
               <motion.div
-                key="step2"
+                key="step3"
                 initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
                 transition={{ duration: 0.22 }}
                 className="space-y-5 pt-2"
@@ -417,7 +1516,7 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
                           style={
                             active
                               ? { background: accentMuted, color: accent, border: `1.5px solid ${accentBorder}` }
-                              : { background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)', border: '1.5px solid rgba(255,255,255,0.08)' }
+                              : { background: '#F3F2EE', color: '#6B6B6B', border: '1.5px solid #E8E6E0' }
                           }
                         >
                           {opt}
@@ -443,10 +1542,10 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
               </motion.div>
             )}
 
-            {/* ── STEP 3: Skills ───────────────────────────────────────── */}
-            {step === 3 && (
+            {/* ── GENERIC STEP 4: Skills ───────────────────────────────────────── */}
+            {!isBGMI && !isValorant && !isFreeFire && !isChess && step === 4 && (
               <motion.div
-                key="step3"
+                key="step4"
                 initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}
                 transition={{ duration: 0.22 }}
                 className="space-y-4 pt-2"
@@ -491,9 +1590,9 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
                                       boxShadow: `0 0 12px ${accentMuted}`,
                                     }
                                   : {
-                                      background: 'rgba(255,255,255,0.04)',
-                                      color: 'rgba(255,255,255,0.4)',
-                                      border: '1.5px solid rgba(255,255,255,0.08)',
+                                      background: '#F3F2EE',
+                                      color: '#6B6B6B',
+                                      border: '1.5px solid #E8E6E0',
                                     }
                               }
                             >
@@ -522,16 +1621,16 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
             </button>
           )}
 
-          {step < 3 ? (
+          {step < totalSteps ? (
             <button
               type="button"
               onClick={() => setStep(s => s + 1)}
-              disabled={step === 1 && !canGoStep2}
+              disabled={!canGoNext()}
               className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all"
               style={
-                !(step === 1 && !canGoStep2)
+                canGoNext()
                   ? { background: accent, color: '#000', boxShadow: `0 4px 20px ${accentMuted}` }
-                  : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.25)', cursor: 'not-allowed' }
+                  : { background: '#F3F2EE', color: '#A0A0A0', cursor: 'not-allowed' }
               }
             >
               Next <ChevronRight size={14} />
@@ -540,12 +1639,12 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports' })
             <button
               type="button"
               onClick={handleSubmit}
-              disabled={!canSubmit}
+              disabled={!canGoNext()}
               className="flex-1 py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all"
               style={
-                canSubmit
+                canGoNext()
                   ? { background: accent, color: '#000', boxShadow: `0 4px 20px ${accentMuted}` }
-                  : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.25)', cursor: 'not-allowed' }
+                  : { background: '#F3F2EE', color: '#A0A0A0', cursor: 'not-allowed' }
               }
             >
               Generate Card ✨
