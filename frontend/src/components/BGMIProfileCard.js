@@ -56,7 +56,7 @@ export default function BGMIProfileCard({ formData }) {
   const borderSubtle = '#22292E';
 
   return (
-    <div className="w-full max-w-4xl mx-auto rounded-2xl overflow-hidden shadow-2xl relative bg-[#0B1015] border border-[#22292E] font-sans text-white">
+    <div className="w-full max-w-4xl mx-auto rounded-2xl overflow-hidden shadow-2xl relative bg-[#0B1015] border border-[#22292E] font-sans text-[#FFFFFF]">
       {/* BACKGROUND BANNER */}
       <div 
         className="absolute top-0 left-0 w-full h-[280px] bg-cover bg-center opacity-40 mix-blend-luminosity pointer-events-none"
@@ -87,10 +87,10 @@ export default function BGMIProfileCard({ formData }) {
 
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <h1 className="text-3xl font-black tracking-widest text-white uppercase">{username}</h1>
+              <h1 className="text-3xl font-black tracking-widest text-[#FFFFFF] uppercase">{username}</h1>
               <CheckCircle size={22} className="text-[#39FF82] fill-[#39FF82]/20" />
             </div>
-            <div className="flex items-center gap-1.5 text-gray-400 mt-1 mb-4">
+            <div className="flex items-center gap-1.5 text-[#9CA3AF] mt-1 mb-4">
               <Shield size={14} />
               <span className="text-sm font-bold tracking-wider">{display_name}</span>
             </div>
@@ -102,7 +102,7 @@ export default function BGMIProfileCard({ formData }) {
                 return (
                   <div key={role} className={clsx(
                     "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider",
-                    idx === 0 ? "bg-[#39FF82]/10 border border-[#39FF82]/30 text-[#39FF82]" : "bg-white/5 border border-white/10 text-gray-300"
+                    idx === 0 ? "bg-[#39FF82]/10 border border-[#39FF82]/30 text-[#39FF82]" : "bg-[#FFFFFF]/5 border border-[#FFFFFF]/10 text-[#D1D5DB]"
                   )}>
                     <Icon size={14} className={idx === 0 ? "text-[#F5A623]" : ""} /> {role}
                   </div>
@@ -114,7 +114,7 @@ export default function BGMIProfileCard({ formData }) {
           {/* Tournament Ready absolute badge top right */}
           <div className="self-end mb-10 flex items-center gap-2 bg-[#1A1A1A] border border-[#333] px-4 py-2 rounded-full shadow-lg">
             <Medal size={16} className="text-[#F5A623]" />
-            <span className="text-xs font-black text-gray-300 tracking-wider">Tournament Ready</span>
+            <span className="text-xs font-black text-[#D1D5DB] tracking-wider">Tournament Ready</span>
           </div>
         </div>
 
@@ -131,17 +131,17 @@ export default function BGMIProfileCard({ formData }) {
             <div className="flex items-center gap-4">
               {/* Dummy Rank Icon */}
               <div className="w-20 h-20 bg-gradient-to-br from-[#F5A623] to-orange-600 rounded-lg flex items-center justify-center shadow-[0_0_20px_rgba(245,166,35,0.2)]">
-                <Crown size={40} className="text-white drop-shadow-md" />
+                <Crown size={40} className="text-[#FFFFFF] drop-shadow-md" />
               </div>
               
               <div>
-                <h3 className="text-xl font-black text-white">{current_rank}</h3>
-                <p className="text-xs text-gray-400 font-bold tracking-widest mt-1">
-                  Highest: <span className="text-gray-200">{highest_rank}</span>
+                <h3 className="text-xl font-black text-[#FFFFFF]">{current_rank}</h3>
+                <p className="text-xs text-[#9CA3AF] font-bold tracking-widest mt-1">
+                  Highest: <span className="text-[#E5E7EB]">{highest_rank}</span>
                 </p>
                 <div className="flex items-center gap-1.5 mt-2">
-                  <span className="bg-[#22292E] text-gray-300 text-[10px] font-black px-1.5 py-0.5 rounded">RP</span>
-                  <span className="text-sm font-black text-white">{current_rp} RP</span>
+                  <span className="bg-[#22292E] text-[#D1D5DB] text-[10px] font-black px-1.5 py-0.5 rounded">RP</span>
+                  <span className="text-sm font-black text-[#FFFFFF]">{current_rp} RP</span>
                 </div>
               </div>
             </div>
@@ -156,16 +156,16 @@ export default function BGMIProfileCard({ formData }) {
 
             <div className="grid grid-cols-3 gap-4 text-center divide-x divide-[#22292E]">
               <div>
-                <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1">K/D Ratio</p>
-                <p className="text-3xl font-black text-white">{kd_ratio}</p>
+                <p className="text-[9px] text-[#9CA3AF] font-black uppercase tracking-widest mb-1">K/D Ratio</p>
+                <p className="text-3xl font-black text-[#FFFFFF]">{kd_ratio}</p>
               </div>
               <div>
-                <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1">Matches Played</p>
-                <p className="text-3xl font-black text-white">{matches_played}</p>
+                <p className="text-[9px] text-[#9CA3AF] font-black uppercase tracking-widest mb-1">Matches Played</p>
+                <p className="text-3xl font-black text-[#FFFFFF]">{matches_played}</p>
               </div>
               <div>
-                <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1">Top 10 Rate</p>
-                <p className="text-3xl font-black text-white">{top_10_rate}%</p>
+                <p className="text-[9px] text-[#9CA3AF] font-black uppercase tracking-widest mb-1">Top 10 Rate</p>
+                <p className="text-3xl font-black text-[#FFFFFF]">{top_10_rate}%</p>
               </div>
             </div>
           </div>
@@ -178,7 +178,7 @@ export default function BGMIProfileCard({ formData }) {
           <div className="col-span-4 bg-[#111518] border border-[#22292E] rounded-xl p-5">
             <div className="flex items-center gap-2 text-[#39FF82] mb-4">
               <Gamepad2 size={16} />
-              <span className="text-[10px] font-black uppercase tracking-widest">Preferred Role <span className="text-gray-500 font-normal ml-1">(UP TO 2)</span></span>
+              <span className="text-[10px] font-black uppercase tracking-widest">Preferred Role <span className="text-[#6B7280] font-normal ml-1">(UP TO 2)</span></span>
             </div>
             <div className="grid grid-cols-2 gap-2">
               {Object.keys(roleIcons).map(role => {
@@ -187,9 +187,9 @@ export default function BGMIProfileCard({ formData }) {
                 return (
                   <div key={role} className={clsx(
                     "flex items-center gap-1.5 p-2.5 rounded-lg text-xs font-bold transition-all",
-                    isActive ? "bg-[#39FF82]/10 border border-[#39FF82] text-white" : "bg-transparent border border-[#22292E] text-gray-400"
+                    isActive ? "bg-[#39FF82]/10 border border-[#39FF82] text-[#FFFFFF]" : "bg-transparent border border-[#22292E] text-[#9CA3AF]"
                   )}>
-                    <Icon size={14} className={isActive ? (role === 'IGL' ? 'text-[#F5A623]' : 'text-[#39FF82]') : "text-gray-500"} />
+                    <Icon size={14} className={isActive ? (role === 'IGL' ? 'text-[#F5A623]' : 'text-[#39FF82]') : "text-[#6B7280]"} />
                     <span className="truncate">{role}</span>
                   </div>
                 );
@@ -210,9 +210,9 @@ export default function BGMIProfileCard({ formData }) {
                 return (
                   <div key={style} className={clsx(
                     "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all",
-                    isActive ? "bg-[#39FF82]/5 border border-[#39FF82]/50 text-gray-200" : "bg-transparent border border-[#22292E] text-gray-400"
+                    isActive ? "bg-[#39FF82]/5 border border-[#39FF82]/50 text-[#E5E7EB]" : "bg-transparent border border-[#22292E] text-[#9CA3AF]"
                   )}>
-                    <Icon size={12} className={isActive ? (style === 'Tournament Ready' || style === 'Competitive' ? 'text-[#F5A623]' : 'text-[#39FF82]') : "text-gray-500"} />
+                    <Icon size={12} className={isActive ? (style === 'Tournament Ready' || style === 'Competitive' ? 'text-[#F5A623]' : 'text-[#39FF82]') : "text-[#6B7280]"} />
                     <span className="truncate">{style}</span>
                   </div>
                 );
@@ -234,9 +234,9 @@ export default function BGMIProfileCard({ formData }) {
                 return (
                   <div key={look} className={clsx(
                     "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all",
-                    isActive ? "bg-[#39FF82]/5 border border-[#39FF82]/50 text-gray-200" : "bg-transparent border border-[#22292E] text-gray-400"
+                    isActive ? "bg-[#39FF82]/5 border border-[#39FF82]/50 text-[#E5E7EB]" : "bg-transparent border border-[#22292E] text-[#9CA3AF]"
                   )}>
-                    <Icon size={12} className={isActive ? "text-[#39FF82]" : "text-gray-500"} />
+                    <Icon size={12} className={isActive ? "text-[#39FF82]" : "text-[#6B7280]"} />
                     <span className="truncate">{look}</span>
                   </div>
                 );
@@ -248,11 +248,11 @@ export default function BGMIProfileCard({ formData }) {
 
         {/* ── FOOTER ACTIONS ── */}
         <div className="flex items-center gap-4 mt-4">
-          <button className="flex-1 bg-[#39FF82] hover:bg-[#39FF82]/90 text-black font-black uppercase tracking-widest py-4 rounded-xl flex items-center justify-center gap-2 transition-all">
+          <button className="flex-1 bg-[#39FF82] hover:bg-[#39FF82]/90 text-[#000000] font-black uppercase tracking-widest py-4 rounded-xl flex items-center justify-center gap-2 transition-all">
             <UsersIcon size={18} /> Invite to Squad
           </button>
           
-          <button className="flex-1 bg-[#1A1F24] hover:bg-[#22292E] border border-[#2A3238] text-white font-black uppercase tracking-widest py-4 rounded-xl transition-all">
+          <button className="flex-1 bg-[#1A1F24] hover:bg-[#22292E] border border-[#2A3238] text-[#FFFFFF] font-black uppercase tracking-widest py-4 rounded-xl transition-all">
             View Full Profile
           </button>
 
@@ -261,8 +261,8 @@ export default function BGMIProfileCard({ formData }) {
               <Star size={20} className="text-[#F5A623]" />
             </div>
             <div>
-              <p className="text-xs font-bold text-gray-300">Sportsmanship <span className="text-[#39FF82] ml-2">4.9<span className="text-gray-500">/5</span></span></p>
-              <p className="text-[10px] text-gray-500 mt-0.5">Matches Completed: 582</p>
+              <p className="text-xs font-bold text-[#D1D5DB]">Sportsmanship <span className="text-[#39FF82] ml-2">4.9<span className="text-[#6B7280]">/5</span></span></p>
+              <p className="text-[10px] text-[#6B7280] mt-0.5">Matches Completed: 582</p>
             </div>
           </div>
         </div>

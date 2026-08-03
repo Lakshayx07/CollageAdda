@@ -53,6 +53,8 @@ import PlayerCard from "@/components/PlayerCard";
 import PlayerCardForm from "@/components/PlayerCardForm";
 import clsx from "clsx";
 import { getExploreColleges, getExploreCollegePool } from "@/config/exploreColleges";
+import { supabase } from "@/utils/supabase";
+import { getAuthenticatedSupabaseClient } from "@/utils/supabaseAuthUser";
 
 const COLLEGE_BANNER_FALLBACK =
   "https://images.unsplash.com/photo-1562774053-701939374585?w=800&q=80";
@@ -206,7 +208,71 @@ function ExploreContent() {
   const [arenaTab, setArenaTab] = useState("posts"); // legacy fallback
   const [showPlayerCardForm, setShowPlayerCardForm] = useState(false);
   const [topPlayers, setTopPlayers] = useState([]);
-  const [viewingPlayerCard, setViewingPlayerCard] = useState(null);
+
+  useEffect(() => {
+    const fetchTopPlayers = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('arena_player_cards')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(20);
+        
+        if (error) throw error;
+        if (data) {
+          // Flatten data back to what the frontend expects
+          const normalized = data.map(row => ({
+            ...row,
+            ...row.card_data
+          }));
+          setTopPlayers(normalized);
+        }
+      } catch (err) {
+        console.error('Failed to fetch top players from Supabase', err);
+      }
+    };
+    
+    if (supabase) {
+      fetchTopPlayers();
+    }
+  }, []);
+
+  const handleSetTopPlayers = async (updater) => {
+    let next;
+    setTopPlayers((prev) => {
+      next = typeof updater === 'function' ? updater(prev) : updater;
+      if (Array.isArray(next) && next.length > 20) {
+        next = next.slice(0, 20);
+      }
+      return next;
+    });
+
+    if (Array.isArray(next) && next.length > 0) {
+      const newPlayer = next[0];
+      if (supabase && !newPlayer.id) {
+        try {
+          const { client: authClient, user } = await getAuthenticatedSupabaseClient();
+          const userId = user?.id;
+          
+          const { error } = await authClient
+            .from('arena_player_cards')
+            .insert({
+              user_id: userId || null,
+              username: newPlayer.username,
+              game_or_sport: newPlayer.game_or_sport,
+              category: newPlayer.category,
+              photo_url: newPlayer.photo_url,
+              card_data: newPlayer.card_data || {}
+            });
+            
+          if (error) throw error;
+        } catch (err) {
+          console.error('Failed to save to Supabase:', err);
+        }
+      }
+    }
+  };
+const [viewingPlayerCard, setViewingPlayerCard] = useState(null);
   const [followed, setFollowed] = useState({});
   const [addedStudents, setAddedStudents] = useState({});
   const [likes, setLikes] = useState({});
@@ -943,9 +1009,9 @@ function ExploreContent() {
                 <div className="flex items-center gap-3.5 min-w-0">
                   <div className="h-11 w-11 rounded-2xl brand-mark flex items-center justify-center shrink-0 shadow-sm">
                     {exploreMode === "colleges" ? (
-                      <Building2 size={20} className="text-white" strokeWidth={2.25} />
+                      <Building2 size={20} className="text-[#FFFFFF]" strokeWidth={2.25} />
                     ) : (
-                      <Swords size={20} className="text-white" strokeWidth={2.25} />
+                      <Swords size={20} className="text-[#FFFFFF]" strokeWidth={2.25} />
                     )}
                   </div>
                   <div className="min-w-0">
@@ -986,7 +1052,7 @@ function ExploreContent() {
                         setArenaSportFilter("All");
                         router.push("/explore", { scroll: false });
                       }}
-                      className="explore-mode-switch flex shrink-0 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 font-bold transition-all cursor-pointer bg-white border-[#E8E6E0] shadow-sm hover:border-[#C8922A]/55 hover:bg-[#FFF8EC]"
+                      className="explore-mode-switch flex shrink-0 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 font-bold transition-all cursor-pointer bg-[#FFFFFF] border-[#E8E6E0] shadow-sm hover:border-[#C8922A]/55 hover:bg-[#FFF8EC]"
                     >
                       <Building2 size={16} strokeWidth={2.4} className="text-[#C8922A]" />
                       <span className="tracking-wider uppercase text-[11px] text-[#C8922A]">Colleges</span>
@@ -1080,7 +1146,7 @@ function ExploreContent() {
                             setSearch("");
                             router.push("/explore?mode=arena", { scroll: false });
                           }}
-                          className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#C8922A] to-[#D4A843] py-3 text-[11px] font-black uppercase tracking-widest text-white shadow-[0_4px_14px_rgba(200,146,42,0.28)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+                          className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#C8922A] to-[#D4A843] py-3 text-[11px] font-black uppercase tracking-widest text-[#FFFFFF] shadow-[0_4px_14px_rgba(200,146,42,0.28)] hover:scale-[1.02] active:scale-[0.98] transition-all"
                         >
                           <Swords size={14} strokeWidth={2.5} />
                           Enter Arena
@@ -1121,7 +1187,7 @@ function ExploreContent() {
                             <button
                               type="button"
                               onClick={clearFilters}
-                              className="shrink-0 flex items-center gap-1 rounded-full border border-[#E8E6E0] bg-white px-3 py-1 text-[9px] font-black uppercase tracking-widest text-[#6B6B6B] transition-all hover:border-[#C8922A]/45 hover:bg-[#FFF8EC] hover:text-[#1A1A1A] active:scale-95"
+                              className="shrink-0 flex items-center gap-1 rounded-full border border-[#E8E6E0] bg-[#FFFFFF] px-3 py-1 text-[9px] font-black uppercase tracking-widest text-[#6B6B6B] transition-all hover:border-[#C8922A]/45 hover:bg-[#FFF8EC] hover:text-[#1A1A1A] active:scale-95"
                               aria-label="Clear all filters"
                             >
                               Clear
@@ -1174,7 +1240,7 @@ function ExploreContent() {
 
                       {/* Location pill (Top-left) */}
                       <div className="absolute top-5 left-5 right-5 flex items-center gap-2 flex-wrap z-10">
-                        <div className="flex items-center gap-1.5 rounded-full border border-white/12 px-3 py-1.5 backdrop-blur-md shadow-sm" style={{ backgroundColor: "rgba(0,0,0,0.42)" }}>
+                        <div className="flex items-center gap-1.5 rounded-full border border-[#FFFFFF]/12 px-3 py-1.5 backdrop-blur-md shadow-sm" style={{ backgroundColor: "rgba(0,0,0,0.42)" }}>
                           <MapPin size={11} color="white" />
                           <span className="text-[11px] font-semibold truncate max-w-[120px]" style={{ color: "white" }}>{college.location}</span>
                         </div>
@@ -1191,7 +1257,7 @@ function ExploreContent() {
                             {college.name}
                           </h3>
                           {(college.followersCount ?? 0) > 0 && (
-                            <div className="flex items-center gap-1 shrink-0 rounded-full border border-white/15 bg-black/45 px-2.5 py-1 backdrop-blur-md mt-1">
+                            <div className="flex items-center gap-1 shrink-0 rounded-full border border-[#FFFFFF]/15 bg-[#000000]/45 px-2.5 py-1 backdrop-blur-md mt-1">
                               <Users size={10} color="white" />
                               <span className="text-[10px] font-bold" style={{ color: "white" }}>
                                 {college.followersCount}
@@ -1208,7 +1274,7 @@ function ExploreContent() {
                             router.push(`/explore?collegeId=${college._id || college.id}`);
                           }}
                           disabled={loadingCollegeId === (college._id || college.id)}
-                          className="explore-college-cta w-full bg-white rounded-2xl py-3.5 flex items-center justify-center text-sm font-extrabold tracking-wide text-[#1A1A1A] shadow-md transition-all hover:bg-neutral-100 disabled:opacity-80 cursor-pointer"
+                          className="explore-college-cta w-full bg-[#FFFFFF] rounded-2xl py-3.5 flex items-center justify-center text-sm font-extrabold tracking-wide text-[#1A1A1A] shadow-md transition-all hover:bg-neutral-100 disabled:opacity-80 cursor-pointer"
                         >
                           {loadingCollegeId === (college._id || college.id) ? (
                             <Loader2 className="h-5 w-5 animate-spin text-[#1A1A1A]" />
@@ -1226,7 +1292,7 @@ function ExploreContent() {
                   <div className="flex-1 flex flex-col items-center justify-center py-16 px-6 text-center">
                     <div className="explore-empty-panel app-panel mx-auto max-w-sm rounded-[1.75rem] p-9 flex flex-col items-center gap-4">
                       <div className="flex h-14 w-14 items-center justify-center rounded-2xl brand-mark shadow-sm">
-                        <SearchX size={24} className="text-white" strokeWidth={2.25} />
+                        <SearchX size={24} className="text-[#FFFFFF]" strokeWidth={2.25} />
                       </div>
                       <div>
                         <p className="text-sm font-black text-[#1A1A1A] mb-1.5">
@@ -1298,7 +1364,7 @@ function ExploreContent() {
                               whileHover={{ y: -3 }}
                               whileTap={{ scale: 0.98 }}
                               onClick={() => router.push(`/arena/sport/${game.key}`)}
-                              className="group relative rounded-[1.35rem] border border-[#E8E6E0] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:border-[#C8922A]/45 transition-all cursor-pointer overflow-hidden text-left"
+                              className="group relative rounded-[1.35rem] border border-[#E8E6E0] bg-[#FFFFFF] shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:border-[#C8922A]/45 transition-all cursor-pointer overflow-hidden text-left"
                             >
                               <div
                                 className="h-1.5 w-full"
@@ -1336,7 +1402,7 @@ function ExploreContent() {
                       </h3>
                       {topPlayers.length === 0 ? (
                         <div className="rounded-[1.5rem] border border-[#E8E6E0] bg-gradient-to-b from-[#FFF8EC]/70 to-[#F9F8F5] px-6 py-12 flex flex-col items-center text-center gap-3">
-                          <div className="w-14 h-14 rounded-2xl bg-white border border-[#E8D9B0] shadow-sm flex items-center justify-center">
+                          <div className="w-14 h-14 rounded-2xl bg-[#FFFFFF] border border-[#E8D9B0] shadow-sm flex items-center justify-center">
                             <Gamepad2 size={24} className="text-[#C8922A]" />
                           </div>
                           <div>
@@ -1361,13 +1427,13 @@ function ExploreContent() {
                             <div 
                               key={idx} 
                               onClick={() => setViewingPlayerCard(player)}
-                              className="group bg-white border border-[#E8E6E0] rounded-[1.5rem] p-4 flex items-center gap-4 cursor-pointer hover:border-[#C8922A] hover:shadow-lg transition-all"
+                              className="group bg-[#FFFFFF] border border-[#E8E6E0] rounded-[1.5rem] p-4 flex items-center gap-4 cursor-pointer hover:border-[#C8922A] hover:shadow-lg transition-all"
                             >
-                              <div className="w-16 h-16 rounded-2xl bg-gray-100 overflow-hidden shrink-0 border border-gray-200">
+                              <div className="w-16 h-16 rounded-2xl bg-[#F3F4F6] overflow-hidden shrink-0 border border-[#E5E7EB]">
                                 {player.photo_url ? (
                                   <img src={player.photo_url} alt={player.username} className="w-full h-full object-cover" />
                                 ) : (
-                                  <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-400 font-bold text-xl">
+                                  <div className="w-full h-full flex items-center justify-center bg-[#E5E7EB] text-[#9CA3AF] font-bold text-xl">
                                     {(player.username || 'A')[0].toUpperCase()}
                                   </div>
                                 )}
@@ -1375,19 +1441,19 @@ function ExploreContent() {
                               <div className="flex-1 min-w-0">
                                 <h4 className="text-[#1A1A1A] font-black text-lg truncate">{player.username}</h4>
                                 <div className="text-xs font-bold text-[#C8922A] uppercase tracking-wider mt-0.5">{player.game_or_sport}</div>
-                                <div className="text-xs text-gray-500 font-medium truncate mt-1">{player.tagline || 'Ready to play'}</div>
+                                <div className="text-xs text-[#6B7280] font-medium truncate mt-1">{player.tagline || 'Ready to play'}</div>
                               </div>
-                              <div className="w-8 h-8 rounded-full bg-gray-50 group-hover:bg-[#FFF8EC] text-gray-400 group-hover:text-[#C8922A] flex items-center justify-center transition-colors">
+                              <div className="w-8 h-8 rounded-full bg-[#F9FAFB] group-hover:bg-[#FFF8EC] text-[#9CA3AF] group-hover:text-[#C8922A] flex items-center justify-center transition-colors">
                                 <Target size={16} />
                               </div>
                             </div>
                           ))}
                           <div 
                             onClick={() => setShowPlayerCardForm(true)}
-                            className="bg-transparent border border-dashed border-gray-300 rounded-[1.5rem] p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-[#C8922A] hover:bg-[#FFF8EC]/50 transition-all min-h-[100px]"
+                            className="bg-transparent border border-dashed border-[#D1D5DB] rounded-[1.5rem] p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-[#C8922A] hover:bg-[#FFF8EC]/50 transition-all min-h-[100px]"
                           >
-                            <Gamepad2 size={24} className="text-gray-400" />
-                            <span className="text-xs font-black text-gray-500 uppercase tracking-widest">Create Yours</span>
+                            <Gamepad2 size={24} className="text-[#9CA3AF]" />
+                            <span className="text-xs font-black text-[#6B7280] uppercase tracking-widest">Create Yours</span>
                           </div>
                         </div>
                       )}
@@ -1402,7 +1468,7 @@ function ExploreContent() {
                       initialCategory={arenaCategory}
                       onClose={() => setShowPlayerCardForm(false)}
                       onSubmit={(data) => {
-                        setTopPlayers(prev => [data, ...prev]);
+                        handleSetTopPlayers(prev => [data, ...prev]);
                       }}
                     />
                   )}
@@ -1448,7 +1514,7 @@ function ExploreContent() {
                 <button
                   type="button"
                   onClick={() => router.push('/explore')}
-                  className="explore-college-banner__back absolute top-3 left-3 p-2.5 bg-black/45 backdrop-blur-md rounded-full hover:bg-black/65 transition-colors z-20 border border-white/10 cursor-pointer"
+                  className="explore-college-banner__back absolute top-3 left-3 p-2.5 bg-[#000000]/45 backdrop-blur-md rounded-full hover:bg-[#000000]/65 transition-colors z-20 border border-[#FFFFFF]/10 cursor-pointer"
                   aria-label="Back to explore"
                   style={{ cursor: "pointer", color: "#ffffff" }}
                 >
@@ -1472,7 +1538,7 @@ function ExploreContent() {
 
                 {/* College Info on Banner */}
                 <div className="absolute bottom-5 left-4 right-4 flex items-end space-x-4 z-10">
-                  <div className="w-16 h-16 rounded-2xl bg-white/95 backdrop-blur-md border border-white/40 flex items-center justify-center shadow-2xl shrink-0">
+                  <div className="w-16 h-16 rounded-2xl bg-[#FFFFFF]/95 backdrop-blur-md border border-[#FFFFFF]/40 flex items-center justify-center shadow-2xl shrink-0">
                     {selectedCollege.emoji ? (
                       <span className="text-3xl leading-none" aria-hidden>
                         {selectedCollege.emoji}
@@ -1531,8 +1597,8 @@ function ExploreContent() {
                   className={clsx(
                     "px-5 py-2.5 rounded-2xl text-sm font-bold transition-all active:scale-95",
                     followed[selectedCollege._id || selectedCollege.id]
-                      ? "bg-white text-[#1A1A1A] border border-[#E8E6E0] shadow-sm"
-                      : "text-white shadow-md"
+                      ? "bg-[#FFFFFF] text-[#1A1A1A] border border-[#E8E6E0] shadow-sm"
+                      : "text-[#FFFFFF] shadow-md"
                   )}
                   style={
                     !followed[selectedCollege._id || selectedCollege.id]
@@ -1625,13 +1691,13 @@ function ExploreContent() {
                         return (
                           <article
                             key={post._id}
-                            className="bg-white border border-[#E8E6E0] rounded-3xl p-5 shadow-sm space-y-4"
+                            className="bg-[#FFFFFF] border border-[#E8E6E0] rounded-3xl p-5 shadow-sm space-y-4"
                           >
                             <div className="flex items-center space-x-4">
                               <div className="w-12 h-12 rounded-full p-[2px] bg-[#F3F2EE] overflow-hidden shrink-0">
                                 <img
                                   src={getAvatarSrc(post.author?.profilePic, post.author?.name, post.author?._id || post.author?.id)}
-                                  className="w-full h-full object-cover rounded-full bg-white"
+                                  className="w-full h-full object-cover rounded-full bg-[#FFFFFF]"
                                   alt=""
                                 />
                               </div>
@@ -1721,7 +1787,7 @@ function ExploreContent() {
                                             <img
                                               src={getAvatarSrc(comment.user?.profilePic, comment.user?.name, comment.user?._id || comment.user?.id || comment._id)}
                                               alt={comment.user?.name || "Student"}
-                                              className="h-full w-full rounded-full object-cover bg-white"
+                                              className="h-full w-full rounded-full object-cover bg-[#FFFFFF]"
                                               onError={(e) => {
                                                 e.currentTarget.onerror = null;
                                                 e.currentTarget.src = getDefaultAvatar(comment.user?.name || "Student", comment.user?._id || comment.user?.id || comment._id);
@@ -1748,7 +1814,7 @@ function ExploreContent() {
                                     />
                                     <button
                                       onClick={() => handleComment(post._id)}
-                                      className="bg-[#C8922A] text-white p-2.5 rounded-full hover:scale-105 active:scale-95 transition-all shadow-md shadow-[#C8922A]/20"
+                                      className="bg-[#C8922A] text-[#FFFFFF] p-2.5 rounded-full hover:scale-105 active:scale-95 transition-all shadow-md shadow-[#C8922A]/20"
                                     >
                                       <Send size={14} />
                                     </button>
@@ -1878,7 +1944,7 @@ function ExploreContent() {
                                 >
                                   {!spinResultStudent && !isSpinning ? (
                                     <>
-                                      <div className="w-24 h-24 rounded-full bg-white shadow-sm border border-border/50 flex items-center justify-center mb-4">
+                                      <div className="w-24 h-24 rounded-full bg-[#FFFFFF] shadow-sm border border-border/50 flex items-center justify-center mb-4">
                                         <span className="text-5xl">🎰</span>
                                       </div>
                                       <div>
@@ -1889,7 +1955,7 @@ function ExploreContent() {
                                       </div>
                                       <button
                                         onClick={handleSpinNow}
-                                        className="mt-6 px-8 py-3.5 bg-[#C8922A] text-white font-black text-sm uppercase tracking-widest rounded-full shadow-lg hover:scale-105 transition-all"
+                                        className="mt-6 px-8 py-3.5 bg-[#C8922A] text-[#FFFFFF] font-black text-sm uppercase tracking-widest rounded-full shadow-lg hover:scale-105 transition-all"
                                       >
                                         SPIN NOW
                                       </button>
@@ -1903,16 +1969,16 @@ function ExploreContent() {
                                   ) : (
                                     <div className="flex flex-col items-center justify-center w-full h-full relative">
                                       <div className="absolute top-4 w-full px-4 text-center z-20">
-                                        <h3 className="text-lg font-black text-[#C8922A] drop-shadow-sm leading-tight bg-white/80 backdrop-blur-md rounded-xl py-2 px-4 shadow-sm border border-[#F3E8D3]">
+                                        <h3 className="text-lg font-black text-[#C8922A] drop-shadow-sm leading-tight bg-[#FFFFFF]/80 backdrop-blur-md rounded-xl py-2 px-4 shadow-sm border border-[#F3E8D3]">
                                           {SPIN_QUESTIONS[spinGameQuestionIndex]}
                                         </h3>
                                       </div>
                                       
-                                      <div className="w-32 h-32 rounded-full border-[6px] border-white shadow-xl bg-muted z-20 mt-8">
+                                      <div className="w-32 h-32 rounded-full border-[6px] border-[#FFFFFF] shadow-xl bg-muted z-20 mt-8">
                                         <img
                                           src={getAvatarSrc(spinResultStudent.profilePic, spinResultStudent.name, spinResultStudent._id || spinResultStudent.id)}
                                           alt=""
-                                          className="w-full h-full object-cover rounded-full bg-white text-transparent"
+                                          className="w-full h-full object-cover rounded-full bg-[#FFFFFF] text-transparent"
                                         />
                                       </div>
                                       <h2 className="text-2xl font-black text-[#1A1A1A] tracking-tight mt-4">{spinResultStudent.name}</h2>
@@ -1920,7 +1986,7 @@ function ExploreContent() {
                                       
                                       <button
                                         onClick={() => setSpinResultStudent(null)}
-                                        className="mt-8 px-6 py-2.5 bg-surface-hover text-muted font-bold text-xs uppercase tracking-widest rounded-full border border-border/50 hover:bg-white hover:shadow-sm transition-all"
+                                        className="mt-8 px-6 py-2.5 bg-surface-hover text-muted font-bold text-xs uppercase tracking-widest rounded-full border border-border/50 hover:bg-[#FFFFFF] hover:shadow-sm transition-all"
                                       >
                                         Spin Again
                                       </button>
@@ -1970,7 +2036,7 @@ function ExploreContent() {
                                       {/* ALREADY NETWORK Overlay */}
                                       {isTop && isAlreadyConnected && (
                                         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none w-[90%] max-w-[280px]">
-                                          <div className="bg-white/90 backdrop-blur-md px-6 py-3 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex items-center justify-center gap-3 border border-border/50 animate-bounce">
+                                          <div className="bg-[#FFFFFF]/90 backdrop-blur-md px-6 py-3 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex items-center justify-center gap-3 border border-border/50 animate-bounce">
                                             <span className="text-2xl">🤝</span>
                                             <span className="text-[#1A1A1A] font-black tracking-widest text-[11px] uppercase" style={{ color: '#1A1A1A' }}>Already Network</span>
                                           </div>
@@ -1982,22 +2048,22 @@ function ExploreContent() {
 
                                         {/* Verified Badge */}
                                         {student.isVerified && (
-                                          <div className="absolute top-4 left-4 bg-white px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm border border-green-100 z-20">
-                                            <div className="bg-green-500 rounded-full p-0.5"><Check size={10} className="text-white" strokeWidth={3} /></div>
+                                          <div className="absolute top-4 left-4 bg-[#FFFFFF] px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm border border-green-100 z-20">
+                                            <div className="bg-green-500 rounded-full p-0.5"><Check size={10} className="text-[#FFFFFF]" strokeWidth={3} /></div>
                                             <span className="text-[10px] font-black text-green-700 tracking-wider">VERIFIED</span>
                                           </div>
                                         )}
                                       </div>
 
                                       {/* Details Area */}
-                                      <div className="flex-1 flex flex-col items-center px-4 pt-14 pb-4 text-center bg-white relative">
+                                      <div className="flex-1 flex flex-col items-center px-4 pt-14 pb-4 text-center bg-[#FFFFFF] relative">
                                         {/* Circular Profile Picture */}
                                         <div className="absolute -top-14 left-1/2 -translate-x-1/2">
-                                          <div className="relative w-[110px] h-[110px] rounded-full border-[5px] border-white shadow-sm bg-muted z-20">
+                                          <div className="relative w-[110px] h-[110px] rounded-full border-[5px] border-[#FFFFFF] shadow-sm bg-muted z-20">
                                             <img
                                               src={getAvatarSrc(student.profilePic, student.name, student._id || student.id)}
                                               alt=""
-                                              className="w-full h-full object-cover rounded-full bg-white text-transparent"
+                                              className="w-full h-full object-cover rounded-full bg-[#FFFFFF] text-transparent"
                                               onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getDefaultAvatar(student.name, student._id || student.id); }}
                                             />
                                           </div>
@@ -2130,7 +2196,7 @@ function ExploreContent() {
                               whileHover={{ scale: 1.02 }}
                               whileTap={{ scale: 0.98 }}
                               onClick={() => handleSwipe(selectedCollege?._id || selectedCollege?.id, 'left', selectedCollege.studentsData[currentStudentIndices[selectedCollege?._id || selectedCollege?.id] || 0])}
-                              className="flex-1 py-3.5 bg-white border border-[#E8E6E0] rounded-[20px] text-[13px] font-black text-[#1A1A1A] flex items-center justify-center gap-2 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:bg-[#F9F8F5] transition-all"
+                              className="flex-1 py-3.5 bg-[#FFFFFF] border border-[#E8E6E0] rounded-[20px] text-[13px] font-black text-[#1A1A1A] flex items-center justify-center gap-2 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:bg-[#F9F8F5] transition-all"
                             >
                               SKIP
                             </motion.button>
@@ -2139,7 +2205,7 @@ function ExploreContent() {
                               whileHover={{ scale: 1.02 }}
                               whileTap={{ scale: 0.98 }}
                               onClick={() => handleSwipe(selectedCollege?._id || selectedCollege?.id, 'right', selectedCollege.studentsData[currentStudentIndices[selectedCollege?._id || selectedCollege?.id] || 0])}
-                              className="relative flex-1 py-3.5 bg-blue-500 rounded-[20px] text-[13px] font-black text-white flex items-center justify-center gap-2 shadow-md hover:bg-blue-600 transition-all overflow-hidden"
+                              className="relative flex-1 py-3.5 bg-blue-500 rounded-[20px] text-[13px] font-black text-[#FFFFFF] flex items-center justify-center gap-2 shadow-md hover:bg-blue-600 transition-all overflow-hidden"
                               style={{ color: '#ffffff' }}
                             >
                               <span className="relative z-10 flex items-center gap-2" style={{ color: '#ffffff' }}>⚡ CONNECT</span>
@@ -2214,7 +2280,7 @@ function ExploreContent() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setChatWithStudent(null)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
+              className="fixed inset-0 bg-[#000000]/60 backdrop-blur-sm z-[100]"
             />
             <motion.div
               initial={{ x: "100%" }}
@@ -2313,7 +2379,7 @@ function ExploreContent() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-[#000000]/95 p-4"
             onClick={() => setSelectedMemoryIndex(null)}
           >
             <div className="absolute top-6 left-6 z-40 flex items-center">
@@ -2339,7 +2405,7 @@ function ExploreContent() {
               )}
               <button
                 onClick={() => setSelectedMemoryIndex(null)}
-                className="text-white/80 hover:text-white p-2 transition-colors pointer-events-auto"
+                className="text-[#FFFFFF]/80 hover:text-[#FFFFFF] p-2 transition-colors pointer-events-auto"
               >
                 <X color="#FFFFFF" size={26} strokeWidth={2.5} />
               </button>
@@ -2352,7 +2418,7 @@ function ExploreContent() {
                   if (selectedMemoryIndex > 0) setSelectedMemoryIndex(selectedMemoryIndex - 1);
                 }}
                 disabled={selectedMemoryIndex === 0}
-                className={`text-white p-4 pointer-events-auto transition-all drop-shadow-xl ${selectedMemoryIndex === 0 ? "opacity-30 cursor-not-allowed" : "hover:text-white/80 hover:scale-110 active:scale-95"
+                className={`text-[#FFFFFF] p-4 pointer-events-auto transition-all drop-shadow-xl ${selectedMemoryIndex === 0 ? "opacity-30 cursor-not-allowed" : "hover:text-[#FFFFFF]/80 hover:scale-110 active:scale-95"
                   }`}
               >
                 <ChevronLeft color="#FFFFFF" size={44} strokeWidth={3} />
@@ -2364,7 +2430,7 @@ function ExploreContent() {
                   if (selectedMemoryIndex < memoryPosts.length - 1) setSelectedMemoryIndex(selectedMemoryIndex + 1);
                 }}
                 disabled={selectedMemoryIndex === memoryPosts.length - 1}
-                className={`text-white p-4 pointer-events-auto transition-all drop-shadow-xl ${selectedMemoryIndex === memoryPosts.length - 1 ? "opacity-30 cursor-not-allowed" : "hover:text-white/80 hover:scale-110 active:scale-95"
+                className={`text-[#FFFFFF] p-4 pointer-events-auto transition-all drop-shadow-xl ${selectedMemoryIndex === memoryPosts.length - 1 ? "opacity-30 cursor-not-allowed" : "hover:text-[#FFFFFF]/80 hover:scale-110 active:scale-95"
                   }`}
               >
                 <ChevronRight color="#FFFFFF" size={44} strokeWidth={3} />

@@ -2,23 +2,74 @@
 import { useEffect, useState } from "react";
 import { Home, Compass, User, Users, Users2, MessageSquare, Search, Zap } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import clsx from "clsx";
+import { Suspense } from "react";
 
 import { useSocket } from "@/context/SocketProvider";
 
-export default function BottomNav() {
+function BottomNavContent() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [hasRequest, setHasRequest] = useState(false);
   const { unreadCount } = useSocket();
 
   const navItems = [
     { name: "Home", path: "/home", icon: Home },
-    { name: "Network", path: "/friends", icon: Users },
+    { name: "Explore", path: "/explore", icon: Compass },
     { name: "Messages", path: "/messages", icon: MessageSquare },
+    { name: "Network", path: "/friends", icon: Users },
     { name: "Community", path: "/community", icon: Users2 },
   ];
+
+  const [isVisible, setIsVisible] = useState(true);
+
+  useEffect(() => {
+    const scrollPositions = new WeakMap();
+    // Also track window separately since WeakMap requires object keys
+    let windowLastScrollY = window.scrollY;
+
+    const handleScroll = (e) => {
+      let currentScrollY;
+      let target = e.target;
+      let lastScrollY;
+
+      if (target === document || target === window) {
+        currentScrollY = window.scrollY;
+        lastScrollY = windowLastScrollY;
+      } else {
+        // Ignore form elements
+        if (target.tagName && ['textarea', 'input'].includes(target.tagName.toLowerCase())) return;
+        // Ignore if element is not actually scrollable
+        if (target.scrollHeight <= target.clientHeight) return;
+        
+        currentScrollY = target.scrollTop;
+        lastScrollY = scrollPositions.get(target) || 0;
+      }
+
+      if (currentScrollY === undefined) return;
+
+      const delta = currentScrollY - lastScrollY;
+      
+      if (target === document || target === window) {
+        windowLastScrollY = currentScrollY;
+      } else {
+        scrollPositions.set(target, currentScrollY);
+      }
+
+      if (Math.abs(delta) < 10) return;
+
+      if (delta > 0 && currentScrollY > 50) {
+        setIsVisible(false);
+      } else if (delta < 0) {
+        setIsVisible(true);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true, capture: true });
+    return () => window.removeEventListener("scroll", handleScroll, { capture: true });
+  }, []);
 
   useEffect(() => {
     if (pathname === "/login" || pathname === "/onboarding" || pathname === "/") return;
@@ -36,10 +87,29 @@ export default function BottomNav() {
     };
   }, [pathname]);
 
+  // Base hidden routes
   if (pathname === "/login" || pathname === "/onboarding" || pathname === "/") return null;
 
+  // Hide on Network user profile detail
+  if (pathname.startsWith("/profile/")) return null;
+
+  // Hide on Community detail
+  if (pathname.startsWith("/community/") && pathname !== "/community") return null;
+
+  // Hide on Messages chat active
+  if (pathname === "/messages" && (searchParams.has("chat") || searchParams.has("userId"))) return null;
+
+  // Hide on Explore university detail
+  if (pathname === "/explore" && searchParams.has("collegeId")) return null;
+
   return (
-    <nav className="mobile-bottom-nav bg-white border-t border-[#E8E6E0]">
+    <nav 
+      className="mobile-bottom-nav bg-white border-t border-[#E8E6E0]"
+      style={{
+        transform: isVisible ? 'translateY(0)' : 'translateY(100%)',
+        transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+      }}
+    >
       {navItems.map((item) => {
         const isActive = pathname === item.path;
         const Icon = item.icon;
@@ -72,5 +142,13 @@ export default function BottomNav() {
         );
       })}
     </nav>
+  );
+}
+
+export default function BottomNav() {
+  return (
+    <Suspense fallback={null}>
+      <BottomNavContent />
+    </Suspense>
   );
 }

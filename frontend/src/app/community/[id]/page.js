@@ -95,6 +95,7 @@ export default function CommunityChatPage() {
   const [typingUsers, setTypingUsers] = useState({});
   const [pinnedJumpIndex, setPinnedJumpIndex] = useState(0);
   const [showJoinSparkles, setShowJoinSparkles] = useState(false);
+  const [fullscreenImage, setFullscreenImage] = useState(null);
 
   const scrollRef = useRef(null);
   const chatContainerRef = useRef(null);
@@ -1046,7 +1047,7 @@ export default function CommunityChatPage() {
   });
 
   return (
-    <div className="h-full bg-[#F9F8F5] pt-[70px] lg:pt-0 flex flex-col lg:grid lg:grid-cols-[330px_minmax(0,1fr)]">
+    <div className="messages-layout bg-[#F9F8F5] flex flex-col lg:grid lg:grid-cols-[330px_minmax(0,1fr)]">
       <aside className="hidden lg:flex min-h-0 flex-col border-r border-[#E8E6E0] bg-white/70 backdrop-blur-sm">
         <div className="px-5 py-5 flex items-center gap-3 shrink-0">
           <button
@@ -1215,7 +1216,7 @@ export default function CommunityChatPage() {
       </div>
 
       {/* Messages Scroll Area */}
-      <div ref={chatContainerRef} className="flex-1 overflow-y-auto px-4 py-6 space-y-4 min-h-0 bg-[#F9F8F5] custom-scrollbar">
+      <div ref={chatContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-6 space-y-4 min-h-0 bg-[#F9F8F5] custom-scrollbar">
         {/* Info Box */}
         <div className="max-w-md mx-auto bg-white rounded-3xl p-6 border border-[#E8E6E0] shadow-sm text-center mb-6">
           <div className={`w-14 h-14 rounded-2xl ${theme.avatar} flex items-center justify-center font-black text-xl mx-auto mb-3 shadow-sm`}>
@@ -1270,7 +1271,7 @@ export default function CommunityChatPage() {
 
               <div
                 className={clsx("flex flex-col max-w-[75%] relative cursor-pointer", isMe ? "items-end" : "items-start")}
-                onClick={() => setTappedMessageId(tappedMessageId === msg.id ? null : msg.id)}
+                onClick={(e) => { e.stopPropagation(); setTappedMessageId(tappedMessageId === msg.id ? null : msg.id); setActiveMessageId(null); }}
               >
                 {!isMe && showAvatar && (
                   <span className="text-[10px] text-[#6B6B6B] font-bold mb-1 ml-1">
@@ -1309,7 +1310,8 @@ export default function CommunityChatPage() {
                     <img
                       src={msg.media_url}
                       alt={msg.content || "Chat photo"}
-                      className="mb-2 max-h-72 w-full rounded-2xl object-cover"
+                      className="mb-2 max-h-72 w-full rounded-2xl object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={(e) => { e.stopPropagation(); setFullscreenImage(msg.media_url); }}
                     />
                   )}
                   {msg.media_url && msg.attachment_type === "video" && (
@@ -1365,8 +1367,8 @@ export default function CommunityChatPage() {
 
                 {!isDeleted && activeMessageId === msg.id && (
                   <div className={clsx(
-                    "absolute z-20 top-1/2 flex -translate-y-1/2 items-center gap-1 rounded-2xl border border-[#E8E6E0] bg-white p-1 shadow-xl",
-                    isMe ? "right-full mr-12" : "left-full ml-12"
+                    "absolute z-20 flex items-center gap-1 rounded-2xl border border-[#E8E6E0] bg-white p-1 shadow-xl min-w-max",
+                    isMe ? "right-0 bottom-full mb-2 origin-bottom-right" : "left-0 bottom-full mb-2 origin-bottom-left"
                   )}>
                     <button onClick={() => handleReplyMessage(msg)} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-amber-50 hover:text-amber-700 cursor-pointer" title="Reply">
                       <Reply size={15} />
@@ -1395,7 +1397,8 @@ export default function CommunityChatPage() {
                       setActiveMessageId(activeMessageId === msg.id ? null : msg.id);
                     }}
                     className={clsx(
-                      "absolute top-1/2 -translate-y-1/2 rounded-full bg-white border border-[#E8E6E0] p-1.5 text-[#6B6B6B] shadow-sm opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 cursor-pointer",
+                      "absolute top-1/2 -translate-y-1/2 rounded-full bg-white border border-[#E8E6E0] p-1.5 text-[#6B6B6B] shadow-sm transition-opacity md:group-hover:opacity-100 cursor-pointer",
+                      tappedMessageId === msg.id || activeMessageId === msg.id ? "opacity-100" : "opacity-0",
                       isMe ? "-left-9" : "-right-9"
                     )}
                     title="Message options"
@@ -1703,6 +1706,31 @@ export default function CommunityChatPage() {
           </motion.div>
         )}
       </AnimatePresence>
+      <AnimatePresence>
+        {fullscreenImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[300] flex items-center justify-center bg-black/90 backdrop-blur-sm"
+            onClick={() => setFullscreenImage(null)}
+          >
+            <button 
+              className="absolute top-6 right-6 p-2 bg-white/20 hover:bg-white/40 rounded-full text-white cursor-pointer transition-colors"
+              onClick={() => setFullscreenImage(null)}
+            >
+              <X size={24} color="white" strokeWidth={2.5} />
+            </button>
+            <img 
+              src={fullscreenImage} 
+              alt="Fullscreen"
+              className="max-h-[90dvh] max-w-[95vw] object-contain select-none"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <JoinSparkles active={showJoinSparkles} />
     </div>
   );

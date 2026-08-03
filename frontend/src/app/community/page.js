@@ -339,13 +339,13 @@ export default function CommunityPage() {
   if (!isMounted) return null;
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6] pb-24 lg:pb-8 pt-[70px] lg:pt-0">
+    <div className="min-h-screen bg-[#FAF9F6] pb-24 lg:pb-8 pt-4 lg:pt-8">
       <div className="w-full max-w-[1380px] mx-auto p-4 md:p-6">
         <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_300px] gap-6">
           <main className="min-w-0">
             <section className="relative overflow-hidden rounded-[1.5rem] bg-white border border-[#EEE7DD] shadow-sm mb-6">
               <div className="grid min-h-[210px] md:grid-cols-[0.92fr_1.08fr]">
-                <div className="relative z-10 p-5 md:p-6 flex flex-col justify-between gap-6">
+                <div className="relative z-10 p-5 md:p-6 flex flex-col justify-between gap-6 min-w-0">
                   <div>
                     <div className="w-11 h-11 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center shadow-sm mb-4">
                       <Users2 size={23} />
@@ -367,7 +367,7 @@ export default function CommunityPage() {
                           setCategoryFilter("");
                         }}
                         className={clsx(
-                          "px-4 py-2.5 rounded-2xl text-xs font-black whitespace-nowrap transition-all border cursor-pointer",
+                          "px-4 py-2.5 rounded-2xl text-xs font-black whitespace-nowrap transition-all border cursor-pointer shrink-0",
                           activeTab === tab
                             ? "bg-gradient-to-r from-amber-300 to-orange-300 text-[#1A1A1A] border-amber-200 shadow-lg shadow-orange-300/20"
                             : "bg-white/90 text-[#333333] border-[#ECE6DD] hover:border-amber-200 hover:text-amber-700"

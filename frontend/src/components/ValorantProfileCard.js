@@ -52,12 +52,12 @@ export default function ValorantProfileCard({ formData }) {
     return {
       name: agent,
       pickRate: mockPickRates[index % 3],
-      ...(info[agent] || { bg: 'bg-gray-800', border: 'border-gray-500', img: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&q=80&w=2000' })
+      ...(info[agent] || { bg: 'bg-[#1F2937]', border: 'border-[#6B7280]', img: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&q=80&w=2000' })
     };
   };
 
   return (
-    <div className="w-full max-w-[1100px] mx-auto rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(255,70,85,0.15)] relative bg-[#090C10] border border-[#2B3240] font-sans text-white p-6">
+    <div className="w-full max-w-[1100px] mx-auto rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(255,70,85,0.15)] relative bg-[#090C10] border border-[#2B3240] font-sans text-[#FFFFFF] p-6">
       
       {/* BACKGROUND IMAGE / OMEN GRAPHIC */}
       <div 
@@ -78,10 +78,10 @@ export default function ValorantProfileCard({ formData }) {
             <span className="text-[#A0AEC0] text-xs font-bold tracking-[0.2em]">MY VALORANT PLAYER CARD</span>
           </div>
           <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 px-4 py-2 rounded-lg border border-[#2B3240] text-xs font-bold tracking-widest text-[#A0AEC0] hover:bg-white/5 transition-colors">
+            <button className="flex items-center gap-2 px-4 py-2 rounded-lg border border-[#2B3240] text-xs font-bold tracking-widest text-[#A0AEC0] hover:bg-[#FFFFFF]/5 transition-colors">
               <Share2 size={14} /> SHARE CARD
             </button>
-            <button className="flex items-center gap-2 px-6 py-2 rounded-lg bg-[#FF4655] hover:bg-[#FF4655]/90 text-white text-xs font-bold tracking-widest transition-colors shadow-[0_4px_14px_rgba(255,70,85,0.4)]">
+            <button className="flex items-center gap-2 px-6 py-2 rounded-lg bg-[#FF4655] hover:bg-[#FF4655]/90 text-[#FFFFFF] text-xs font-bold tracking-widest transition-colors shadow-[0_4px_14px_rgba(255,70,85,0.4)]">
               <UsersIcon size={14} /> INVITE TO TEAM
             </button>
           </div>
@@ -117,7 +117,7 @@ export default function ValorantProfileCard({ formData }) {
                   <div className="w-24 h-24 rounded-full p-1 border-2 border-[#FF4655] relative shadow-[0_0_20px_rgba(255,70,85,0.4)]">
                     <img src={photo_url || 'https://i.pravatar.cc/300?u=val'} alt="Profile" className="w-full h-full rounded-full object-cover grayscale hover:grayscale-0 transition-all" />
                   </div>
-                  <div className="absolute -bottom-1 -right-1 bg-[#12171D] border border-[#2B3240] p-1.5 rounded-full text-white">
+                  <div className="absolute -bottom-1 -right-1 bg-[#12171D] border border-[#2B3240] p-1.5 rounded-full text-[#FFFFFF]">
                     <Edit2 size={12} />
                   </div>
                 </div>

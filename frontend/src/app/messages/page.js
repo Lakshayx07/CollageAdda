@@ -278,6 +278,7 @@ function MessagesContent() {
   const [selectedFileName, setSelectedFileName] = useState("");
   const [mediaType, setMediaType] = useState('none');
   const [activeMessageMenu, setActiveMessageMenu] = useState(null);
+  const [activeMessageDot, setActiveMessageDot] = useState(null);
   const [replyTo, setReplyTo] = useState(null);
   const [editingMessage, setEditingMessage] = useState(null);
   const [typingName, setTypingName] = useState("");
@@ -287,6 +288,7 @@ function MessagesContent() {
   const [pinnedJumpIndex, setPinnedJumpIndex] = useState(0);
   const [loadingConnections, setLoadingConnections] = useState(false);
   const [connectionsLoaded, setConnectionsLoaded] = useState(false);
+  const [fullscreenImage, setFullscreenImage] = useState(null);
   
   const emojis = ["❤️", "🔥", "😂", "😍", "🙌", "👏", "✨", "💯", "🎉", "😎", "🚀", "💡", "☕", "📚", "🎓", "🍕", "🎸", "🎮", "🏀", "🧪"];
   
@@ -1126,8 +1128,8 @@ function MessagesContent() {
 
   const renderMessageActions = (msg, isMe) => (
     <div className={clsx(
-      "absolute z-40 top-1/2 flex -translate-y-1/2 items-center gap-1 rounded-2xl border border-[#E8E6E0] bg-white p-1 shadow-xl",
-      isMe ? "right-full mr-2" : "left-full ml-2"
+      "absolute z-40 flex items-center gap-1 rounded-2xl border border-[#E8E6E0] bg-white p-1 shadow-xl min-w-max",
+      isMe ? "left-0 bottom-full mb-2 origin-bottom-left" : "right-0 bottom-full mb-2 origin-bottom-right"
     )}>
       <button onClick={() => startReply(msg)} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-amber-50 hover:text-amber-700" title="Reply" aria-label="Reply">
         <Reply size={15} />
@@ -1286,7 +1288,7 @@ function MessagesContent() {
             {/* Chat Header */}
             <header className="chat-header page-header flex items-center justify-between px-4 md:px-6 py-2">
               <div className="flex items-center space-x-3 min-w-0">
-                <button onClick={closeChat} className="lg:hidden p-2 text-[#6B6B6B] hover:text-[#1A1A1A] bg-[#F3F2EE] rounded-full mr-1 flex-shrink-0" aria-label="Back to conversations">
+                <button onClick={closeChat} className="lg:hidden p-2 text-[#6B6B6B] hover:text-[#1A1A1A] bg-[#F3F2EE] rounded-full mr-1 -ml-2 flex-shrink-0" aria-label="Back to conversations">
                   <ChevronLeft size={20} />
                 </button>
                 <div className="relative flex-shrink-0">
@@ -1306,7 +1308,7 @@ function MessagesContent() {
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center space-x-1.5 min-w-0">
-                    <h2 className="font-bold text-[#1A1A1A] text-[14px] truncate max-w-[120px] xs:max-w-[150px] sm:max-w-none leading-tight">{activeChat.name}</h2>
+                    <h2 className="font-bold text-[#1A1A1A] text-[16px] truncate max-w-[120px] xs:max-w-[150px] sm:max-w-none leading-tight">{activeChat.name}</h2>
                   </div>
                 </div>
               </div>
@@ -1464,7 +1466,10 @@ function MessagesContent() {
                             <button
                               type="button"
                               onClick={() => setActiveMessageMenu(activeMessageMenu === msg.id ? null : msg.id)}
-                              className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 p-1.5 rounded-full bg-white border border-[#E8E6E0] text-[#6B6B6B] shadow-md hover:text-[#1A1A1A] transition-all"
+                              className={clsx(
+                                "p-1.5 rounded-full bg-white border border-[#E8E6E0] text-[#6B6B6B] shadow-md hover:text-[#1A1A1A] transition-all",
+                                activeMessageDot === msg.id || activeMessageMenu === msg.id ? "opacity-100" : "opacity-0 lg:group-hover:opacity-100"
+                              )}
                               aria-label="Message options"
                               aria-expanded={activeMessageMenu === msg.id}
                             >
@@ -1496,7 +1501,8 @@ function MessagesContent() {
                               rotate: { duration: 3, repeat: Infinity, ease: "easeInOut" },
                               opacity: { duration: 0.3 }
                             }}
-                            className="text-5xl py-1 cursor-default select-none drop-shadow-2xl"
+                            className="text-5xl py-1 cursor-pointer select-none drop-shadow-2xl"
+                            onClick={(e) => { e.stopPropagation(); setActiveMessageDot(activeMessageDot === msg.id ? null : msg.id); setActiveMessageMenu(null); }}
                           >
                             {msg.text}
                           </motion.div>
@@ -1545,7 +1551,10 @@ function MessagesContent() {
 
                           if (isSharedPost && sharedData) {
                             return (
-                              <div className="w-72 sm:w-80 max-w-[82vw] p-3.5 rounded-2xl bg-white border border-[#E5E0D5] text-[#1A1A1A] shadow-md my-1">
+                              <div 
+                                className="w-72 sm:w-80 max-w-[82vw] p-3.5 rounded-2xl bg-white border border-[#E5E0D5] text-[#1A1A1A] shadow-md my-1 cursor-pointer"
+                                onClick={(e) => { e.stopPropagation(); setActiveMessageDot(activeMessageDot === msg.id ? null : msg.id); setActiveMessageMenu(null); }}
+                              >
                                 <div className="flex items-center gap-1.5 pb-2 mb-2.5 border-b border-[#EBEBEB] text-[10px] font-bold uppercase tracking-wider text-[#C8922A]">
                                   <Share2 size={12} />
                                   <span>Shared Post</span>
@@ -1578,7 +1587,7 @@ function MessagesContent() {
                                     {sharedData.mediaType === 'video' ? (
                                       <video src={sharedData.mediaUrl} controls className="w-full h-auto max-h-40 object-contain" />
                                     ) : (
-                                      <img src={sharedData.mediaUrl} alt="" className="w-full h-auto max-h-40 object-cover" />
+                                      <img src={sharedData.mediaUrl} alt="" className="w-full h-auto max-h-40 object-cover cursor-pointer hover:opacity-90 transition-opacity" onClick={(e) => { e.stopPropagation(); setFullscreenImage(sharedData.mediaUrl); }} />
                                     )}
                                   </div>
                                 )}
@@ -1602,12 +1611,15 @@ function MessagesContent() {
                           }
 
                           return (
-                            <div className={clsx(
-                              "w-fit max-w-full px-3.5 py-2.5 text-[14px] leading-relaxed shadow-2xl relative break-words",
-                              isMe 
-                                ? "ca-chat-sent" 
-                                : "ca-chat-received"
-                            )}>
+                            <div 
+                              onClick={(e) => { e.stopPropagation(); setActiveMessageDot(activeMessageDot === msg.id ? null : msg.id); setActiveMessageMenu(null); }}
+                              className={clsx(
+                                "w-fit max-w-full px-3.5 py-2.5 text-[14px] leading-relaxed shadow-2xl relative break-words cursor-pointer",
+                                isMe 
+                                  ? "ca-chat-sent" 
+                                  : "ca-chat-received"
+                              )}
+                            >
                               {msg.isPinned && (
                                 <div className="mb-1 flex items-center gap-1 text-[10px] font-black opacity-80">
                                   <Pin size={11} /> Pinned
@@ -1631,7 +1643,7 @@ function MessagesContent() {
                                       <FileText size={18} /> Document
                                     </a>
                                   ) : (
-                                    <img src={msg.mediaUrl} alt="" className="max-w-full h-auto max-h-[350px] object-contain" />
+                                    <img src={msg.mediaUrl} alt="" className="max-w-full h-auto max-h-[350px] object-contain cursor-pointer hover:opacity-90 transition-opacity" onClick={(e) => { e.stopPropagation(); setFullscreenImage(msg.mediaUrl); }} />
                                   )}
                                 </div>
                               )}
@@ -1695,7 +1707,10 @@ function MessagesContent() {
                             <button
                               type="button"
                               onClick={() => setActiveMessageMenu(activeMessageMenu === msg.id ? null : msg.id)}
-                              className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 p-1.5 rounded-full bg-white border border-[#E8E6E0] text-[#6B6B6B] shadow-md hover:text-[#1A1A1A] transition-all"
+                              className={clsx(
+                                "p-1.5 rounded-full bg-white border border-[#E8E6E0] text-[#6B6B6B] shadow-md hover:text-[#1A1A1A] transition-all",
+                                activeMessageDot === msg.id || activeMessageMenu === msg.id ? "opacity-100" : "opacity-0 lg:group-hover:opacity-100"
+                              )}
                               aria-label="Message options"
                               aria-expanded={activeMessageMenu === msg.id}
                             >
@@ -2161,6 +2176,30 @@ function MessagesContent() {
                 )}
               </div>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {fullscreenImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[300] flex items-center justify-center bg-black/90 backdrop-blur-sm"
+            onClick={() => setFullscreenImage(null)}
+          >
+            <button 
+              className="absolute top-6 right-6 p-2 bg-white/20 hover:bg-white/40 rounded-full text-white cursor-pointer transition-colors"
+              onClick={() => setFullscreenImage(null)}
+            >
+              <X size={24} color="white" strokeWidth={2.5} />
+            </button>
+            <img 
+              src={fullscreenImage} 
+              alt="Fullscreen"
+              className="max-h-[90dvh] max-w-[95vw] object-contain select-none"
+              onClick={(e) => e.stopPropagation()}
+            />
           </motion.div>
         )}
       </AnimatePresence>

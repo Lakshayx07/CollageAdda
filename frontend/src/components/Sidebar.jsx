@@ -158,12 +158,12 @@ export default function Sidebar() {
                 className={clsx(
                   "relative z-10 flex items-center h-12 rounded-[1rem] overflow-hidden w-full px-3.5 transition-all duration-200",
                   isActive 
-                    ? "bg-[#FFF7E8] text-black" 
-                    : "text-[#4A4A4A] hover:text-[#1A1A1A] hover:bg-[#F9F8F5]"
+                    ? "bg-[#FFF7E8] text-[#333333]" 
+                    : "text-[#777777] hover:text-[#1A1A1A] hover:bg-[#F9F8F5]"
                 )}
               >
                 <div className="relative flex h-8 w-8 shrink-0 items-center justify-center">
-                  <Icon size={20} strokeWidth={isActive ? 3 : 1.75} className={isActive ? "text-black" : "text-[#4A4A4A] group-hover:text-[#1A1A1A]"} />
+                  <Icon size={20} strokeWidth={isActive ? 2.75 : 1.75} className={isActive ? "text-[#333333]" : "text-[#777777] group-hover:text-[#1A1A1A]"} />
                   {isFriends && hasRequest && (
                     <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-white bg-orange-400 shadow-[0_0_14px_rgba(251,146,60,0.65)]" />
                   )}
@@ -187,7 +187,7 @@ export default function Sidebar() {
                 >
                   <p className={clsx(
                     "text-[16px] transition-colors duration-200",
-                    isActive ? "text-black font-[900]" : "text-[#4A4A4A] font-bold group-hover:text-[#1A1A1A]"
+                    isActive ? "text-[#333333] font-black" : "text-[#777777] font-medium group-hover:text-[#1A1A1A]"
                   )}>
                     {item.name}
                   </p>

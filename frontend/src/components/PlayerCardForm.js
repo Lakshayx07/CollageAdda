@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Upload, ChevronRight, ChevronLeft, Gamepad2, Dumbbell, Check } from 'lucide-react';
+import { X, Upload, ChevronRight, ChevronLeft, ChevronDown, Gamepad2, Dumbbell, Check } from 'lucide-react';
 import clsx from 'clsx';
 import BGMIProfileCard from './BGMIProfileCard';
 import ValorantProfileCard from './ValorantProfileCard';
@@ -85,7 +85,7 @@ function PreviewCard({ name, game, photo, skills, skillRatings, accent, accentMu
       <div className="flex items-center gap-3 relative z-10">
         {/* Avatar */}
         <div
-          className="w-14 h-14 rounded-xl overflow-hidden shrink-0 border-2 flex items-center justify-center bg-black/40"
+          className="w-14 h-14 rounded-xl overflow-hidden shrink-0 border-2 flex items-center justify-center bg-[#000000]/40"
           style={{ borderColor: accentBorder }}
         >
           {photo
@@ -143,50 +143,66 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
     } catch (_) {}
   }, []);
 
+  // Helper to flatten data from Supabase for formData state
+  const getInitialFormData = () => {
+    if (viewOnlyData) {
+      if (viewOnlyData.card_data) {
+        return {
+          username: viewOnlyData.username,
+          game_or_sport: viewOnlyData.game_or_sport,
+          photo_url: viewOnlyData.photo_url,
+          ...viewOnlyData.card_data
+        };
+      }
+      return viewOnlyData; // Legacy support for old localStorage items
+    }
+    return {
+      username: '',
+      game_or_sport: '',
+      role_or_position: '',
+      rank: '',
+      experience_level: '',
+      availability: 'Both',
+      bio: '',
+      photo_url: '',
+      skills: { s1: null, s2: null, s3: null, s4: null, s5: null },
+      display_name: '',
+      highest_rank: '',
+      current_rp: '',
+      kd_ratio: '',
+      matches_played: '',
+      top_10_rate: '',
+      preferred_roles: [],
+      playstyles: [],
+      looking_for: '',
+      // Valorant specific
+      tagline: '',
+      current_rr: '',
+      win_rate: '',
+      acs: '',
+      agents: ['', '', ''],
+      val_playstyle: [],
+      val_looking_for: [],
+      // Free Fire specific
+      ff_rank_score: '',
+      booyah_rate: '',
+      ff_preferred_roles: [],
+      ff_playstyles: [],
+      ff_looking_for: [],
+      // Chess specific
+      chess_play_format: 'Rapid',
+      chess_current_rating: '',
+      chess_highest_rating: '',
+      chess_games_played: '',
+      chess_win_rate: '',
+      chess_good_game: '',
+      chess_playstyles: [],
+      chess_looking_for: [],
+    };
+  };
+
   // Form state — keep all fields so submit payload doesn't change
-  const [formData, setFormData] = useState(viewOnlyData || {
-    username: '',
-    game_or_sport: '',
-    role_or_position: '',
-    rank: '',
-    experience_level: '',
-    availability: 'Both',
-    bio: '',
-    photo_url: '',
-    skills: { s1: null, s2: null, s3: null, s4: null, s5: null },
-    display_name: '',
-    highest_rank: '',
-    current_rp: '',
-    kd_ratio: '',
-    matches_played: '',
-    top_10_rate: '',
-    preferred_roles: [],
-    playstyles: [],
-    looking_for: '',
-    // Valorant specific
-    tagline: '',
-    current_rr: '',
-    win_rate: '',
-    acs: '',
-    agents: ['', '', ''],
-    val_playstyle: [],
-    val_looking_for: [],
-    // Free Fire specific
-    ff_rank_score: '',
-    booyah_rate: '',
-    ff_preferred_roles: [],
-    ff_playstyles: [],
-    ff_looking_for: [],
-    // Chess specific
-    chess_play_format: 'Rapid',
-    chess_current_rating: '',
-    chess_highest_rating: '',
-    chess_games_played: '',
-    chess_win_rate: '',
-    chess_good_game: '',
-    chess_playstyles: [],
-    chess_looking_for: [],
-  });
+  const [formData, setFormData] = useState(getInitialFormData());
 
   const isEsports = category === 'esports';
   const theme = THEME[category];
@@ -216,8 +232,42 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
   const handlePhotoUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    
+    // Create an image element to resize the image via canvas
+    const img = new Image();
     const reader = new FileReader();
-    reader.onloadend = () => setFormData(prev => ({ ...prev, photo_url: reader.result }));
+    
+    reader.onload = (e) => {
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 300;
+        const MAX_HEIGHT = 300;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Compress as JPEG
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
+        setFormData(prev => ({ ...prev, photo_url: compressedDataUrl }));
+      };
+      img.src = e.target.result;
+    };
     reader.readAsDataURL(file);
   };
 
@@ -230,11 +280,14 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
   };
 
   const handleSubmit = () => {
-    // Emit full payload matching existing backend shape
+    // Separate core fields from game-specific fields for Supabase schema
+    const { username, game_or_sport, photo_url, ...rest } = formData;
     const payload = {
-      name: autoName,
-      ...formData,
+      username: username || autoName,
+      game_or_sport,
       category,
+      photo_url,
+      card_data: rest
     };
     console.log('PlayerCard submit:', payload);
     
@@ -299,10 +352,10 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
 
   if (isSubmitted && isBGMI) {
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl overflow-y-auto">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#000000]/80 backdrop-blur-xl overflow-y-auto">
         <button
           onClick={onClose}
-          className="absolute top-6 right-6 p-2 bg-white/10 rounded-full text-white hover:bg-white/20 transition-colors z-50"
+          className="absolute top-6 right-6 p-2 bg-[#FFFFFF]/10 rounded-full text-[#FFFFFF] hover:bg-[#FFFFFF]/20 transition-colors z-50"
         >
           <X size={24} />
         </button>
@@ -316,7 +369,7 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#0F1923]/90 backdrop-blur-xl overflow-y-auto">
         <button
           onClick={onClose}
-          className="absolute top-6 right-6 p-2 bg-white/10 rounded-full text-white hover:bg-[#FF4655] transition-colors z-50"
+          className="absolute top-6 right-6 p-2 bg-[#FFFFFF]/10 rounded-full text-[#FFFFFF] hover:bg-[#FF4655] transition-colors z-50"
         >
           <X size={24} />
         </button>
@@ -330,7 +383,7 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#0E1015]/90 backdrop-blur-xl overflow-y-auto">
         <button
           onClick={onClose}
-          className="absolute top-6 right-6 p-2 bg-white/10 rounded-full text-white hover:bg-[#FBBF24] transition-colors z-50"
+          className="absolute top-6 right-6 p-2 bg-[#FFFFFF]/10 rounded-full text-[#FFFFFF] hover:bg-[#FBBF24] transition-colors z-50"
         >
           <X size={24} />
         </button>
@@ -344,7 +397,7 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#0A0D14]/90 backdrop-blur-xl overflow-y-auto">
         <button
           onClick={onClose}
-          className="absolute top-6 right-6 p-2 bg-white/10 rounded-full text-white hover:bg-[#CD8C38] transition-colors z-50"
+          className="absolute top-6 right-6 p-2 bg-[#FFFFFF]/10 rounded-full text-[#FFFFFF] hover:bg-[#CD8C38] transition-colors z-50"
         >
           <X size={24} />
         </button>
@@ -354,7 +407,7 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-xl">
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#000000]/40 backdrop-blur-xl">
       <motion.div
         initial={{ opacity: 0, y: 60, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -512,7 +565,8 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
               >
                 <div>
                   <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Current Rank <span className="text-red-500">*</span></label>
-                  <select
+                  <div className="relative">
+<select
                     value={formData.current_rank}
                     onChange={e => setFormData(p => ({ ...p, current_rank: e.target.value }))}
                     className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:outline-none transition appearance-none"
@@ -522,10 +576,13 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
                       <option key={r} value={r}>{r}</option>
                     ))}
                   </select>
+<ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6B7280] pointer-events-none" size={16} />
+</div>
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Highest Rank Achieved <span className="text-red-500">*</span></label>
-                  <select
+                  <div className="relative">
+<select
                     value={formData.highest_rank}
                     onChange={e => setFormData(p => ({ ...p, highest_rank: e.target.value }))}
                     className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:outline-none transition appearance-none"
@@ -535,11 +592,13 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
                       <option key={r} value={r}>{r}</option>
                     ))}
                   </select>
+<ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6B7280] pointer-events-none" size={16} />
+</div>
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Current RP / Points</label>
                   <input
-                    type="text"
+                    type="number"
                     placeholder="Enter your current RP"
                     value={formData.current_rp}
                     onChange={e => setFormData(p => ({ ...p, current_rp: e.target.value }))}
@@ -561,7 +620,7 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
                   <div className="flex-1">
                     <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">K/D Ratio</label>
                     <input
-                      type="text"
+                      type="number"
                       placeholder="e.g. 4.82"
                       value={formData.kd_ratio}
                       onChange={e => setFormData(p => ({ ...p, kd_ratio: e.target.value }))}
@@ -571,7 +630,7 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
                   <div className="flex-1">
                     <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Matches Played</label>
                     <input
-                      type="text"
+                      type="number"
                       placeholder="e.g. 1240"
                       value={formData.matches_played}
                       onChange={e => setFormData(p => ({ ...p, matches_played: e.target.value }))}
@@ -582,7 +641,7 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
                 <div>
                   <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Top 10 Rate (%)</label>
                   <input
-                    type="text"
+                    type="number"
                     placeholder="e.g. 71"
                     value={formData.top_10_rate}
                     onChange={e => setFormData(p => ({ ...p, top_10_rate: e.target.value }))}
@@ -754,7 +813,8 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
               >
                 <div>
                   <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Current Rank <span className="text-[#FF4655]">*</span></label>
-                  <select
+                  <div className="relative">
+<select
                     value={formData.current_rank}
                     onChange={e => setFormData(p => ({ ...p, current_rank: e.target.value }))}
                     className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:outline-none transition appearance-none"
@@ -764,10 +824,13 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
                       <option key={r} value={r}>{r}</option>
                     ))}
                   </select>
+<ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6B7280] pointer-events-none" size={16} />
+</div>
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Peak Rank <span className="text-[#FF4655]">*</span></label>
-                  <select
+                  <div className="relative">
+<select
                     value={formData.highest_rank}
                     onChange={e => setFormData(p => ({ ...p, highest_rank: e.target.value }))}
                     className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm focus:outline-none transition appearance-none"
@@ -777,12 +840,14 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
                       <option key={r} value={r}>{r}</option>
                     ))}
                   </select>
+<ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6B7280] pointer-events-none" size={16} />
+</div>
                 </div>
                 <div className="relative">
                   <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Current RR (Optional)</label>
                   <div className="flex items-center gap-2">
                     <input
-                      type="text"
+                      type="number"
                       placeholder="e.g. 68"
                       value={formData.current_rr}
                       onChange={e => setFormData(p => ({ ...p, current_rr: e.target.value }))}
@@ -806,7 +871,7 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
                   <div className="flex-1">
                     <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">K/D Ratio <span className="text-[#FF4655]">*</span></label>
                     <input
-                      type="text"
+                      type="number"
                       placeholder="e.g. 1.68"
                       value={formData.kd_ratio}
                       onChange={e => setFormData(p => ({ ...p, kd_ratio: e.target.value }))}
@@ -816,7 +881,7 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
                   <div className="flex-1">
                     <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Win Rate (%) <span className="text-[#FF4655]">*</span></label>
                     <input
-                      type="text"
+                      type="number"
                       placeholder="e.g. 52"
                       value={formData.win_rate}
                       onChange={e => setFormData(p => ({ ...p, win_rate: e.target.value }))}
@@ -826,7 +891,7 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
                   <div className="flex-1">
                     <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">ACS <span className="text-[#FF4655]">*</span></label>
                     <input
-                      type="text"
+                      type="number"
                       placeholder="e.g. 238"
                       value={formData.acs}
                       onChange={e => setFormData(p => ({ ...p, acs: e.target.value }))}
@@ -848,21 +913,24 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
                 <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Select Top 3 Agents</label>
                 <div className="flex items-center gap-2">
                   {[0, 1, 2].map(idx => (
-                    <select
-                      key={idx}
-                      value={formData.agents[idx]}
-                      onChange={e => {
-                        const newAgents = [...formData.agents];
-                        newAgents[idx] = e.target.value;
-                        setFormData(p => ({ ...p, agents: newAgents }));
-                      }}
-                      className="flex-1 bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-2 py-3 text-[#1A1A1A] text-xs font-bold focus:outline-none transition appearance-none"
-                    >
+                    <div className="relative flex-1" key={idx}>
+                      <select
+                        value={formData.agents[idx]}
+                        onChange={e => {
+                          const newAgents = [...formData.agents];
+                          newAgents[idx] = e.target.value;
+                          setFormData(p => ({ ...p, agents: newAgents }));
+                        }}
+                        className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-2 py-3 text-[#1A1A1A] text-xs font-bold focus:outline-none transition appearance-none pr-8"
+                      >
+
                       <option value="">Agent {idx + 1}</option>
                       {['Jett', 'Reyna', 'Raze', 'Phoenix', 'Yoru', 'Neon', 'Iso', 'Sova', 'Breach', 'Skye', 'KAY/O', 'Fade', 'Gekko', 'Omen', 'Brimstone', 'Astra', 'Viper', 'Harbor', 'Clove', 'Killjoy', 'Cypher', 'Sage', 'Chamber', 'Deadlock'].map(a => (
                         <option key={a} value={a}>{a}</option>
                       ))}
                     </select>
+<ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6B7280] pointer-events-none" size={16} />
+</div>
                   ))}
                 </div>
               </motion.div>
@@ -959,36 +1027,37 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
                 className="space-y-5 pt-2"
               >
                 <div>
-                  <label className="block text-xs font-bold text-gray-300 mb-2">In-Game Name (IGN) <span className="text-red-500">*</span></label>
+                  <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">In-Game Name (IGN) <span className="text-red-500">*</span></label>
                   <input
                     type="text"
                     placeholder="Enter your IGN"
                     value={formData.username}
                     onChange={e => setFormData(p => ({ ...p, username: e.target.value }))}
-                    className="w-full bg-[#111318] border border-[#2B3240] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#FBBF24] transition"
+                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm font-bold focus:outline-none transition"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-300 mb-2">Tagline (Optional)</label>
+                  <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Tagline (Optional)</label>
                   <input
                     type="text"
                     placeholder="e.g. I don't chase, I eliminate."
                     value={formData.tagline}
                     onChange={e => setFormData(p => ({ ...p, tagline: e.target.value }))}
-                    className="w-full bg-[#111318] border border-[#2B3240] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#FBBF24] transition"
+                    className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-xl px-4 py-3 text-[#1A1A1A] text-sm font-bold focus:outline-none transition"
                   />
                 </div>
                 <div className="flex flex-col w-full">
-                  <label className="block text-xs font-bold text-gray-300 mb-2">Profile Picture</label>
+                  <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest mb-2">Profile Picture</label>
                   <label
-                    className="relative w-full h-20 rounded-2xl overflow-hidden cursor-pointer flex flex-col items-center justify-center border-2 border-dashed border-gray-400 bg-white/5 transition hover:border-white hover:bg-white/10"
+                    className="relative w-full h-24 rounded-2xl overflow-hidden cursor-pointer flex flex-col items-center justify-center border border-dashed border-[#E8E6E0] bg-[#F3F2EE] transition hover:opacity-80"
                   >
                     {formData.photo_url
                       ? <img src={formData.photo_url} alt="photo" className="absolute inset-0 w-full h-full object-cover" />
                       : (
-                        <div className="flex items-center gap-2 text-white">
-                          <Upload size={18} />
-                          <span className="text-sm font-bold">Upload Image</span>
+                        <div className="flex flex-col items-center gap-1">
+                          <Upload size={22} style={{ color: '#D97706' }} />
+                          <span className="text-[12px] text-[#1A1A1A] font-bold">Upload Image</span>
+                          <span className="text-[10px] text-[#888888]">JPG, PNG (Max 5MB)</span>
                         </div>
                       )
                     }
@@ -1007,26 +1076,29 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
                 className="space-y-5 pt-2"
               >
                 <div>
-                  <label className="block text-xs font-bold text-gray-300 mb-2">Current Rank <span className="text-red-500">*</span></label>
-                  <select
+                  <label className="block text-xs font-bold text-[#D1D5DB] mb-2">Current Rank <span className="text-red-500">*</span></label>
+                  <div className="relative">
+<select
                     value={formData.current_rank}
                     onChange={e => setFormData(p => ({ ...p, current_rank: e.target.value }))}
-                    className="w-full bg-[#111318] border border-[#2B3240] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#FBBF24] transition appearance-none"
+                    className="w-full bg-[#111318] border border-[#2B3240] rounded-xl px-4 py-3 text-[#FFFFFF] text-sm focus:outline-none focus:border-[#FBBF24] transition appearance-none"
                   >
                     <option value="" disabled>Select Current Rank</option>
                     {['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Heroic', 'Master', 'Grandmaster'].map(r => (
                       <option key={r} value={r}>{r}</option>
                     ))}
                   </select>
+<ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6B7280] pointer-events-none" size={16} />
+</div>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-300 mb-2">Rank Score (Optional)</label>
+                  <label className="block text-xs font-bold text-[#D1D5DB] mb-2">Rank Score (Optional)</label>
                   <input
                     type="text"
                     placeholder="e.g. 9856"
                     value={formData.ff_rank_score}
                     onChange={e => setFormData(p => ({ ...p, ff_rank_score: e.target.value }))}
-                    className="w-full bg-[#111318] border border-[#2B3240] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#FBBF24] transition"
+                    className="w-full bg-[#111318] border border-[#2B3240] rounded-xl px-4 py-3 text-[#FFFFFF] text-sm focus:outline-none focus:border-[#FBBF24] transition"
                   />
                 </div>
               </motion.div>
@@ -1042,33 +1114,33 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
               >
                 <div className="flex items-center gap-4">
                   <div className="flex-1">
-                    <label className="block text-[10px] font-bold text-gray-300 mb-2">K/D Ratio <span className="text-red-500">*</span></label>
+                    <label className="block text-[10px] font-bold text-[#D1D5DB] mb-2">K/D Ratio <span className="text-red-500">*</span></label>
                     <input
-                      type="text"
+                      type="number"
                       placeholder="e.g. 3.45"
                       value={formData.kd_ratio}
                       onChange={e => setFormData(p => ({ ...p, kd_ratio: e.target.value }))}
-                      className="w-full bg-[#111318] border border-[#2B3240] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#FBBF24] transition"
+                      className="w-full bg-[#111318] border border-[#2B3240] rounded-xl px-4 py-3 text-[#FFFFFF] text-sm focus:outline-none focus:border-[#FBBF24] transition"
                     />
                   </div>
                   <div className="flex-1">
-                    <label className="block text-[10px] font-bold text-gray-300 mb-2">Matches Played <span className="text-red-500">*</span></label>
+                    <label className="block text-[10px] font-bold text-[#D1D5DB] mb-2">Matches Played <span className="text-red-500">*</span></label>
                     <input
-                      type="text"
+                      type="number"
                       placeholder="e.g. 1250"
                       value={formData.matches_played}
                       onChange={e => setFormData(p => ({ ...p, matches_played: e.target.value }))}
-                      className="w-full bg-[#111318] border border-[#2B3240] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#FBBF24] transition"
+                      className="w-full bg-[#111318] border border-[#2B3240] rounded-xl px-4 py-3 text-[#FFFFFF] text-sm focus:outline-none focus:border-[#FBBF24] transition"
                     />
                   </div>
                   <div className="flex-1">
-                    <label className="block text-[10px] font-bold text-gray-300 mb-2">Booyah Rate (%) <span className="text-red-500">*</span></label>
+                    <label className="block text-[10px] font-bold text-[#D1D5DB] mb-2">Booyah Rate (%) <span className="text-red-500">*</span></label>
                     <input
                       type="text"
                       placeholder="e.g. 28.6"
                       value={formData.booyah_rate}
                       onChange={e => setFormData(p => ({ ...p, booyah_rate: e.target.value }))}
-                      className="w-full bg-[#111318] border border-[#2B3240] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#FBBF24] transition"
+                      className="w-full bg-[#111318] border border-[#2B3240] rounded-xl px-4 py-3 text-[#FFFFFF] text-sm focus:outline-none focus:border-[#FBBF24] transition"
                     />
                   </div>
                 </div>
@@ -1084,10 +1156,10 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
                 className="space-y-4 pt-2"
               >
                 <div className="flex justify-between items-center mb-2">
-                  <label className="block text-xs font-bold text-gray-300">Select up to 2</label>
-                  <span className="text-xs font-bold text-[#FBBF24]">{formData.ff_preferred_roles.length}/2</span>
+                  <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest">Select main roles (up to 2)</label>
+                  <span className="text-xs font-black" style={{ color: '#D97706' }}>{formData.ff_preferred_roles.length}/2</span>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   {['Rusher', 'Sniper', 'Support', 'Bomber', 'Igl', 'Flanker'].map(role => {
                     const active = formData.ff_preferred_roles.includes(role);
                     const disabled = !active && formData.ff_preferred_roles.length >= 2;
@@ -1101,15 +1173,13 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
                           if (p.ff_preferred_roles.length >= 2) return p;
                           return { ...p, ff_preferred_roles: [...p.ff_preferred_roles, role] };
                         })}
-                        className={clsx(
-                          "py-3 px-4 rounded-xl text-sm font-bold transition-all flex items-center gap-3 border text-left",
-                          disabled ? "opacity-50 cursor-not-allowed border-[#2B3240] text-gray-500 bg-[#111318]" 
-                          : active ? "border-[#FBBF24] text-white shadow-[0_0_15px_rgba(251,191,36,0.15)] bg-[#111318]" : "border-[#2B3240] text-gray-400 bg-[#111318] hover:border-gray-500"
-                        )}
+                        className="py-3 px-3 rounded-xl text-sm font-black text-center transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                        style={
+                          active
+                            ? { background: 'rgba(217, 119, 6, 0.15)', color: '#D97706', border: '1.5px solid #D97706' }
+                            : { background: '#F3F2EE', color: '#1A1A1A', border: '1.5px solid #E8E6E0' }
+                        }
                       >
-                        <div className={clsx("w-4 h-4 rounded-[4px] border flex items-center justify-center transition-colors", active ? "bg-[#FBBF24] border-[#FBBF24]" : "border-gray-500")}>
-                          {active && <Check size={12} className="text-black" />}
-                        </div>
                         {role}
                       </button>
                     );
@@ -1127,9 +1197,9 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
                 className="space-y-4 pt-2"
               >
                 <div className="flex justify-between items-center mb-2">
-                  <label className="block text-xs font-bold text-gray-300">Select all that apply</label>
+                  <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest">Select Playstyles</label>
                 </div>
-                <div className="flex flex-wrap gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   {['Aggressive', 'Competitive', 'Team Player', 'Tournament Ready', 'Mic On'].map(style => {
                     const active = formData.ff_playstyles.includes(style);
                     return (
@@ -1140,14 +1210,13 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
                           if (active) return { ...p, ff_playstyles: p.ff_playstyles.filter(s => s !== style) };
                           return { ...p, ff_playstyles: [...p.ff_playstyles, style] };
                         })}
-                        className={clsx(
-                          "py-2.5 px-4 rounded-xl text-sm font-bold transition-all flex items-center gap-2 border",
-                          active ? "border-[#FBBF24] text-white shadow-[0_0_15px_rgba(251,191,36,0.15)] bg-[#111318]" : "border-[#2B3240] text-gray-400 bg-[#111318] hover:border-gray-500"
-                        )}
+                        className="py-2.5 px-3 rounded-xl text-xs font-black text-center transition-all flex items-center justify-center gap-2 cursor-pointer"
+                        style={
+                          active
+                            ? { background: 'rgba(217, 119, 6, 0.15)', color: '#D97706', border: '1.5px solid #D97706' }
+                            : { background: '#F3F2EE', color: '#1A1A1A', border: '1.5px solid #E8E6E0' }
+                        }
                       >
-                        <div className={clsx("w-4 h-4 rounded-[4px] border flex items-center justify-center transition-colors", active ? "bg-[#FBBF24] border-[#FBBF24]" : "border-gray-500")}>
-                          {active && <Check size={12} className="text-black" />}
-                        </div>
                         {style}
                       </button>
                     );
@@ -1165,9 +1234,9 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
                 className="space-y-4 pt-2"
               >
                 <div className="flex justify-between items-center mb-2">
-                  <label className="block text-xs font-bold text-gray-300">Select all that apply</label>
+                  <label className="block text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest">Looking For</label>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   {['Rank Push', 'Clash Squad', 'Tournament', 'Guild', 'Casual'].map(option => {
                     const active = formData.ff_looking_for.includes(option);
                     return (
@@ -1178,15 +1247,14 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
                           if (active) return { ...p, ff_looking_for: p.ff_looking_for.filter(s => s !== option) };
                           return { ...p, ff_looking_for: [...p.ff_looking_for, option] };
                         })}
-                        className={clsx(
-                          "py-3 px-3 rounded-xl text-[13px] font-bold transition-all flex items-center gap-2 border text-left",
-                          active ? "border-[#FBBF24] text-white shadow-[0_0_15px_rgba(251,191,36,0.15)] bg-[#111318]" : "border-[#2B3240] text-gray-400 bg-[#111318] hover:border-gray-500"
-                        )}
+                        className="py-3 px-3 rounded-xl text-xs font-black text-center transition-all flex items-center justify-center gap-2 cursor-pointer"
+                        style={
+                          active
+                            ? { background: 'rgba(217, 119, 6, 0.15)', color: '#D97706', border: '1.5px solid #D97706' }
+                            : { background: '#F3F2EE', color: '#1A1A1A', border: '1.5px solid #E8E6E0' }
+                        }
                       >
-                        <div className={clsx("w-4 h-4 rounded-[4px] border flex-shrink-0 flex items-center justify-center transition-colors", active ? "bg-[#FBBF24] border-[#FBBF24]" : "border-gray-500")}>
-                          {active && <Check size={12} className="text-black" />}
-                        </div>
-                        <span className="truncate">{option}</span>
+                        {option}
                       </button>
                     );
                   })}
@@ -1203,34 +1271,34 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
                 className="space-y-5 pt-2"
               >
                 <div>
-                  <label className="block text-xs font-bold text-gray-800 mb-2">In-Game Name (IGN) <span className="text-red-500">*</span></label>
+                  <label className="block text-xs font-bold text-[#1F2937] mb-2">In-Game Name (IGN) <span className="text-red-500">*</span></label>
                   <input
                     type="text"
                     placeholder="Enter your in-game name"
                     value={formData.username}
                     onChange={e => setFormData(p => ({ ...p, username: e.target.value }))}
-                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-black text-sm focus:outline-none focus:border-[#CD8C38] transition"
+                    className="w-full bg-[#FFFFFF] border border-[#E5E7EB] rounded-xl px-4 py-3 text-[#000000] text-sm focus:outline-none focus:border-[#CD8C38] transition"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-800 mb-2">Tagline (Optional)</label>
+                  <label className="block text-xs font-bold text-[#1F2937] mb-2">Tagline (Optional)</label>
                   <input
                     type="text"
                     placeholder="e.g. Every move has a purpose."
                     value={formData.tagline}
                     onChange={e => setFormData(p => ({ ...p, tagline: e.target.value }))}
-                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-black text-sm focus:outline-none focus:border-[#CD8C38] transition"
+                    className="w-full bg-[#FFFFFF] border border-[#E5E7EB] rounded-xl px-4 py-3 text-[#000000] text-sm focus:outline-none focus:border-[#CD8C38] transition"
                   />
                 </div>
                 <div className="flex flex-col w-full">
-                  <label className="block text-xs font-bold text-gray-800 mb-2">Profile Picture</label>
+                  <label className="block text-xs font-bold text-[#1F2937] mb-2">Profile Picture</label>
                   <label
-                    className="relative w-full h-20 rounded-2xl overflow-hidden cursor-pointer flex flex-col items-center justify-center border border-dashed border-gray-300 bg-[#FAFAFA] transition hover:border-[#CD8C38]"
+                    className="relative w-full h-20 rounded-2xl overflow-hidden cursor-pointer flex flex-col items-center justify-center border border-dashed border-[#D1D5DB] bg-[#FAFAFA] transition hover:border-[#CD8C38]"
                   >
                     {formData.photo_url
                       ? <img src={formData.photo_url} alt="photo" className="absolute inset-0 w-full h-full object-cover" />
                       : (
-                        <div className="flex items-center gap-2 text-gray-600">
+                        <div className="flex items-center gap-2 text-[#4B5563]">
                           <Upload size={18} />
                           <span className="text-sm font-bold">Upload Image</span>
                         </div>
@@ -1251,8 +1319,8 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
                 className="space-y-5 pt-2"
               >
                 <div>
-                  <label className="block text-xs font-bold text-gray-800 mb-2">Play Format <span className="text-red-500">*</span></label>
-                  <div className="flex items-center gap-2 bg-[#FAFAFA] p-1 border border-gray-200 rounded-xl">
+                  <label className="block text-xs font-bold text-[#1F2937] mb-2">Play Format <span className="text-red-500">*</span></label>
+                  <div className="flex items-center gap-2 bg-[#FAFAFA] p-1 border border-[#E5E7EB] rounded-xl">
                     {['Rapid', 'Blitz', 'Bullet', 'Classic'].map(format => {
                       const active = formData.chess_play_format === format;
                       return (
@@ -1262,7 +1330,7 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
                           onClick={() => setFormData(p => ({ ...p, chess_play_format: format }))}
                           className={clsx(
                             "flex-1 py-2 rounded-lg text-sm font-bold transition-all",
-                            active ? "bg-white text-[#CD8C38] shadow-[0_2px_4px_rgba(0,0,0,0.05)] border border-[#CD8C38]" : "text-gray-600 hover:text-black border border-transparent"
+                            active ? "bg-[#FFFFFF] text-[#CD8C38] shadow-[0_2px_4px_rgba(0,0,0,0.05)] border border-[#CD8C38]" : "text-[#4B5563] hover:text-[#000000] border border-transparent"
                           )}
                         >
                           {format}
@@ -1272,23 +1340,23 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-800 mb-2">Current Rating <span className="text-red-500">*</span></label>
+                  <label className="block text-xs font-bold text-[#1F2937] mb-2">Current Rating <span className="text-red-500">*</span></label>
                   <input
-                    type="text"
+                    type="number"
                     placeholder="e.g. 1824"
                     value={formData.chess_current_rating}
                     onChange={e => setFormData(p => ({ ...p, chess_current_rating: e.target.value }))}
-                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-black text-sm focus:outline-none focus:border-[#CD8C38] transition"
+                    className="w-full bg-[#FFFFFF] border border-[#E5E7EB] rounded-xl px-4 py-3 text-[#000000] text-sm focus:outline-none focus:border-[#CD8C38] transition"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-800 mb-2">Highest Rating Achieved <span className="text-red-500">*</span></label>
+                  <label className="block text-xs font-bold text-[#1F2937] mb-2">Highest Rating Achieved <span className="text-red-500">*</span></label>
                   <input
-                    type="text"
+                    type="number"
                     placeholder="e.g. 1943"
                     value={formData.chess_highest_rating}
                     onChange={e => setFormData(p => ({ ...p, chess_highest_rating: e.target.value }))}
-                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-black text-sm focus:outline-none focus:border-[#CD8C38] transition"
+                    className="w-full bg-[#FFFFFF] border border-[#E5E7EB] rounded-xl px-4 py-3 text-[#000000] text-sm focus:outline-none focus:border-[#CD8C38] transition"
                   />
                 </div>
               </motion.div>
@@ -1304,33 +1372,33 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
               >
                 <div className="flex items-center gap-4">
                   <div className="flex-1">
-                    <label className="block text-[10px] font-bold text-gray-800 mb-2">Games Played <span className="text-red-500">*</span></label>
+                    <label className="block text-[10px] font-bold text-[#1F2937] mb-2">Games Played <span className="text-red-500">*</span></label>
                     <input
-                      type="text"
+                      type="number"
                       placeholder="e.g. 842"
                       value={formData.chess_games_played}
                       onChange={e => setFormData(p => ({ ...p, chess_games_played: e.target.value }))}
-                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-black text-sm focus:outline-none focus:border-[#CD8C38] transition"
+                      className="w-full bg-[#FFFFFF] border border-[#E5E7EB] rounded-xl px-4 py-3 text-[#000000] text-sm focus:outline-none focus:border-[#CD8C38] transition"
                     />
                   </div>
                   <div className="flex-1">
-                    <label className="block text-[10px] font-bold text-gray-800 mb-2">Win Rate (%) <span className="text-red-500">*</span></label>
+                    <label className="block text-[10px] font-bold text-[#1F2937] mb-2">Win Rate (%) <span className="text-red-500">*</span></label>
                     <input
-                      type="text"
+                      type="number"
                       placeholder="e.g. 58"
                       value={formData.chess_win_rate}
                       onChange={e => setFormData(p => ({ ...p, chess_win_rate: e.target.value }))}
-                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-black text-sm focus:outline-none focus:border-[#CD8C38] transition"
+                      className="w-full bg-[#FFFFFF] border border-[#E5E7EB] rounded-xl px-4 py-3 text-[#000000] text-sm focus:outline-none focus:border-[#CD8C38] transition"
                     />
                   </div>
                   <div className="flex-1">
-                    <label className="block text-[10px] font-bold text-gray-800 mb-2">Good Game %</label>
+                    <label className="block text-[10px] font-bold text-[#1F2937] mb-2">Good Game %</label>
                     <input
                       type="text"
                       placeholder="e.g. 92"
                       value={formData.chess_good_game}
                       onChange={e => setFormData(p => ({ ...p, chess_good_game: e.target.value }))}
-                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-black text-sm focus:outline-none focus:border-[#CD8C38] transition"
+                      className="w-full bg-[#FFFFFF] border border-[#E5E7EB] rounded-xl px-4 py-3 text-[#000000] text-sm focus:outline-none focus:border-[#CD8C38] transition"
                     />
                   </div>
                 </div>
@@ -1346,7 +1414,7 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
                 className="space-y-4 pt-2"
               >
                 <div className="flex justify-between items-center mb-2">
-                  <label className="block text-xs font-bold text-gray-800">Select up to 3</label>
+                  <label className="block text-xs font-bold text-[#1F2937]">Select up to 3</label>
                   <span className="text-xs font-bold text-[#CD8C38]">{formData.chess_playstyles.length}/3</span>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -1365,13 +1433,13 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
                         })}
                         className={clsx(
                           "py-3 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between border text-left",
-                          disabled ? "opacity-50 cursor-not-allowed border-gray-200 text-gray-400 bg-white" 
-                          : active ? "border-[#CD8C38] text-[#CD8C38] shadow-[0_2px_8px_rgba(205,140,56,0.15)] bg-white" : "border-gray-200 text-gray-700 bg-white hover:border-gray-300"
+                          disabled ? "opacity-50 cursor-not-allowed border-[#E5E7EB] text-[#9CA3AF] bg-[#FFFFFF]" 
+                          : active ? "border-[#CD8C38] text-[#CD8C38] shadow-[0_2px_8px_rgba(205,140,56,0.15)] bg-[#FFFFFF]" : "border-[#E5E7EB] text-gray-700 bg-[#FFFFFF] hover:border-[#D1D5DB]"
                         )}
                       >
                         <span className="truncate">{style}</span>
-                        <div className={clsx("w-4 h-4 rounded-[4px] border flex-shrink-0 flex items-center justify-center transition-colors", active ? "bg-[#CD8C38] border-[#CD8C38]" : "border-gray-300")}>
-                          {active && <Check size={12} className="text-white" />}
+                        <div className={clsx("w-4 h-4 rounded-[4px] border flex-shrink-0 flex items-center justify-center transition-colors", active ? "bg-[#CD8C38] border-[#CD8C38]" : "border-[#D1D5DB]")}>
+                          {active && <Check size={12} className="text-[#FFFFFF]" />}
                         </div>
                       </button>
                     );
@@ -1389,7 +1457,7 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
                 className="space-y-4 pt-2"
               >
                 <div className="flex justify-between items-center mb-2">
-                  <label className="block text-xs font-bold text-gray-800">Select all that apply</label>
+                  <label className="block text-xs font-bold text-[#1F2937]">Select all that apply</label>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {['Practice', 'Improve', 'Tournaments', 'Casual', 'Serious Matches', 'Clubs / Teams'].map(option => {
@@ -1404,12 +1472,12 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
                         })}
                         className={clsx(
                           "py-3 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between border text-left",
-                          active ? "border-[#CD8C38] text-[#CD8C38] shadow-[0_2px_8px_rgba(205,140,56,0.15)] bg-white" : "border-gray-200 text-gray-700 bg-white hover:border-gray-300"
+                          active ? "border-[#CD8C38] text-[#CD8C38] shadow-[0_2px_8px_rgba(205,140,56,0.15)] bg-[#FFFFFF]" : "border-[#E5E7EB] text-gray-700 bg-[#FFFFFF] hover:border-[#D1D5DB]"
                         )}
                       >
                         <span className="truncate">{option}</span>
-                        <div className={clsx("w-4 h-4 rounded-[4px] border flex-shrink-0 flex items-center justify-center transition-colors", active ? "bg-[#CD8C38] border-[#CD8C38]" : "border-gray-300")}>
-                          {active && <Check size={12} className="text-white" />}
+                        <div className={clsx("w-4 h-4 rounded-[4px] border flex-shrink-0 flex items-center justify-center transition-colors", active ? "bg-[#CD8C38] border-[#CD8C38]" : "border-[#D1D5DB]")}>
+                          {active && <Check size={12} className="text-[#FFFFFF]" />}
                         </div>
                       </button>
                     );
@@ -1612,7 +1680,7 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
         </div>
 
         {/* ── Navigation Buttons ─────────────────────────────────────────── */}
-        <div className="px-6 py-4 border-t border-white/8 flex gap-3 shrink-0">
+        <div className="px-6 py-4 border-t border-[#FFFFFF]/8 flex gap-3 shrink-0">
           {step > 1 && (
             <button
               type="button"

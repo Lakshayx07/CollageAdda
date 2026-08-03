@@ -62,7 +62,7 @@
 }
 
 /* Backwards compatibility for existing tailwind variables if any */
-@theme inline {
+@theme {
   --color-background: var(--color-bg-base);
   --color-foreground: var(--color-text-primary);
   --color-primary: var(--color-accent-from);
@@ -85,7 +85,7 @@
 
 body {
   background-color: var(--bg-primary) !important;
-  color: var(--text-primary) !important;
+  color: var(--color-text-primary);
   background-image: none;
   background-attachment: fixed;
   transition: background-color 0.3s ease, color 0.2s ease;
@@ -255,14 +255,9 @@ aside, .nav-rail {
   border-color: var(--color-border) !important;
 }
 
-aside *, .nav-rail * {
-  color: var(--color-text-secondary);
-}
-
-aside [class*="active"], .nav-rail [class*="active"],
-aside [class*="text-cyan"], .nav-rail [class*="text-cyan"],
-aside [class*="text-white"], .nav-rail [class*="text-white"] {
-  color: var(--color-text-primary) !important;
+/* Navigation bar / rail styling - let components style their items */
+:where(.nav-rail *) {
+  color: var(--color-text-primary);
 }
 
 /* Bottom Nav */
@@ -281,7 +276,7 @@ header, [class*="navbar"], [class*="topbar"], .page-header {
 [class*="pill"], [class*="badge"],
 [class*="tag"], [class*="chip"] {
   background-color: var(--color-pill-bg) !important;
-  color: var(--color-text-primary) !important;
+  color: var(--color-text-primary);
 }
 
 /* Smooth transition on ALL elements */
@@ -704,7 +699,10 @@ body:not(.messages-page-active) {
   .messages-layout {
     position: relative;
     overflow: hidden;
-    height: calc(100dvh - 64px - env(safe-area-inset-bottom));
+    height: 100dvh;
+  }
+  .inbox-conversation-list {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom) + 20px);
   }
   .inbox-panel {
     position: absolute; top: 0; left: 0;
@@ -807,4 +805,13 @@ body:not(.messages-page-active) {
 }
 .story-progress-bar.paused {
   animation-play-state: paused;
+}
+
+/* Hide scrollbar utility */
+.hide-scrollbar {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none !important;
 }
