@@ -84,17 +84,24 @@ export default function CommunityPage() {
   });
 
   // -- TanStack Query: Memberships --
-  const { data: membershipSet = new Set() } = useQuery({
+  const { data: { members: membershipSet = new Set(), pending: pendingSet = new Set() } = {} } = useQuery({
     queryKey: ['community-memberships'],
     queryFn: async () => {
       const { client: authSupabase, user: authUser } = await getAuthenticatedSupabaseClient();
       setCurrentUserId(authUser.id);
       const { data, error } = await authSupabase
         .from("community_members")
-        .select("community_id")
+        .select("community_id, role")
         .eq("user_id", authUser.id);
       if (error) throw error;
-      return new Set(data?.map(m => m.community_id) || []);
+      
+      const members = new Set();
+      const pending = new Set();
+      (data || []).forEach(m => {
+        if (m.role === 'pending') pending.add(m.community_id);
+        else members.add(m.community_id);
+      });
+      return { members, pending };
     },
     enabled: !!supabase && isMounted,
     staleTime: 5 * 60 * 1000,
@@ -213,26 +220,36 @@ export default function CommunityPage() {
     
     setJoiningCommunityId(community.id);
     try {
+      const isInviteOnly = community.privacy === 'invite_only';
+      const roleToInsert = isInviteOnly ? 'pending' : 'member';
+
       const { error: memberError } = await authSupabase
         .from("community_members")
-        .insert([{ community_id: community.id, user_id: currentUserId, role: 'member' }]);
+        .insert([{ community_id: community.id, user_id: currentUserId, role: roleToInsert }]);
         
       if (memberError && memberError.code !== '23505') throw memberError;
       const alreadyJoined = memberError?.code === '23505';
 
-      if (!alreadyJoined) {
+      if (!alreadyJoined && !isInviteOnly) {
         await authSupabase
           .from("communities")
           .update({ member_count: (community.member_count || 0) + 1 })
           .eq("id", community.id);
       }
 
-      queryClient.setQueryData(['community-memberships'], (prev) => new Set([...(prev || []), community.id]));
-      queryClient.setQueryData(['community-list'], (prev) => (prev || []).map(c => 
-        c.id === community.id && !alreadyJoined ? { ...c, member_count: (c.member_count || 0) + 1 } : c
-      ));
+      queryClient.setQueryData(['community-memberships'], (prev) => {
+        const p = prev || { members: new Set(), pending: new Set() };
+        if (isInviteOnly) return { members: p.members, pending: new Set([...p.pending, community.id]) };
+        return { members: new Set([...p.members, community.id]), pending: p.pending };
+      });
       
-      showToast('success', community.privacy === 'invite_only' ? 'Request sent! 🎉' : `Joined ${community.name}! 🎉`);
+      if (!isInviteOnly) {
+        queryClient.setQueryData(['community-list'], (prev) => (prev || []).map(c => 
+          c.id === community.id && !alreadyJoined ? { ...c, member_count: (c.member_count || 0) + 1 } : c
+        ));
+      }
+      
+      showToast('success', isInviteOnly ? 'Request sent! 🎉' : `Joined ${community.name}! 🎉`);
       triggerJoinSparkles();
     } catch (err) {
       showToast('error', err.message || 'Failed to join community.');
@@ -442,6 +459,7 @@ export default function CommunityPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {filteredCommunities.map((comm) => {
                   const isMember = membershipSet.has(comm.id);
+                  const isPending = pendingSet.has(comm.id);
                   const isJoining = joiningCommunityId === comm.id;
                   const theme = getCommunityTheme(comm);
                   const Icon = theme.icon;
@@ -512,6 +530,15 @@ export default function CommunityPage() {
                                   {unread > 99 ? "99+" : unread}
                                 </span>
                               )}
+                            </button>
+                          ) : isPending ? (
+                            <button
+                              disabled
+                              className={clsx(
+                                "w-full flex items-center justify-center gap-1.5 rounded-2xl border px-4 py-2 text-sm font-black disabled:opacity-70 bg-amber-50 text-amber-600 border-amber-200"
+                              )}
+                            >
+                              Approval Pending...
                             </button>
                           ) : (
                             <button

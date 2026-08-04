@@ -137,6 +137,7 @@ export default function FriendsPage() {
   const [creatingCommunity, setCreatingCommunity] = useState(false);
   const [communities, setCommunities] = useState([]);
   const [membershipSet, setMembershipSet] = useState(new Set());
+  const [pendingSet, setPendingSet] = useState(new Set());
   const [joiningCommunityId, setJoiningCommunityId] = useState(null);
 
   useEffect(() => {
@@ -217,10 +218,17 @@ export default function FriendsPage() {
       const { client: authSupabase, user: authUser } = await getAuthenticatedSupabaseClient();
       const { data, error } = await authSupabase
         .from("community_members")
-        .select("community_id")
+        .select("community_id, role")
         .eq("user_id", authUser.id);
       if (!error && data) {
-        setMembershipSet(new Set(data.map(m => m.community_id)));
+        const members = new Set();
+        const pending = new Set();
+        data.forEach(m => {
+          if (m.role === 'pending') pending.add(m.community_id);
+          else members.add(m.community_id);
+        });
+        setMembershipSet(members);
+        setPendingSet(pending);
       }
     } catch (err) {
       console.error("Error fetching memberships:", err);
@@ -235,28 +243,38 @@ export default function FriendsPage() {
     if (membershipSet.has(community.id)) return;
     setJoiningCommunityId(community.id);
     try {
+      const isInviteOnly = community.privacy === 'invite_only';
+      const roleToInsert = isInviteOnly ? 'pending' : 'member';
+
       // Insert member
       const { error: memberError } = await authSupabase
         .from("community_members")
-        .insert([{ community_id: community.id, user_id: currentUserId, role: 'member' }]);
+        .insert([{ community_id: community.id, user_id: currentUserId, role: roleToInsert }]);
       if (memberError && memberError.code !== '23505') { // ignore duplicate
         throw memberError;
       }
-      // Increment member_count
-      await authSupabase
-        .from("communities")
-        .update({ member_count: (community.member_count || 1) + 1 })
-        .eq("id", community.id);
-      // Optimistic update
-      setMembershipSet(prev => new Set([...prev, community.id]));
-      setCommunities(prev => prev.map(c =>
-        c.id === community.id ? { ...c, member_count: (c.member_count || 1) + 1 } : c
-      ));
-      if (community.privacy === 'invite_only') {
-        showCommunityToast('success', 'Request sent! 🎉');
-      } else {
-        showCommunityToast('success', `Joined ${community.name}! 🎉`);
+      
+      const alreadyJoined = memberError?.code === '23505';
+
+      if (!alreadyJoined && !isInviteOnly) {
+        // Increment member_count
+        await authSupabase
+          .from("communities")
+          .update({ member_count: (community.member_count || 1) + 1 })
+          .eq("id", community.id);
       }
+      
+      // Optimistic update
+      if (isInviteOnly) {
+        setPendingSet(new Set([...pendingSet, community.id]));
+      } else {
+        setMembershipSet(new Set([...membershipSet, community.id]));
+        setCommunities(prev => prev.map(c => 
+          c.id === community.id && !alreadyJoined ? { ...c, member_count: (c.member_count || 0) + 1 } : c
+        ));
+      }
+      
+      showCommunityToast('success', isInviteOnly ? 'Request sent! 🎉' : `Joined ${community.name}! 🎉`);
     } catch (err) {
       console.error("Error joining community:", err);
       showCommunityToast('error', err.message || 'Failed to join community.');
@@ -1577,6 +1595,7 @@ export default function FriendsPage() {
                 <AnimatePresence>
                   {communities.length > 0 ? communities.map((comm, idx) => {
                     const isMember = membershipSet.has(comm.id);
+                    const isPending = pendingSet.has(comm.id);
                     const isJoining = joiningCommunityId === comm.id;
                     const colors = ['bg-[#9D50FF]', 'bg-[#F7931A]', 'bg-[#10B981]', 'bg-[#EF4444]', 'bg-[#3B82F6]'];
                     const solidBg = colors[parseInt(comm.id, 16) % colors.length] || colors[idx % colors.length];
@@ -1620,11 +1639,18 @@ export default function FriendsPage() {
                                 <CheckCircle2 size={12} strokeWidth={3} />
                                 Joined
                               </motion.div>
+                            ) : isPending ? (
+                              <button
+                                disabled
+                                className="flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full shadow-sm cursor-default"
+                              >
+                                Pending...
+                              </button>
                             ) : (
                               <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                onClick={() => handleJoinCommunity(comm.id)}
+                                onClick={() => handleJoinCommunity(comm)}
                                 disabled={isJoining}
                                 className="flex items-center gap-1 text-[10px] font-bold text-[#1A1A1A] bg-[#F9F8F5] hover:bg-[#F3F2EE] border border-[#E8E6E0] px-2.5 py-1 rounded-full shadow-sm cursor-pointer transition-colors"
                               >

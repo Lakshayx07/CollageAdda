@@ -6,7 +6,7 @@ import {
   ArrowLeft, Users2, Send, Loader2, Globe, CheckCircle2,
   AlertCircle, LogOut, MoreVertical, Plus, ArrowRight, Smile,
   Image as ImageIcon, Video, BarChart3, Pencil, Trash2, Reply,
-  Pin, PinOff, X, Check, Flame
+  Pin, PinOff, X, Check, Flame, UserPlus, UserCheck, XCircle
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
@@ -65,6 +65,9 @@ export default function CommunityChatPage() {
   const [messages, setMessages] = useState([]);
   const [communities, setCommunities] = useState([]);
   const [membershipSet, setMembershipSet] = useState(new Set());
+  const [pendingSet, setPendingSet] = useState(new Set());
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [showRequestsModal, setShowRequestsModal] = useState(false);
   const [unreadCounts, setUnreadCounts] = useState({});
   const [isMember, setIsMember] = useState(false);
   const [role, setRole] = useState(null); // owner | member | null
@@ -289,10 +292,16 @@ export default function CommunityChatPage() {
 
           const { data: memberships } = await authSupabase
             .from("community_members")
-            .select("community_id")
+            .select("community_id, role")
             .eq("user_id", authUser.id);
-          const nextMembershipSet = new Set(memberships?.map(m => m.community_id) || []);
+          const nextMembershipSet = new Set();
+          const nextPendingSet = new Set();
+          (memberships || []).forEach(m => {
+            if (m.role === 'pending') nextPendingSet.add(m.community_id);
+            else nextMembershipSet.add(m.community_id);
+          });
           setMembershipSet(nextMembershipSet);
+          setPendingSet(nextPendingSet);
 
           // Check membership for this specific community
           const { data: member } = await authSupabase
@@ -303,8 +312,12 @@ export default function CommunityChatPage() {
             .maybeSingle();
 
           if (member) {
-            setIsMember(true);
             setRole(member.role);
+            if (member.role !== 'pending') {
+              setIsMember(true);
+            } else {
+              setIsMember(false);
+            }
           }
 
           setUnreadCounts(buildUnreadCounts(tempUnread, authUser.id, targetId));
@@ -380,8 +393,12 @@ export default function CommunityChatPage() {
             .maybeSingle();
 
           if (member) {
-            setIsMember(true);
             setRole(member.role);
+            if (member.role !== 'pending') {
+              setIsMember(true);
+            } else {
+              setIsMember(false);
+            }
           }
 
           if (channelRef.current) {
@@ -783,6 +800,45 @@ export default function CommunityChatPage() {
     }
   };
 
+
+  const handleApproveRequest = async (userId) => {
+    try {
+      const { client: authSupabase } = await getAuthenticatedSupabaseClient();
+      await authSupabase
+        .from('community_members')
+        .update({ role: 'member' })
+        .eq('community_id', activeCommunityId)
+        .eq('user_id', userId);
+        
+      await authSupabase
+        .from('communities')
+        .update({ member_count: (community?.member_count || 0) + 1 })
+        .eq('id', activeCommunityId);
+        
+      setCommunity(prev => ({ ...prev, member_count: (prev.member_count || 0) + 1 }));
+      setPendingRequests(prev => prev.filter(req => req._id !== userId));
+      showToastMsg("success", "Request approved!");
+    } catch (err) {
+      showToastMsg("error", "Failed to approve request");
+    }
+  };
+
+  const handleSkipRequest = async (userId) => {
+    try {
+      const { client: authSupabase } = await getAuthenticatedSupabaseClient();
+      await authSupabase
+        .from('community_members')
+        .delete()
+        .eq('community_id', activeCommunityId)
+        .eq('user_id', userId);
+        
+      setPendingRequests(prev => prev.filter(req => req._id !== userId));
+      showToastMsg("success", "Request skipped");
+    } catch (err) {
+      showToastMsg("error", "Failed to skip request");
+    }
+  };
+
   const handleJoin = async () => {
     if (!supabase || joining) return;
 
@@ -792,33 +848,43 @@ export default function CommunityChatPage() {
       const memberUserId = authUser.id;
       if (!memberUserId) return;
       setCurrentUserId(memberUserId);
+      
+      const isInviteOnly = community?.privacy === 'invite_only';
+      const roleToInsert = isInviteOnly ? 'pending' : 'member';
 
       const { error: memberError } = await authSupabase
         .from("community_members")
-        .insert([{ community_id: activeCommunityId, user_id: memberUserId, role: 'member' }]);
+        .insert([{ community_id: activeCommunityId, user_id: memberUserId, role: roleToInsert }]);
 
       if (memberError && memberError.code !== '23505') throw memberError;
       const alreadyJoined = memberError?.code === '23505';
 
       // Update community member count
       const newCount = alreadyJoined ? (community?.member_count || 0) : (community?.member_count || 0) + 1;
-      if (!alreadyJoined) {
+      if (!alreadyJoined && !isInviteOnly) {
         await authSupabase
           .from("communities")
           .update({ member_count: newCount })
           .eq("id", activeCommunityId);
       }
 
-      setCommunity((prev) => ({ ...prev, member_count: newCount }));
-      setMembershipSet(prev => new Set([...prev, activeCommunityId]));
-      setCommunities(prev => prev.map(comm => (
-        comm.id === activeCommunityId ? { ...comm, member_count: newCount } : comm
-      )));
-      localStorage.setItem(`community_seen_${activeCommunityId}`, new Date().toISOString());
-      setIsMember(true);
-      setRole('member');
-      showToastMsg("success", "You joined the community! 🎉");
-      triggerJoinSparkles();
+      if (isInviteOnly) {
+        setPendingSet(prev => new Set([...prev, activeCommunityId]));
+        setRole('pending');
+        setIsMember(false);
+        showToastMsg("success", "Request sent! 🎉");
+      } else {
+        setCommunity((prev) => ({ ...prev, member_count: newCount }));
+        setMembershipSet(prev => new Set([...prev, activeCommunityId]));
+        setCommunities(prev => prev.map(comm => (
+          comm.id === activeCommunityId ? { ...comm, member_count: newCount } : comm
+        )));
+        localStorage.setItem(`community_seen_${activeCommunityId}`, new Date().toISOString());
+        setIsMember(true);
+        setRole('member');
+        showToastMsg("success", "You joined the community! 🎉");
+        triggerJoinSparkles();
+      }
 
       // Reload messages
       const { data: msgs } = await authSupabase
@@ -843,34 +909,46 @@ export default function CommunityChatPage() {
       const memberUserId = authUser.id;
       if (!memberUserId) return;
       setCurrentUserId(memberUserId);
+      
+      const isInviteOnly = targetCommunity.privacy === 'invite_only';
+      const roleToInsert = isInviteOnly ? 'pending' : 'member';
 
       const { error: memberError } = await authSupabase
         .from("community_members")
-        .insert([{ community_id: targetCommunity.id, user_id: memberUserId, role: 'member' }]);
+        .insert([{ community_id: targetCommunity.id, user_id: memberUserId, role: roleToInsert }]);
 
       if (memberError && memberError.code !== '23505') throw memberError;
       const alreadyJoined = memberError?.code === '23505';
 
       const newCount = alreadyJoined ? (targetCommunity.member_count || 0) : (targetCommunity.member_count || 0) + 1;
-      if (!alreadyJoined) {
+      if (!alreadyJoined && !isInviteOnly) {
         await authSupabase
           .from("communities")
           .update({ member_count: newCount })
           .eq("id", targetCommunity.id);
       }
 
-      localStorage.setItem(`community_seen_${targetCommunity.id}`, new Date().toISOString());
-      setMembershipSet(prev => new Set([...prev, targetCommunity.id]));
-      setCommunities(prev => prev.map(comm => (
-        comm.id === targetCommunity.id ? { ...comm, member_count: newCount } : comm
-      )));
-      if (targetCommunity.id === activeCommunityId) {
-        setCommunity(prev => ({ ...prev, member_count: newCount }));
-        setIsMember(true);
-        setRole('member');
+      if (isInviteOnly) {
+        setPendingSet(prev => new Set([...prev, targetCommunity.id]));
+        if (targetCommunity.id === activeCommunityId) {
+           setRole('pending');
+           setIsMember(false);
+        }
+        showToastMsg("success", "Request sent! 🎉");
+      } else {
+        localStorage.setItem(`community_seen_${targetCommunity.id}`, new Date().toISOString());
+        setMembershipSet(prev => new Set([...prev, targetCommunity.id]));
+        setCommunities(prev => prev.map(comm => (
+          comm.id === targetCommunity.id ? { ...comm, member_count: newCount } : comm
+        )));
+        if (targetCommunity.id === activeCommunityId) {
+          setCommunity(prev => ({ ...prev, member_count: newCount }));
+          setIsMember(true);
+          setRole('member');
+        }
+        showToastMsg("success", `Joined ${targetCommunity.name}!`);
+        triggerJoinSparkles();
       }
-      showToastMsg("success", `Joined ${targetCommunity.name}!`);
-      triggerJoinSparkles();
     } catch (err) {
       showToastMsg("error", "Failed to join community.");
     } finally {
@@ -1013,6 +1091,41 @@ export default function CommunityChatPage() {
   const pinnedCount = messages.filter((msg) => msg.is_pinned).length;
   const typingNames = Object.values(typingUsers).slice(0, 2);
 
+  const fetchPendingRequests = async () => {
+    if (!activeCommunityId || !isMember) return;
+    try {
+      const { client: authSupabase } = await getAuthenticatedSupabaseClient();
+      const { data } = await authSupabase
+        .from('community_members')
+        .select('user_id')
+        .eq('community_id', activeCommunityId)
+        .eq('role', 'pending');
+        
+      if (data && data.length > 0) {
+        // Fetch user details from our backend API
+        const userIds = data.map(d => d.user_id);
+        const users = await Promise.all(
+          userIds.map(async (id) => {
+             const res = await fetch(`/api/users/${id}`, {
+               headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+             });
+             if (res.ok) return await res.json();
+             return { _id: id, name: 'Unknown User', university: 'Unknown' };
+          })
+        );
+        setPendingRequests(users.filter(u => u !== null));
+      } else {
+        setPendingRequests([]);
+      }
+    } catch (err) {
+      console.error("Error fetching pending requests:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchPendingRequests();
+  }, [activeCommunityId, isMember]);
+
   if (!isMounted) return null;
 
   if (loading) {
@@ -1037,6 +1150,9 @@ export default function CommunityChatPage() {
       </div>
     );
   }
+
+
+
 
   const theme = getCommunityTheme(community);
   const grad = theme.gradient;
@@ -1120,14 +1236,20 @@ export default function CommunityChatPage() {
                       </button>
                     )}
                     {!active && !member && (
-                      <button
-                        onClick={() => handleJoinCommunity(comm)}
-                        disabled={isJoiningCard}
-                        className={`flex items-center gap-1.5 rounded-2xl bg-white border px-4 py-2 text-xs font-black cursor-pointer disabled:opacity-50 ${cardTheme.text} ${cardTheme.avatar}`}
-                      >
-                        {isJoiningCard ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-                        Join
-                      </button>
+                      pendingSet.has(comm.id) ? (
+                        <button disabled className={`flex items-center gap-1.5 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 px-4 py-2 text-[10px] font-black opacity-70`}>
+                          Pending...
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleJoinCommunity(comm)}
+                          disabled={isJoiningCard}
+                          className={`flex items-center gap-1.5 rounded-2xl bg-white border px-4 py-2 text-xs font-black cursor-pointer disabled:opacity-50 ${cardTheme.text} ${cardTheme.avatar}`}
+                        >
+                          {isJoiningCard ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                          {comm.privacy === 'invite_only' ? 'Request' : 'Join'}
+                        </button>
+                      )
                     )}
                   </div>
                 </div>
@@ -1174,6 +1296,19 @@ export default function CommunityChatPage() {
               >
                 <span aria-hidden="true">📌</span>
                 {pinnedCount}
+              </button>
+            )}
+            {isMember && community?.privacy === 'invite_only' && (
+              <button
+                type="button"
+                onClick={() => setShowRequestsModal(true)}
+                className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-black cursor-pointer transition-colors ${pendingRequests.length > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' : 'bg-[#F9F8F5] text-[#6B6B6B] border-[#E8E6E0] hover:bg-[#F3F2EE]'}`}
+                title="View Join Requests"
+              >
+                <UserPlus size={16} />
+                {pendingRequests.length > 0 && (
+                  <span>{pendingRequests.length}</span>
+                )}
               </button>
             )}
             {isMember && (
@@ -1230,7 +1365,15 @@ export default function CommunityChatPage() {
           </div>
 
           {/* Message bubbles */}
-          {sortedMessages.map((msg, index) => {
+          {(!isMember && community?.privacy === 'invite_only') ? (
+            <div className="flex flex-col items-center justify-center py-10 opacity-60">
+              <div className="w-16 h-16 rounded-full bg-[#E8E6E0] flex items-center justify-center mb-4 text-[#888888]">
+                <Globe size={24} />
+              </div>
+              <h4 className="text-[#1A1A1A] font-bold text-lg mb-1">Private Community</h4>
+              <p className="text-[#6B6B6B] text-sm text-center max-w-xs">You must be approved to view messages and participate in this community.</p>
+            </div>
+          ) : sortedMessages.map((msg, index) => {
             const isMe = msg.sender_id === currentUserId;
             const prevMsg = index > 0 ? sortedMessages[index - 1] : null;
             const showAvatar = index === 0 || prevMsg.sender_id !== msg.sender_id;
@@ -1568,6 +1711,17 @@ export default function CommunityChatPage() {
                 </button>
               </form>
             </div>
+          ) : role === 'pending' ? (
+            <div className="max-w-md mx-auto text-center py-2">
+              <p className="text-sm text-amber-700 mb-3 font-semibold">Your join request is pending approval.</p>
+              <button
+                disabled
+                className="w-full bg-amber-50 text-amber-600 border border-amber-200 py-3 rounded-2xl text-xs font-bold uppercase tracking-wider shadow-sm flex items-center justify-center gap-2 opacity-80"
+              >
+                <Loader2 size={14} className="animate-spin" />
+                Approval Pending...
+              </button>
+            </div>
           ) : (
             <div className="max-w-md mx-auto text-center py-2">
               <p className="text-sm text-[#6B6B6B] mb-3 font-semibold">You are not a member of this community.</p>
@@ -1577,7 +1731,7 @@ export default function CommunityChatPage() {
                 className="w-full bg-gradient-to-r from-amber-300 to-orange-300 hover:from-amber-400 hover:to-orange-400 text-[#1A1A1A] py-3 rounded-2xl text-xs font-bold uppercase tracking-wider shadow-md shadow-amber-300/20 flex items-center justify-center gap-2 cursor-pointer"
               >
                 {joining ? <Loader2 size={14} className="animate-spin" /> : <Globe size={14} />}
-                Join Community to Participate
+                {community?.privacy === 'invite_only' ? 'Request to Join' : 'Join Community to Participate'}
               </button>
             </div>
           )}
@@ -1732,6 +1886,58 @@ export default function CommunityChatPage() {
       </AnimatePresence>
 
       <JoinSparkles active={showJoinSparkles} />
+
+      {/* Pending Requests Modal */}
+      <AnimatePresence>
+        {showRequestsModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 12 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 12 }}
+              className="w-full max-w-md overflow-hidden flex flex-col rounded-[24px] border border-[#ECE6DD] bg-white shadow-[0_24px_80px_rgba(0,0,0,0.12)] max-h-[85vh]"
+            >
+              <div className="flex shrink-0 items-center justify-between border-b border-[#ECE6DD] bg-[#F4F1EB] px-6 py-5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+                    <UserPlus size={14} />
+                  </div>
+                  <h3 className="text-xs font-bold uppercase tracking-[0.1em] text-[#1B1B1B]">
+                    Join Requests
+                  </h3>
+                </div>
+                <button onClick={() => setShowRequestsModal(false)} className="flex h-8 w-8 items-center justify-center rounded-full text-[#6F6F6F] hover:bg-black/5 transition">
+                  <XCircle size={18} />
+                </button>
+              </div>
+              <div className="overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                {pendingRequests.length === 0 ? (
+                  <div className="text-center py-10 text-[#888888]">
+                    <UserCheck size={32} className="mx-auto mb-3 opacity-50" />
+                    <p className="font-bold text-sm">No pending requests</p>
+                  </div>
+                ) : (
+                  pendingRequests.map(req => (
+                    <div key={req._id} className="flex items-center justify-between p-3 border border-[#E8E6E0] rounded-2xl bg-[#F9F8F5]">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <img src={req.profilePic || `/api/users/${req._id}/avatar`} alt={req.name} className="w-10 h-10 rounded-xl object-cover" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://avatar.iran.liara.run/public'; }} />
+                        <div className="min-w-0">
+                          <p className="font-black text-[#1A1A1A] text-sm truncate">{req.name}</p>
+                          <p className="text-[10px] font-bold text-[#888888] truncate">{req.university || 'Student'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0 ml-2">
+                        <button onClick={() => handleApproveRequest(req._id)} className="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold hover:bg-emerald-100 transition">Approve</button>
+                        <button onClick={() => handleSkipRequest(req._id)} className="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold hover:bg-rose-100 transition">Skip</button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
