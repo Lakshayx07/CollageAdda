@@ -9,7 +9,7 @@ const xpLogSchema = new mongoose.Schema({
   actionType: {
     type: String,
     required: true,
-    enum: ['CONNECT_USER', 'CREATE_POST', 'CREATE_STORY', 'JOIN_COMMUNITY', 'LIKE_POST', 'COMMENT_POST']
+    enum: ['CONNECT_USER', 'CREATE_POST', 'CREATE_STORY', 'JOIN_COMMUNITY', 'LIKE_POST', 'COMMENT_POST', 'EXPLORE_POST', 'FIRST_POST', 'FIRST_STORY']
   },
   xpAwarded: {
     type: Number,

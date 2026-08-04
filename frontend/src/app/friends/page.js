@@ -1385,7 +1385,7 @@ export default function FriendsPage() {
                           >
                             {/* Top Banner Image — crystal clear full resolution block */}
                             <div
-                              className="relative w-full h-52 sm:h-60 overflow-hidden rounded-[1.5rem] bg-[#F5F4F0] border border-black/5 shrink-0"
+                              className="relative w-full aspect-[6/5] sm:aspect-auto sm:h-60 overflow-hidden rounded-[1.5rem] bg-[#F5F4F0] border border-black/5 shrink-0"
                               style={{ transform: "translateZ(0)", backfaceVisibility: "hidden" }}
                             >
                               <img
@@ -1536,13 +1536,13 @@ export default function FriendsPage() {
               <div className="bg-[#FFFDF9] border border-[#F5E6C4] rounded-[20px] p-5 mb-8 relative overflow-hidden">
                 {/* Decorative background shapes */}
                 <div className="absolute right-0 top-0 bottom-0 w-1/2 overflow-hidden pointer-events-none">
-                   <div className="absolute right-[-10%] bottom-[-20%] text-[#D49C2C] opacity-10">
-                     <svg width="140" height="140" viewBox="0 0 24 24" fill="currentColor"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                   </div>
-                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#D49C2C" strokeWidth="2" className="absolute top-4 right-16 opacity-40"><path d="M12 2v20M17 5l-10 14M22 12H2M19 17L5 7"></path></svg>
-                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D49C2C" strokeWidth="2" className="absolute top-8 right-4 opacity-50"><path d="M12 2v20M17 5l-10 14M22 12H2M19 17L5 7"></path></svg>
+                  <div className="absolute right-[-10%] bottom-[-20%] text-[#D49C2C] opacity-10">
+                    <svg width="140" height="140" viewBox="0 0 24 24" fill="currentColor"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                  </div>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#D49C2C" strokeWidth="2" className="absolute top-4 right-16 opacity-40"><path d="M12 2v20M17 5l-10 14M22 12H2M19 17L5 7"></path></svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D49C2C" strokeWidth="2" className="absolute top-8 right-4 opacity-50"><path d="M12 2v20M17 5l-10 14M22 12H2M19 17L5 7"></path></svg>
                 </div>
-                
+
                 <div className="flex gap-4 items-center relative z-10 mb-5">
                   <div className="w-[52px] h-[52px] rounded-[14px] bg-[#F2AB27] flex items-center justify-center text-[#1A1A1A] shrink-0 shadow-sm">
                     <Globe size={26} strokeWidth={2} />
@@ -1610,31 +1610,31 @@ export default function FriendsPage() {
                         </div>
                         {/* Join / Joined & 3-dots */}
                         <div className="flex flex-col items-end gap-1.5 shrink-0 h-full mt-0.5">
-                           <div className="flex items-center gap-0.5">
-                              {isMember ? (
-                                <motion.div
-                                  initial={{ scale: 0.8 }}
-                                  animate={{ scale: 1 }}
-                                  className="flex items-center gap-1 text-[10px] font-bold text-[#137333] bg-[#E6F4EA] border border-[#CEEAD6] px-2 py-1 rounded-full shadow-sm cursor-default"
-                                >
-                                  <CheckCircle2 size={12} strokeWidth={3} />
-                                  Joined
-                                </motion.div>
-                              ) : (
-                                <motion.button
-                                  whileHover={{ scale: 1.05 }}
-                                  whileTap={{ scale: 0.95 }}
-                                  onClick={() => handleJoinCommunity(comm.id)}
-                                  disabled={isJoining}
-                                  className="flex items-center gap-1 text-[10px] font-bold text-[#1A1A1A] bg-[#F9F8F5] hover:bg-[#F3F2EE] border border-[#E8E6E0] px-2.5 py-1 rounded-full shadow-sm cursor-pointer transition-colors"
-                                >
-                                  {isJoining ? <Loader2 size={10} className="animate-spin" /> : (comm.privacy === 'invite_only' ? 'Request' : 'Join')}
-                                </motion.button>
-                              )}
-                              <button className="text-[#888888] hover:text-[#1A1A1A] transition-colors p-1 rounded-lg hover:bg-black/5">
-                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
-                              </button>
-                           </div>
+                          <div className="flex items-center gap-0.5">
+                            {isMember ? (
+                              <motion.div
+                                initial={{ scale: 0.8 }}
+                                animate={{ scale: 1 }}
+                                className="flex items-center gap-1 text-[10px] font-bold text-[#137333] bg-[#E6F4EA] border border-[#CEEAD6] px-2 py-1 rounded-full shadow-sm cursor-default"
+                              >
+                                <CheckCircle2 size={12} strokeWidth={3} />
+                                Joined
+                              </motion.div>
+                            ) : (
+                              <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => handleJoinCommunity(comm.id)}
+                                disabled={isJoining}
+                                className="flex items-center gap-1 text-[10px] font-bold text-[#1A1A1A] bg-[#F9F8F5] hover:bg-[#F3F2EE] border border-[#E8E6E0] px-2.5 py-1 rounded-full shadow-sm cursor-pointer transition-colors"
+                              >
+                                {isJoining ? <Loader2 size={10} className="animate-spin" /> : (comm.privacy === 'invite_only' ? 'Request' : 'Join')}
+                              </motion.button>
+                            )}
+                            <button className="text-[#888888] hover:text-[#1A1A1A] transition-colors p-1 rounded-lg hover:bg-black/5">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+                            </button>
+                          </div>
                         </div>
                       </motion.div>
                     );
@@ -1646,18 +1646,18 @@ export default function FriendsPage() {
 
               {/* Discover More Bottom Card */}
               <div className="mt-4 bg-[#F9F8F5] border border-[#E8E6E0] rounded-[16px] p-3.5 flex items-center justify-between gap-2 flex-wrap">
-                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                     <div className="w-[36px] h-[36px] rounded-[10px] bg-white border border-[#E8E6E0] flex items-center justify-center shrink-0 shadow-sm">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#1A1A1A]"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
-                     </div>
-                     <div className="flex-1 min-w-0 pr-1">
-                        <h5 className="font-black text-[12px] text-[#1A1A1A] leading-tight mb-0.5 truncate">Discover more communities</h5>
-                        <p className="text-[10px] font-medium text-[#6B6B6B] truncate">Explore topics and connect.</p>
-                     </div>
-                 </div>
-                 <button onClick={() => router.push('/community')} className="shrink-0 bg-white border border-[#E8E6E0] text-[#1A1A1A] text-[9px] font-black uppercase px-2.5 py-1.5 rounded-lg flex items-center gap-1 hover:bg-[#F3F2EE] transition-colors shadow-sm cursor-pointer">
-                    EXPLORE <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                 </button>
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <div className="w-[36px] h-[36px] rounded-[10px] bg-white border border-[#E8E6E0] flex items-center justify-center shrink-0 shadow-sm">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#1A1A1A]"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+                  </div>
+                  <div className="flex-1 min-w-0 pr-1">
+                    <h5 className="font-black text-[12px] text-[#1A1A1A] leading-tight mb-0.5 truncate">Discover more communities</h5>
+                    <p className="text-[10px] font-medium text-[#6B6B6B] truncate">Explore topics and connect.</p>
+                  </div>
+                </div>
+                <button onClick={() => router.push('/community')} className="shrink-0 bg-white border border-[#E8E6E0] text-[#1A1A1A] text-[9px] font-black uppercase px-2.5 py-1.5 rounded-lg flex items-center gap-1 hover:bg-[#F3F2EE] transition-colors shadow-sm cursor-pointer">
+                  EXPLORE <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
               </div>
             </div>
           </div>

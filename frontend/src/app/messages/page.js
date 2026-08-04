@@ -139,10 +139,10 @@ function MessagesContent() {
         avatar: room.type === "group"
           ? "group"
           : getAvatarSrc(
-              typeof room.avatar === "string" && room.avatar !== "group" ? room.avatar : room.partner?.profilePic,
-              room.name || room.partner?.name || "Student",
-              room.partner?._id || room.partner?.id || room.id
-            ),
+            typeof room.avatar === "string" && room.avatar !== "group" ? room.avatar : room.partner?.profilePic,
+            room.name || room.partner?.name || "Student",
+            room.partner?._id || room.partner?.id || room.id
+          ),
       })));
     }
 
@@ -240,13 +240,13 @@ function MessagesContent() {
         ...room,
         lastMessage: message
           ? {
-              text: message.text,
-              mediaType: message.mediaType,
-              poll: message.poll,
-              deletedAt: message.deletedAt,
-              createdAt: message.createdAt || new Date().toISOString(),
-              sender: message.sender || message.senderId,
-            }
+            text: message.text,
+            mediaType: message.mediaType,
+            poll: message.poll,
+            deletedAt: message.deletedAt,
+            createdAt: message.createdAt || new Date().toISOString(),
+            sender: message.sender || message.senderId,
+          }
           : room.lastMessage,
         updatedAt: message?.createdAt || room.updatedAt || new Date().toISOString(),
         unreadCounts: nextUnread,
@@ -289,9 +289,9 @@ function MessagesContent() {
   const [loadingConnections, setLoadingConnections] = useState(false);
   const [connectionsLoaded, setConnectionsLoaded] = useState(false);
   const [fullscreenImage, setFullscreenImage] = useState(null);
-  
+
   const emojis = ["❤️", "🔥", "😂", "😍", "🙌", "👏", "✨", "💯", "🎉", "😎", "🚀", "💡", "☕", "📚", "🎓", "🍕", "🎸", "🎮", "🏀", "🧪"];
-  
+
   const { socket, setActiveRoom, resetUnread } = useSocket();
   const fileInputRef = useRef(null);
   const documentInputRef = useRef(null);
@@ -315,7 +315,7 @@ function MessagesContent() {
     const emojiRegex = /^(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff]|\ufe0f|\u200d)+$/;
     return emojiRegex.test(cleanText) && cleanText.length <= 15;
   };
-  
+
   const sendAutoInterestMessage = async (roomId, productTitle) => {
     const storedUser = localStorage.getItem("collegeadda_user");
     if (!storedUser) return;
@@ -328,7 +328,7 @@ function MessagesContent() {
     const textMsg = `👋 Hi! ${u.name} is interested in your listing: "${productTitle}"`;
     const token = localStorage.getItem("collegeadda_token");
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
-    
+
     try {
       const res = await fetch(`${apiUrl}/api/chat/rooms/${roomId}/messages`, {
         method: "POST",
@@ -371,7 +371,7 @@ function MessagesContent() {
     } catch (error) {
       console.error("Error sending auto interest message:", error);
     }
-    
+
     const url = new URL(window.location.href);
     url.searchParams.delete("interestProduct");
     url.searchParams.delete("userId");
@@ -488,7 +488,7 @@ function MessagesContent() {
       const didAppendUnreadMessage = !isDuplicateSocketMessage && !isMine;
       setMessages(prev => {
         const roomMessages = prev[msg.room] || [];
-        
+
         // Check if this message already exists (by ID)
         if (isDuplicateSocketMessage || roomMessages.find(m => m.id === msg._id)) return prev;
 
@@ -506,7 +506,7 @@ function MessagesContent() {
         }
 
         const formatted = formatMessage({ ...msg, id: msg._id }, user);
-        
+
         return {
           ...prev,
           [msg.room]: [...roomMessages, formatted]
@@ -553,7 +553,7 @@ function MessagesContent() {
     if (activeChat && socket) {
       socket.emit('join_room', activeChat.id);
       setActiveRoom(activeChat.id);
-      
+
       const markSeen = async () => {
         const token = localStorage.getItem("collegeadda_token");
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
@@ -584,7 +584,7 @@ function MessagesContent() {
   const handleMediaSelect = (e, forcedType = null) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
     const type = forcedType || (file.type.startsWith('video') ? 'video' : file.type.startsWith('image') ? 'image' : 'file');
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -684,7 +684,7 @@ function MessagesContent() {
       mediaType: data.mediaType,
       createdAt: new Date().toISOString(),
     });
-    
+
     try {
       const res = await fetch(`${apiUrl}/api/chat/rooms/${activeChat.id}/messages`, {
         method: "POST",
@@ -700,7 +700,7 @@ function MessagesContent() {
           fileName: selectedFileName
         })
       });
-      
+
       if (res.ok) {
         const savedMsg = await res.json();
         if (socket) {
@@ -962,13 +962,13 @@ function MessagesContent() {
       const res = await fetch(`${apiUrl}/api/chat/rooms`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          isGroup: true, 
-          groupName: newGroupName, 
+        body: JSON.stringify({
+          isGroup: true,
+          groupName: newGroupName,
           participantIds: selectedMembers
         })
       });
-      
+
       if (res.ok) {
         const newRoom = await res.json();
         await queryClient.invalidateQueries({ queryKey: ["chat-rooms"] });
@@ -1032,18 +1032,18 @@ function MessagesContent() {
 
   const handleLeaveGroup = async () => {
     if (!activeChat || activeChat.type !== 'group') return;
-    
+
     if (!window.confirm("Are you sure you want to leave this group?")) return;
 
     try {
       const token = localStorage.getItem("collegeadda_token");
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
-      
+
       const res = await fetch(`${apiUrl}/api/chat/rooms/${activeChat.id}/leave`, {
         method: "PUT",
         headers: { "Authorization": `Bearer ${token}` }
       });
-      
+
       if (res.ok) {
         // Emit leave message via socket
         socket?.emit('send_message', {
@@ -1070,16 +1070,16 @@ function MessagesContent() {
     try {
       const token = localStorage.getItem("collegeadda_token");
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
-      
+
       const res = await fetch(`${apiUrl}/api/chat/rooms/${activeChat.id}/add`, {
         method: "PUT",
-        headers: { 
+        headers: {
           "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify({ participantId: memberId })
       });
-      
+
       if (res.ok) {
         invalidateChatRooms();
 
@@ -1104,10 +1104,10 @@ function MessagesContent() {
     // Check if it's the common group
     const isACommonGroup = a.type === "group" && a.name.includes("Common Group");
     const isBCommonGroup = b.type === "group" && b.name.includes("Common Group");
-    
+
     if (isACommonGroup && !isBCommonGroup) return -1;
     if (!isACommonGroup && isBCommonGroup) return 1;
-    
+
     // Sort by timestamp descending
     return (b.timestamp || 0) - (a.timestamp || 0);
   });
@@ -1155,7 +1155,7 @@ function MessagesContent() {
   return (
     <div className="messages-layout">
       {/* Chat List Sidebar */}
-      <motion.div 
+      <motion.div
         initial={{ x: -20, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         className={clsx(
@@ -1166,7 +1166,7 @@ function MessagesContent() {
         <header className="inbox-header flex flex-col pt-4">
           <div className="mb-4 flex items-center justify-between sm:mb-6">
             <h1 className="text-2xl font-bold text-[#1A1A1A] tracking-tight sm:text-3xl">Inbox</h1>
-            <motion.button 
+            <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               onClick={() => {
@@ -1220,8 +1220,8 @@ function MessagesContent() {
                 aria-label={`Open chat with ${chat.name}`}
                 className={clsx(
                   "group relative flex w-full items-center space-x-3 rounded-[1.35rem] p-3 transition-all sm:space-x-4 sm:rounded-[1.5rem] sm:p-4",
-                  activeChat?.id === chat.id 
-                    ? "bg-purple-900/30 border-l-2 border-[#C8922A] shadow-xl rounded-l-none" 
+                  activeChat?.id === chat.id
+                    ? "bg-purple-900/30 border-l-2 border-[#C8922A] shadow-xl rounded-l-none"
                     : "hover:bg-[#F3F2EE] border border-transparent"
                 )}
               >
@@ -1233,11 +1233,11 @@ function MessagesContent() {
                           <Users size={24} className="text-white" />
                         </div>
                       ) : (
-                        <img 
-                          src={chat.avatar} 
+                        <img
+                          src={chat.avatar}
                           alt=""
-                          className="w-full h-full object-cover" 
-                            onError={(e) => { e.target.src = getAvatarSrc("", chat.name, chat.id); }}
+                          className="w-full h-full object-cover"
+                          onError={(e) => { e.target.src = getAvatarSrc("", chat.name, chat.id); }}
                         />
                       )}
                     </div>
@@ -1265,9 +1265,9 @@ function MessagesContent() {
                     )}
                   </div>
                 </div>
-                
+
                 {activeChat?.id === chat.id && (
-                  <motion.div 
+                  <motion.div
                     layoutId="active-chat-indicator"
                     className="absolute left-0 w-1 h-8 gradient-bg rounded-r-full"
                   />
@@ -1298,11 +1298,11 @@ function MessagesContent() {
                         <div className="w-full h-full gradient-bg flex items-center justify-center text-[#1A1A1A] font-black text-sm">
                           {activeChat.name.charAt(0)}
                         </div>
-                      ) : <img 
-                            src={activeChat.avatar} 
-                            className="w-full h-full object-cover" 
-                            onError={(e) => { e.target.src = getAvatarSrc("", activeChat.name, activeChat.id); }}
-                          />}
+                      ) : <img
+                        src={activeChat.avatar}
+                        className="w-full h-full object-cover"
+                        onError={(e) => { e.target.src = getAvatarSrc("", activeChat.name, activeChat.id); }}
+                      />}
                     </div>
                   </div>
                 </div>
@@ -1312,7 +1312,7 @@ function MessagesContent() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-2 flex-shrink-0">
                 {pinnedCount > 0 && (
                   <button
@@ -1326,7 +1326,7 @@ function MessagesContent() {
                   </button>
                 )}
                 {activeChat.type === "group" && (
-                  <button 
+                  <button
                     onClick={() => {
                       setShowMemberCount(true);
                       setTimeout(() => setShowMemberCount(false), 10000);
@@ -1358,13 +1358,13 @@ function MessagesContent() {
                   </button>
                 )}
                 <div className="relative">
-                  <button 
+                  <button
                     onClick={() => setShowChatOptions(!showChatOptions)}
                     className="p-2 text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#F3F2EE] rounded-xl transition-all"
                   >
                     <MoreVertical size={18} />
                   </button>
-                  
+
                   <AnimatePresence>
                     {showChatOptions && (
                       <motion.div
@@ -1375,14 +1375,14 @@ function MessagesContent() {
                       >
                         {activeChat.type === 'group' ? (
                           <>
-                            <button 
+                            <button
                               onClick={() => { setShowAddMemberModal(true); setShowChatOptions(false); fetchConnections(); }}
                               className="w-full text-left px-4 py-3 text-sm font-bold text-green-500 hover:bg-green-500/10 flex items-center space-x-2 transition-colors border-b border-[#E8E6E0]"
                             >
                               <UserPlus size={16} />
                               <span>Add Member</span>
                             </button>
-                            <button 
+                            <button
                               onClick={handleLeaveGroup}
                               className="w-full text-left px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-500/10 flex items-center space-x-2 transition-colors"
                             >
@@ -1412,23 +1412,23 @@ function MessagesContent() {
 
               <AnimatePresence initial={false}>
                 {activeMessages.map((msg, idx, arr) => {
-                    const isMe = msg.sender === "me";
-                    const showAvatar = !isMe && (idx === 0 || arr[idx-1].sender !== "them");
-                    
-                    if (msg.isSystem) {
-                      return (
-                        <div key={msg.id} className="flex justify-center w-full my-4">
-                          <span className="text-[10px] bg-[#F9F8F5] border border-[#E8E6E0] px-4 py-1.5 rounded-full text-[#6B6B6B] font-bold uppercase tracking-[0.2em]">
-                            {msg.text}
-                          </span>
-                        </div>
-                      );
-                    }
+                  const isMe = msg.sender === "me";
+                  const showAvatar = !isMe && (idx === 0 || arr[idx - 1].sender !== "them");
 
-                    const isLastInGroup = idx === arr.length - 1 || arr[idx + 1]?.sender !== msg.sender;
-
+                  if (msg.isSystem) {
                     return (
-                    <motion.div 
+                      <div key={msg.id} className="flex justify-center w-full my-4">
+                        <span className="text-[10px] bg-[#F9F8F5] border border-[#E8E6E0] px-4 py-1.5 rounded-full text-[#6B6B6B] font-bold uppercase tracking-[0.2em]">
+                          {msg.text}
+                        </span>
+                      </div>
+                    );
+                  }
+
+                  const isLastInGroup = idx === arr.length - 1 || arr[idx + 1]?.sender !== msg.sender;
+
+                  return (
+                    <motion.div
                       key={msg.id}
                       ref={(node) => {
                         if (node) messageRefs.current[msg.id] = node;
@@ -1443,14 +1443,14 @@ function MessagesContent() {
                       {!isMe && (
                         <div className="w-8 h-8 flex-shrink-0 mr-3 mt-auto">
                           {showAvatar ? (
-                            <img 
-                              src={msg.senderAvatar} 
-                              className="w-full h-full rounded-full object-cover border border-[#E8E6E0]" 
+                            <img
+                              src={msg.senderAvatar}
+                              className="w-full h-full rounded-full object-cover border border-[#E8E6E0]"
                             />
                           ) : null}
                         </div>
                       )}
-                      
+
                       <div className={clsx(
                         "flex flex-col max-w-[84%] sm:max-w-[75%]",
                         isMe ? "items-end" : "items-start"
@@ -1461,276 +1461,276 @@ function MessagesContent() {
                           </span>
                         )}
                         <div className="relative flex items-center gap-2">
-                        {isMe && !msg.deletedAt && (
-                          <div className="relative flex-shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => setActiveMessageMenu(activeMessageMenu === msg.id ? null : msg.id)}
-                              className={clsx(
-                                "p-1.5 rounded-full bg-white border border-[#E8E6E0] text-[#6B6B6B] shadow-md hover:text-[#1A1A1A] transition-all",
-                                activeMessageDot === msg.id || activeMessageMenu === msg.id ? "opacity-100" : "opacity-0 lg:group-hover:opacity-100"
-                              )}
-                              aria-label="Message options"
-                              aria-expanded={activeMessageMenu === msg.id}
+                          {isMe && !msg.deletedAt && (
+                            <div className="relative flex-shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => setActiveMessageMenu(activeMessageMenu === msg.id ? null : msg.id)}
+                                className={clsx(
+                                  "p-1.5 rounded-full bg-white border border-[#E8E6E0] text-[#6B6B6B] shadow-md hover:text-[#1A1A1A] transition-all",
+                                  activeMessageDot === msg.id || activeMessageMenu === msg.id ? "opacity-100" : "opacity-0 lg:group-hover:opacity-100"
+                                )}
+                                aria-label="Message options"
+                                aria-expanded={activeMessageMenu === msg.id}
+                              >
+                                <MoreVertical size={15} />
+                              </button>
+                              <AnimatePresence>
+                                {activeMessageMenu === msg.id && (
+                                  <motion.div
+                                    initial={{ opacity: 0, scale: 0.94, x: 8 }}
+                                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                                    exit={{ opacity: 0, scale: 0.94, x: 8 }}
+                                  >
+                                    {renderMessageActions(msg, isMe)}
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+                          )}
+                          {isOnlyEmoji(msg.text) && !msg.mediaUrl && !msg.poll ? (
+                            <motion.div
+                              initial={{ scale: 0.5, opacity: 0 }}
+                              animate={{
+                                scale: [1, 1.15, 1],
+                                rotate: [0, 5, -5, 0],
+                                opacity: 1
+                              }}
+                              transition={{
+                                scale: { duration: 2, repeat: Infinity, ease: "easeInOut" },
+                                rotate: { duration: 3, repeat: Infinity, ease: "easeInOut" },
+                                opacity: { duration: 0.3 }
+                              }}
+                              className="text-5xl py-1 cursor-pointer select-none drop-shadow-2xl"
+                              onClick={(e) => { e.stopPropagation(); setActiveMessageDot(activeMessageDot === msg.id ? null : msg.id); setActiveMessageMenu(null); }}
                             >
-                              <MoreVertical size={15} />
-                            </button>
-                            <AnimatePresence>
-                              {activeMessageMenu === msg.id && (
-                                <motion.div
-                                  initial={{ opacity: 0, scale: 0.94, x: 8 }}
-                                  animate={{ opacity: 1, scale: 1, x: 0 }}
-                                  exit={{ opacity: 0, scale: 0.94, x: 8 }}
-                                >
-                                  {renderMessageActions(msg, isMe)}
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </div>
-                        )}
-                        {isOnlyEmoji(msg.text) && !msg.mediaUrl && !msg.poll ? (
-                          <motion.div
-                            initial={{ scale: 0.5, opacity: 0 }}
-                            animate={{ 
-                              scale: [1, 1.15, 1],
-                              rotate: [0, 5, -5, 0],
-                              opacity: 1
-                            }}
-                            transition={{ 
-                              scale: { duration: 2, repeat: Infinity, ease: "easeInOut" },
-                              rotate: { duration: 3, repeat: Infinity, ease: "easeInOut" },
-                              opacity: { duration: 0.3 }
-                            }}
-                            className="text-5xl py-1 cursor-pointer select-none drop-shadow-2xl"
-                            onClick={(e) => { e.stopPropagation(); setActiveMessageDot(activeMessageDot === msg.id ? null : msg.id); setActiveMessageMenu(null); }}
-                          >
-                            {msg.text}
-                          </motion.div>
-                        ) : (() => {
-                          const hasSharedObj = Boolean(msg.sharedPost && (msg.sharedPost.authorName || msg.sharedPost.content || msg.sharedPost.postId));
-                          const hasSharedText = typeof msg.text === 'string' && msg.text.includes('Check out this post by');
-                          const isSharedPost = hasSharedObj || hasSharedText;
+                              {msg.text}
+                            </motion.div>
+                          ) : (() => {
+                            const hasSharedObj = Boolean(msg.sharedPost && (msg.sharedPost.authorName || msg.sharedPost.content || msg.sharedPost.postId));
+                            const hasSharedText = typeof msg.text === 'string' && msg.text.includes('Check out this post by');
+                            const isSharedPost = hasSharedObj || hasSharedText;
 
-                          let sharedData = null;
+                            let sharedData = null;
 
-                          if (hasSharedObj) {
-                            sharedData = {
-                              postId: msg.sharedPost.postId || '',
-                              authorName: msg.sharedPost.authorName || 'CampusAdda User',
-                              authorAvatar: msg.sharedPost.authorAvatar || '',
-                              authorUniversity: msg.sharedPost.authorUniversity || '',
-                              authorTime: msg.sharedPost.authorTime || '',
-                              content: msg.sharedPost.content || '',
-                              mediaUrl: msg.sharedPost.mediaUrl || msg.mediaUrl || '',
-                              mediaType: msg.sharedPost.mediaType || msg.mediaType || 'none'
-                            };
-                          } else if (hasSharedText) {
-                            const parts = msg.text.split('Check out this post by');
-                            const rest = parts[1] || '';
-                            const firstColonIndex = rest.indexOf(':');
-                            
-                            let authorName = "CampusAdda User";
-                            let content = rest.trim();
-                            
-                            if (firstColonIndex !== -1) {
-                              authorName = rest.substring(0, firstColonIndex).trim() || "CampusAdda User";
-                              content = rest.substring(firstColonIndex + 1).trim();
+                            if (hasSharedObj) {
+                              sharedData = {
+                                postId: msg.sharedPost.postId || '',
+                                authorName: msg.sharedPost.authorName || 'CampusAdda User',
+                                authorAvatar: msg.sharedPost.authorAvatar || '',
+                                authorUniversity: msg.sharedPost.authorUniversity || '',
+                                authorTime: msg.sharedPost.authorTime || '',
+                                content: msg.sharedPost.content || '',
+                                mediaUrl: msg.sharedPost.mediaUrl || msg.mediaUrl || '',
+                                mediaType: msg.sharedPost.mediaType || msg.mediaType || 'none'
+                              };
+                            } else if (hasSharedText) {
+                              const parts = msg.text.split('Check out this post by');
+                              const rest = parts[1] || '';
+                              const firstColonIndex = rest.indexOf(':');
+
+                              let authorName = "CampusAdda User";
+                              let content = rest.trim();
+
+                              if (firstColonIndex !== -1) {
+                                authorName = rest.substring(0, firstColonIndex).trim() || "CampusAdda User";
+                                content = rest.substring(firstColonIndex + 1).trim();
+                              }
+
+                              sharedData = {
+                                postId: '',
+                                authorName: authorName,
+                                authorAvatar: '',
+                                authorUniversity: '',
+                                authorTime: '',
+                                content: content,
+                                mediaUrl: msg.mediaUrl || '',
+                                mediaType: msg.mediaType || 'none'
+                              };
                             }
 
-                            sharedData = {
-                              postId: '',
-                              authorName: authorName,
-                              authorAvatar: '',
-                              authorUniversity: '',
-                              authorTime: '',
-                              content: content,
-                              mediaUrl: msg.mediaUrl || '',
-                              mediaType: msg.mediaType || 'none'
-                            };
-                          }
-
-                          if (isSharedPost && sharedData) {
-                            return (
-                              <div 
-                                className="w-72 sm:w-80 max-w-[82vw] p-3.5 rounded-2xl bg-white border border-[#E5E0D5] text-[#1A1A1A] shadow-md my-1 cursor-pointer"
-                                onClick={(e) => { e.stopPropagation(); setActiveMessageDot(activeMessageDot === msg.id ? null : msg.id); setActiveMessageMenu(null); }}
-                              >
-                                <div className="flex items-center gap-1.5 pb-2 mb-2.5 border-b border-[#EBEBEB] text-[10px] font-bold uppercase tracking-wider text-[#C8922A]">
-                                  <Share2 size={12} />
-                                  <span>Shared Post</span>
-                                </div>
-                                
-                                <div className="flex items-center gap-2.5 mb-2.5">
-                                  <div className="w-8 h-8 rounded-full overflow-hidden border border-[#E8E6E0] bg-[#F3F2EE] shrink-0">
-                                    <img 
-                                      src={getAvatarSrc(sharedData.authorAvatar, sharedData.authorName, sharedData.postId || 'post')} 
-                                      alt={sharedData.authorName || 'Author'} 
-                                      className="w-full h-full object-cover" 
-                                    />
-                                  </div>
-                                  <div className="min-w-0 flex-1">
-                                    <p className="text-xs font-bold text-[#1A1A1A] truncate">{sharedData.authorName || 'CampusAdda User'}</p>
-                                    {sharedData.authorUniversity && (
-                                      <p className="text-[10px] text-[#71717A] truncate">{sharedData.authorUniversity}</p>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {sharedData.content && (
-                                  <p className="text-xs text-[#27272A] font-medium leading-relaxed mb-2.5 whitespace-pre-wrap line-clamp-3">
-                                    {sharedData.content}
-                                  </p>
-                                )}
-
-                                {sharedData.mediaUrl && (
-                                  <div className="rounded-xl overflow-hidden border border-[#E8E6E0] max-h-40 bg-black/5 mb-2.5">
-                                    {sharedData.mediaType === 'video' ? (
-                                      <video src={sharedData.mediaUrl} controls className="w-full h-auto max-h-40 object-contain" />
-                                    ) : (
-                                      <img src={sharedData.mediaUrl} alt="" className="w-full h-auto max-h-40 object-cover cursor-pointer hover:opacity-90 transition-opacity" onClick={(e) => { e.stopPropagation(); setFullscreenImage(sharedData.mediaUrl); }} />
-                                    )}
-                                  </div>
-                                )}
-
-                                <button 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    const pid = sharedData?.postId || '';
-                                    const searchStr = sharedData?.content ? encodeURIComponent(sharedData.content.slice(0, 30)) : '';
-                                    const mediaStr = sharedData?.mediaUrl ? encodeURIComponent(sharedData.mediaUrl) : '';
-                                    const authorStr = sharedData?.authorName ? encodeURIComponent(sharedData.authorName) : '';
-                                    window.location.href = `/home?postId=${pid}&search=${searchStr}&media=${mediaStr}&author=${authorStr}#post-${pid}`;
-                                  }}
-                                  className="w-full py-2 bg-[#FAF4E8] hover:bg-[#FFF2D6] text-[#C8922A] text-[11px] font-bold rounded-xl border border-[#E5E0D5] flex items-center justify-center gap-1 transition-all cursor-pointer shadow-sm mt-1"
+                            if (isSharedPost && sharedData) {
+                              return (
+                                <div
+                                  className="w-72 sm:w-80 max-w-[82vw] p-3.5 rounded-2xl bg-white border border-[#E5E0D5] text-[#1A1A1A] shadow-md my-1 cursor-pointer"
+                                  onClick={(e) => { e.stopPropagation(); setActiveMessageDot(activeMessageDot === msg.id ? null : msg.id); setActiveMessageMenu(null); }}
                                 >
-                                  <span>View Post</span>
-                                  <ChevronRight size={13} />
-                                </button>
+                                  <div className="flex items-center gap-1.5 pb-2 mb-2.5 border-b border-[#EBEBEB] text-[10px] font-bold uppercase tracking-wider text-[#C8922A]">
+                                    <Share2 size={12} />
+                                    <span>Shared Post</span>
+                                  </div>
+
+                                  <div className="flex items-center gap-2.5 mb-2.5">
+                                    <div className="w-8 h-8 rounded-full overflow-hidden border border-[#E8E6E0] bg-[#F3F2EE] shrink-0">
+                                      <img
+                                        src={getAvatarSrc(sharedData.authorAvatar, sharedData.authorName, sharedData.postId || 'post')}
+                                        alt={sharedData.authorName || 'Author'}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <p className="text-xs font-bold text-[#1A1A1A] truncate">{sharedData.authorName || 'CampusAdda User'}</p>
+                                      {sharedData.authorUniversity && (
+                                        <p className="text-[10px] text-[#71717A] truncate">{sharedData.authorUniversity}</p>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {sharedData.content && (
+                                    <p className="text-xs text-[#27272A] font-medium leading-relaxed mb-2.5 whitespace-pre-wrap line-clamp-3">
+                                      {sharedData.content}
+                                    </p>
+                                  )}
+
+                                  {sharedData.mediaUrl && (
+                                    <div className="rounded-xl overflow-hidden border border-[#E8E6E0] max-h-40 bg-black/5 mb-2.5">
+                                      {sharedData.mediaType === 'video' ? (
+                                        <video src={sharedData.mediaUrl} controls className="w-full h-auto max-h-40 object-contain" />
+                                      ) : (
+                                        <img src={sharedData.mediaUrl} alt="" className="w-full h-auto max-h-40 object-cover cursor-pointer hover:opacity-90 transition-opacity" onClick={(e) => { e.stopPropagation(); setFullscreenImage(sharedData.mediaUrl); }} />
+                                      )}
+                                    </div>
+                                  )}
+
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const pid = sharedData?.postId || '';
+                                      const searchStr = sharedData?.content ? encodeURIComponent(sharedData.content.slice(0, 30)) : '';
+                                      const mediaStr = sharedData?.mediaUrl ? encodeURIComponent(sharedData.mediaUrl) : '';
+                                      const authorStr = sharedData?.authorName ? encodeURIComponent(sharedData.authorName) : '';
+                                      window.location.href = `/home?postId=${pid}&search=${searchStr}&media=${mediaStr}&author=${authorStr}#post-${pid}`;
+                                    }}
+                                    className="w-full py-2 bg-[#FAF4E8] hover:bg-[#FFF2D6] text-[#C8922A] text-[11px] font-bold rounded-xl border border-[#E5E0D5] flex items-center justify-center gap-1 transition-all cursor-pointer shadow-sm mt-1"
+                                  >
+                                    <span>View Post</span>
+                                    <ChevronRight size={13} />
+                                  </button>
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <div
+                                onClick={(e) => { e.stopPropagation(); setActiveMessageDot(activeMessageDot === msg.id ? null : msg.id); setActiveMessageMenu(null); }}
+                                className={clsx(
+                                  "w-fit max-w-full px-3.5 py-2.5 text-[14px] leading-relaxed shadow-2xl relative break-words cursor-pointer",
+                                  isMe
+                                    ? "ca-chat-sent"
+                                    : "ca-chat-received"
+                                )}
+                              >
+                                {msg.isPinned && (
+                                  <div className="mb-1 flex items-center gap-1 text-[10px] font-black opacity-80">
+                                    <Pin size={11} /> Pinned
+                                  </div>
+                                )}
+                                {msg.replyTo && (
+                                  <div className={clsx(
+                                    "mb-2 rounded-xl border-l-4 px-3 py-2 text-xs",
+                                    isMe ? "bg-white/20 border-white/70" : "bg-[#F3F2EE] border-[#C8922A]"
+                                  )}>
+                                    <div className="font-black">{msg.replyTo.senderName}</div>
+                                    <div className="line-clamp-1 opacity-80">{msg.replyTo.text}</div>
+                                  </div>
+                                )}
+                                {msg.mediaUrl && (
+                                  <div className="mb-2 rounded-xl overflow-hidden border border-[#E8E6E0] bg-[#F8F7F4] flex items-center justify-center">
+                                    {msg.mediaType === 'video' ? (
+                                      <video src={msg.mediaUrl} controls className="max-w-full h-auto max-h-[350px] object-contain" />
+                                    ) : msg.mediaType === 'file' ? (
+                                      <a href={msg.mediaUrl} download className="flex items-center gap-2 bg-white/30 px-3 py-2 text-sm font-black">
+                                        <FileText size={18} /> Document
+                                      </a>
+                                    ) : (
+                                      <img src={msg.mediaUrl} alt="" className="max-w-full h-auto max-h-[350px] object-contain cursor-pointer hover:opacity-90 transition-opacity" onClick={(e) => { e.stopPropagation(); setFullscreenImage(msg.mediaUrl); }} />
+                                    )}
+                                  </div>
+                                )}
+                                {msg.poll?.question && (
+                                  <div className="relative z-10 w-64 max-w-[70vw] space-y-2">
+                                    <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest opacity-80">
+                                      <BarChart3 size={14} /> Poll
+                                    </div>
+                                    <div className="font-black">{msg.poll.question}</div>
+                                    {msg.poll.options?.map((option, optionIndex) => {
+                                      const totalVotes = msg.poll.options.reduce((sum, item) => sum + (item.votes?.length || 0), 0);
+                                      const votes = option.votes?.length || 0;
+                                      const percent = totalVotes ? Math.round((votes / totalVotes) * 100) : 0;
+                                      const currentUserId = user?._id || user?.id;
+                                      const didVote = Boolean(option.votes?.some(vote => String(vote._id || vote.id || vote) === String(currentUserId)));
+
+                                      return (
+                                        <button
+                                          key={`${msg.id}-poll-${optionIndex}`}
+                                          type="button"
+                                          onClick={() => votePoll(msg, optionIndex)}
+                                          className={clsx(
+                                            "relative w-full overflow-hidden rounded-xl px-3.5 py-2.5 text-left text-xs transition-all duration-300 shadow-sm",
+                                            didVote
+                                              ? "bg-[#C8922A] text-white border-2 border-white ring-2 ring-[#C8922A]/50 shadow-md font-black"
+                                              : "bg-white text-[#1A1A1A] border border-[#E5E0D5] hover:bg-[#FAF8F5] font-bold"
+                                          )}
+                                        >
+                                          <span
+                                            className={clsx(
+                                              "absolute inset-y-0 left-0 transition-all duration-500",
+                                              didVote ? "bg-white/25" : "bg-[#C8922A]/15"
+                                            )}
+                                            style={{ width: `${percent}%` }}
+                                          />
+                                          <span className="relative flex items-center justify-between gap-3 z-10">
+                                            <span className="flex items-center gap-2 font-extrabold">
+                                              {didVote && (
+                                                <span className="w-4 h-4 rounded-full bg-white text-[#C8922A] flex items-center justify-center text-[10px] font-black shrink-0 shadow-sm">
+                                                  ✓
+                                                </span>
+                                              )}
+                                              <span>{option.text}</span>
+                                            </span>
+                                            <span className={clsx("text-xs font-extrabold shrink-0 ml-2", didVote ? "text-white" : "text-[#888888]")}>
+                                              {votes} {totalVotes > 0 && `(${percent}%)`}
+                                            </span>
+                                          </span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                                {!msg.poll?.question && <div className="relative z-10 font-medium">{msg.text}</div>}
+                                {msg.editedAt && !msg.deletedAt && <div className="mt-1 text-[10px] font-bold opacity-70">edited</div>}
                               </div>
                             );
-                          }
-
-                          return (
-                            <div 
-                              onClick={(e) => { e.stopPropagation(); setActiveMessageDot(activeMessageDot === msg.id ? null : msg.id); setActiveMessageMenu(null); }}
-                              className={clsx(
-                                "w-fit max-w-full px-3.5 py-2.5 text-[14px] leading-relaxed shadow-2xl relative break-words cursor-pointer",
-                                isMe 
-                                  ? "ca-chat-sent" 
-                                  : "ca-chat-received"
-                              )}
-                            >
-                              {msg.isPinned && (
-                                <div className="mb-1 flex items-center gap-1 text-[10px] font-black opacity-80">
-                                  <Pin size={11} /> Pinned
-                                </div>
-                              )}
-                              {msg.replyTo && (
-                                <div className={clsx(
-                                  "mb-2 rounded-xl border-l-4 px-3 py-2 text-xs",
-                                  isMe ? "bg-white/20 border-white/70" : "bg-[#F3F2EE] border-[#C8922A]"
-                                )}>
-                                  <div className="font-black">{msg.replyTo.senderName}</div>
-                                  <div className="line-clamp-1 opacity-80">{msg.replyTo.text}</div>
-                                </div>
-                              )}
-                              {msg.mediaUrl && (
-                                <div className="mb-2 rounded-xl overflow-hidden border border-[#E8E6E0] bg-[#F8F7F4] flex items-center justify-center">
-                                  {msg.mediaType === 'video' ? (
-                                    <video src={msg.mediaUrl} controls className="max-w-full h-auto max-h-[350px] object-contain" />
-                                  ) : msg.mediaType === 'file' ? (
-                                    <a href={msg.mediaUrl} download className="flex items-center gap-2 bg-white/30 px-3 py-2 text-sm font-black">
-                                      <FileText size={18} /> Document
-                                    </a>
-                                  ) : (
-                                    <img src={msg.mediaUrl} alt="" className="max-w-full h-auto max-h-[350px] object-contain cursor-pointer hover:opacity-90 transition-opacity" onClick={(e) => { e.stopPropagation(); setFullscreenImage(msg.mediaUrl); }} />
-                                  )}
-                                </div>
-                              )}
-                              {msg.poll?.question && (
-                                <div className="relative z-10 w-64 max-w-[70vw] space-y-2">
-                                  <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest opacity-80">
-                                    <BarChart3 size={14} /> Poll
-                                  </div>
-                                  <div className="font-black">{msg.poll.question}</div>
-                                  {msg.poll.options?.map((option, optionIndex) => {
-                                    const totalVotes = msg.poll.options.reduce((sum, item) => sum + (item.votes?.length || 0), 0);
-                                    const votes = option.votes?.length || 0;
-                                    const percent = totalVotes ? Math.round((votes / totalVotes) * 100) : 0;
-                                    const currentUserId = user?._id || user?.id;
-                                    const didVote = Boolean(option.votes?.some(vote => String(vote._id || vote.id || vote) === String(currentUserId)));
-
-                                    return (
-                                      <button
-                                        key={`${msg.id}-poll-${optionIndex}`}
-                                        type="button"
-                                        onClick={() => votePoll(msg, optionIndex)}
-                                        className={clsx(
-                                          "relative w-full overflow-hidden rounded-xl px-3.5 py-2.5 text-left text-xs transition-all duration-300 shadow-sm",
-                                          didVote 
-                                            ? "bg-[#C8922A] text-white border-2 border-white ring-2 ring-[#C8922A]/50 shadow-md font-black" 
-                                            : "bg-white text-[#1A1A1A] border border-[#E5E0D5] hover:bg-[#FAF8F5] font-bold"
-                                        )}
-                                      >
-                                        <span 
-                                          className={clsx(
-                                            "absolute inset-y-0 left-0 transition-all duration-500",
-                                            didVote ? "bg-white/25" : "bg-[#C8922A]/15"
-                                          )} 
-                                          style={{ width: `${percent}%` }} 
-                                        />
-                                        <span className="relative flex items-center justify-between gap-3 z-10">
-                                          <span className="flex items-center gap-2 font-extrabold">
-                                            {didVote && (
-                                              <span className="w-4 h-4 rounded-full bg-white text-[#C8922A] flex items-center justify-center text-[10px] font-black shrink-0 shadow-sm">
-                                                ✓
-                                              </span>
-                                            )}
-                                            <span>{option.text}</span>
-                                          </span>
-                                          <span className={clsx("text-xs font-extrabold shrink-0 ml-2", didVote ? "text-white" : "text-[#888888]")}>
-                                            {votes} {totalVotes > 0 && `(${percent}%)`}
-                                          </span>
-                                        </span>
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                              {!msg.poll?.question && <div className="relative z-10 font-medium">{msg.text}</div>}
-                              {msg.editedAt && !msg.deletedAt && <div className="mt-1 text-[10px] font-bold opacity-70">edited</div>}
+                          })()}
+                          {!isMe && !msg.deletedAt && (
+                            <div className="relative flex-shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => setActiveMessageMenu(activeMessageMenu === msg.id ? null : msg.id)}
+                                className={clsx(
+                                  "p-1.5 rounded-full bg-white border border-[#E8E6E0] text-[#6B6B6B] shadow-md hover:text-[#1A1A1A] transition-all",
+                                  activeMessageDot === msg.id || activeMessageMenu === msg.id ? "opacity-100" : "opacity-0 lg:group-hover:opacity-100"
+                                )}
+                                aria-label="Message options"
+                                aria-expanded={activeMessageMenu === msg.id}
+                              >
+                                <MoreVertical size={15} />
+                              </button>
+                              <AnimatePresence>
+                                {activeMessageMenu === msg.id && (
+                                  <motion.div
+                                    initial={{ opacity: 0, scale: 0.94, x: -8 }}
+                                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                                    exit={{ opacity: 0, scale: 0.94, x: -8 }}
+                                  >
+                                    {renderMessageActions(msg, isMe)}
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
                             </div>
-                          );
-                        })()}
-                        {!isMe && !msg.deletedAt && (
-                          <div className="relative flex-shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => setActiveMessageMenu(activeMessageMenu === msg.id ? null : msg.id)}
-                              className={clsx(
-                                "p-1.5 rounded-full bg-white border border-[#E8E6E0] text-[#6B6B6B] shadow-md hover:text-[#1A1A1A] transition-all",
-                                activeMessageDot === msg.id || activeMessageMenu === msg.id ? "opacity-100" : "opacity-0 lg:group-hover:opacity-100"
-                              )}
-                              aria-label="Message options"
-                              aria-expanded={activeMessageMenu === msg.id}
-                            >
-                              <MoreVertical size={15} />
-                            </button>
-                            <AnimatePresence>
-                              {activeMessageMenu === msg.id && (
-                                <motion.div
-                                  initial={{ opacity: 0, scale: 0.94, x: -8 }}
-                                  animate={{ opacity: 1, scale: 1, x: 0 }}
-                                  exit={{ opacity: 0, scale: 0.94, x: -8 }}
-                                >
-                                  {renderMessageActions(msg, isMe)}
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </div>
-                        )}
+                          )}
                         </div>
-                        
+
                         {isLastInGroup && (
                           <div className="flex items-center space-x-1 mt-1">
                             <span className="text-[11px] text-[#6B6B6B] font-semibold">{msg.time}</span>
@@ -1757,193 +1757,193 @@ function MessagesContent() {
             </div>
 
             <div className="chat-input-area">
-            <AnimatePresence>
-              {(replyTo || editingMessage) && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 8 }}
-                  className="mx-4 mt-2 flex items-center justify-between rounded-2xl border border-[#E8E6E0] bg-[#F9F8F5] px-4 py-2"
-                >
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-[#C8922A]">
-                      {editingMessage ? "Editing message" : `Replying to ${replyTo.senderName}`}
-                    </p>
-                    <p className="truncate text-xs font-bold text-[#1A1A1A]">
-                      {editingMessage ? editingMessage.text : replyTo.text}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setReplyTo(null);
-                      setEditingMessage(null);
-                      if (editingMessage) setInput("");
-                    }}
-                    className="ml-3 rounded-full p-1.5 text-[#6B6B6B] hover:bg-[#F3F2EE] hover:text-[#1A1A1A]"
-                    aria-label="Cancel"
+              <AnimatePresence>
+                {(replyTo || editingMessage) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 8 }}
+                    className="mx-4 mt-2 flex items-center justify-between rounded-2xl border border-[#E8E6E0] bg-[#F9F8F5] px-4 py-2"
                   >
-                    <X size={16} />
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-            {/* Selected Media Preview */}
-            <AnimatePresence>
-              {selectedMedia && (
-                <div className="px-4 py-2 shrink-0 bg-[#FAFAF8]/80 backdrop-blur-xl border-t border-[#E8E6E0] relative z-20">
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    className="relative rounded-2xl overflow-hidden border border-[#E8E6E0] max-h-32 w-32"
-                  >
-                    {mediaType === 'video' ? (
-                      <video src={selectedMedia} className="w-full h-full object-cover" />
-                    ) : mediaType === 'file' ? (
-                      <div className="flex h-24 w-32 flex-col items-center justify-center gap-2 bg-[#F3F2EE] p-3 text-center">
-                        <FileText size={28} className="text-[#C8922A]" />
-                        <span className="line-clamp-1 text-[10px] font-black text-[#1A1A1A]">{selectedFileName || "Document"}</span>
-                      </div>
-                    ) : (
-                      <img src={selectedMedia} className="w-full h-full object-cover" alt="Preview" />
-                    )}
-                    <button 
-                      onClick={() => { setSelectedMedia(null); setMediaType('none'); }}
-                      className="absolute top-1 right-1 bg-black/60 backdrop-blur-md text-[#1A1A1A] p-1 rounded-full hover:bg-black/40 transition-all"
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[#C8922A]">
+                        {editingMessage ? "Editing message" : `Replying to ${replyTo.senderName}`}
+                      </p>
+                      <p className="truncate text-xs font-bold text-[#1A1A1A]">
+                        {editingMessage ? editingMessage.text : replyTo.text}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setReplyTo(null);
+                        setEditingMessage(null);
+                        if (editingMessage) setInput("");
+                      }}
+                      className="ml-3 rounded-full p-1.5 text-[#6B6B6B] hover:bg-[#F3F2EE] hover:text-[#1A1A1A]"
+                      aria-label="Cancel"
                     >
-                      <X size={12} />
+                      <X size={16} />
                     </button>
                   </motion.div>
-                </div>
-              )}
-            </AnimatePresence>
-
-            {/* Message Input */}
-            <div className="relative z-20 flex min-h-[60px] w-full shrink-0 items-center justify-between border-t border-[#E8E6E0] bg-[#FAFAF8] px-3 py-2.5 sm:px-4">
-              <div className="w-full h-full ca-input rounded-full flex items-center px-1.5 py-0.5 shadow-2xl transition-all">
-                {/* Plus button */}
-                <button 
-                  onClick={() => setShowAttachments(!showAttachments)}
-                  className="p-2 text-[#6B6B6B] hover:text-[#C8922A] hover:bg-[#F3F2EE] rounded-full transition-all flex items-center justify-center shrink-0"
-                >
-                  <Plus size={20} className={clsx("transition-transform duration-500", showAttachments && "rotate-45")} />
-                </button>
-
-                {/* Emoji button */}
-                <div className="relative flex items-center">
-                  <button 
-                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                    className={clsx(
-                      "p-2 hover:bg-[#F3F2EE] rounded-full transition-all flex items-center justify-center shrink-0",
-                      showEmojiPicker ? "text-yellow-400" : "text-[#6B6B6B]"
-                    )}
-                  >
-                    <Smile size={20} />
-                  </button>
-
-                  <AnimatePresence>
-                    {showEmojiPicker && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10, scale: 0.9 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                        className="absolute bottom-12 left-0 z-50 w-[min(14rem,calc(100vw-2rem))] rounded-[1.5rem] border border-[#E8E6E0] bg-[#16161D] p-3 shadow-2xl"
-                      >
-                        <div className="grid grid-cols-5 gap-1.5">
-                          {emojis.map((emoji, i) => (
-                            <button
-                              key={i}
-                              onClick={() => addEmoji(emoji)}
-                              className="text-xl hover:scale-125 transition-transform p-0.5"
-                            >
-                              {emoji}
-                            </button>
-                          ))}
+                )}
+              </AnimatePresence>
+              {/* Selected Media Preview */}
+              <AnimatePresence>
+                {selectedMedia && (
+                  <div className="px-4 py-2 shrink-0 bg-[#FAFAF8]/80 backdrop-blur-xl border-t border-[#E8E6E0] relative z-20">
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      className="relative rounded-2xl overflow-hidden border border-[#E8E6E0] max-h-32 w-32"
+                    >
+                      {mediaType === 'video' ? (
+                        <video src={selectedMedia} className="w-full h-full object-cover" />
+                      ) : mediaType === 'file' ? (
+                        <div className="flex h-24 w-32 flex-col items-center justify-center gap-2 bg-[#F3F2EE] p-3 text-center">
+                          <FileText size={28} className="text-[#C8922A]" />
+                          <span className="line-clamp-1 text-[10px] font-black text-[#1A1A1A]">{selectedFileName || "Document"}</span>
                         </div>
-                      </motion.div>
+                      ) : (
+                        <img src={selectedMedia} className="w-full h-full object-cover" alt="Preview" />
+                      )}
+                      <button
+                        onClick={() => { setSelectedMedia(null); setMediaType('none'); }}
+                        className="absolute top-1 right-1 bg-black/60 backdrop-blur-md text-[#1A1A1A] p-1 rounded-full hover:bg-black/40 transition-all"
+                      >
+                        <X size={12} />
+                      </button>
+                    </motion.div>
+                  </div>
+                )}
+              </AnimatePresence>
+
+              {/* Message Input */}
+              <div className="relative z-20 flex min-h-[60px] w-full shrink-0 items-center justify-between border-t border-[#E8E6E0] bg-[#FAFAF8] px-3 py-2.5 sm:px-4">
+                <div className="w-full h-full ca-input rounded-full flex items-center px-1.5 py-0.5 shadow-2xl transition-all">
+                  {/* Plus button */}
+                  <button
+                    onClick={() => setShowAttachments(!showAttachments)}
+                    className="p-2 text-[#6B6B6B] hover:text-[#C8922A] hover:bg-[#F3F2EE] rounded-full transition-all flex items-center justify-center shrink-0"
+                  >
+                    <Plus size={20} className={clsx("transition-transform duration-500", showAttachments && "rotate-45")} />
+                  </button>
+
+                  {/* Emoji button */}
+                  <div className="relative flex items-center">
+                    <button
+                      onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                      className={clsx(
+                        "p-2 hover:bg-[#F3F2EE] rounded-full transition-all flex items-center justify-center shrink-0",
+                        showEmojiPicker ? "text-yellow-400" : "text-[#6B6B6B]"
+                      )}
+                    >
+                      <Smile size={20} />
+                    </button>
+
+                    <AnimatePresence>
+                      {showEmojiPicker && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                          className="absolute bottom-12 left-0 z-50 w-[min(14rem,calc(100vw-2rem))] rounded-[1.5rem] border border-[#E8E6E0] bg-[#16161D] p-3 shadow-2xl"
+                        >
+                          <div className="grid grid-cols-5 gap-1.5">
+                            {emojis.map((emoji, i) => (
+                              <button
+                                key={i}
+                                onClick={() => addEmoji(emoji)}
+                                className="text-xl hover:scale-125 transition-transform p-0.5"
+                              >
+                                {emoji}
+                              </button>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Input Field */}
+                  <input
+                    value={input}
+                    onChange={e => handleInputChange(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && sendMessage()}
+                    type="text"
+                    placeholder="Share a campus moment..."
+                    className="flex-1 bg-transparent py-1 px-2 text-[14px] text-[#1A1A1A] placeholder:text-[#6B6B6B] focus:outline-none font-medium min-w-0"
+                  />
+
+                  {/* Send Button */}
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={sendMessage}
+                    disabled={isSending || (!input.trim() && !selectedMedia)}
+                    className="ca-btn-primary p-2 rounded-full disabled:opacity-50 disabled:grayscale transition-all flex items-center justify-center shrink-0 w-9 h-9"
+                  >
+                    {isSending ? (
+                      <div className="w-4 h-4 border-2 border-[#E8E6E0] border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <Send size={16} />
                     )}
-                  </AnimatePresence>
+                  </motion.button>
                 </div>
-
-                {/* Input Field */}
-                <input
-                  value={input}
-                  onChange={e => handleInputChange(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && sendMessage()}
-                  type="text"
-                  placeholder="Share a campus moment..."
-                  className="flex-1 bg-transparent py-1 px-2 text-[14px] text-[#1A1A1A] placeholder:text-[#6B6B6B] focus:outline-none font-medium min-w-0"
-                />
-
-                {/* Send Button */}
-                <motion.button 
-                  whileTap={{ scale: 0.95 }}
-                  onClick={sendMessage}
-                  disabled={isSending || (!input.trim() && !selectedMedia)}
-                  className="ca-btn-primary p-2 rounded-full disabled:opacity-50 disabled:grayscale transition-all flex items-center justify-center shrink-0 w-9 h-9"
-                >
-                  {isSending ? (
-                    <div className="w-4 h-4 border-2 border-[#E8E6E0] border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <Send size={16} />
-                  )}
-                </motion.button>
               </div>
-            </div>
-            
-            {/* Attachment Menu Popup */}
-            <AnimatePresence>
-              {showAttachments && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10, scale: 0.9 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                  className="absolute bottom-16 left-3 z-50 w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-[1.5rem] border border-[#E8E6E0] bg-white text-[#1A1A1A] shadow-2xl sm:left-4 sm:w-64"
-                >
-                  <button 
-                    onClick={() => { setShowAttachments(false); fileInputRef.current?.click(); }}
-                    className="w-full flex items-center space-x-4 px-6 py-4 hover:bg-[#F3F2EE] transition-all text-left group"
+
+              {/* Attachment Menu Popup */}
+              <AnimatePresence>
+                {showAttachments && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                    className="absolute bottom-16 left-3 z-50 w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-[1.5rem] border border-[#E8E6E0] bg-white text-[#1A1A1A] shadow-2xl sm:left-4 sm:w-64"
                   >
-                    <div className="bg-[#C8922A]/10 p-2.5 rounded-xl text-[#C8922A] group-hover:scale-110 transition-transform">
-                      <ImageIcon size={20} />
-                    </div>
-                    <span className="text-sm font-bold text-[#1A1A1A]">Gallery</span>
-                  </button>
-                  <button 
-                    onClick={() => { setShowAttachments(false); documentInputRef.current?.click(); }}
-                    className="w-full flex items-center space-x-4 px-6 py-4 hover:bg-[#F3F2EE] transition-all text-left group border-t border-[#E8E6E0]"
-                  >
-                    <div className="bg-[#C8922A]/10 p-2.5 rounded-xl text-[#C8922A] group-hover:scale-110 transition-transform">
-                      <FileText size={20} />
-                    </div>
-                    <span className="text-sm font-bold text-[#1A1A1A]">Documents</span>
-                  </button>
-                  {activeChat.type === "group" && (
-                    <button 
-                      onClick={() => { setShowAttachments(false); setShowPollModal(true); }}
+                    <button
+                      onClick={() => { setShowAttachments(false); fileInputRef.current?.click(); }}
+                      className="w-full flex items-center space-x-4 px-6 py-4 hover:bg-[#F3F2EE] transition-all text-left group"
+                    >
+                      <div className="bg-[#C8922A]/10 p-2.5 rounded-xl text-[#C8922A] group-hover:scale-110 transition-transform">
+                        <ImageIcon size={20} />
+                      </div>
+                      <span className="text-sm font-bold text-[#1A1A1A]">Gallery</span>
+                    </button>
+                    <button
+                      onClick={() => { setShowAttachments(false); documentInputRef.current?.click(); }}
                       className="w-full flex items-center space-x-4 px-6 py-4 hover:bg-[#F3F2EE] transition-all text-left group border-t border-[#E8E6E0]"
                     >
                       <div className="bg-[#C8922A]/10 p-2.5 rounded-xl text-[#C8922A] group-hover:scale-110 transition-transform">
-                        <BarChart3 size={20} />
+                        <FileText size={20} />
                       </div>
-                      <span className="text-sm font-bold text-[#1A1A1A]">Poll</span>
+                      <span className="text-sm font-bold text-[#1A1A1A]">Documents</span>
                     </button>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-            <input type="file" ref={fileInputRef} accept="image/*,video/*" className="hidden" onChange={handleMediaSelect} />
-            <input type="file" ref={documentInputRef} className="hidden" onChange={(e) => handleMediaSelect(e, 'file')} />
+                    {activeChat.type === "group" && (
+                      <button
+                        onClick={() => { setShowAttachments(false); setShowPollModal(true); }}
+                        className="w-full flex items-center space-x-4 px-6 py-4 hover:bg-[#F3F2EE] transition-all text-left group border-t border-[#E8E6E0]"
+                      >
+                        <div className="bg-[#C8922A]/10 p-2.5 rounded-xl text-[#C8922A] group-hover:scale-110 transition-transform">
+                          <BarChart3 size={20} />
+                        </div>
+                        <span className="text-sm font-bold text-[#1A1A1A]">Poll</span>
+                      </button>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              <input type="file" ref={fileInputRef} accept="image/*,video/*" className="hidden" onChange={handleMediaSelect} />
+              <input type="file" ref={documentInputRef} className="hidden" onChange={(e) => handleMediaSelect(e, 'file')} />
             </div>
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-8 space-y-8">
             <div className="relative">
-              <motion.div 
+              <motion.div
                 animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.6, 0.3] }}
                 transition={{ duration: 4, repeat: Infinity }}
-                className="absolute inset-0 bg-[#C8922A] blur-3xl rounded-full opacity-20" 
+                className="absolute inset-0 bg-[#C8922A] blur-3xl rounded-full opacity-20"
               />
               <div className="w-24 h-24 rounded-[2.5rem] bg-[#F9F8F5] border border-[#E8E6E0] flex items-center justify-center relative z-10 border-[#E8E6E0]">
                 <MessageSquare size={44} className="text-[#C8922A]/50" />
@@ -1965,14 +1965,14 @@ function MessagesContent() {
       {/* --- POLL MODAL --- */}
       <AnimatePresence>
         {showPollModal && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-3 backdrop-blur-sm sm:items-center sm:p-4"
             onClick={() => setShowPollModal(false)}
           >
-            <motion.div 
+            <motion.div
               initial={{ y: 80, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 80, opacity: 0 }}
@@ -2034,14 +2034,14 @@ function MessagesContent() {
       {/* --- CREATE GROUP MODAL --- */}
       <AnimatePresence>
         {showCreateGroup && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-3 backdrop-blur-sm sm:p-4"
             onClick={() => setShowCreateGroup(false)}
           >
-            <motion.div 
+            <motion.div
               initial={{ y: 100 }}
               animate={{ y: 0 }}
               exit={{ y: 100 }}
@@ -2055,14 +2055,14 @@ function MessagesContent() {
               <div className="p-6 space-y-5 overflow-y-auto custom-scrollbar">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest ml-2">Group Name</label>
-                  <input 
+                  <input
                     value={newGroupName}
                     onChange={e => setNewGroupName(e.target.value)}
                     className="w-full bg-[#F3F2EE] border border-[#E8E6E0] rounded-2xl p-4 text-sm text-[#1A1A1A] focus:outline-none focus:border-purple-500/50 transition-all"
                     placeholder="E.g. Weekend Hackers..."
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-[#6B6B6B] uppercase tracking-widest ml-2 flex justify-between">
                     <span>Select Members ({selectedMembers.length})</span>
@@ -2077,7 +2077,7 @@ function MessagesContent() {
                       <p className="text-[#6B6B6B] text-xs text-center py-4 font-medium italic">No connections found. Follow people first!</p>
                     ) : (
                       connections.map(c => (
-                        <div 
+                        <div
                           key={c._id}
                           onClick={() => toggleMemberSelection(c._id)}
                           className={clsx(
@@ -2100,7 +2100,7 @@ function MessagesContent() {
                     )}
                   </div>
                 </div>
-                
+
                 <motion.button
                   whileTap={{ scale: 0.97 }}
                   onClick={handleCreateGroup}
@@ -2117,14 +2117,14 @@ function MessagesContent() {
       {/* Add Member Modal */}
       <AnimatePresence>
         {showAddMemberModal && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-3 backdrop-blur-md sm:items-center sm:p-4"
             onClick={() => setShowAddMemberModal(false)}
           >
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
@@ -2156,16 +2156,16 @@ function MessagesContent() {
                     .map((f, i) => (
                       <div key={i} className="flex items-center justify-between p-3 hover:bg-[#F3F2EE] rounded-2xl transition-all border border-transparent hover:border-[#E8E6E0] group">
                         <div className="flex items-center space-x-4">
-                          <img 
-                            src={getAvatarSrc(f.profilePic, f.name, f._id || f.id)} 
-                            className="w-11 h-11 rounded-full object-cover border border-[#E8E6E0]" 
+                          <img
+                            src={getAvatarSrc(f.profilePic, f.name, f._id || f.id)}
+                            className="w-11 h-11 rounded-full object-cover border border-[#E8E6E0]"
                           />
                           <div>
                             <p className="text-sm font-bold text-[#1A1A1A]">{f.name}</p>
                             <p className="text-[10px] text-[#6B6B6B] font-bold uppercase tracking-wider">{f.university}</p>
                           </div>
                         </div>
-                        <button 
+                        <button
                           onClick={() => handleAddMember(f._id || f.id, f.name)}
                           className="px-4 py-2 bg-green-500/10 hover:bg-green-500 text-green-500 hover:text-[#1A1A1A] rounded-xl text-[10px] font-black uppercase tracking-widest border border-green-500/20 transition-all"
                         >
@@ -2188,14 +2188,14 @@ function MessagesContent() {
             className="fixed inset-0 z-[300] flex items-center justify-center bg-black/90 backdrop-blur-sm"
             onClick={() => setFullscreenImage(null)}
           >
-            <button 
+            <button
               className="absolute top-6 right-6 p-2 bg-white/20 hover:bg-white/40 rounded-full text-white cursor-pointer transition-colors"
               onClick={() => setFullscreenImage(null)}
             >
               <X size={24} color="white" strokeWidth={2.5} />
             </button>
-            <img 
-              src={fullscreenImage} 
+            <img
+              src={fullscreenImage}
               alt="Fullscreen"
               className="max-h-[90dvh] max-w-[95vw] object-contain select-none"
               onClick={(e) => e.stopPropagation()}

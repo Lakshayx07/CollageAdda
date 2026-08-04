@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef, Fragment } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { 
-  ArrowLeft, Users2, Send, Loader2, Globe, CheckCircle2, 
+import {
+  ArrowLeft, Users2, Send, Loader2, Globe, CheckCircle2,
   AlertCircle, LogOut, MoreVertical, Plus, ArrowRight, Smile,
   Image as ImageIcon, Video, BarChart3, Pencil, Trash2, Reply,
   Pin, PinOff, X, Check, Flame
@@ -59,7 +59,7 @@ export default function CommunityChatPage() {
 
   const [isMounted, setIsMounted] = useState(false);
   const [user, setUser] = useState(null);
-  
+
   // Data States
   const [community, setCommunity] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -69,14 +69,14 @@ export default function CommunityChatPage() {
   const [isMember, setIsMember] = useState(false);
   const [role, setRole] = useState(null); // owner | member | null
   const [currentUserId, setCurrentUserId] = useState("");
-  
+
   // Status/Loading States
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [joining, setJoining] = useState(false);
   const [joiningCommunityId, setJoiningCommunityId] = useState(null);
   const [leaving, setLeaving] = useState(false);
-  
+
   // Input / UI States
   const [inputText, setInputText] = useState("");
   const [showMenu, setShowMenu] = useState(false);
@@ -479,7 +479,7 @@ export default function CommunityChatPage() {
     if (chatContainerRef.current && messages.length > 0) {
       const isInitial = !initialScrollDone.current;
       const shouldForceBottom = pendingScrollToBottomRef.current;
-      
+
       if (isInitial || shouldForceBottom) {
         initialScrollDone.current = true;
         pendingScrollToBottomRef.current = false;
@@ -533,17 +533,17 @@ export default function CommunityChatPage() {
 
       const request = editingMessage
         ? authSupabase
-            .from("community_messages")
-            .update({ content, edited_at: new Date().toISOString() })
-            .eq("id", editingMessage.id)
-            .eq("sender_id", senderId)
-            .select()
-            .single()
+          .from("community_messages")
+          .update({ content, edited_at: new Date().toISOString() })
+          .eq("id", editingMessage.id)
+          .eq("sender_id", senderId)
+          .select()
+          .single()
         : authSupabase
-            .from("community_messages")
-            .insert([richPayload])
-            .select()
-            .single();
+          .from("community_messages")
+          .insert([richPayload])
+          .select()
+          .single();
 
       let { data, error } = await request;
       if (editingMessage && error && isRecoverableSchemaError(error)) {
@@ -593,7 +593,7 @@ export default function CommunityChatPage() {
       payload: { userId: currentUserId, name: user?.name || "Someone" },
     });
     window.clearTimeout(typingTimeoutRef.current);
-    typingTimeoutRef.current = window.setTimeout(() => {}, 900);
+    typingTimeoutRef.current = window.setTimeout(() => { }, 900);
   };
 
   const handleEditMessage = (msg) => {
@@ -1047,7 +1047,7 @@ export default function CommunityChatPage() {
   });
 
   return (
-    <div className="messages-layout bg-[#F9F8F5] flex flex-col lg:grid lg:grid-cols-[330px_minmax(0,1fr)]">
+    <div className="h-[100dvh] overflow-hidden w-full bg-[#F9F8F5] flex flex-col lg:grid lg:grid-cols-[330px_minmax(0,1fr)]">
       <aside className="hidden lg:flex min-h-0 flex-col border-r border-[#E8E6E0] bg-white/70 backdrop-blur-sm">
         <div className="px-5 py-5 flex items-center gap-3 shrink-0">
           <button
@@ -1138,450 +1138,450 @@ export default function CommunityChatPage() {
       </aside>
 
       <section className="min-h-0 h-full flex-1 flex flex-col overflow-hidden">
-      {/* Community Header */}
-      <div className="bg-white border-b border-[#E8E6E0] px-4 py-3 flex items-center justify-between shadow-sm shrink-0">
-        <div className="flex items-center gap-3 min-w-0">
-          <button 
-            onClick={() => router.push("/community")}
-            className="p-2 hover:bg-[#F3F2EE] rounded-xl text-[#6B6B6B] transition-colors cursor-pointer"
-          >
-            <ArrowLeft size={18} />
-          </button>
-          
-          <div className={`w-10 h-10 rounded-xl ${theme.avatar} flex items-center justify-center font-black shrink-0`}>
-            {community?.name?.charAt(0).toUpperCase()}
-          </div>
-          
-          <div className="min-w-0">
-            <h2 className="font-black text-[#1A1A1A] leading-tight truncate text-base">
-              {community?.name}
-            </h2>
-            <p className="text-xs text-[#888888] font-semibold flex items-center gap-1.5 mt-0.5">
-              <span>{community?.member_count} member{community?.member_count !== 1 ? 's' : ''}</span>
-              <span>•</span>
-              <span className="capitalize">{community?.privacy?.replace('_', ' ')}</span>
-            </p>
-          </div>
-        </div>
-
-        <div className="relative flex items-center gap-2">
-          {pinnedCount > 0 && (
+        {/* Community Header */}
+        <div className="bg-white border-b border-[#E8E6E0] px-4 py-3 flex items-center justify-between shadow-sm shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
             <button
-              type="button"
-              onClick={handleJumpToPinned}
-              className="flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-black text-amber-700 hover:bg-amber-100 cursor-pointer"
-              title="Jump to pinned message"
-            >
-              <span aria-hidden="true">📌</span>
-              {pinnedCount}
-            </button>
-          )}
-          {isMember && (
-            <button 
-              onClick={() => setShowMenu(!showMenu)}
+              onClick={() => router.push("/community")}
               className="p-2 hover:bg-[#F3F2EE] rounded-xl text-[#6B6B6B] transition-colors cursor-pointer"
             >
-              <MoreVertical size={18} />
+              <ArrowLeft size={18} />
             </button>
-          )}
 
-          <AnimatePresence>
-            {showMenu && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                  className="absolute right-0 mt-1 w-48 bg-white border border-[#E8E6E0] rounded-2xl shadow-xl py-2 z-50 overflow-hidden"
-                >
-                  <button
-                    onClick={handleLeave}
-                    disabled={role === 'owner'}
-                    className={clsx(
-                      "w-full flex items-center gap-2 px-4 py-2.5 text-left text-xs font-bold transition-colors cursor-pointer",
-                      role === 'owner' 
-                        ? "text-gray-400 cursor-not-allowed" 
-                        : "text-red-600 hover:bg-red-50"
-                    )}
-                  >
-                    <LogOut size={14} />
-                    Leave Community
-                  </button>
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
-        </div>
-      </div>
+            <div className={`w-10 h-10 rounded-xl ${theme.avatar} flex items-center justify-center font-black shrink-0`}>
+              {community?.name?.charAt(0).toUpperCase()}
+            </div>
 
-      {/* Messages Scroll Area */}
-      <div ref={chatContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-6 space-y-4 min-h-0 bg-[#F9F8F5] custom-scrollbar">
-        {/* Info Box */}
-        <div className="max-w-md mx-auto bg-white rounded-3xl p-6 border border-[#E8E6E0] shadow-sm text-center mb-6">
-          <div className={`w-14 h-14 rounded-2xl ${theme.avatar} flex items-center justify-center font-black text-xl mx-auto mb-3 shadow-sm`}>
-            {community?.name?.charAt(0).toUpperCase()}
+            <div className="min-w-0">
+              <h2 className="font-black text-[#1A1A1A] leading-tight truncate text-base">
+                {community?.name}
+              </h2>
+              <p className="text-xs text-[#888888] font-semibold flex items-center gap-1.5 mt-0.5">
+                <span>{community?.member_count} member{community?.member_count !== 1 ? 's' : ''}</span>
+                <span>•</span>
+                <span className="capitalize">{community?.privacy?.replace('_', ' ')}</span>
+              </p>
+            </div>
           </div>
-          <h3 className="font-black text-[#1A1A1A] text-lg leading-tight">{community?.name}</h3>
-          <p className="text-xs text-[#888888] font-semibold mt-1">Created on {new Date(community?.created_at).toLocaleDateString()}</p>
-          <p className="text-xs text-[#6B6B6B] leading-relaxed mt-3 font-medium bg-[#F9F8F5] p-3 rounded-2xl border border-[#E8E6E0]/60">
-            {community?.description || "Welcome to the group! Start talking and collaborating."}
-          </p>
+
+          <div className="relative flex items-center gap-2">
+            {pinnedCount > 0 && (
+              <button
+                type="button"
+                onClick={handleJumpToPinned}
+                className="flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-black text-amber-700 hover:bg-amber-100 cursor-pointer"
+                title="Jump to pinned message"
+              >
+                <span aria-hidden="true">📌</span>
+                {pinnedCount}
+              </button>
+            )}
+            {isMember && (
+              <button
+                onClick={() => setShowMenu(!showMenu)}
+                className="p-2 hover:bg-[#F3F2EE] rounded-xl text-[#6B6B6B] transition-colors cursor-pointer"
+              >
+                <MoreVertical size={18} />
+              </button>
+            )}
+
+            <AnimatePresence>
+              {showMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                    className="absolute right-0 mt-1 w-48 bg-white border border-[#E8E6E0] rounded-2xl shadow-xl py-2 z-50 overflow-hidden"
+                  >
+                    <button
+                      onClick={handleLeave}
+                      disabled={role === 'owner'}
+                      className={clsx(
+                        "w-full flex items-center gap-2 px-4 py-2.5 text-left text-xs font-bold transition-colors cursor-pointer",
+                        role === 'owner'
+                          ? "text-gray-400 cursor-not-allowed"
+                          : "text-red-600 hover:bg-red-50"
+                      )}
+                    >
+                      <LogOut size={14} />
+                      Leave Community
+                    </button>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
-        {/* Message bubbles */}
-        {sortedMessages.map((msg, index) => {
-          const isMe = msg.sender_id === currentUserId;
-          const prevMsg = index > 0 ? sortedMessages[index - 1] : null;
-          const showAvatar = index === 0 || prevMsg.sender_id !== msg.sender_id;
-          const isDeleted = !!msg.deleted_at;
-          const emojiOnly = isEmojiOnly(msg.content) && !msg.poll && !msg.media_url && msg.attachment_type === "text";
-          
-          const msgDateStr = new Date(msg.created_at).toDateString();
-          const prevMsgDateStr = prevMsg ? new Date(prevMsg.created_at).toDateString() : null;
-          const showDateDivider = msgDateStr !== prevMsgDateStr;
-          
-          return (
-            <Fragment key={msg.id}>
-              {showDateDivider && (
-                <div className="flex justify-center my-6">
-                  <span className="bg-[#E8E6E0]/60 text-[#555555] text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-sm">
-                    {formatDateDivider(msg.created_at)}
-                  </span>
-                </div>
-              )}
-              <div
-                ref={(node) => {
-                  if (node) messageRefs.current[msg.id] = node;
-                }}
-                className={clsx("group flex w-full mb-1 scroll-mt-24", isMe ? "justify-end" : "justify-start")}
-              >
-              {!isMe && showAvatar && (
-                <img
-                  src={getAvatarSrc(msg.sender_avatar, msg.sender_name, msg.sender_id)}
-                  alt={msg.sender_name}
-                  className="w-8 h-8 rounded-full object-cover border border-[#E8E6E0] mr-2 shrink-0 self-end mb-1"
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = getDefaultAvatar(msg.sender_name, msg.sender_id);
-                  }}
-                />
-              )}
-              {!isMe && !showAvatar && <div className="w-8 mr-2 shrink-0" />}
+        {/* Messages Scroll Area */}
+        <div ref={chatContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-6 space-y-4 min-h-0 bg-[#F9F8F5] custom-scrollbar">
+          {/* Info Box */}
+          <div className="max-w-md mx-auto bg-white rounded-3xl p-6 border border-[#E8E6E0] shadow-sm text-center mb-6">
+            <div className={`w-14 h-14 rounded-2xl ${theme.avatar} flex items-center justify-center font-black text-xl mx-auto mb-3 shadow-sm`}>
+              {community?.name?.charAt(0).toUpperCase()}
+            </div>
+            <h3 className="font-black text-[#1A1A1A] text-lg leading-tight">{community?.name}</h3>
+            <p className="text-xs text-[#888888] font-semibold mt-1">Created on {new Date(community?.created_at).toLocaleDateString()}</p>
+            <p className="text-xs text-[#6B6B6B] leading-relaxed mt-3 font-medium bg-[#F9F8F5] p-3 rounded-2xl border border-[#E8E6E0]/60">
+              {community?.description || "Welcome to the group! Start talking and collaborating."}
+            </p>
+          </div>
 
-              <div
-                className={clsx("flex flex-col max-w-[75%] relative cursor-pointer", isMe ? "items-end" : "items-start")}
-                onClick={(e) => { e.stopPropagation(); setTappedMessageId(tappedMessageId === msg.id ? null : msg.id); setActiveMessageId(null); }}
-              >
-                {!isMe && showAvatar && (
-                  <span className="text-[10px] text-[#6B6B6B] font-bold mb-1 ml-1">
-                    {msg.sender_name}
-                  </span>
-                )}
-                
-                <div className={clsx(
-                  emojiOnly
-                    ? "relative px-1 py-1 text-4xl leading-none"
-                    : "px-4 py-2.5 text-sm shadow-sm relative font-medium whitespace-pre-wrap break-words leading-relaxed",
-                  !emojiOnly && (isMe ? "ca-chat-sent" : "ca-chat-received"),
-                  isDeleted && "opacity-70 italic"
-                )}>
-                  {msg.is_pinned && (
-                    <div className={clsx("mb-1 flex items-center gap-1 text-[10px] font-black", isMe ? "text-white/80" : "text-amber-700")}>
-                      <Pin size={11} />
-                      Pinned
-                    </div>
-                  )}
-                  {msg.reply_to_content && (
-                    <div className={clsx("mb-2 rounded-xl border-l-4 px-3 py-2 text-xs", isMe ? "border-white/70 bg-white/15 text-white/90" : "border-amber-300 bg-amber-50 text-[#5F4B23]")}>
-                      <p className="font-black truncate">{msg.reply_to_sender_name || "Student"}</p>
-                      <p className="truncate">{msg.reply_to_content}</p>
-                    </div>
-                  )}
-                  {msg.attachment_type && msg.attachment_type !== "text" && (
-                    <div className={clsx("mb-2 flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-black", isMe ? "bg-white/15 text-white" : "bg-[#F8F3E8] text-amber-800")}>
-                      {msg.attachment_type === "poll" && <BarChart3 size={15} />}
-                      {msg.attachment_type === "photo" && <ImageIcon size={15} />}
-                      {msg.attachment_type === "video" && <Video size={15} />}
-                      {msg.attachment_type.charAt(0).toUpperCase() + msg.attachment_type.slice(1)}
-                    </div>
-                  )}
-                  {msg.media_url && msg.attachment_type === "photo" && (
-                    <img
-                      src={msg.media_url}
-                      alt={msg.content || "Chat photo"}
-                      className="mb-2 max-h-72 w-full rounded-2xl object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                      onClick={(e) => { e.stopPropagation(); setFullscreenImage(msg.media_url); }}
-                    />
-                  )}
-                  {msg.media_url && msg.attachment_type === "video" && (
-                    <video
-                      src={msg.media_url}
-                      controls
-                      className="mb-2 max-h-80 w-full rounded-2xl bg-black"
-                    />
-                  )}
-                  {msg.poll && (
-                    <div className={clsx("mb-2 min-w-64 rounded-2xl p-3", isMe ? "bg-white/15" : "bg-[#F9F8F5] border border-[#E8E6E0]")}>
-                      <p className={clsx("mb-2 text-sm font-black", isMe ? "text-white" : "text-[#1A1A1A]")}>{msg.poll.question || msg.content}</p>
-                      <div className="space-y-2">
-                        {(msg.poll.options || []).map((option, optionIndex) => {
-                          const totalVotes = Math.max(1, (msg.poll.options || []).reduce((sum, item) => sum + (item.votes?.length || 0), 0));
-                          const votes = option.votes?.length || 0;
-                          const percentage = Math.round((votes / totalVotes) * 100);
-                          const selected = option.votes?.includes(currentUserId);
-                          return (
-                            <button
-                              key={`${option.text}-${optionIndex}`}
-                              type="button"
-                              onClick={() => handlePollVote(msg, optionIndex)}
-                              className={clsx(
-                                "relative w-full overflow-hidden rounded-xl border px-3 py-2 text-left text-xs font-black cursor-pointer",
-                                isMe ? "border-white/25 text-white" : "border-[#E8E6E0] text-[#1A1A1A]"
-                              )}
-                            >
-                              <span
-                                className={clsx("absolute inset-y-0 left-0", selected ? "bg-emerald-400/30" : "bg-amber-300/20")}
-                                style={{ width: `${percentage}%` }}
-                              />
-                              <span className="relative flex items-center justify-between gap-3">
-                                <span className="truncate">{option.text}</span>
-                                <span>{votes}</span>
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <p className={clsx("mt-2 text-[10px] font-bold", isMe ? "text-white/70" : "text-[#888888]")}>
-                        {msg.poll.allowMultiple ? "Multiple answers allowed" : "Select one answer"}
-                      </p>
-                    </div>
-                  )}
-                  {(!msg.poll || !msg.poll.question) && !msg.media_url && msg.content}
-                  {msg.edited_at && !isDeleted && (
-                    <span className={clsx("ml-2 text-[10px] font-bold", isMe ? "text-white/70" : "text-[#888888]")}>
-                      edited
+          {/* Message bubbles */}
+          {sortedMessages.map((msg, index) => {
+            const isMe = msg.sender_id === currentUserId;
+            const prevMsg = index > 0 ? sortedMessages[index - 1] : null;
+            const showAvatar = index === 0 || prevMsg.sender_id !== msg.sender_id;
+            const isDeleted = !!msg.deleted_at;
+            const emojiOnly = isEmojiOnly(msg.content) && !msg.poll && !msg.media_url && msg.attachment_type === "text";
+
+            const msgDateStr = new Date(msg.created_at).toDateString();
+            const prevMsgDateStr = prevMsg ? new Date(prevMsg.created_at).toDateString() : null;
+            const showDateDivider = msgDateStr !== prevMsgDateStr;
+
+            return (
+              <Fragment key={msg.id}>
+                {showDateDivider && (
+                  <div className="flex justify-center my-6">
+                    <span className="bg-[#E8E6E0]/60 text-[#555555] text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-sm">
+                      {formatDateDivider(msg.created_at)}
                     </span>
-                  )}
-                </div>
-
-                {!isDeleted && activeMessageId === msg.id && (
-                  <div className={clsx(
-                    "absolute z-20 flex items-center gap-1 rounded-2xl border border-[#E8E6E0] bg-white p-1 shadow-xl min-w-max",
-                    isMe ? "right-0 bottom-full mb-2 origin-bottom-right" : "left-0 bottom-full mb-2 origin-bottom-left"
-                  )}>
-                    <button onClick={() => handleReplyMessage(msg)} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-amber-50 hover:text-amber-700 cursor-pointer" title="Reply">
-                      <Reply size={15} />
-                    </button>
-                    <button onClick={(e) => { e.stopPropagation(); handleTogglePin(msg); }} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-amber-50 hover:text-amber-700 cursor-pointer" title={msg.is_pinned ? "Unpin" : "Pin"}>
-                      {msg.is_pinned ? <PinOff size={15} /> : <Pin size={15} />}
-                    </button>
-                    {isMe && (
-                      <>
-                        <button onClick={(e) => { e.stopPropagation(); handleEditMessage(msg); }} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-amber-50 hover:text-amber-700 cursor-pointer" title="Edit">
-                          <Pencil size={15} />
-                        </button>
-                        <button onClick={(e) => { e.stopPropagation(); handleDeleteMessage(msg); }} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-red-50 hover:text-red-600 cursor-pointer" title="Delete">
-                          <Trash2 size={15} />
-                        </button>
-                      </>
-                    )}
                   </div>
                 )}
+                <div
+                  ref={(node) => {
+                    if (node) messageRefs.current[msg.id] = node;
+                  }}
+                  className={clsx("group flex w-full mb-1 scroll-mt-24", isMe ? "justify-end" : "justify-start")}
+                >
+                  {!isMe && showAvatar && (
+                    <img
+                      src={getAvatarSrc(msg.sender_avatar, msg.sender_name, msg.sender_id)}
+                      alt={msg.sender_name}
+                      className="w-8 h-8 rounded-full object-cover border border-[#E8E6E0] mr-2 shrink-0 self-end mb-1"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = getDefaultAvatar(msg.sender_name, msg.sender_id);
+                      }}
+                    />
+                  )}
+                  {!isMe && !showAvatar && <div className="w-8 mr-2 shrink-0" />}
 
-                {!isDeleted && (
+                  <div
+                    className={clsx("flex flex-col max-w-[75%] relative cursor-pointer", isMe ? "items-end" : "items-start")}
+                    onClick={(e) => { e.stopPropagation(); setTappedMessageId(tappedMessageId === msg.id ? null : msg.id); setActiveMessageId(null); }}
+                  >
+                    {!isMe && showAvatar && (
+                      <span className="text-[10px] text-[#6B6B6B] font-bold mb-1 ml-1">
+                        {msg.sender_name}
+                      </span>
+                    )}
+
+                    <div className={clsx(
+                      emojiOnly
+                        ? "relative px-1 py-1 text-4xl leading-none"
+                        : "px-4 py-2.5 text-sm shadow-sm relative font-medium whitespace-pre-wrap break-words leading-relaxed",
+                      !emojiOnly && (isMe ? "ca-chat-sent" : "ca-chat-received"),
+                      isDeleted && "opacity-70 italic"
+                    )}>
+                      {msg.is_pinned && (
+                        <div className={clsx("mb-1 flex items-center gap-1 text-[10px] font-black", isMe ? "text-white/80" : "text-amber-700")}>
+                          <Pin size={11} />
+                          Pinned
+                        </div>
+                      )}
+                      {msg.reply_to_content && (
+                        <div className={clsx("mb-2 rounded-xl border-l-4 px-3 py-2 text-xs", isMe ? "border-white/70 bg-white/15 text-white/90" : "border-amber-300 bg-amber-50 text-[#5F4B23]")}>
+                          <p className="font-black truncate">{msg.reply_to_sender_name || "Student"}</p>
+                          <p className="truncate">{msg.reply_to_content}</p>
+                        </div>
+                      )}
+                      {msg.attachment_type && msg.attachment_type !== "text" && (
+                        <div className={clsx("mb-2 flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-black", isMe ? "bg-white/15 text-white" : "bg-[#F8F3E8] text-amber-800")}>
+                          {msg.attachment_type === "poll" && <BarChart3 size={15} />}
+                          {msg.attachment_type === "photo" && <ImageIcon size={15} />}
+                          {msg.attachment_type === "video" && <Video size={15} />}
+                          {msg.attachment_type.charAt(0).toUpperCase() + msg.attachment_type.slice(1)}
+                        </div>
+                      )}
+                      {msg.media_url && msg.attachment_type === "photo" && (
+                        <img
+                          src={msg.media_url}
+                          alt={msg.content || "Chat photo"}
+                          className="mb-2 max-h-72 w-full rounded-2xl object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={(e) => { e.stopPropagation(); setFullscreenImage(msg.media_url); }}
+                        />
+                      )}
+                      {msg.media_url && msg.attachment_type === "video" && (
+                        <video
+                          src={msg.media_url}
+                          controls
+                          className="mb-2 max-h-80 w-full rounded-2xl bg-black"
+                        />
+                      )}
+                      {msg.poll && (
+                        <div className={clsx("mb-2 min-w-64 rounded-2xl p-3", isMe ? "bg-white/15" : "bg-[#F9F8F5] border border-[#E8E6E0]")}>
+                          <p className={clsx("mb-2 text-sm font-black", isMe ? "text-white" : "text-[#1A1A1A]")}>{msg.poll.question || msg.content}</p>
+                          <div className="space-y-2">
+                            {(msg.poll.options || []).map((option, optionIndex) => {
+                              const totalVotes = Math.max(1, (msg.poll.options || []).reduce((sum, item) => sum + (item.votes?.length || 0), 0));
+                              const votes = option.votes?.length || 0;
+                              const percentage = Math.round((votes / totalVotes) * 100);
+                              const selected = option.votes?.includes(currentUserId);
+                              return (
+                                <button
+                                  key={`${option.text}-${optionIndex}`}
+                                  type="button"
+                                  onClick={() => handlePollVote(msg, optionIndex)}
+                                  className={clsx(
+                                    "relative w-full overflow-hidden rounded-xl border px-3 py-2 text-left text-xs font-black cursor-pointer",
+                                    isMe ? "border-white/25 text-white" : "border-[#E8E6E0] text-[#1A1A1A]"
+                                  )}
+                                >
+                                  <span
+                                    className={clsx("absolute inset-y-0 left-0", selected ? "bg-emerald-400/30" : "bg-amber-300/20")}
+                                    style={{ width: `${percentage}%` }}
+                                  />
+                                  <span className="relative flex items-center justify-between gap-3">
+                                    <span className="truncate">{option.text}</span>
+                                    <span>{votes}</span>
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <p className={clsx("mt-2 text-[10px] font-bold", isMe ? "text-white/70" : "text-[#888888]")}>
+                            {msg.poll.allowMultiple ? "Multiple answers allowed" : "Select one answer"}
+                          </p>
+                        </div>
+                      )}
+                      {(!msg.poll || !msg.poll.question) && !msg.media_url && msg.content}
+                      {msg.edited_at && !isDeleted && (
+                        <span className={clsx("ml-2 text-[10px] font-bold", isMe ? "text-white/70" : "text-[#888888]")}>
+                          edited
+                        </span>
+                      )}
+                    </div>
+
+                    {!isDeleted && activeMessageId === msg.id && (
+                      <div className={clsx(
+                        "absolute z-20 flex items-center gap-1 rounded-2xl border border-[#E8E6E0] bg-white p-1 shadow-xl min-w-max",
+                        isMe ? "right-0 bottom-full mb-2 origin-bottom-right" : "left-0 bottom-full mb-2 origin-bottom-left"
+                      )}>
+                        <button onClick={() => handleReplyMessage(msg)} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-amber-50 hover:text-amber-700 cursor-pointer" title="Reply">
+                          <Reply size={15} />
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); handleTogglePin(msg); }} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-amber-50 hover:text-amber-700 cursor-pointer" title={msg.is_pinned ? "Unpin" : "Pin"}>
+                          {msg.is_pinned ? <PinOff size={15} /> : <Pin size={15} />}
+                        </button>
+                        {isMe && (
+                          <>
+                            <button onClick={(e) => { e.stopPropagation(); handleEditMessage(msg); }} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-amber-50 hover:text-amber-700 cursor-pointer" title="Edit">
+                              <Pencil size={15} />
+                            </button>
+                            <button onClick={(e) => { e.stopPropagation(); handleDeleteMessage(msg); }} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-red-50 hover:text-red-600 cursor-pointer" title="Delete">
+                              <Trash2 size={15} />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    {!isDeleted && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveMessageId(activeMessageId === msg.id ? null : msg.id);
+                        }}
+                        className={clsx(
+                          "absolute top-1/2 -translate-y-1/2 rounded-full bg-white border border-[#E8E6E0] p-1.5 text-[#6B6B6B] shadow-sm transition-opacity md:group-hover:opacity-100 cursor-pointer",
+                          tappedMessageId === msg.id || activeMessageId === msg.id ? "opacity-100" : "opacity-0",
+                          isMe ? "-left-9" : "-right-9"
+                        )}
+                        title="Message options"
+                      >
+                        <MoreVertical size={14} />
+                      </button>
+                    )}
+
+                    <span className="text-[9px] text-[#888888] font-bold mt-1 px-1">
+                      {formatTime(msg.created_at)}
+                    </span>
+                  </div>
+                </div>
+              </Fragment>
+            );
+          })}
+          {Object.keys(typingUsers).length > 0 && (() => {
+            const firstId = Object.keys(typingUsers)[0];
+            const firstName = typingUsers[firstId];
+            return (
+              <div className="flex items-end gap-2">
+                <img
+                  src={getDefaultAvatar(firstName, firstId)}
+                  alt={firstName}
+                  className="w-8 h-8 rounded-full object-cover border border-[#E8E6E0]"
+                />
+                <div className="ca-chat-received px-4 py-3 shadow-sm">
+                  <div className="mb-1 text-[10px] font-black text-[#6B6B6B]">
+                    {Object.values(typingUsers).slice(0, 2).join(", ")} typing
+                  </div>
+                  <div className="ca-typing-wave" aria-label="typing">
+                    <span />
+                    <span />
+                    <span />
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+          <div ref={scrollRef} className="h-4" />
+        </div>
+
+        {/* Input Bar / Join Banner */}
+        <div className="bg-white border-t border-[#E8E6E0] p-4 shrink-0">
+          {isMember ? (
+            <div className="max-w-4xl mx-auto space-y-2">
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(event) => handleMediaSelected(event, "photo")}
+              />
+              <input
+                ref={videoInputRef}
+                type="file"
+                accept="video/*"
+                className="hidden"
+                onChange={(event) => handleMediaSelected(event, "video")}
+              />
+              {(replyTo || editingMessage) && (
+                <div className="flex items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2">
+                  <div className="min-w-0">
+                    <p className="text-xs font-black text-amber-800">{editingMessage ? "Editing message" : `Replying to ${replyTo?.sender_name || "Student"}`}</p>
+                    <p className="truncate text-xs font-semibold text-[#6B5A38]">{editingMessage?.content || replyTo?.content}</p>
+                  </div>
                   <button
                     type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setActiveMessageId(activeMessageId === msg.id ? null : msg.id);
+                    onClick={() => {
+                      setReplyTo(null);
+                      setEditingMessage(null);
+                      setInputText("");
                     }}
-                    className={clsx(
-                      "absolute top-1/2 -translate-y-1/2 rounded-full bg-white border border-[#E8E6E0] p-1.5 text-[#6B6B6B] shadow-sm transition-opacity md:group-hover:opacity-100 cursor-pointer",
-                      tappedMessageId === msg.id || activeMessageId === msg.id ? "opacity-100" : "opacity-0",
-                      isMe ? "-left-9" : "-right-9"
-                    )}
-                    title="Message options"
+                    className="rounded-full p-1 text-amber-700 hover:bg-amber-100 cursor-pointer"
+                    title="Cancel"
                   >
-                    <MoreVertical size={14} />
+                    <X size={16} />
                   </button>
-                )}
-                
-                <span className="text-[9px] text-[#888888] font-bold mt-1 px-1">
-                  {formatTime(msg.created_at)}
-                </span>
-              </div>
-            </div>
-          </Fragment>
-        );
-      })}
-        {Object.keys(typingUsers).length > 0 && (() => {
-          const firstId = Object.keys(typingUsers)[0];
-          const firstName = typingUsers[firstId];
-          return (
-            <div className="flex items-end gap-2">
-              <img
-                src={getDefaultAvatar(firstName, firstId)}
-                alt={firstName}
-                className="w-8 h-8 rounded-full object-cover border border-[#E8E6E0]"
-              />
-              <div className="ca-chat-received px-4 py-3 shadow-sm">
-                <div className="mb-1 text-[10px] font-black text-[#6B6B6B]">
-                  {Object.values(typingUsers).slice(0, 2).join(", ")} typing
                 </div>
-                <div className="ca-typing-wave" aria-label="typing">
-                  <span />
-                  <span />
-                  <span />
-                </div>
-              </div>
-            </div>
-          );
-        })()}
-        <div ref={scrollRef} className="h-4" />
-      </div>
+              )}
+              <form onSubmit={handleSendMessage} className="flex gap-2">
+                <div className="relative flex flex-1 items-center rounded-2xl border border-[#E8E6E0] bg-[#F9F8F5] px-2 focus-within:border-[#C8922A]">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowEmojiPicker((prev) => !prev);
+                      setShowAttachMenu(false);
+                    }}
+                    className="p-2 text-[#777777] hover:text-amber-700 cursor-pointer"
+                    title="Emoji"
+                  >
+                    <Smile size={20} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAttachMenu((prev) => !prev);
+                      setShowEmojiPicker(false);
+                    }}
+                    className="p-2 text-[#777777] hover:text-amber-700 cursor-pointer"
+                    title="Add"
+                  >
+                    <Plus size={21} />
+                  </button>
+                  <input
+                    value={inputText}
+                    onChange={(e) => handleInputChange(e.target.value)}
+                    placeholder="Send message..."
+                    disabled={sending}
+                    className="flex-1 border-0 bg-transparent px-2 py-3 text-sm focus:outline-none"
+                  />
 
-      {/* Input Bar / Join Banner */}
-      <div className="bg-white border-t border-[#E8E6E0] p-4 shrink-0">
-        {isMember ? (
-          <div className="max-w-4xl mx-auto space-y-2">
-            <input
-              ref={photoInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(event) => handleMediaSelected(event, "photo")}
-            />
-            <input
-              ref={videoInputRef}
-              type="file"
-              accept="video/*"
-              className="hidden"
-              onChange={(event) => handleMediaSelected(event, "video")}
-            />
-            {(replyTo || editingMessage) && (
-              <div className="flex items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2">
-                <div className="min-w-0">
-                  <p className="text-xs font-black text-amber-800">{editingMessage ? "Editing message" : `Replying to ${replyTo?.sender_name || "Student"}`}</p>
-                  <p className="truncate text-xs font-semibold text-[#6B5A38]">{editingMessage?.content || replyTo?.content}</p>
+                  <AnimatePresence>
+                    {showEmojiPicker && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                        className="absolute bottom-full left-0 mb-2 grid grid-cols-8 gap-1 rounded-2xl border border-[#E8E6E0] bg-white p-2 shadow-xl"
+                      >
+                        {["😀", "😂", "😍", "🔥", "👏", "❤️", "👍", "🎉", "😎", "🤝", "🥳", "🙌", "💯", "✨", "😅", "😭"].map((emoji) => (
+                          <button
+                            key={emoji}
+                            type="button"
+                            onClick={() => handleInputChange(`${inputText}${emoji}`)}
+                            className="h-8 w-8 rounded-xl text-lg hover:bg-amber-50 cursor-pointer"
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                    {showAttachMenu && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                        className="absolute bottom-full left-10 mb-2 grid w-52 gap-2 rounded-2xl border border-[#E8E6E0] bg-white p-3 shadow-xl"
+                      >
+                        {[
+                          { type: "poll", label: "Poll", icon: BarChart3, color: "text-amber-700 bg-amber-50" },
+                          { type: "photo", label: "Photo", icon: ImageIcon, color: "text-sky-700 bg-sky-50" },
+                          { type: "video", label: "Video", icon: Video, color: "text-rose-700 bg-rose-50" },
+                        ].map(({ type, label, icon: Icon, color }) => (
+                          <button
+                            key={type}
+                            type="button"
+                            onClick={() => handleAttachmentChoice(type)}
+                            className="flex items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-black text-[#1A1A1A] hover:bg-[#FAF7F1] cursor-pointer"
+                          >
+                            <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${color}`}>
+                              <Icon size={18} />
+                            </span>
+                            {label}
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
                 <button
-                  type="button"
-                  onClick={() => {
-                    setReplyTo(null);
-                    setEditingMessage(null);
-                    setInputText("");
-                  }}
-                  className="rounded-full p-1 text-amber-700 hover:bg-amber-100 cursor-pointer"
-                  title="Cancel"
+                  type="submit"
+                  disabled={!inputText.trim() || sending}
+                  className="p-3 bg-gradient-to-r from-amber-300 to-orange-300 text-[#1A1A1A] rounded-2xl hover:from-amber-400 hover:to-orange-400 transition-colors shadow-md shadow-amber-300/20 disabled:opacity-50 cursor-pointer flex items-center justify-center shrink-0"
                 >
-                  <X size={16} />
+                  {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                 </button>
-              </div>
-            )}
-            <form onSubmit={handleSendMessage} className="flex gap-2">
-              <div className="relative flex flex-1 items-center rounded-2xl border border-[#E8E6E0] bg-[#F9F8F5] px-2 focus-within:border-[#C8922A]">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowEmojiPicker((prev) => !prev);
-                    setShowAttachMenu(false);
-                  }}
-                  className="p-2 text-[#777777] hover:text-amber-700 cursor-pointer"
-                  title="Emoji"
-                >
-                  <Smile size={20} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAttachMenu((prev) => !prev);
-                    setShowEmojiPicker(false);
-                  }}
-                  className="p-2 text-[#777777] hover:text-amber-700 cursor-pointer"
-                  title="Add"
-                >
-                  <Plus size={21} />
-                </button>
-                <input
-                  value={inputText}
-                  onChange={(e) => handleInputChange(e.target.value)}
-                  placeholder="Send message..."
-                  disabled={sending}
-                  className="flex-1 border-0 bg-transparent px-2 py-3 text-sm focus:outline-none"
-                />
-
-                <AnimatePresence>
-                  {showEmojiPicker && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                      className="absolute bottom-full left-0 mb-2 grid grid-cols-8 gap-1 rounded-2xl border border-[#E8E6E0] bg-white p-2 shadow-xl"
-                    >
-                      {["😀","😂","😍","🔥","👏","❤️","👍","🎉","😎","🤝","🥳","🙌","💯","✨","😅","😭"].map((emoji) => (
-                        <button
-                          key={emoji}
-                          type="button"
-                          onClick={() => handleInputChange(`${inputText}${emoji}`)}
-                          className="h-8 w-8 rounded-xl text-lg hover:bg-amber-50 cursor-pointer"
-                        >
-                          {emoji}
-                        </button>
-                      ))}
-                    </motion.div>
-                  )}
-                  {showAttachMenu && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                      className="absolute bottom-full left-10 mb-2 grid w-52 gap-2 rounded-2xl border border-[#E8E6E0] bg-white p-3 shadow-xl"
-                    >
-                      {[
-                        { type: "poll", label: "Poll", icon: BarChart3, color: "text-amber-700 bg-amber-50" },
-                        { type: "photo", label: "Photo", icon: ImageIcon, color: "text-sky-700 bg-sky-50" },
-                        { type: "video", label: "Video", icon: Video, color: "text-rose-700 bg-rose-50" },
-                      ].map(({ type, label, icon: Icon, color }) => (
-                        <button
-                          key={type}
-                          type="button"
-                          onClick={() => handleAttachmentChoice(type)}
-                          className="flex items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-black text-[#1A1A1A] hover:bg-[#FAF7F1] cursor-pointer"
-                        >
-                          <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${color}`}>
-                            <Icon size={18} />
-                          </span>
-                          {label}
-                        </button>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+              </form>
+            </div>
+          ) : (
+            <div className="max-w-md mx-auto text-center py-2">
+              <p className="text-sm text-[#6B6B6B] mb-3 font-semibold">You are not a member of this community.</p>
               <button
-                type="submit"
-                disabled={!inputText.trim() || sending}
-                className="p-3 bg-gradient-to-r from-amber-300 to-orange-300 text-[#1A1A1A] rounded-2xl hover:from-amber-400 hover:to-orange-400 transition-colors shadow-md shadow-amber-300/20 disabled:opacity-50 cursor-pointer flex items-center justify-center shrink-0"
+                onClick={handleJoin}
+                disabled={joining}
+                className="w-full bg-gradient-to-r from-amber-300 to-orange-300 hover:from-amber-400 hover:to-orange-400 text-[#1A1A1A] py-3 rounded-2xl text-xs font-bold uppercase tracking-wider shadow-md shadow-amber-300/20 flex items-center justify-center gap-2 cursor-pointer"
               >
-                {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                {joining ? <Loader2 size={14} className="animate-spin" /> : <Globe size={14} />}
+                Join Community to Participate
               </button>
-            </form>
-          </div>
-        ) : (
-          <div className="max-w-md mx-auto text-center py-2">
-            <p className="text-sm text-[#6B6B6B] mb-3 font-semibold">You are not a member of this community.</p>
-            <button
-              onClick={handleJoin}
-              disabled={joining}
-              className="w-full bg-gradient-to-r from-amber-300 to-orange-300 hover:from-amber-400 hover:to-orange-400 text-[#1A1A1A] py-3 rounded-2xl text-xs font-bold uppercase tracking-wider shadow-md shadow-amber-300/20 flex items-center justify-center gap-2 cursor-pointer"
-            >
-              {joining ? <Loader2 size={14} className="animate-spin" /> : <Globe size={14} />}
-              Join Community to Participate
-            </button>
-          </div>
-        )}
-      </div>
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Poll Composer */}
@@ -1715,14 +1715,14 @@ export default function CommunityChatPage() {
             className="fixed inset-0 z-[300] flex items-center justify-center bg-black/90 backdrop-blur-sm"
             onClick={() => setFullscreenImage(null)}
           >
-            <button 
+            <button
               className="absolute top-6 right-6 p-2 bg-white/20 hover:bg-white/40 rounded-full text-white cursor-pointer transition-colors"
               onClick={() => setFullscreenImage(null)}
             >
               <X size={24} color="white" strokeWidth={2.5} />
             </button>
-            <img 
-              src={fullscreenImage} 
+            <img
+              src={fullscreenImage}
               alt="Fullscreen"
               className="max-h-[90dvh] max-w-[95vw] object-contain select-none"
               onClick={(e) => e.stopPropagation()}

@@ -111,8 +111,7 @@ export default function CollabPage() {
         }}
       >
         <div
-          className="mx-auto flex w-full max-w-[1440px] items-center justify-between"
-          style={{ padding: "22px 48px" }}
+          className="mx-auto flex flex-col md:flex-row w-full max-w-[1440px] items-center justify-between gap-4 px-4 py-4 md:px-12 md:py-6"
         >
           {/* Logo */}
           <div className="flex shrink-0 items-center gap-3">
@@ -131,14 +130,14 @@ export default function CollabPage() {
           </div>
 
           {/* Center heading */}
-          <div className="flex flex-col items-center gap-1 text-center">
+          <div className="flex flex-col items-center gap-1 text-center w-full md:w-auto">
             <h1
-              className="text-5xl font-extrabold tracking-tight leading-none"
+              className="text-2xl md:text-5xl font-extrabold tracking-tight leading-none"
               style={{ color: "#1B1B1B" }}
             >
               Find your next opportunity
             </h1>
-            <p className="mt-2 text-base font-normal leading-relaxed" style={{ color: "#6F6F6F" }}>
+            <p className="mt-1 md:mt-2 text-sm md:text-base font-normal leading-relaxed px-2" style={{ color: "#6F6F6F" }}>
               Hackathons, side projects, societies, and startup teams.
             </p>
           </div>
@@ -161,8 +160,7 @@ export default function CollabPage() {
 
       {/* ── Main Body ───────────────────────────────── */}
       <main
-        className="mx-auto w-full max-w-[1440px] flex-1 flex flex-col"
-        style={{ padding: "48px 48px 80px" }}
+        className="mx-auto w-full max-w-[1440px] flex-1 flex flex-col px-4 md:px-12 pt-6 md:pt-12 pb-24"
       >
         {/* Section 1 — Opportunity Finder */}
         <section>
@@ -172,7 +170,7 @@ export default function CollabPage() {
         {/* Section 2 — Team Cards */}
         <section style={{ marginTop: 56 }}>
           {/* Section header */}
-          <div className="flex items-center justify-between" style={{ marginBottom: 24 }}>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-1 md:gap-0 mb-6">
             <div>
               <p
                 className="text-xs font-bold uppercase tracking-[0.1em]"

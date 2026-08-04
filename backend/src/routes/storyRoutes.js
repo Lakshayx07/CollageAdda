@@ -131,7 +131,7 @@ router.delete('/:id', protect, async (req, res) => {
       return res.status(401).json({ message: 'Not authorized' });
     }
 
-    await story.remove();
+    await story.deleteOne();
     res.json({ message: 'Story removed' });
   } catch (error) {
     res.status(500).json({ message: error.message });

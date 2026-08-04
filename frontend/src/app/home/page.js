@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Heart, MessageCircle, Share2, MoreVertical, Send, X, Check, Plus, Flame, TrendingUp, Search, Zap, BarChart2, Compass, ShieldCheck, Flag, Globe, GraduationCap, ChevronLeft, ChevronRight, Users, Trophy, Sun, Sunset, Moon, Pause, Play } from "lucide-react";
+import { Heart, MessageCircle, Share2, MoreVertical, Send, X, Check, Plus, Flame, TrendingUp, Search, Zap, BarChart2, Compass, ShieldCheck, Flag, Globe, GraduationCap, ChevronLeft, ChevronRight, Users, Trophy, Sun, Sunset, Moon, Pause, Play, Trash2 } from "lucide-react";
 import Image from "next/image";
 import NotificationBell from "../../components/NotificationBell";
 import NameWithTick from '../../components/NameWithTick';
@@ -1215,6 +1215,29 @@ export default function Home() {
     }
   };
 
+  const handleDeleteStory = async (storyId) => {
+    try {
+      const token = localStorage.getItem('collegeadda_token');
+      if (!token) return;
+      const res = await fetch(`${apiUrl}/api/stories/${storyId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        queryClient.invalidateQueries(["stories"]);
+        setActiveStory(null);
+        setToastMsg("Story deleted");
+        setTimeout(() => setToastMsg(""), 2000);
+      } else {
+        throw new Error("Failed to delete story");
+      }
+    } catch (err) {
+      console.error(err);
+      setToastMsg("Error deleting story");
+      setTimeout(() => setToastMsg(""), 2000);
+    }
+  };
+
   const myStoriesGroup = stories.find(s => (s.author?._id || s.author?.id) === (currentUser?._id || currentUser?.id));
   const hasMyStory = myStoriesGroup && myStoriesGroup.stories && myStoriesGroup.stories.length > 0;
 
@@ -1248,8 +1271,8 @@ export default function Home() {
           animation: shimmer-bg 6s ease infinite;
         }
       `}</style>
-      <header className="sticky top-0 z-40 w-full border-b border-[#E8E6E0] header-shimmer px-4 py-4 backdrop-blur-xl sm:px-6">
-        <div className="mx-auto flex max-w-[1440px] w-full px-2 items-center justify-between">
+      <header className="sticky top-0 z-40 w-full border-b border-[#E8E6E0] header-shimmer pl-2 pr-4 py-4 backdrop-blur-xl sm:px-6">
+        <div className="mx-auto flex max-w-[1440px] w-full pl-0 pr-2 sm:px-2 items-center justify-between">
           <div className="relative overflow-hidden py-1">
             {(() => {
               if (!currentUser) {
@@ -2325,6 +2348,11 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="flex items-center space-x-1">
+                  {currentUser && (activeStory.author._id === currentUser._id || activeStory.author.id === currentUser._id || activeStory.author.id === currentUser.id) && (
+                    <button onClick={(e) => { e.stopPropagation(); handleDeleteStory(currentStory._id || currentStory.id); }} className="!text-red-500 p-2 !bg-white/10 hover:!bg-red-500/20 rounded-full transition-all">
+                      <Trash2 size={18} />
+                    </button>
+                  )}
                   <button onClick={(e) => { e.stopPropagation(); setIsStoryPaused(p => !p); }} className="!text-white p-2 !bg-white/10 hover:!bg-white/20 rounded-full transition-all">
                     {isStoryPaused ? <Play size={18} /> : <Pause size={18} />}
                   </button>
@@ -2369,39 +2397,41 @@ export default function Home() {
               )}
 
               {/* Story Actions */}
-              <div className="absolute bottom-8 left-4 right-4 flex items-center space-x-3 z-30">
-                <form
-                  onSubmit={(e) => handleStoryReply(e, currentStory._id, activeStory.author._id || activeStory.author.id)}
-                  className="flex-1 flex space-x-2"
-                  onClick={e => e.stopPropagation()}
-                >
-                  <div className="flex-1 rounded-full flex items-center px-4 py-3 border !border-white/30 !bg-black/40 backdrop-blur-md">
-                    <input
-                      type="text"
-                      value={storyReplyText}
-                      onChange={(e) => setStoryReplyText(e.target.value)}
-                      placeholder={`Reply to ${activeStory.author.name.split(' ')[0]}...`}
-                      className="!bg-transparent !text-white text-sm focus:outline-none w-full placeholder:!text-white/60"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="p-3 gradient-bg rounded-full !text-white shadow-lg shrink-0"
-                    disabled={!storyReplyText.trim()}
+              {!(currentUser && (activeStory.author._id === currentUser._id || activeStory.author.id === currentUser._id || activeStory.author.id === currentUser.id)) && (
+                <div className="absolute bottom-8 left-4 right-4 flex items-center space-x-3 z-30">
+                  <form
+                    onSubmit={(e) => handleStoryReply(e, currentStory._id, activeStory.author._id || activeStory.author.id)}
+                    className="flex-1 flex space-x-2"
+                    onClick={e => e.stopPropagation()}
                   >
-                    <Send size={18} />
+                    <div className="flex-1 rounded-full flex items-center px-4 py-3 border !border-white/30 !bg-black/40 backdrop-blur-md">
+                      <input
+                        type="text"
+                        value={storyReplyText}
+                        onChange={(e) => setStoryReplyText(e.target.value)}
+                        placeholder={`Reply to ${activeStory.author.name.split(' ')[0]}...`}
+                        className="!bg-transparent !text-white text-sm focus:outline-none w-full placeholder:!text-white/60"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="p-3 gradient-bg rounded-full !text-white shadow-lg shrink-0"
+                      disabled={!storyReplyText.trim()}
+                    >
+                      <Send size={18} />
+                    </button>
+                  </form>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleStoryLike(currentStory._id); }}
+                    className="p-3 rounded-full !text-white !bg-black/40 border !border-white/30 backdrop-blur-md shrink-0"
+                  >
+                    <Heart
+                      size={22}
+                      className={(currentStory.likes || []).some(id => id.toString() === (currentUser?._id || currentUser?.id)?.toString()) ? "fill-red-500 text-red-500" : ""}
+                    />
                   </button>
-                </form>
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleStoryLike(currentStory._id); }}
-                  className="p-3 rounded-full !text-white !bg-black/40 border !border-white/30 backdrop-blur-md shrink-0"
-                >
-                  <Heart
-                    size={22}
-                    className={(currentStory.likes || []).some(id => id.toString() === (currentUser?._id || currentUser?.id)?.toString()) ? "fill-red-500 text-red-500" : ""}
-                  />
-                </button>
-              </div>
+                </div>
+              )}
             </div>
           </div>
         );
