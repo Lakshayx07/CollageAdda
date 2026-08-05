@@ -33,6 +33,9 @@ export const metadata = {
   alternates: {
     canonical: "https://www.campusadda.social",
   },
+  verification: {
+    google: "google4736c4d1c2c1ea28",
+  },
   openGraph: {
     type: "website",
     locale: "en_IN",
