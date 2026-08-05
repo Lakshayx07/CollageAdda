@@ -499,11 +499,8 @@ export default function CommunityPage() {
                               </span>
                             )}
                           </div>
-                          <p className="text-sm text-[#333333] line-clamp-1 font-bold">
-                            {comm.description || "Student community"}
-                          </p>
-                          <p className="text-xs text-[#6B6B6B] line-clamp-2 leading-relaxed mt-2 min-h-[34px] font-medium">
-                            {comm.description ? "Join conversations, share ideas and grow with students who care about the same things." : "A space for students to connect, collaborate and keep the conversation moving."}
+                          <p className="text-xs sm:text-sm text-[#4A4A4A] leading-relaxed mt-2 min-h-[44px] font-medium line-clamp-3">
+                            {comm.description || "A space for students to connect, collaborate and share ideas with peers."}
                           </p>
 
                           <div className="flex flex-wrap gap-1.5 mt-3">

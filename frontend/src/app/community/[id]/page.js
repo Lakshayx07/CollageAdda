@@ -1253,9 +1253,8 @@ export default function CommunityChatPage() {
                     {comm.name?.charAt(0).toUpperCase()}
                   </div>
                   <h3 className="font-black text-[#1A1A1A] text-base leading-tight truncate">{comm.name}</h3>
-                  <p className="text-xs font-bold text-[#333333] line-clamp-1 mt-1">{comm.description || "Student community"}</p>
-                  <p className="text-xs text-[#6B6B6B] line-clamp-2 leading-relaxed mt-2 font-medium">
-                    Join conversations, share ideas and grow together.
+                  <p className="text-xs text-[#4A4A4A] leading-relaxed mt-2 font-medium">
+                    {comm.description || "A space for students to connect, collaborate and share ideas with peers."}
                   </p>
                   <div className="flex flex-wrap gap-2 mt-3">
                     {(comm.tags || []).slice(0, 2).map(tag => (
