@@ -34,7 +34,7 @@ export const metadata = {
     canonical: "https://www.campusadda.social",
   },
   verification: {
-    google: "google4736c4d1c2c1ea28",
+    google: "A4XYapdxAtUPtUxCDxxMKNmj5vB9j2lSOoXKJGdR9yU",
   },
   openGraph: {
     type: "website",
@@ -118,7 +118,7 @@ export default function RootLayout({ children }) {
         <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png" />
         <link rel="apple-touch-icon" href="/favicon-192x192.png" />
         <link rel="canonical" href="https://www.campusadda.social" />
-        <meta name="google-site-verification" content="google4736c4d1c2c1ea28" />
+        <meta name="google-site-verification" content="A4XYapdxAtUPtUxCDxxMKNmj5vB9j2lSOoXKJGdR9yU" />
         <link rel="preconnect" href="https://accounts.google.com" />
         <link rel="preconnect" href="https://www.gstatic.com" crossOrigin="" />
         <link rel="dns-prefetch" href="https://accounts.google.com" />
