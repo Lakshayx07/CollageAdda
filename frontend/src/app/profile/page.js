@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { LogOut, Edit3, X, Check, Plus, Grid, Heart, MessageCircle, Send, ChevronLeft, ChevronRight, Share2, Ghost, MapPin, Zap, Star, Camera, Clock, Image as ImageIcon, Music, Code, Palette, Plane, Gamepad2, Book, Dumbbell, Film, Utensils, Trophy, Briefcase, Users, Crown, CalendarDays, GraduationCap, Flame, Building2, TrendingUp, Award, User, MoreVertical, Globe, Sparkles, Users2, Lock } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { getAuthenticatedSupabaseClient } from "@/utils/supabaseAuthUser";
+import { renderTextWithLinks } from "@/utils/linkify";
 
 const InstagramIcon = ({ size = 20 }) => (
   <svg
@@ -1279,8 +1280,8 @@ export default function ProfilePage() {
                       {/* Content (Clickable to open modal) */}
                       <div onClick={() => { setActivePostIndex(idx); setModal("post"); }} className="cursor-pointer flex-1 flex flex-col">
                         {post.content && (
-                          <p className="text-sm text-[#4A4A4A] mb-4 whitespace-pre-wrap leading-relaxed font-medium line-clamp-3">
-                            {post.content}
+                          <p className="text-[#0F172A] font-medium text-[15px] sm:text-base mb-5 leading-relaxed whitespace-pre-wrap">
+                            {renderTextWithLinks(post.content)}
                           </p>
                         )}
 

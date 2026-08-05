@@ -18,6 +18,7 @@ import {
 } from "@/utils/supabaseUploads";
 import { useApiQuery } from "@/utils/useApiQuery";
 import { useQueryClient } from "@tanstack/react-query";
+import { renderTextWithLinks } from "@/utils/linkify";
 import { useSocket } from "@/context/SocketProvider";
 import { getAvatarSrc, getDefaultAvatar } from "@/utils/defaultAvatars";
 const PLACEHOLDER_PROMPTS = [
@@ -1733,7 +1734,7 @@ export default function Home() {
 
                   {post.content && (
                     <p className="text-[#0F172A] font-medium text-[15px] sm:text-base mb-5 leading-relaxed whitespace-pre-wrap">
-                      {post.content}
+                      {renderTextWithLinks(post.content)}
                     </p>
                   )}
 
@@ -1883,7 +1884,7 @@ export default function Home() {
                                 >
                                   <NameWithTick name={comment.author} tick={comment.authorTick} />
                                 </p>
-                                <p className="text-xs text-[#6B6B6B] mt-0.5">{comment.text}</p>
+                                <p className="text-xs text-[#6B6B6B] mt-0.5">{renderTextWithLinks(comment.text)}</p>
                               </div>
                               <button
                                 type="button"

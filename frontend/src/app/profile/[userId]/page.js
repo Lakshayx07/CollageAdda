@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import VerifiedBadge from "@/components/VerifiedBadge";
+import { renderTextWithLinks } from "@/utils/linkify";
 import UniversityBadges from "@/components/UniversityBadges";
 import NameWithTick from "@/components/NameWithTick";
 import { extractInstagramUsername, extractGenericUsername } from "@/utils/socials";
@@ -1318,7 +1319,7 @@ export default function UserProfilePage({ params }) {
                       <div onClick={() => { setSelectedPostId(post.id); setActivePostIndex(idx); setModal("post"); setCommentInput(""); }} className="cursor-pointer flex-1 flex flex-col">
                         {post.content && (
                           <p className="text-sm text-[#4A4A4A] mb-4 whitespace-pre-wrap leading-relaxed font-medium line-clamp-3">
-                            {post.content}
+                            {renderTextWithLinks(post.content)}
                           </p>
                         )}
                         {post.img && (

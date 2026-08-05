@@ -11,6 +11,7 @@ import { useApiQuery } from "@/utils/useApiQuery";
 import { useQueryClient } from "@tanstack/react-query";
 import { getAvatarSrc } from "@/utils/defaultAvatars";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import { renderTextWithLinks } from "@/utils/linkify";
 
 function MessagesContent() {
   const [isMounted, setIsMounted] = useState(false);
@@ -1722,7 +1723,7 @@ function MessagesContent() {
                                     })}
                                   </div>
                                 )}
-                                {!msg.poll?.question && <div className="relative z-10 font-medium">{msg.text}</div>}
+                                {!msg.poll?.question && <div className="relative z-10 font-medium">{renderTextWithLinks(msg.text)}</div>}
                                 {msg.editedAt && !msg.deletedAt && <div className="mt-1 text-[10px] font-bold opacity-70">edited</div>}
                               </div>
                             );

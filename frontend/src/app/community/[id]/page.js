@@ -15,6 +15,7 @@ import { getAvatarSrc, getDefaultAvatar } from "@/utils/defaultAvatars";
 import { supabase } from "../../../utils/supabase";
 import { getAuthenticatedSupabaseClient } from "../../../utils/supabaseAuthUser";
 import { uploadPublicMedia } from "../../../utils/supabaseUploads";
+import { renderTextWithLinks } from "@/utils/linkify";
 
 function JoinSparkles({ active }) {
   const pieces = Array.from({ length: 34 }, (_, index) => ({
@@ -1545,7 +1546,7 @@ export default function CommunityChatPage() {
                           </p>
                         </div>
                       )}
-                      {(!msg.poll || !msg.poll.question) && !msg.media_url && msg.content}
+                      {(!msg.poll || !msg.poll.question) && !msg.media_url && renderTextWithLinks(msg.content)}
                       {msg.edited_at && !isDeleted && (
                         <span className={clsx("ml-2 text-[10px] font-bold", isMe ? "text-white/70" : "text-[#888888]")}>
                           edited
