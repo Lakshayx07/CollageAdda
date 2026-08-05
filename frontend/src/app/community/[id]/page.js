@@ -51,6 +51,7 @@ function JoinSparkles({ active }) {
 }
 
 export default function CommunityChatPage() {
+  const queryClient = useQueryClient();
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1033,6 +1034,22 @@ export default function CommunityChatPage() {
         .eq("id", activeCommunityId);
 
       if (error) throw error;
+
+      // Instantly remove deleted community from TanStack Query cache so it disappears immediately
+      queryClient.setQueryData(['community-list'], (prev) =>
+        Array.isArray(prev) ? prev.filter((c) => c.id !== activeCommunityId) : []
+      );
+      queryClient.setQueryData(['community-memberships'], (prev) => {
+        if (!prev || typeof prev !== 'object') return { members: new Set(), pending: new Set() };
+        const nextMembers = new Set(prev.members || []);
+        const nextPending = new Set(prev.pending || []);
+        nextMembers.delete(activeCommunityId);
+        nextPending.delete(activeCommunityId);
+        return { members: nextMembers, pending: nextPending };
+      });
+      queryClient.invalidateQueries({ queryKey: ['community-list'] });
+      queryClient.invalidateQueries({ queryKey: ['community-memberships'] });
+
       showToastMsg("success", "Community deleted successfully.");
       router.push("/community");
     } catch (err) {

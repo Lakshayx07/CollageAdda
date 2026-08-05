@@ -260,7 +260,7 @@ export default function CommunityPage() {
 
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
-    if (!communityName.trim() || !supabase) return;
+    if (!communityName.trim() || !supabase || creatingCommunity) return;
 
     setCreatingCommunity(true);
     try {
@@ -295,15 +295,22 @@ export default function CommunityPage() {
           user_id: authUser.id,
           role: 'owner'
         }]);
-        queryClient.setQueryData(['community-list'], (prev) => [inserted, ...(prev || [])]);
-        queryClient.setQueryData(['community-memberships'], (prev) => new Set([...(prev || []), inserted.id]));
-      }
+        queryClient.setQueryData(['community-list'], (prev) => [inserted, ...(Array.isArray(prev) ? prev : [])]);
+        queryClient.setQueryData(['community-memberships'], (prev) => {
+          const p = prev && typeof prev === 'object' && prev.members ? prev : { members: new Set(), pending: new Set() };
+          return {
+            members: new Set([...(p.members || []), inserted.id]),
+            pending: p.pending || new Set()
+          };
+        });
 
-      setCommunityName("");
-      setCommunityDescription("");
-      setCommunityTags([]);
-      setShowCreateModal(false);
-      showToast('success', 'Community created! 🎉');
+        setCommunityName("");
+        setCommunityDescription("");
+        setCommunityTags([]);
+        setShowCreateModal(false);
+        showToast('success', 'Community created! 🎉');
+        router.push(`/community/${inserted.id}`);
+      }
     } catch (error) {
       console.error("Community creation failed:", error);
       showToast('error', error.message || 'Failed to create community.');
