@@ -115,6 +115,8 @@ export default function RootLayout({ children }) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
+        <meta name="google-site-verification" content="A4XYapdxAtUPtUxCDxxMKNmj5vB9j2lSOoXKJGdR9yU" />
+        <meta name="google-site-verification" content="google4736c4d1c2c1ea28" />
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
         <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
