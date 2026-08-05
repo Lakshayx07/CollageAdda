@@ -63,15 +63,15 @@ export const metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png" },
       { url: "/favicon-48x48.png", sizes: "48x48", type: "image/png" },
       { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
       { url: "/favicon-192x192.png", sizes: "192x192", type: "image/png" },
       { url: "/logo.png", type: "image/png" },
     ],
-    shortcut: "/favicon.ico",
+    shortcut: "/icon.png",
     apple: [
-      { url: "/favicon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon.png", type: "image/png" },
       { url: "/logo.png" },
     ],
   },
@@ -117,7 +117,8 @@ export default function RootLayout({ children }) {
       <head>
         <meta name="google-site-verification" content="A4XYapdxAtUPtUxCDxxMKNmj5vB9j2lSOoXKJGdR9yU" />
         <meta name="google-site-verification" content="google4736c4d1c2c1ea28" />
-        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" type="image/png" href="/icon.png" />
+        <link rel="shortcut icon" href="/icon.png" />
         <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
         <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
         <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png" />
