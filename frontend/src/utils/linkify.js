@@ -24,7 +24,8 @@ export function renderTextWithLinks(text) {
           target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
-          className="text-blue-500 hover:text-blue-600 underline font-semibold break-all transition-colors"
+          style={{ color: "#2563eb" }}
+          className="!text-[#2563eb] hover:!text-[#1d4ed8] underline font-semibold break-all transition-colors"
         >
           {cleanUrl}
         </a>
