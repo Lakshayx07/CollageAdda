@@ -27,6 +27,10 @@ const nextConfig = {
     const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
     return [
       {
+        source: '/favicon.ico',
+        destination: '/icon.png',
+      },
+      {
         source: '/google4736c4d1c2c1ea28.html',
         destination: '/google-verify',
       },
