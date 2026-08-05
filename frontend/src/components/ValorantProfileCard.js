@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import {
   Trophy, TrendingUp, Gamepad2, Star, Search, Shield, Zap,
   Users, Medal, Mic, Map, Target, Crown, Crosshair,
@@ -57,31 +56,34 @@ export default function ValorantProfileCard({ formData }) {
   };
 
   return (
-    <div className="w-full max-w-[1100px] mx-auto rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(255,70,85,0.15)] relative bg-[#090C10] border border-[#2B3240] font-sans text-[#FFFFFF] p-6">
+    <div className="w-full max-w-[1300px] mx-auto my-4 rounded-[1.6rem] overflow-hidden shadow-[0_0_70px_rgba(255,70,85,0.18)] relative bg-[#070A0F] border border-[#343A46] font-sans text-[#FFFFFF] p-4 sm:p-7">
       
       {/* BACKGROUND IMAGE / OMEN GRAPHIC */}
       <div 
-        className="absolute top-0 right-0 w-[50%] h-[60%] bg-cover bg-left opacity-60 mix-blend-lighten pointer-events-none"
+        className="absolute top-0 right-0 w-[54%] h-[58%] bg-cover bg-left opacity-65 mix-blend-lighten pointer-events-none"
         style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&q=80&w=2000)', maskImage: 'linear-gradient(to left, black, transparent)' }}
       />
+      <div className="absolute right-[10%] top-14 hidden lg:block h-72 w-72 rotate-45 border-[42px] border-[#FF4655]/28 pointer-events-none" />
+      <div className="absolute right-[18%] top-24 hidden lg:block h-44 w-44 rotate-45 bg-[#FF4655]/18 pointer-events-none" />
+      <div className="absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-[#FF4655]/18 blur-3xl pointer-events-none" />
       <div className="absolute inset-0 bg-gradient-to-r from-[#090C10] via-[#090C10]/90 to-transparent pointer-events-none" />
       <div className="absolute inset-0 bg-gradient-to-t from-[#090C10] via-transparent to-transparent pointer-events-none" />
 
       <div className="relative z-10">
         
         {/* ── HEADER ── */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
           <div className="flex items-center gap-3">
             <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M99.25 48.66V10.28c0-.59-.75-.86-1.12-.39l-41.92 52.4a.627.627 0 00.49 1.02h30.29c1.63 0 3.11-.79 4.02-2.12l8.24-12.53zM53.64 10.67l-45.2 56.49c-.37.46-.04 1.14.55 1.14h29.93c1.63 0 3.11-.79 4.02-2.12l11.23-17.07V11.06c0-.58-.75-.86-1.12-.39z" fill="#FF4655"/>
             </svg>
-            <span className="text-[#A0AEC0] text-xs font-bold tracking-[0.2em]">MY VALORANT PLAYER CARD</span>
+            <span className="text-[#FFFFFF] text-sm sm:text-base font-black tracking-[0.16em]">MY <span className="text-[#FF4655]">VALORANT</span> PLAYER CARD</span>
           </div>
-          <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 px-4 py-2 rounded-lg border border-[#2B3240] text-xs font-bold tracking-widest text-[#A0AEC0] hover:bg-[#FFFFFF]/5 transition-colors">
+          <div className="flex flex-wrap items-center gap-3">
+            <button className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-[#3C4452] bg-[#111722]/80 text-xs font-bold tracking-widest text-[#E2E8F0] hover:bg-[#FFFFFF]/5 transition-colors">
               <Share2 size={14} /> SHARE CARD
             </button>
-            <button className="flex items-center gap-2 px-6 py-2 rounded-lg bg-[#FF4655] hover:bg-[#FF4655]/90 text-[#FFFFFF] text-xs font-bold tracking-widest transition-colors shadow-[0_4px_14px_rgba(255,70,85,0.4)]">
+            <button className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-[#FF2E48] hover:bg-[#FF4655] text-[#FFFFFF] text-xs font-bold tracking-widest transition-colors shadow-[0_4px_18px_rgba(255,70,85,0.45)]">
               <UsersIcon size={14} /> INVITE TO TEAM
             </button>
           </div>
@@ -94,7 +96,7 @@ export default function ValorantProfileCard({ formData }) {
           <div className="col-span-12 md:col-span-5 flex flex-col gap-4">
             
             {/* 1. BASIC INFO */}
-            <div className="bg-[#12171D] border border-[#2B3240] rounded-2xl p-5 relative">
+            <div className="bg-[#101722]/92 border border-[#3C4452] rounded-2xl p-5 relative shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
               <div className="flex items-center gap-2 text-[#FF4655] mb-4">
                 <UsersIcon size={14} className="fill-current" />
                 <span className="text-[10px] font-bold uppercase tracking-widest text-[#FF4655]">1. BASIC INFO</span>
@@ -104,7 +106,7 @@ export default function ValorantProfileCard({ formData }) {
                 <div>
                   <span className="text-[10px] text-[#A0AEC0] uppercase font-bold tracking-wider">IGN</span>
                   <div className="flex items-center gap-2 mt-1">
-                    <h2 className="text-3xl font-black">{username}</h2>
+                    <h2 className="text-3xl sm:text-4xl font-black truncate max-w-[270px]">{username}</h2>
                     <span className="bg-[#FF4655]/10 text-[#FF4655] px-2 py-0.5 rounded text-xs font-bold tracking-wider">#XDXD</span>
                   </div>
                   <div className="mt-6">
@@ -125,7 +127,7 @@ export default function ValorantProfileCard({ formData }) {
             </div>
 
             {/* 2. CURRENT RANK */}
-            <div className="bg-[#12171D] border border-[#2B3240] rounded-2xl p-5 relative overflow-hidden flex flex-col justify-center">
+            <div className="bg-[#101722]/92 border border-[#3C4452] rounded-2xl p-5 relative overflow-hidden flex flex-col justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
               <div className="flex items-center gap-2 text-[#FF4655] mb-2 absolute top-5 left-5 z-20">
                 <Trophy size={14} className="fill-current" />
                 <span className="text-[10px] font-bold uppercase tracking-widest text-[#FF4655]">2. CURRENT RANK</span>
@@ -146,7 +148,7 @@ export default function ValorantProfileCard({ formData }) {
                 {/* Big Rank Icon Mock */}
                 <div className="relative">
                   <div className="absolute inset-0 bg-[#39FF82]/20 blur-2xl rounded-full" />
-                  <div className="w-32 h-32 relative z-10">
+                  <div className="w-32 h-32 sm:w-40 sm:h-40 relative z-10">
                     <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
                       <path d="M50 10L90 40L50 90L10 40L50 10Z" fill="#14B8A6" stroke="#5EEAD4" strokeWidth="2"/>
                       <path d="M50 20L75 42L50 80L25 42L50 20Z" fill="#0F766E"/>
@@ -166,7 +168,7 @@ export default function ValorantProfileCard({ formData }) {
             </div>
 
             {/* 4. AGENT POOL */}
-            <div className="bg-[#12171D] border border-[#2B3240] rounded-2xl p-5 relative">
+            <div className="bg-[#101722]/92 border border-[#3C4452] rounded-2xl p-5 relative shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
               <div className="flex items-center gap-2 text-[#FF4655] mb-4">
                 <UsersIcon size={14} className="fill-current" />
                 <span className="text-[10px] font-bold uppercase tracking-widest text-[#FF4655]">4. AGENT POOL <span className="text-[#A0AEC0] ml-1">(TOP 3 AGENTS)</span></span>
@@ -198,10 +200,10 @@ export default function ValorantProfileCard({ formData }) {
           </div>
 
           {/* RIGHT COLUMN (Sections 3, 5, Background) */}
-          <div className="col-span-12 md:col-span-7 flex flex-col gap-4 justify-end pt-32">
+          <div className="col-span-12 md:col-span-7 flex flex-col gap-4 justify-end md:pt-32">
             
             {/* 3. CORE STATS */}
-            <div className="bg-[#12171D] border border-[#2B3240] rounded-2xl p-5 relative backdrop-blur-md">
+            <div className="bg-[#101722]/92 border border-[#3C4452] rounded-2xl p-5 relative backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
               <div className="flex items-center gap-2 text-[#FF4655] mb-4">
                 <BarChart3 size={14} className="fill-current" />
                 <span className="text-[10px] font-bold uppercase tracking-widest text-[#FF4655]">3. CORE STATS</span>
@@ -229,13 +231,13 @@ export default function ValorantProfileCard({ formData }) {
             </div>
 
             {/* 5. PLAYSTYLE */}
-            <div className="bg-[#12171D] border border-[#2B3240] rounded-2xl p-5 relative backdrop-blur-md">
+            <div className="bg-[#101722]/92 border border-[#3C4452] rounded-2xl p-5 relative backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
               <div className="flex items-center gap-2 text-[#FF4655] mb-4">
                 <Star size={14} className="fill-current" />
                 <span className="text-[10px] font-bold uppercase tracking-widest text-[#FF4655]">5. PLAYSTYLE <span className="text-[#A0AEC0] ml-1">(SELECT ALL THAT APPLY)</span></span>
               </div>
               
-              <div className="grid grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                 {val_playstyle.slice(0,5).map(style => {
                   const Icon = playstyleIcons[style] || Gamepad2;
                   return (
@@ -253,7 +255,7 @@ export default function ValorantProfileCard({ formData }) {
           {/* FULL WIDTH BOTTOM (Section 6) */}
           <div className="col-span-12">
             {/* 6. LOOKING FOR */}
-            <div className="bg-[#12171D] border border-[#2B3240] rounded-2xl p-5 relative">
+            <div className="bg-[#101722]/92 border border-[#3C4452] rounded-2xl p-5 relative shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
               <div className="flex items-center gap-2 text-[#FF4655] mb-4">
                 <Search size={14} />
                 <span className="text-[10px] font-bold uppercase tracking-widest text-[#FF4655]">6. LOOKING FOR <span className="text-[#A0AEC0] ml-1">(SELECT ALL THAT APPLY)</span></span>

@@ -1277,13 +1277,16 @@ export default function Home() {
             {(() => {
               if (!currentUser) {
                 return (
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#C8922A]">
-                      Campus pulse
-                    </p>
-                    <h1 className="mt-1 text-2xl font-black tracking-tight text-[#1A1A1A]">
-                      Campus Adda
-                    </h1>
+                  <div className="flex items-center gap-3">
+                    <img src="/logo.png" alt="Campus Adda" className="w-10 h-10 rounded-xl object-cover shadow-sm" />
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#C8922A]">
+                        Campus pulse
+                      </p>
+                      <h1 className="mt-0.5 text-xl font-black tracking-tight text-[#1A1A1A]">
+                        Campus Adda
+                      </h1>
+                    </div>
                   </div>
                 );
               }
@@ -1699,12 +1702,12 @@ export default function Home() {
                         </button>
                         {postMenu === post.id && (
                           <div className="absolute right-0 top-full mt-2 w-40 bg-white border border-[#E8E6E0] rounded-xl shadow-lg py-1 z-50 overflow-hidden">
-                            {currentUser?._id === post.authorId || currentUser?.id === post.authorId ? (
+                            {currentUser?._id === post.authorId || currentUser?.id === post.authorId || currentUser?.email === 'collageadda1@gmail.com' ? (
                               <button
                                 onClick={() => { handleDeletePost(post.id); setPostMenu(null); }}
                                 className="w-full text-left px-4 py-2.5 text-[13px] font-bold text-red-500 hover:bg-[#FFF8EC] transition-colors cursor-pointer"
                               >
-                                Delete Post
+                                {currentUser?.email === 'collageadda1@gmail.com' ? 'Delete (Admin)' : 'Delete Post'}
                               </button>
                             ) : (
                               <>
@@ -2348,7 +2351,7 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="flex items-center space-x-1">
-                  {currentUser && (activeStory.author._id === currentUser._id || activeStory.author.id === currentUser._id || activeStory.author.id === currentUser.id) && (
+                  {currentUser && (((activeStory.author?._id || activeStory.author?.id) === (currentUser?._id || currentUser?.id)) || currentUser?.email === 'collageadda1@gmail.com') && (
                     <button onClick={(e) => { e.stopPropagation(); handleDeleteStory(currentStory._id || currentStory.id); }} className="!text-red-500 p-2 !bg-white/10 hover:!bg-red-500/20 rounded-full transition-all">
                       <Trash2 size={18} />
                     </button>
@@ -2397,7 +2400,7 @@ export default function Home() {
               )}
 
               {/* Story Actions */}
-              {!(currentUser && (activeStory.author._id === currentUser._id || activeStory.author.id === currentUser._id || activeStory.author.id === currentUser.id)) && (
+              {!(currentUser && ((activeStory.author?._id || activeStory.author?.id) === (currentUser?._id || currentUser?.id))) && (
                 <div className="absolute bottom-8 left-4 right-4 flex items-center space-x-3 z-30">
                   <form
                     onSubmit={(e) => handleStoryReply(e, currentStory._id, activeStory.author._id || activeStory.author.id)}

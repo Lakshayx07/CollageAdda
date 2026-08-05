@@ -1143,7 +1143,7 @@ export default function ProfilePage() {
                     <h4 className="font-black text-[#1A1A1A] text-lg tracking-wide">Highlights</h4>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <UniversityBadges userId={user.id || user.email} />
+
                     <span className="ca-badge bg-[#FFF9E6] text-[#C8922A] border border-[#C8922A]/20 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold">
                       🔥 {getDisplayStreak(user)}
                     </span>

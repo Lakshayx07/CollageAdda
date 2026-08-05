@@ -1,210 +1,239 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { Share2, Users, Check, MapPin, Target, Gamepad2, Flame, Mic, Shield, Trophy } from 'lucide-react';
+import {
+  Trophy, TrendingUp, Gamepad2, Star, Search, Shield, Zap,
+  Users, Medal, Mic, Map, Target, Crown, Crosshair,
+  Binoculars, CheckCircle, BarChart3, Users as UsersIcon
+} from 'lucide-react';
+import clsx from 'clsx';
 
 export default function FreeFireProfileCard({ formData }) {
-  // Safe defaults
+  // Destructure with fallbacks
   const {
-    username = 'SHADOW FF',
-    tagline = "I don't chase, I eliminate.",
-    photo_url = '',
-    current_rank = 'Grandmaster V',
-    ff_rank_score = '9856',
-    kd_ratio = '3.45',
-    matches_played = '1250',
-    booyah_rate = '28.6%',
-    ff_preferred_roles = ['Rusher'],
-    ff_playstyles = ['Aggressive', 'Competitive', 'Mic On'],
-    ff_looking_for = ['Rank Push', 'Tournament', 'Guild']
+    username = 'SHADOW_OP',
+    display_name = 'Shadow Gaming',
+    photo_url = 'https://i.pravatar.cc/300',
+    current_rank = 'Ace Dominator',
+    highest_rank = 'Conqueror',
+    current_rp = '6432',
+    kd_ratio = '4.82',
+    matches_played = '1,240',
+    top_10_rate = '71',
+    preferred_roles = ['IGL', 'Assaulter'],
+    playstyles = ['Aggressive', 'Competitive', 'Team Player', 'Tournament Ready', 'Mic ON'],
+    looking_for = 'Tournament Team'
   } = formData || {};
 
-  const uid = 'UID: 849204918';
-
+  // Mappings
   const roleIcons = {
-    'Rusher': Flame,
-    'Sniper': Target,
+    'IGL': Crown,
+    'Assaulter': Target,
+    'Sniper': Crosshair,
     'Support': Shield,
-    'Bomber': Flame,
-    'Igl': Mic,
-    'Flanker': Target
+    'Entry Fragger': Zap,
+    'Scout': Binoculars
+  };
+
+  const playstyleIcons = {
+    'Aggressive': Zap,
+    'Competitive': Trophy,
+    'Team Player': Users,
+    'Tournament Ready': Medal,
+    'Mic ON': Mic
+  };
+
+  const lookingForIcons = {
+    'Rank Push': TrendingUp,
+    'Tournament Team': Shield,
+    'Scrims': Target,
+    'Classic': Map,
+    'Esports Org': Crown,
+    'Casual': Star
   };
 
   return (
-    <div 
-      className="w-full max-w-[900px] min-h-[600px] rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden font-sans border"
-      style={{ backgroundColor: '#0E1015', borderColor: '#1F232B', color: '#FFFFFF' }}
-    >
-      {/* ── TOP BAR ─────────────────────────────────────────────── */}
-      <div className="flex justify-between items-center mb-8">
-        <div className="flex items-center gap-3">
-          <div className="text-2xl font-black italic tracking-wider" style={{ color: '#FBBF24' }}>
-            FREE<span style={{ color: '#FFFFFF' }}>FIRE</span>
-          </div>
-          <div className="text-xs font-bold tracking-[0.2em] uppercase mt-1" style={{ color: '#9CA3AF' }}>
-            PLAYER CARD
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <button 
-            className="px-4 py-2.5 rounded-xl border text-xs font-bold flex items-center gap-2 transition cursor-pointer"
-            style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: '#2B3240', color: '#D1D5DB' }}
-          >
-            <Share2 size={16} /> SHARE CARD
-          </button>
-          <button 
-            className="px-5 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition shadow-lg cursor-pointer"
-            style={{ backgroundColor: '#FBBF24', color: '#000000' }}
-          >
-            <Users size={16} /> INVITE TO SQUAD
-          </button>
-        </div>
-      </div>
+    <div className="w-full max-w-[1280px] mx-auto my-4 rounded-[1.75rem] overflow-hidden shadow-[0_28px_90px_rgba(0,0,0,0.65)] relative bg-[#071017] border border-[#34404A] font-sans text-[#FFFFFF]">
+      {/* BACKGROUND BANNER */}
+      <div 
+        className="absolute top-0 left-0 w-full h-[340px] bg-cover bg-center opacity-55 mix-blend-luminosity pointer-events-none"
+        style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=2070)' }}
+      />
+      <div className="absolute top-0 right-0 w-[46%] h-[340px] bg-[radial-gradient(circle_at_55%_42%,rgba(57,255,130,0.15),transparent_42%)] pointer-events-none" />
+      <div className="absolute top-0 left-0 w-full h-[340px] bg-gradient-to-b from-[#071017]/15 via-[#071017]/70 to-[#071017] pointer-events-none" />
 
-      <div className="flex flex-col gap-5">
+      <div className="relative z-10 p-4 sm:p-6">
         
-        {/* ── ROW 1: Identity & Rank ─────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
-          
-          {/* Identity Box */}
-          <div 
-            className="md:col-span-7 rounded-2xl p-6 border flex items-center gap-6 relative overflow-hidden"
-            style={{ backgroundColor: '#14171E', borderColor: '#1F232B' }}
-          >
-            {/* Avatar container */}
-            <div className="relative shrink-0">
+        {/* ── TOP SECTION (Avatar & Identity) ── */}
+        <div className="flex flex-col lg:flex-row lg:items-center gap-6 mb-7 pt-3">
+          <div className="relative">
+            {/* Hexagon Avatar */}
+            <div 
+              className="w-32 h-32 sm:w-40 sm:h-40 flex items-center justify-center p-1 bg-gradient-to-b from-[#39FF82] to-[#111518] shadow-[0_0_32px_rgba(57,255,130,0.25)]"
+              style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}
+            >
               <div 
-                className="w-28 h-28 rounded-full border-4 shadow-xl p-1 relative"
-                style={{ borderColor: '#FBBF24' }}
-              >
-                <div className="w-full h-full rounded-full overflow-hidden bg-[#1A1F2B]">
-                  {photo_url ? (
-                    <img src={photo_url} alt="Profile" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center font-black text-2xl" style={{ backgroundColor: '#222834', color: '#FBBF24' }}>
-                      {(username || 'F')[0].toUpperCase()}
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div 
-                className="absolute -bottom-2 left-1/2 -translate-x-1/2 border text-xs font-black px-2.5 py-0.5 rounded-md shadow-lg"
-                style={{ backgroundColor: '#0E1015', borderColor: '#FBBF24', color: '#FFFFFF' }}
-              >
-                LVL 68
-              </div>
+                className="w-full h-full bg-cover bg-center"
+                style={{ backgroundImage: `url(${photo_url || 'https://i.pravatar.cc/300'})`, clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}
+              />
             </div>
-
-            <div className="flex flex-col flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <h2 className="text-2xl font-black uppercase tracking-tight truncate" style={{ color: '#FFFFFF' }}>{username}</h2>
-                <div className="rounded-md p-1 shrink-0" style={{ backgroundColor: '#9333EA' }}>
-                  <Check size={12} style={{ color: '#FFFFFF' }} strokeWidth={4} />
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-2 text-xs font-medium mb-3" style={{ color: '#9CA3AF' }}>
-                <span>{uid}</span>
-              </div>
-              
-              <p className="italic text-xs mb-4 truncate" style={{ color: '#D1D5DB', opacity: 0.9 }}>
-                "{tagline}"
-              </p>
-              
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1.5 text-xs font-bold" style={{ color: '#D1D5DB' }}>
-                  <Target size={14} style={{ color: '#FBBF24' }} /> BR MAIN
-                </div>
-                <div className="flex items-center gap-1.5 text-xs font-bold" style={{ color: '#D1D5DB' }}>
-                  <MapPin size={14} style={{ color: '#9CA3AF' }} /> INDIA
-                </div>
-              </div>
+            {/* Level/Rating badge at bottom of hexagon */}
+            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-[#0B1015] text-[#39FF82] border border-[#39FF82] px-3 py-0.5 rounded-full text-sm font-black shadow-[0_0_10px_rgba(57,255,130,0.3)]">
+              78
             </div>
           </div>
 
-          {/* Rank Box */}
-          <div 
-            className="md:col-span-5 rounded-2xl p-6 border flex flex-col justify-center relative overflow-hidden"
-            style={{ backgroundColor: '#14171E', borderColor: '#1F232B' }}
-          >
-            <h3 className="text-xs font-black tracking-widest mb-4 flex items-center gap-2" style={{ color: '#9CA3AF' }}>
-              <span style={{ color: '#FBBF24' }}>RANK</span> OVERVIEW
-            </h3>
-            
-            <div className="flex items-center gap-5">
-              <div className="w-20 h-20 shrink-0 flex items-center justify-center rounded-2xl border p-2" style={{ backgroundColor: '#1A1F2B', borderColor: 'rgba(251, 191, 36, 0.3)' }}>
-                <Trophy size={40} style={{ color: '#FBBF24' }} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="text-base font-black uppercase mb-1 tracking-wider truncate" style={{ color: '#FFFFFF' }}>{current_rank}</h4>
-                <div className="text-[10px] font-black tracking-widest mb-1 flex items-center gap-1" style={{ color: '#9CA3AF' }}>
-                  SCORE
-                </div>
-                <div className="text-2xl font-black mb-2" style={{ color: '#FFFFFF' }}>{ff_rank_score}</div>
-                <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ backgroundColor: '#1F232B' }}>
-                  <div className="h-full w-[80%] rounded-full" style={{ backgroundColor: '#FBBF24' }}></div>
-                </div>
-              </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h1 className="text-3xl sm:text-5xl font-black tracking-widest text-[#FFFFFF] uppercase truncate">{username}</h1>
+              <CheckCircle size={22} className="text-[#39FF82] fill-[#39FF82]/20" />
+            </div>
+            <div className="flex items-center gap-1.5 text-[#9CA3AF] mt-1 mb-4">
+              <Shield size={14} />
+              <span className="text-sm font-bold tracking-wider">{display_name}</span>
+            </div>
+
+            {/* Active Badges/Roles Header */}
+            <div className="flex flex-wrap items-center gap-3">
+              {preferred_roles.map((role, idx) => {
+                const Icon = roleIcons[role] || Gamepad2;
+                return (
+                  <div key={role} className={clsx(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider",
+                    idx === 0 ? "bg-[#39FF82]/10 border border-[#39FF82]/30 text-[#39FF82]" : "bg-[#FFFFFF]/5 border border-[#FFFFFF]/10 text-[#D1D5DB]"
+                  )}>
+                    <Icon size={14} className={idx === 0 ? "text-[#F5A623]" : ""} /> {role}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
+          {/* Tournament Ready absolute badge top right */}
+          <div className="lg:self-end lg:mb-10 flex items-center gap-2 bg-[#1A1A1A]/90 border border-[#333] px-4 py-2 rounded-xl shadow-lg backdrop-blur">
+            <Medal size={16} className="text-[#F5A623]" />
+            <span className="text-xs font-black text-[#D1D5DB] tracking-wider">Tournament Ready</span>
+          </div>
         </div>
 
-        {/* ── ROW 2: Core Stats & Playstyle ─────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+        {/* ── MIDDLE SECTION (Rank & Stats) ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
           
-          {/* Core Stats Box */}
-          <div 
-            className="md:col-span-5 rounded-2xl p-6 border flex flex-col justify-between"
-            style={{ backgroundColor: '#14171E', borderColor: '#1F232B' }}
-          >
-            <h3 className="text-xs font-black tracking-widest mb-4 flex items-center gap-2" style={{ color: '#9CA3AF' }}>
-              <span style={{ color: '#FBBF24' }}>📊</span> CORE STATS
-            </h3>
+          {/* RANK BOX */}
+          <div className="lg:col-span-5 bg-[#101820]/92 border border-[#2A3540] rounded-xl p-5 relative overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+            <div className="flex items-center gap-2 text-[#39FF82] mb-4">
+              <Trophy size={16} />
+              <span className="text-[10px] font-black uppercase tracking-widest">Rank</span>
+            </div>
             
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="flex flex-col items-center">
-                <Target size={18} className="mb-2" style={{ color: '#FBBF24' }} />
-                <div className="text-[9px] font-black tracking-widest mb-1" style={{ color: '#9CA3AF' }}>K/D RATIO</div>
-                <div className="text-xl font-black" style={{ color: '#FFFFFF' }}>{kd_ratio}</div>
+            <div className="flex items-center gap-4">
+              {/* Dummy Rank Icon */}
+              <div className="w-24 h-24 bg-gradient-to-br from-[#FFE08A] via-[#F5A623] to-[#7C3A05] rounded-lg flex items-center justify-center shadow-[0_0_28px_rgba(245,166,35,0.28)]">
+                <Crown size={40} className="text-[#FFFFFF] drop-shadow-md" />
               </div>
-              <div className="flex flex-col items-center border-x px-1" style={{ borderColor: '#262C38' }}>
-                <Gamepad2 size={18} className="mb-2" style={{ color: '#FBBF24' }} />
-                <div className="text-[9px] font-black tracking-widest mb-1" style={{ color: '#9CA3AF' }}>MATCHES</div>
-                <div className="text-xl font-black" style={{ color: '#FFFFFF' }}>{matches_played}</div>
-              </div>
-              <div className="flex flex-col items-center">
-                <Flame size={18} className="mb-2" style={{ color: '#FBBF24' }} />
-                <div className="text-[9px] font-black tracking-widest mb-1" style={{ color: '#9CA3AF' }}>BOOYAH %</div>
-                <div className="text-xl font-black" style={{ color: '#FFFFFF' }}>{booyah_rate}</div>
+              
+              <div>
+                <h3 className="text-xl font-black text-[#FFFFFF]">{current_rank}</h3>
+                <p className="text-xs text-[#9CA3AF] font-bold tracking-widest mt-1">
+                  Highest: <span className="text-[#E5E7EB]">{highest_rank}</span>
+                </p>
+                <div className="flex items-center gap-1.5 mt-2">
+                  <span className="bg-[#22292E] text-[#D1D5DB] text-[10px] font-black px-1.5 py-0.5 rounded">RP</span>
+                  <span className="text-sm font-black text-[#FFFFFF]">{current_rp} RP</span>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Preferred Roles */}
-          <div 
-            className="md:col-span-7 rounded-2xl p-6 border flex flex-col justify-between"
-            style={{ backgroundColor: '#14171E', borderColor: '#1F232B' }}
-          >
-            <h3 className="text-xs font-black tracking-widest mb-4 flex items-center gap-2" style={{ color: '#9CA3AF' }}>
-              <span style={{ color: '#FBBF24' }}>🔥</span> PREFERRED ROLES
-            </h3>
-            
-            <div className="grid grid-cols-3 gap-2">
-              {['Rusher', 'Sniper', 'Support', 'Bomber', 'Igl', 'Flanker'].map(role => {
-                const IconComponent = roleIcons[role] || Target;
-                const active = ff_preferred_roles.includes(role);
+          {/* CORE STATS BOX */}
+          <div className="lg:col-span-7 bg-[#101820]/92 border border-[#2A3540] rounded-xl p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+            <div className="flex items-center gap-2 text-[#39FF82] mb-6">
+              <BarChart3 size={16} />
+              <span className="text-[10px] font-black uppercase tracking-widest">Core Stats</span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 text-center divide-x divide-[#22292E]">
+              <div>
+                <p className="text-[9px] text-[#9CA3AF] font-black uppercase tracking-widest mb-1">K/D Ratio</p>
+                <p className="text-3xl font-black text-[#FFFFFF]">{kd_ratio}</p>
+              </div>
+              <div>
+                <p className="text-[9px] text-[#9CA3AF] font-black uppercase tracking-widest mb-1">Matches Played</p>
+                <p className="text-3xl font-black text-[#FFFFFF]">{matches_played}</p>
+              </div>
+              <div>
+                <p className="text-[9px] text-[#9CA3AF] font-black uppercase tracking-widest mb-1">Top 10 Rate</p>
+                <p className="text-3xl font-black text-[#FFFFFF]">{top_10_rate}%</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── GRIDS (Roles, Playstyle, Looking For) ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
+          
+          {/* Preferred Role Grid */}
+          <div className="lg:col-span-5 bg-[#101820]/92 border border-[#2A3540] rounded-xl p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+            <div className="flex items-center gap-2 text-[#39FF82] mb-4">
+              <Gamepad2 size={16} />
+              <span className="text-[10px] font-black uppercase tracking-widest">Preferred Role <span className="text-[#6B7280] font-normal ml-1">(UP TO 2)</span></span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {Object.keys(roleIcons).map(role => {
+                const Icon = roleIcons[role];
+                const isActive = preferred_roles.includes(role);
                 return (
-                  <div
-                    key={role}
-                    className="p-3 rounded-xl border flex items-center gap-2 transition"
-                    style={{
-                      backgroundColor: active ? 'rgba(251, 191, 36, 0.12)' : 'rgba(255, 255, 255, 0.02)',
-                      borderColor: active ? '#FBBF24' : '#262C38',
-                      color: active ? '#FBBF24' : '#D1D5DB'
-                    }}
-                  >
-                    <IconComponent size={14} style={{ color: active ? '#FBBF24' : '#9CA3AF' }} />
-                    <span className="text-xs font-bold truncate">{role}</span>
+                  <div key={role} className={clsx(
+                    "flex items-center gap-1.5 p-2.5 rounded-lg text-xs font-bold transition-all",
+                    isActive ? "bg-[#39FF82]/10 border border-[#39FF82] text-[#FFFFFF]" : "bg-transparent border border-[#22292E] text-[#9CA3AF]"
+                  )}>
+                    <Icon size={14} className={isActive ? (role === 'IGL' ? 'text-[#F5A623]' : 'text-[#39FF82]') : "text-[#6B7280]"} />
+                    <span className="truncate">{role}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Playstyle Grid */}
+          <div className="lg:col-span-4 bg-[#101820]/92 border border-[#2A3540] rounded-xl p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+            <div className="flex items-center gap-2 text-[#39FF82] mb-4">
+              <Star size={16} />
+              <span className="text-[10px] font-black uppercase tracking-widest">Playstyle</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {Object.keys(playstyleIcons).map(style => {
+                const Icon = playstyleIcons[style];
+                const isActive = playstyles.includes(style);
+                return (
+                  <div key={style} className={clsx(
+                    "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all",
+                    isActive ? "bg-[#39FF82]/5 border border-[#39FF82]/50 text-[#E5E7EB]" : "bg-transparent border border-[#22292E] text-[#9CA3AF]"
+                  )}>
+                    <Icon size={12} className={isActive ? (style === 'Tournament Ready' || style === 'Competitive' ? 'text-[#F5A623]' : 'text-[#39FF82]') : "text-[#6B7280]"} />
+                    <span className="truncate">{style}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Looking For Grid */}
+          <div className="lg:col-span-3 bg-[#101820]/92 border border-[#2A3540] rounded-xl p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+            <div className="flex items-center gap-2 text-[#39FF82] mb-4">
+              <Search size={16} />
+              <span className="text-[10px] font-black uppercase tracking-widest">Looking For</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {Object.keys(lookingForIcons).map(look => {
+                const Icon = lookingForIcons[look];
+                // Support both array and string for looking_for
+                const isActive = Array.isArray(looking_for) ? looking_for.includes(look) : looking_for === look;
+                return (
+                  <div key={look} className={clsx(
+                    "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all",
+                    isActive ? "bg-[#39FF82]/5 border border-[#39FF82]/50 text-[#E5E7EB]" : "bg-transparent border border-[#22292E] text-[#9CA3AF]"
+                  )}>
+                    <Icon size={12} className={isActive ? "text-[#39FF82]" : "text-[#6B7280]"} />
+                    <span className="truncate">{look}</span>
                   </div>
                 );
               })}
@@ -213,49 +242,25 @@ export default function FreeFireProfileCard({ formData }) {
 
         </div>
 
-        {/* ── ROW 3: Playstyle & Looking For ─────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+        {/* ── FOOTER ACTIONS ── */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mt-4">
+          <button className="md:col-span-5 bg-[#22C78A] hover:bg-[#39FF82] text-[#FFFFFF] font-black tracking-wide py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-[0_10px_28px_rgba(34,199,138,0.25)]">
+            <UsersIcon size={18} /> Invite to Squad
+          </button>
           
-          <div 
-            className="md:col-span-6 rounded-2xl p-5 border"
-            style={{ backgroundColor: '#14171E', borderColor: '#1F232B' }}
-          >
-            <h3 className="text-xs font-black tracking-widest mb-3 flex items-center gap-2" style={{ color: '#9CA3AF' }}>
-              <span style={{ color: '#FBBF24' }}>⭐</span> PLAYSTYLE
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {ff_playstyles.map(style => (
-                <span
-                  key={style}
-                  className="px-3 py-1.5 rounded-lg border text-xs font-bold"
-                  style={{ backgroundColor: 'rgba(251, 191, 36, 0.1)', borderColor: 'rgba(251, 191, 36, 0.3)', color: '#FBBF24' }}
-                >
-                  {style}
-                </span>
-              ))}
+          <button className="md:col-span-4 bg-[#1A1F24] hover:bg-[#22292E] border border-[#2A3238] text-[#FFFFFF] font-black tracking-wide py-4 rounded-xl transition-all">
+            View Full Profile
+          </button>
+
+          <div className="md:col-span-3 bg-[#101820]/92 border border-[#22292E] rounded-xl p-3 flex items-center gap-4">
+            <div className="w-10 h-10 bg-[#F5A623]/10 rounded-lg flex items-center justify-center border border-[#F5A623]/30">
+              <Star size={20} className="text-[#F5A623]" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-[#D1D5DB]">Sportsmanship <span className="text-[#39FF82] ml-2">4.9<span className="text-[#6B7280]">/5</span></span></p>
+              <p className="text-[10px] text-[#6B7280] mt-0.5">Matches Completed: 582</p>
             </div>
           </div>
-
-          <div 
-            className="md:col-span-6 rounded-2xl p-5 border"
-            style={{ backgroundColor: '#14171E', borderColor: '#1F232B' }}
-          >
-            <h3 className="text-xs font-black tracking-widest mb-3 flex items-center gap-2" style={{ color: '#9CA3AF' }}>
-              <span style={{ color: '#FBBF24' }}>🎯</span> LOOKING FOR
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {ff_looking_for.map(item => (
-                <span
-                  key={item}
-                  className="px-3 py-1.5 rounded-lg border text-xs font-bold"
-                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.04)', borderColor: '#262C38', color: '#D1D5DB' }}
-                >
-                  {item}
-                </span>
-              ))}
-            </div>
-          </div>
-
         </div>
 
       </div>

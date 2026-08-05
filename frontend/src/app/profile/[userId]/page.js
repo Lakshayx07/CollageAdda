@@ -409,9 +409,13 @@ export default function UserProfilePage({ params }) {
             .then((res) => (res.ok ? res.json() : null))
             .then((myData) => {
               if (cancelled || !myData) return;
-              if (myData.following && myData.following.includes(userData._id)) {
+              const myId = me._id || me.id;
+              const hasFollowed = myData.following && myData.following.some(f => f === userData._id || f._id === userData._id || f.id === userData._id);
+              const hasRequested = userData.connectionRequests && userData.connectionRequests.some(r => r === myId || r._id === myId || r.id === myId);
+
+              if (hasFollowed) {
                 setConnectStatus("connected");
-              } else if (userData.connectionRequests && userData.connectionRequests.includes(me._id || me.id)) {
+              } else if (hasRequested) {
                 setConnectStatus("pending");
               } else {
                 setConnectStatus("idle");
@@ -690,8 +694,8 @@ export default function UserProfilePage({ params }) {
                   </>
                 ) : connectStatus === "connected" ? (
                   <>
-                    <div className="px-4 py-2 bg-[#F9F8F5] border border-[#E8E6E0] rounded-xl text-xs font-bold text-[#6B6B6B] flex items-center gap-1 cursor-default">
-                      Network <Check size={14} className="text-emerald-500" />
+                    <div className="px-4 py-1.5 bg-white border-[1.5px] border-[#E8E6E0] rounded-full text-xs font-black uppercase tracking-wider cursor-default shadow-sm" style={{ color: '#0EA5E9' }}>
+                      NETWORK
                     </div>
                     <button
                       onClick={handleDirectMessage}
@@ -1432,7 +1436,7 @@ export default function UserProfilePage({ params }) {
                     <h4 className="font-black text-[#1A1A1A] text-lg tracking-wide">Highlights</h4>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <UniversityBadges userId={profileUser._id || profileUser.email} />
+
                     <span className="ca-badge bg-[#FFF9E6] text-[#C8922A] border border-[#C8922A]/20 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold">
                       🔥 {getDisplayStreak(profileUser)}
                     </span>

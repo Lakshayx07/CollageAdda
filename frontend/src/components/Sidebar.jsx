@@ -115,8 +115,8 @@ export default function Sidebar() {
     >
       <div className="mb-8 space-y-5 px-6 pt-7 min-w-[288px]">
         <div className="flex items-center gap-3 h-10">
-          <div className="brand-mark flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white">
-            <Zap size={20} fill="currentColor" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl overflow-hidden shadow-sm">
+            <img src="/logo.png" alt="Campus Adda Logo" className="h-full w-full object-cover" />
           </div>
           <motion.div
             initial={false}

@@ -358,7 +358,7 @@ export const ExploreSection = () => {
   );
 };
 
-export const HustleHubSection = () => {
+export const CommunitySection = () => {
   const ref = useRef(null);
   const { opacity, y, scale } = useScrollFade(ref);
 
@@ -367,49 +367,29 @@ export const HustleHubSection = () => {
       <motion.div style={{ opacity, y, scale }} className="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
         
         <div className="space-y-6">
-          <div className="w-14 h-14 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center border border-emerald-500/30">
-            <ShoppingBag size={28} />
+          <div className="w-14 h-14 bg-purple-500/20 text-purple-500 rounded-2xl flex items-center justify-center border border-purple-500/30">
+            <Users size={28} />
           </div>
           <h2 className="text-4xl md:text-5xl font-black text-[#1A1A1A] tracking-tighter">
-            Buy. Sell. Earn.
+            Campus Community
           </h2>
           <p className="text-lg text-[#6B6B6B] leading-relaxed font-medium">
-            The student marketplace built for campus life. Find used books, hostel items, student gigs, and freelance opportunities.
+            Connect, share updates, ask questions, participate in college events, and compete on the campus leaderboard with your peers.
           </p>
         </div>
 
-        <div className="relative h-[400px]">
-          {/* Item 1 */}
-          <motion.div 
-            initial={{ opacity: 0, x: 50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: false }}
-            className="absolute top-10 right-10 w-64 ca-card p-4 z-20"
-          >
-            <div className="w-full h-32 bg-[#F3F2EE] rounded-xl mb-3 flex items-center justify-center"><Briefcase className="text-[#888888]" size={32}/></div>
-            <h4 className="font-bold text-[#1A1A1A] text-sm">Frontend Developer Gig</h4>
-            <p className="text-emerald-400 font-black text-lg mt-1">₹5000</p>
-            <div className="mt-3 ca-btn-primary py-2 text-[10px] text-center rounded-lg">Apply Now</div>
-          </motion.div>
-
-          {/* Item 2 */}
-          <motion.div 
-            initial={{ opacity: 0, x: -50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: false }} transition={{ delay: 0.2 }}
-            className="absolute bottom-10 left-10 w-64 ca-card p-4 z-10"
-          >
-            <div className="w-full h-32 bg-[#F3F2EE] rounded-xl mb-3 relative overflow-hidden flex items-center justify-center">
-              <span className="text-4xl">📚</span>
-              <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm">
-                <span className="text-[#1A1A1A] font-black uppercase tracking-widest text-lg rotate-12 border-2 border-white px-3 py-1 rounded-lg">SOLD</span>
-              </div>
-            </div>
-            <h4 className="font-bold text-[#1A1A1A] text-sm text-[#6B6B6B]">Engineering Mathematics</h4>
-            <p className="text-[#6B6B6B] font-black text-lg mt-1 line-through">₹300</p>
-          </motion.div>
+        <div className="relative h-[400px] flex items-center justify-center">
+          <div className="w-full h-full rounded-2xl overflow-hidden shadow-2xl border border-[#E8E6E0]">
+            <img src="/welcome-community.png" alt="Campus Community" className="w-full h-full object-cover object-top" />
+          </div>
         </div>
 
       </motion.div>
     </section>
   );
 };
+
+export const HustleHubSection = CommunitySection;
 
 export const CollabSection = () => {
   const ref = useRef(null);

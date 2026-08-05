@@ -71,8 +71,8 @@ const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001").tri
 function Brand({ compact = false }) {
   return (
     <div className={`${styles.brand} ${compact ? styles.brandCompact : ""}`}>
-      <span className={styles.brandIcon}>
-        <GraduationCap aria-hidden="true" />
+      <span className={styles.brandIcon} style={{ background: 'transparent', padding: 0, overflow: 'hidden' }}>
+        <img src="/logo.png" alt="Campus Adda Logo" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px' }} />
       </span>
       <span className={styles.brandName}>
         Campus<span>Adda</span>
@@ -539,55 +539,55 @@ export default function LoginPage() {
               )}
 
               {emailOpen && (
-                  <form className={styles.emailForm} onSubmit={handleAuth}>
-                    {isSignUp && (
-                      <input
-                        type="text"
-                        value={name}
-                        onChange={(event) => setName(event.target.value)}
-                        placeholder="Full name"
-                        autoComplete="name"
-                        required
-                      />
-                    )}
+                <form className={styles.emailForm} onSubmit={handleAuth}>
+                  {isSignUp && (
                     <input
-                      type="email"
-                      value={email}
-                      onChange={(event) => setEmail(event.target.value)}
-                      placeholder="College email"
-                      autoComplete="email"
+                      type="text"
+                      value={name}
+                      onChange={(event) => setName(event.target.value)}
+                      placeholder="Full name"
+                      autoComplete="name"
                       required
                     />
-                    <div className={styles.passwordField}>
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        value={password}
-                        onChange={(event) => setPassword(event.target.value)}
-                        placeholder="Password"
-                        autoComplete={isSignUp ? "new-password" : "current-password"}
-                        minLength={6}
-                        required
-                      />
-                      <button
-                        type="button"
-                        className={styles.passwordToggle}
-                        onClick={() => setShowPassword((visible) => !visible)}
-                        aria-label={showPassword ? "Hide password" : "Show password"}
-                        aria-pressed={showPassword}
-                      >
-                        {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
-                      </button>
-                    </div>
-                    <button className={styles.submitButton} type="submit" disabled={isLoading}>
-                      {isLoading ? "Please wait..." : isSignUp ? "Create Account" : "Continue with Email"}
+                  )}
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="College email"
+                    autoComplete="email"
+                    required
+                  />
+                  <div className={styles.passwordField}>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      placeholder="Password"
+                      autoComplete={isSignUp ? "new-password" : "current-password"}
+                      minLength={6}
+                      required
+                    />
+                    <button
+                      type="button"
+                      className={styles.passwordToggle}
+                      onClick={() => setShowPassword((visible) => !visible)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      aria-pressed={showPassword}
+                    >
+                      {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
                     </button>
-                    <p className={styles.switchMode}>
-                      {isSignUp ? "Already have an account?" : "New to CampusAdda?"}
-                      <button type="button" onClick={switchMode}>
-                        {isSignUp ? "Sign in" : "Create account"}
-                      </button>
-                    </p>
-                  </form>
+                  </div>
+                  <button className={styles.submitButton} type="submit" disabled={isLoading}>
+                    {isLoading ? "Please wait..." : isSignUp ? "Create Account" : "Continue with Email"}
+                  </button>
+                  <p className={styles.switchMode}>
+                    {isSignUp ? "Already have an account?" : "New to CampusAdda?"}
+                    <button type="button" onClick={switchMode}>
+                      {isSignUp ? "Sign in" : "Create account"}
+                    </button>
+                  </p>
+                </form>
               )}
 
               {message && <p className={styles.message} role="alert">{message}</p>}

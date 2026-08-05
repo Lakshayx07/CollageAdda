@@ -409,7 +409,7 @@ router.get('/search/query', protect, async (req, res) => {
     const users = await User.find(query)
       .select('name university bio interests year studyYear passOutBatch course branch isVerified xp points currentTick streak createdAt updatedAt')
       .sort({ createdAt: -1 })
-      .limit(30)
+      .limit(100)
       .lean();
 
     const totalCount = await User.countDocuments(query);

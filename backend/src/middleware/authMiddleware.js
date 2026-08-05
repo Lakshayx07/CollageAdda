@@ -15,6 +15,7 @@ const protect = async (req, res, next) => {
       if (!req.user) {
         return res.status(401).json({ message: 'Not authorized, user not found' });
       }
+      req.user.isAdmin = req.user.email === 'collageadda1@gmail.com' || req.user.role === 'admin';
       next();
     } catch (error) {
       res.status(401).json({ message: 'Not authorized, token failed' });

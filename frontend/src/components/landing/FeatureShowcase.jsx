@@ -42,12 +42,12 @@ const tabs = [
   },
   {
     number: "05",
-    label: "Hustle Hub",
-    tagline: "Buy. Sell. Earn.",
-    description: "A student-only marketplace for books, hostel items, services and gigs. Trusted buyers and sellers, all verified students.",
-    icon: "💸",
-    image: "/landing/feature-hustle.png",
-    color: "green"
+    label: "Community",
+    tagline: "Connect. Share. Engage.",
+    description: "Vibrant campus feeds, top contributor leaderboards, trending topics and campus events. Your college community in real time.",
+    icon: "👥",
+    image: "/welcome-community.png",
+    color: "purple"
   },
   {
     number: "06",

@@ -1013,6 +1013,32 @@ export default function CommunityChatPage() {
     }
   };
 
+  const handleDeleteCommunity = async () => {
+    if (!supabase || !isMember || role !== 'owner') return;
+    if (community?.member_count >= 10) {
+      showToastMsg("error", "Cannot delete community with 10 or more members.");
+      return;
+    }
+
+    const confirmDelete = window.confirm("Are you sure you want to delete this community? This action cannot be undone.");
+    if (!confirmDelete) return;
+
+    setShowMenu(false);
+    try {
+      const { client: authSupabase } = await getAuthenticatedSupabaseClient();
+      const { error } = await authSupabase
+        .from("communities")
+        .delete()
+        .eq("id", activeCommunityId);
+
+      if (error) throw error;
+      showToastMsg("success", "Community deleted successfully.");
+      router.push("/community");
+    } catch (err) {
+      showToastMsg("error", "Failed to delete community.");
+    }
+  };
+
   const handlePollVote = async (msg, optionIndex) => {
     if (!msg.poll || !currentUserId) return;
     const nextPoll = {
@@ -1104,10 +1130,13 @@ export default function CommunityChatPage() {
       if (data && data.length > 0) {
         // Fetch user details from our backend API
         const userIds = data.map(d => d.user_id);
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
         const users = await Promise.all(
           userIds.map(async (id) => {
-             const res = await fetch(`/api/users/${id}`, {
-               headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+             // Convert Supabase UUID back to MongoDB ObjectId
+             const mongoId = id.replace(/-/g, '').substring(0, 24);
+             const res = await fetch(`${apiUrl}/api/users/${mongoId}`, {
+               headers: { 'Authorization': `Bearer ${localStorage.getItem('collegeadda_token')}` }
              });
              if (res.ok) return await res.json();
              return { _id: id, name: 'Unknown User', university: 'Unknown' };
@@ -1343,6 +1372,22 @@ export default function CommunityChatPage() {
                       <LogOut size={14} />
                       Leave Community
                     </button>
+                    {role === 'owner' && (
+                      <button
+                        onClick={handleDeleteCommunity}
+                        disabled={community?.member_count >= 10}
+                        title={community?.member_count >= 10 ? "Cannot delete community with 10 or more members" : ""}
+                        className={clsx(
+                          "w-full flex items-center gap-2 px-4 py-2.5 text-left text-xs font-bold transition-colors cursor-pointer",
+                          community?.member_count >= 10
+                            ? "text-gray-400 cursor-not-allowed"
+                            : "text-red-600 hover:bg-red-50"
+                        )}
+                      >
+                        <Trash2 size={14} />
+                        Delete Community
+                      </button>
+                    )}
                   </motion.div>
                 </>
               )}

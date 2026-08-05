@@ -127,7 +127,8 @@ router.delete('/:id', protect, async (req, res) => {
     const story = await Story.findById(req.params.id);
     if (!story) return res.status(404).json({ message: 'Story not found' });
 
-    if (story.author.toString() !== req.user._id.toString()) {
+    const isSuperAdmin = req.user?.isAdmin || req.user?.email === 'collageadda1@gmail.com';
+    if (!isSuperAdmin && story.author.toString() !== req.user._id.toString()) {
       return res.status(401).json({ message: 'Not authorized' });
     }
 

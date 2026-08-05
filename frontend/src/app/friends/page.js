@@ -475,12 +475,19 @@ export default function FriendsPage() {
         };
       });
 
+      users.sort((a, b) => {
+        const isConnectedA = followStatus[a._id] === "connected";
+        const isConnectedB = followStatus[b._id] === "connected";
+        if (isConnectedA === isConnectedB) return 0;
+        return isConnectedA ? 1 : -1;
+      });
+
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setSuggestedUsers(users);
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setCampusUsers(users);
     }
-  }, [suggestedData, normalizeUserAvatar]);
+  }, [suggestedData, normalizeUserAvatar, followStatus]);
 
 
   const fetchGlobalUsers = useCallback(async () => {

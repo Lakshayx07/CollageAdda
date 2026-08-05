@@ -254,7 +254,8 @@ router.delete('/:id', protect, verified, async (req, res) => {
     const post = await Post.findById(req.params.id);
     if (!post) return res.status(404).json({ message: 'Post not found' });
 
-    if (post.author.toString() !== req.user._id.toString()) {
+    const isSuperAdmin = req.user?.isAdmin || req.user?.email === 'collageadda1@gmail.com';
+    if (!isSuperAdmin && post.author.toString() !== req.user._id.toString()) {
       return res.status(401).json({ message: 'User not authorized to delete this post' });
     }
 

@@ -10,6 +10,7 @@ import { Suspense, useCallback, useMemo } from "react";
 import { useApiQuery } from "@/utils/useApiQuery";
 import { useQueryClient } from "@tanstack/react-query";
 import { getAvatarSrc } from "@/utils/defaultAvatars";
+import VerifiedBadge from "@/components/VerifiedBadge";
 
 function MessagesContent() {
   const [isMounted, setIsMounted] = useState(false);
@@ -274,6 +275,7 @@ function MessagesContent() {
   const [showMemberCount, setShowMemberCount] = useState(false);
   const [showChatOptions, setShowChatOptions] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [selectedFileName, setSelectedFileName] = useState("");
   const [mediaType, setMediaType] = useState('none');
@@ -985,6 +987,29 @@ function MessagesContent() {
     }
   };
 
+  const handleStartDirectChat = async (participantId) => {
+    try {
+      const token = localStorage.getItem("collegeadda_token");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+      const createRes = await fetch(`${apiUrl}/api/chat/rooms`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ participantId }),
+      });
+      if (!createRes.ok) return;
+      const room = await createRes.json();
+      await queryClient.invalidateQueries({ queryKey: ["chat-rooms"] });
+      const formatted = formatRooms([room])[0];
+      if (formatted) openDirectRoom(formatted);
+      setShowNewChatModal(false);
+    } catch (err) {
+      console.error("Error creating DM:", err);
+    }
+  };
+
   const toggleMemberSelection = (id) => {
     setSelectedMembers(prev => prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id]);
   };
@@ -1170,7 +1195,7 @@ function MessagesContent() {
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               onClick={() => {
-                setShowCreateGroup(true);
+                setShowNewChatModal(true);
                 fetchConnections();
               }}
               className="p-3 rounded-2xl text-[#C8922A] border border-[#E8E6E0] bg-[#F3F2EE] hover:bg-[#F3F2EE]"
@@ -1955,7 +1980,10 @@ function MessagesContent() {
                 Connect with your campus network or join university hubs to start vibrating.
               </p>
             </div>
-            <button className="gradient-bg px-8 py-3 rounded-full text-sm font-bold text-[#1A1A1A] shadow-xl shadow-[0_4px_14px_rgba(200,146,42,0.15)]">
+            <button 
+              onClick={() => { setShowNewChatModal(true); fetchConnections(); }}
+              className="gradient-bg px-8 py-3 rounded-full text-sm font-bold text-[#1A1A1A] shadow-xl shadow-[0_4px_14px_rgba(200,146,42,0.15)]"
+            >
               New Message
             </button>
           </div>
@@ -2179,6 +2207,72 @@ function MessagesContent() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* New Chat Modal */}
+      <AnimatePresence>
+        {showNewChatModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-3 backdrop-blur-md sm:items-center sm:p-4"
+            onClick={() => setShowNewChatModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="w-full max-w-md overflow-hidden rounded-[1.75rem] border border-[#E8E6E0] shadow-2xl bg-[#F9F8F5] border border-[#E8E6E0] sm:rounded-[2.5rem]"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="p-6 border-b border-[#E8E6E0] flex items-center justify-between bg-[#F3F2EE]">
+                <h3 className="text-xl font-bold text-[#1A1A1A] tracking-tight">New Message</h3>
+                <button onClick={() => setShowNewChatModal(false)} className="p-2 hover:bg-[#F3F2EE] rounded-full transition-all text-[#6B6B6B]"><X size={20} /></button>
+              </div>
+              <div className="max-h-[60vh] overflow-y-auto p-4 space-y-2 custom-scrollbar">
+                <button
+                  onClick={() => { setShowNewChatModal(false); setShowCreateGroup(true); }}
+                  className="w-full flex items-center justify-center p-4 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-2xl transition-all border border-amber-200 mb-4 font-bold"
+                >
+                  <Users size={18} className="mr-2" /> Create Group
+                </button>
+                {loadingConnections ? (
+                  <div className="flex items-center justify-center gap-2 py-10 text-[10px] font-black uppercase tracking-widest text-[#888888]">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#E8E6E0] border-t-[#C8922A]" />
+                    Loading friends
+                  </div>
+                ) : connections.length === 0 ? (
+                  <div className="py-10 text-center text-[#888888] font-bold uppercase tracking-widest text-[10px]">No friends found</div>
+                ) : (
+                  connections.map((f, i) => (
+                    <div
+                      key={i}
+                      onClick={() => handleStartDirectChat(f._id || f.id)}
+                      className="flex items-center justify-between p-3 hover:bg-[#F3F2EE] rounded-2xl transition-all border border-transparent hover:border-[#E8E6E0] group cursor-pointer"
+                    >
+                      <div className="flex items-center space-x-4">
+                        <img
+                          src={getAvatarSrc(f.profilePic, f.name, f._id || f.id)}
+                          className="w-12 h-12 rounded-full object-cover border border-[#E8E6E0]"
+                          onError={(e) => { e.target.src = getAvatarSrc("", f.name, f._id || f.id); }}
+                          alt={f.name}
+                        />
+                        <div>
+                          <p className="text-[15px] font-bold text-[#1A1A1A] flex items-center">
+                            {f.name} <VerifiedBadge user={f} size={14} className="ml-1" />
+                          </p>
+                          <p className="text-[11px] text-[#888888] font-medium tracking-wide uppercase mt-0.5">{f.university}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {fullscreenImage && (
           <motion.div

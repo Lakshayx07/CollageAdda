@@ -65,8 +65,8 @@ export default function CreatePage() {
                 <p className="text-xs font-bold uppercase tracking-[0.22em] text-primary">New update</p>
                 <h2 className="mt-2 text-2xl font-black tracking-tight text-[#1A1A1A]">What is happening on campus?</h2>
               </div>
-              <div className="brand-mark flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl">
-                <Sparkles size={22} className="text-[#1A1A1A]" />
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl overflow-hidden shadow-sm">
+                <img src="/logo.png" alt="Campus Adda" className="h-full w-full object-cover" />
               </div>
             </div>
           </div>

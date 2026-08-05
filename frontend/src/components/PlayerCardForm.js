@@ -352,7 +352,7 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
 
   if (isSubmitted && isBGMI) {
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#000000]/80 backdrop-blur-xl overflow-y-auto">
+      <div className="fixed inset-0 z-[100] flex items-start justify-center p-3 sm:p-6 bg-[#000000]/85 backdrop-blur-xl overflow-y-auto">
         <button
           onClick={onClose}
           className="absolute top-6 right-6 p-2 bg-[#FFFFFF]/10 rounded-full text-[#FFFFFF] hover:bg-[#FFFFFF]/20 transition-colors z-50"
@@ -366,7 +366,7 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
 
   if (isSubmitted && isValorant) {
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#0F1923]/90 backdrop-blur-xl overflow-y-auto">
+      <div className="fixed inset-0 z-[100] flex items-start justify-center p-3 sm:p-6 bg-[#0F1923]/92 backdrop-blur-xl overflow-y-auto">
         <button
           onClick={onClose}
           className="absolute top-6 right-6 p-2 bg-[#FFFFFF]/10 rounded-full text-[#FFFFFF] hover:bg-[#FF4655] transition-colors z-50"
@@ -380,7 +380,7 @@ export default function PlayerCardForm({ onClose, initialCategory = 'esports', o
 
   if (isSubmitted && isFreeFire) {
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#0E1015]/90 backdrop-blur-xl overflow-y-auto">
+      <div className="fixed inset-0 z-[100] flex items-start justify-center p-3 sm:p-6 bg-[#0E1015]/92 backdrop-blur-xl overflow-y-auto">
         <button
           onClick={onClose}
           className="absolute top-6 right-6 p-2 bg-[#FFFFFF]/10 rounded-full text-[#FFFFFF] hover:bg-[#FBBF24] transition-colors z-50"

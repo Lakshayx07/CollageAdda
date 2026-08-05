@@ -74,19 +74,19 @@ const features = [
   },
   {
     number: '05',
-    tag: 'HUSTLE HUB',
-    headlineParts: ['Buy. Sell.', 'Earn.', 'As a Student.'],
-    subheadline: 'A marketplace made for campus life — trusted, verified, local.',
-    description: 'Sell your old books and buy hostel essentials. Offer your skills as a service or pick up gigs. Every buyer and seller is a verified student. No scams, no strangers, just your campus community doing business.',
+    tag: 'COMMUNITY',
+    headlineParts: ['Connect.', 'Share.', 'Vibe.', 'With Campus.'],
+    subheadline: 'A vibrant hub for campus posts, discussions, events & leaderboards.',
+    description: 'Engage with your campus community in real time. Ask questions, share updates, participate in campus events, follow trending topics, and climb your college leaderboard.',
     bullets: [
-      { icon: '📚', title: 'Books, notes & study material', desc: 'Buy and sell academic resources easily.' },
-      { icon: '🛏️', title: 'Hostel items & room essentials', desc: 'Find everything you need for your dorm.' },
-      { icon: '💼', title: 'Student gigs & freelance services', desc: 'Offer your skills and earn on campus.' },
-      { icon: '💰', title: 'Earn from your unused stuff', desc: 'Turn your clutter into extra cash.' }
+      { icon: '💬', title: 'Campus feed & student posts', desc: 'Share updates, ask questions & vibe with your college.' },
+      { icon: '🏆', title: 'Top contributors & leaderboard', desc: 'Earn points by engaging and climb your campus leaderboard.' },
+      { icon: '🔥', title: 'Trending campus topics', desc: 'Follow discussions on internships, hackathons & events.' },
+      { icon: '📅', title: 'Upcoming campus events', desc: 'Discover sports meets, workshops & community meetups.' }
     ],
-    tags: ['Marketplace', 'Books', 'Gigs', 'Student Economy'],
-    image: '/landing/feature-hustle.png',
-    color: '#F97316',
+    tags: ['Connect', 'Feed', 'Events', 'Leaderboard'],
+    image: '/welcome-community.png',
+    color: '#8B5CF6',
   },
   {
     number: '06',
@@ -277,25 +277,48 @@ export default function WelcomeTourPage() {
             padding: isMobile ? '0 16px' : '0 24px',
           }}>
 
-            {/* Badge */}
+            {/* Official Campus Adda Logo Badge */}
             <motion.div
-              initial={{ opacity: 0, y: -12 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, scale: 0.85, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                marginBottom: '28px',
+              }}
+            >
+              <div style={{
+                width: '150px',
+                height: '150px',
+                borderRadius: '36px',
+                overflow: 'hidden',
+                boxShadow: '0 20px 50px rgba(200, 146, 42, 0.35)',
+                border: '2.5px solid rgba(200, 146, 42, 0.45)',
+                background: '#FFFFFF',
+              }}>
+                <img src="/logo.png" alt="Campus Adda Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+            </motion.div>
+
+            {/* Tag pill */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
-                background: 'rgba(249,115,22,0.12)',
-                border: '1px solid rgba(249,115,22,0.35)',
+                padding: '6px 16px',
                 borderRadius: '100px',
-                padding: '8px 22px',
+                background: 'rgba(249, 115, 22, 0.08)',
+                border: '1px solid rgba(249, 115, 22, 0.25)',
+                color: '#F97316',
                 fontSize: '11px',
                 fontWeight: '700',
-                letterSpacing: '0.16em',
-                color: '#D4A843',
-                marginBottom: '36px',
-                textTransform: 'uppercase',
+                letterSpacing: '0.12em',
+                marginBottom: '28px',
               }}
             >
               <span style={{ fontSize: '14px' }}>✦</span> PLATFORM FEATURES
@@ -362,10 +385,60 @@ export default function WelcomeTourPage() {
               transition={{ duration: 0.55, delay: 0.28 }}
               style={{
                 display: 'flex',
-                justifyContent: 'center',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '14px',
                 marginBottom: '36px',
               }}
             >
+              {/* Explore Platform Features Button */}
+              <motion.button
+                animate={{
+                  scale: [1, 1.05, 1],
+                  boxShadow: [
+                    '0 6px 20px rgba(249, 115, 22, 0.12)',
+                    '0 12px 32px rgba(249, 115, 22, 0.28)',
+                    '0 6px 20px rgba(249, 115, 22, 0.12)'
+                  ]
+                }}
+                transition={{
+                  duration: 1.2,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+                whileHover={{ scale: 1.08, boxShadow: '0 14px 36px rgba(249, 115, 22, 0.35)' }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  if (cardRefs.current && cardRefs.current[0]) {
+                    cardRefs.current[0].scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '13px 32px',
+                  borderRadius: '100px',
+                  background: 'rgba(255, 255, 255, 0.95)',
+                  border: '1.5px solid rgba(249, 115, 22, 0.45)',
+                  color: '#1A1A1A',
+                  fontSize: '13px',
+                  fontWeight: '800',
+                  letterSpacing: '0.06em',
+                  cursor: 'pointer',
+                  textTransform: 'uppercase',
+                }}
+              >
+                <span>✦ EXPLORE PLATFORM FEATURES</span>
+                <motion.span
+                  animate={{ y: [0, 4, 0] }}
+                  transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut' }}
+                  style={{ fontSize: '13px', color: '#F97316' }}
+                >
+                  ↓
+                </motion.span>
+              </motion.button>
+
               <Link href="/login" style={{ textDecoration: 'none' }}>
                 <motion.div
                   whileHover={{ scale: 1.05 }}
