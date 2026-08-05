@@ -27,6 +27,14 @@ const nextConfig = {
     const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
     return [
       {
+        source: '/google4736c4d1c2c1ea28.html',
+        destination: '/google-verify',
+      },
+      {
+        source: '/googleA4XYapdxAtUPtUxCDxxMKNmj5vB9j2lSOoXKJGdR9yU.html',
+        destination: '/google-verify',
+      },
+      {
         source: '/api/users/:id/avatar',
         destination: `${apiBase}/api/users/:id/avatar`,
       },
