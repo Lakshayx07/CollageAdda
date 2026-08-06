@@ -409,7 +409,7 @@ function MessagesContent() {
 
   // Deep-link: ?chat= / ?userId= — wait until user + rooms are ready
   useEffect(() => {
-    if (!user || loadingChats || deepLinkHandledRef.current || activeChat) return;
+    if (!user || deepLinkHandledRef.current || activeChat) return;
 
     const chatParam = searchParams.get("chat");
     const userIdParam = searchParams.get("userId");
@@ -429,6 +429,7 @@ function MessagesContent() {
     };
 
     if (chatParam) {
+      if (loadingChats) return; // For chatParam, we must wait for the chat list to load to find the room
       const found = chats.find((c) => String(c.id) === String(chatParam));
       if (found) {
         deepLinkHandledRef.current = true;
