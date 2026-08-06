@@ -4,7 +4,8 @@ import User from '../models/User.js';
 import ChatRoom from '../models/ChatRoom.js';
 
 import { ensureUniversityGroup, normalizeUniversityName } from '../utils/universityUtils.js';
-import { publicUserPayload, syncVerificationStatus } from '../utils/verificationUtils.js';
+import { publicUserPayload } from '../utils/verificationUtils.js';
+import { isEmailAllowedForUniversity } from '../utils/emailDomain.js';
 import { OAuth2Client } from 'google-auth-library';
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -38,7 +39,7 @@ router.get('/supabase-token', async (req, res) => {
     }
 
     if (!process.env.SUPABASE_JWT_SECRET) {
-      return res.status(500).json({ message: 'SUPABASE_JWT_SECRET is not configured — add it to your backend .env from your Supabase project dashboard under Settings > API > JWT Secret' });
+      return res.status(500).json({ message: 'SUPABASE_JWT_SECRET is not configured' });
     }
 
     const supabaseUserId = mongoObjectIdToUuid(user._id);
@@ -77,33 +78,37 @@ router.post('/register', async (req, res) => {
     if (!normalizedName || !normalizedEmail || !password || !university?.trim()) {
       return res.status(400).json({ message: 'Name, email, password and university are required' });
     }
-    if (password.length < 6) {
-      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    if (password.length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters' });
+    }
+
+    const normalizedUniversity = normalizeUniversityName(university);
+
+    // Enforce campus email domain
+    const domainAllowed = await isEmailAllowedForUniversity(normalizedEmail, normalizedUniversity);
+    if (!domainAllowed) {
+      return res.status(403).json({
+        message: `Please use your ${normalizedUniversity} college email address to sign up. Personal emails (Gmail, etc.) are not accepted.`
+      });
     }
 
     const existingUser = await User.findOne({ email: normalizedEmail });
-    
-    // If user already exists (e.g. Google OAuth re-registration), 
-    // update university if it was missing/Other, then return success
+
     if (existingUser) {
-      const reqUniversity = normalizeUniversityName(university);
+      const reqUniversity = normalizedUniversity;
       if (reqUniversity && reqUniversity !== 'Other') {
         if (!existingUser.university || existingUser.university === 'Other') {
           existingUser.university = reqUniversity;
-          syncVerificationStatus(existingUser);
           await existingUser.save();
         } else if (existingUser.university !== reqUniversity) {
           return res.status(403).json({ message: `Email already registered with ${existingUser.university}. 1 mail - 1 campus.` });
         }
       }
 
-      // Always ensure this user is in the correct university group
       await ensureUniversityGroup(existingUser);
-
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Generate unique referral code (First name + random string)
     const genCode = `${normalizedName.split(' ')[0].toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
     let referredBy = null;
@@ -117,19 +122,21 @@ router.post('/register', async (req, res) => {
       }
     }
 
-    const user = await User.create({ 
+    const user = await User.create({
       name: normalizedName,
       email: normalizedEmail,
-      password, 
-      university: normalizeUniversityName(university), 
+      password,
+      university: normalizedUniversity,
       referralCode: genCode,
       referredBy,
       points: 50,
       streak: 1,
-      lastLoginDate: new Date()
+      lastLoginDate: new Date(),
+      // Campus email verified at registration
+      isVerified: true,
+      verificationStatus: 'verified',
+      verificationMethod: 'email'
     });
-    syncVerificationStatus(user);
-    await user.save();
 
     await ensureUniversityGroup(user);
 
@@ -151,16 +158,16 @@ router.post('/login', async (req, res) => {
 
     const user = await User.findOne({ email: normalizedEmail });
     if (user && (await user.matchPassword(password))) {
-      
+
       const reqUniversity = normalizeUniversityName(university);
       if (reqUniversity && reqUniversity !== 'Other' && user.university && user.university !== 'Other' && user.university !== reqUniversity) {
         return res.status(403).json({ message: `Email already registered with ${user.university}. 1 mail - 1 campus.` });
       }
 
-      // Update login streak — compare in IST (UTC+5:30) so Indian users get correct day boundaries
+      // Update login streak — compare in IST (UTC+5:30)
       const toISTDateString = (d) => {
         const ist = new Date(d.getTime() + 5.5 * 60 * 60 * 1000);
-        return ist.toISOString().slice(0, 10); // "YYYY-MM-DD"
+        return ist.toISOString().slice(0, 10);
       };
       const now = new Date();
       const todayIST = toISTDateString(now);
@@ -182,7 +189,6 @@ router.post('/login', async (req, res) => {
           user.lastLoginDate = now;
         }
       }
-      syncVerificationStatus(user);
       await user.save();
       await ensureUniversityGroup(user);
       res.json(publicUserPayload(user, generateToken(user._id)));
@@ -225,7 +231,7 @@ router.post('/google', async (req, res) => {
     let isNewUser = false;
 
     if (user) {
-      // Login existing user
+      // Login existing Google user
       const reqUniversity = normalizeUniversityName(university);
       if (reqUniversity && reqUniversity !== 'Other') {
         if (!user.university || user.university === 'Other') {
@@ -234,7 +240,7 @@ router.post('/google', async (req, res) => {
           return res.status(403).json({ message: `Email already registered with ${user.university}. 1 mail - 1 campus.` });
         }
       }
-      // Update login streak — compare in IST (UTC+5:30) so Indian users get correct day boundaries
+
       const toISTDateString = (d) => {
         const ist = new Date(d.getTime() + 5.5 * 60 * 60 * 1000);
         return ist.toISOString().slice(0, 10);
@@ -259,13 +265,22 @@ router.post('/google', async (req, res) => {
           user.lastLoginDate = now;
         }
       }
-      syncVerificationStatus(user);
       await user.save();
       await ensureUniversityGroup(user);
     } else {
-      // Register new user
+      // Register new Google user
       if (!university) {
         return res.status(400).json({ message: 'University is required for registration' });
+      }
+
+      const normalizedUniversity = normalizeUniversityName(university);
+
+      // Enforce campus email domain before creating account
+      const domainAllowed = await isEmailAllowedForUniversity(email, normalizedUniversity);
+      if (!domainAllowed) {
+        return res.status(403).json({
+          message: `Please use your ${normalizedUniversity} Google Workspace (college) account. Personal Gmail accounts are not accepted.`
+        });
       }
 
       const genCode = `${name.split(' ')[0].toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
@@ -280,28 +295,29 @@ router.post('/google', async (req, res) => {
         }
       }
 
-      // We use 'sub' as a dummy password for Google users since we don't need a real one
       user = await User.create({
         name,
         email,
-        password: sub, // Dummy password
-        university: normalizeUniversityName(university),
+        password: sub,
+        university: normalizedUniversity,
         referralCode: genCode,
         referredBy,
         points: 50,
         profilePic: picture,
         streak: 1,
-        lastLoginDate: new Date()
+        lastLoginDate: new Date(),
+        // Campus email verified at registration via Google
+        isVerified: true,
+        verificationStatus: 'verified',
+        verificationMethod: 'email'
       });
       isNewUser = true;
-      syncVerificationStatus(user);
-      await user.save();
       await ensureUniversityGroup(user);
     }
 
     res.status(isNewUser ? 201 : 200).json(publicUserPayload(user, generateToken(user._id)));
   } catch (error) {
-    console.error("Google Auth Error:", error);
+    console.error('Google Auth Error:', error);
     res.status(500).json({ message: 'Failed to authenticate with Google' });
   }
 });

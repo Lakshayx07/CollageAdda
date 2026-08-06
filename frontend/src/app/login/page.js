@@ -364,7 +364,7 @@ export default function LoginPage() {
             <Brand compact />
             <div className={styles.welcome}>
               <h2>Welcome Back! <span aria-hidden="true">👋</span></h2>
-              <p>Login to continue to CampusAdda</p>
+              <p>Use your college email to log in or sign up</p>
             </div>
 
             <div className={styles.authBody}>
@@ -447,7 +447,7 @@ export default function LoginPage() {
                     type="email"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
-                    placeholder="College email"
+                    placeholder="College email (e.g. you@rishihood.edu.in)"
                     autoComplete="email"
                     required
                   />
@@ -456,9 +456,9 @@ export default function LoginPage() {
                       type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(event) => setPassword(event.target.value)}
-                      placeholder="Password"
+                      placeholder={isSignUp ? "Password (min 8 characters)" : "Password"}
                       autoComplete={isSignUp ? "new-password" : "current-password"}
-                      minLength={6}
+                      minLength={isSignUp ? 8 : 1}
                       required
                     />
                     <button
