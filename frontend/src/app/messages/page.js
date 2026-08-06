@@ -1744,7 +1744,7 @@ function MessagesContent() {
                                     })}
                                   </div>
                                 )}
-                                {!msg.poll?.question && <div className="relative z-10 font-medium">{renderTextWithLinks(msg.text)}</div>}
+                                {!msg.poll?.question && <div className="relative z-10 font-medium whitespace-pre-wrap">{renderTextWithLinks(msg.text)}</div>}
                                 {msg.editedAt && !msg.deletedAt && <div className="mt-1 text-[10px] font-bold opacity-70">edited</div>}
                               </div>
                             );
