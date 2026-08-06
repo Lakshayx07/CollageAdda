@@ -21,6 +21,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { renderTextWithLinks } from "@/utils/linkify";
 import { useSocket } from "@/context/SocketProvider";
 import { getAvatarSrc, getDefaultAvatar } from "@/utils/defaultAvatars";
+import { isUserUnverifiedOrIncomplete } from "@/utils/verificationCheck";
 const PLACEHOLDER_PROMPTS = [
   "What's on your mind right now?",
   "Got a campus update? Share it here.",
@@ -1339,11 +1340,20 @@ export default function Home() {
             <NotificationBell />
             <div
               onClick={() => router.push('/profile')}
-              className="brand-mark h-10 w-10 cursor-pointer rounded-2xl p-[2px] transition-transform hover:scale-105"
+              className="relative brand-mark h-10 w-10 cursor-pointer rounded-2xl p-[2px] transition-transform hover:scale-105"
             >
               <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-[0.95rem] bg-white border border-[#E8E6E0]">
                 <img src={getAvatarSrc(currentUser?.profilePic, currentUser?.name, currentUser?._id || currentUser?.id)} className="w-full h-full object-cover" alt="Me" />
               </div>
+              {isUserUnverifiedOrIncomplete(currentUser) && (
+                <motion.span
+                  animate={{ scale: [1, 1.3, 1] }}
+                  transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[9px] font-black text-white shadow-md border-2 border-white z-10"
+                >
+                  1
+                </motion.span>
+              )}
             </div>
           </div>
         </div>
