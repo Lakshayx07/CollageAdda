@@ -8,9 +8,8 @@ const protect = async (req, res, next) => {
     try {
       token = req.headers.authorization.split(' ')[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      // Keep auth lean — never load profilePic / follow graphs on every request
       req.user = await User.findById(decoded.id).select(
-        '_id name email university isVerified verificationStatus onboardingComplete interests'
+        '_id name email university isVerified verificationStatus onboardingComplete interests isAdmin'
       );
       if (!req.user) {
         return res.status(401).json({ message: 'Not authorized, user not found' });
@@ -18,26 +17,32 @@ const protect = async (req, res, next) => {
       req.user.isAdmin = req.user.email === 'collageadda1@gmail.com' || req.user.role === 'admin';
       next();
     } catch (error) {
-      res.status(401).json({ message: 'Not authorized, token failed' });
+      return res.status(401).json({ message: 'Not authorized, token failed' });
     }
   }
 
   if (!token) {
-    res.status(401).json({ message: 'Not authorized, no token' });
+    return res.status(401).json({ message: 'Not authorized, no token' });
   }
 };
 
 const verified = (req, res, next) => {
-  // Auto-verify users for now to prevent blocking features during testing
-  // In production, this would check req.user.isVerified
-  if (req.user) {
+  if (req.user && req.user.isVerified) {
     next();
   } else {
-    res.status(403).json({ 
-      message: 'Access denied. Please verify your student identity first 🎓',
-      verificationStatus: 'unverified'
+    res.status(403).json({
+      message: 'Access denied. Please verify your student identity first.',
+      verificationStatus: req.user?.verificationStatus || 'unverified'
     });
   }
 };
 
-export { protect, verified };
+const adminOnly = (req, res, next) => {
+  if (req.user && req.user.isAdmin) {
+    next();
+  } else {
+    res.status(403).json({ message: 'Access denied. Admin privileges required.' });
+  }
+};
+
+export { protect, verified, adminOnly };
