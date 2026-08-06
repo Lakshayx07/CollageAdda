@@ -929,7 +929,7 @@ export default function ProfilePage() {
                 )}
                 <button
                   onClick={handleLogout}
-                  className="p-2 bg-white border border-red-200 rounded-xl text-red-500 hover:bg-red-50 hover:border-red-300 transition-all shadow-sm"
+                  className="hidden sm:flex p-2 bg-white border border-red-200 rounded-xl text-red-500 hover:bg-red-50 hover:border-red-300 transition-all shadow-sm"
                 >
                   <LogOut size={15} />
                 </button>
