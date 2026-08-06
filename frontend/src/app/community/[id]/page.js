@@ -524,6 +524,10 @@ export default function CommunityChatPage() {
     const content = inputText.trim();
     setInputText("");
     setSending(true);
+    
+    // Reset textarea height
+    const textarea = document.getElementById('community-chat-textarea');
+    if (textarea) textarea.style.height = 'auto';
 
     try {
       const { client: authSupabase, user: authUser } = await getAuthenticatedSupabaseClient();
@@ -603,8 +607,21 @@ export default function CommunityChatPage() {
     }
   };
 
-  const handleInputChange = (value) => {
+  const handleInputChange = (e) => {
+    let value = typeof e === 'string' ? e : e.target.value;
     setInputText(value);
+    
+    if (typeof e !== 'string') {
+      e.target.style.height = 'auto';
+      e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+    } else {
+      const textarea = document.getElementById('community-chat-textarea');
+      if (textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
+      }
+    }
+
     if (!channelRef.current || !currentUserId || !value.trim()) return;
     channelRef.current.send({
       type: "broadcast",
@@ -1562,7 +1579,7 @@ export default function CommunityChatPage() {
                           </p>
                         </div>
                       )}
-                      {(!msg.poll || !msg.poll.question) && !msg.media_url && renderTextWithLinks(msg.content)}
+                      {(!msg.poll || !msg.poll.question) && !msg.media_url && <div className="whitespace-pre-wrap">{renderTextWithLinks(msg.content)}</div>}
                       {msg.edited_at && !isDeleted && (
                         <span className={clsx("ml-2 text-[10px] font-bold", isMe ? "text-white/70" : "text-[#888888]")}>
                           edited
@@ -1708,12 +1725,21 @@ export default function CommunityChatPage() {
                   >
                     <Plus size={21} />
                   </button>
-                  <input
+                  <textarea
+                    id="community-chat-textarea"
                     value={inputText}
-                    onChange={(e) => handleInputChange(e.target.value)}
+                    onChange={handleInputChange}
+                    onKeyDown={e => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage(e);
+                      }
+                    }}
+                    rows={1}
                     placeholder="Send message..."
                     disabled={sending}
-                    className="flex-1 border-0 bg-transparent px-2 py-3 text-sm focus:outline-none"
+                    className="flex-1 border-0 bg-transparent px-2 py-3.5 text-sm focus:outline-none resize-none overflow-y-auto"
+                    style={{ maxHeight: '120px' }}
                   />
 
                   <AnimatePresence>
