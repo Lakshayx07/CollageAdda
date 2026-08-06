@@ -219,7 +219,8 @@ function GoogleContinueButton({ onSuccess, onError, disabled }) {
       logo_alignment: "left",
     });
 
-    requestAnimationFrame(() => {
+    // Try to click immediately to preserve the synchronous user gesture context
+    const clickButton = () => {
       const btn =
         fallbackHostRef.current?.querySelector('[role="button"]') ||
         fallbackHostRef.current?.querySelector("div[tabindex]");
@@ -228,7 +229,19 @@ function GoogleContinueButton({ onSuccess, onError, disabled }) {
       } else {
         onErrorRef.current?.("Google sign-in could not start. Try again or use email.");
       }
-    });
+    };
+
+    // `renderButton` typically populates the DOM immediately.
+    // If it's there, click it synchronously. Otherwise fallback to next tick.
+    const btnImmediately =
+      fallbackHostRef.current?.querySelector('[role="button"]') ||
+      fallbackHostRef.current?.querySelector("div[tabindex]");
+
+    if (btnImmediately) {
+      btnImmediately.click();
+    } else {
+      setTimeout(clickButton, 10);
+    }
   }, []);
 
   const handleClick = useCallback(() => {
@@ -255,13 +268,8 @@ function GoogleContinueButton({ onSuccess, onError, disabled }) {
       initializedRef.current = true;
     }
 
-    // Prefer on-page FedCM / One Tap — no blank popup window
-    window.google.accounts.id.prompt((notification) => {
-      // Only fall back when Google cannot show the on-page prompt
-      if (notification.isNotDisplayed?.() || notification.isSkippedMoment?.()) {
-        triggerFallbackButton();
-      }
-    });
+    // Directly trigger the fallback button to avoid FedCM prompt collision on user click
+    triggerFallbackButton();
   }, [disabled, scriptLoadedSuccessfully, clientId, triggerFallbackButton]);
 
   const ready = scriptLoadedSuccessfully && clientId && clientId !== "YOUR_GOOGLE_CLIENT_ID";
