@@ -10,7 +10,6 @@ export default function AlumniAngelsPage() {
   const alumniList = [];
 
   return (
-    
     <div className="page-shell flex flex-col overflow-hidden">
       <header className="page-header sticky top-0 z-40 px-5 py-5">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
