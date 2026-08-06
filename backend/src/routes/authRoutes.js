@@ -189,18 +189,29 @@ router.post('/login', async (req, res) => {
 // @route   POST /api/auth/google
 // @desc    Login or register user via Google
 router.post('/google', async (req, res) => {
-  const { credential, university, referralCode } = req.body;
+  const { credential, access_token, university, referralCode } = req.body;
   try {
-    if (!credential) {
+    let email, name, sub, picture;
+
+    if (credential) {
+      const ticket = await googleClient.verifyIdToken({
+        idToken: credential,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      const payload = ticket.getPayload();
+      ({ email, name, sub, picture } = payload);
+    } else if (access_token) {
+      const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: `Bearer ${access_token}` }
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch user info from Google');
+      }
+      const data = await response.json();
+      ({ email, name, sub, picture } = data);
+    } else {
       return res.status(400).json({ message: 'Google credential missing' });
     }
-
-    const ticket = await googleClient.verifyIdToken({
-      idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-    const payload = ticket.getPayload();
-    const { email, name, sub, picture } = payload;
 
     let user = await User.findOne({ email });
     let isNewUser = false;
