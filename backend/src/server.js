@@ -2,8 +2,11 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import compression from 'compression';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import jwt from 'jsonwebtoken';
 import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import postRoutes from './routes/postRoutes.js';
@@ -13,6 +16,7 @@ import verifyRoutes from './routes/verifyRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import Message from './models/Message.js';
 import ChatRoom from './models/ChatRoom.js';
+import User from './models/User.js';
 import collegeRoutes from './routes/collegeRoutes.js';
 import storyRoutes from './routes/storyRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
@@ -20,12 +24,11 @@ import hustleRoutes from './routes/hustleRoutes.js';
 import confessionRoutes from './routes/confessionRoutes.js';
 import collabRoutes from './routes/collabRoutes.js';
 
-// Connect to database
 connectDB();
 
 const app = express();
 const httpServer = createServer(app);
-// Allow multiple frontend origins (local, Render, Vercel)
+
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
@@ -38,8 +41,14 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, etc.)
-    if (!origin || allowedOrigins.includes(origin)) {
+    // Reject requests with no origin (server-to-server or curl) in production
+    if (!origin) {
+      if (process.env.NODE_ENV === 'production') {
+        return callback(new Error('CORS: origin required in production'));
+      }
+      return callback(null, true);
+    }
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error(`CORS blocked for origin: ${origin}`));
@@ -50,11 +59,33 @@ const corsOptions = {
 
 const io = new Server(httpServer, { cors: corsOptions });
 
+// ── Socket.io JWT authentication middleware ───────────────────────────────────
+io.use(async (socket, next) => {
+  try {
+    const token = socket.handshake.auth?.token;
+    if (!token) return next(new Error('Authentication required'));
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select('_id name university').lean();
+    if (!user) return next(new Error('User not found'));
+
+    socket.userId = user._id.toString();
+    socket.userName = user.name;
+    socket.userUniversity = user.university;
+    next();
+  } catch {
+    next(new Error('Invalid token'));
+  }
+});
+
 // Middleware
+app.use(helmet({
+  crossOriginOpenerPolicy: false, // managed by Next.js for Google OAuth
+}));
 app.use(cors(corsOptions));
 app.use(compression());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Cache-Control Middleware
 app.use((req, res, next) => {
@@ -68,122 +99,125 @@ app.use((req, res, next) => {
   next();
 });
 
-// API Routes
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'CollegeAdda Backend is running 🚀' });
+// ── Rate limiters ─────────────────────────────────────────────────────────────
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20,
+  message: { message: 'Too many attempts. Please try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
-app.use('/api/auth', authRoutes);
-app.use('/api/posts', postRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/matches', matchRoutes);
-app.use('/api/verify', verifyRoutes);
-app.use('/api/chat', chatRoutes);
-app.use('/api/colleges', collegeRoutes);
-app.use('/api/stories', storyRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/hustle', hustleRoutes);
-app.use('/api/confessions', confessionRoutes);
-app.use('/api/collab', collabRoutes);
+const otpLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 5,
+  message: { message: 'Too many OTP requests. Please wait 10 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 120,
+  message: { message: 'Too many requests. Please slow down.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// API Routes
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK' });
+});
+
+app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/verify', otpLimiter, verifyRoutes);
+app.use('/api/posts', apiLimiter, postRoutes);
+app.use('/api/users', apiLimiter, userRoutes);
+app.use('/api/matches', apiLimiter, matchRoutes);
+app.use('/api/chat', apiLimiter, chatRoutes);
+app.use('/api/colleges', apiLimiter, collegeRoutes);
+app.use('/api/stories', apiLimiter, storyRoutes);
+app.use('/api/notifications', apiLimiter, notificationRoutes);
+app.use('/api/hustle', apiLimiter, hustleRoutes);
+app.use('/api/confessions', apiLimiter, confessionRoutes);
+app.use('/api/collab', apiLimiter, collabRoutes);
 
 // ── Socket.io Real-time Chat ──────────────────────────────────────────────────
 const onlineUsers = new Map(); // socketId → { userId, name, university }
 
 io.on('connection', (socket) => {
-  console.log(`[WS] User connected: ${socket.id}`);
+  // socket.userId / socket.userName / socket.userUniversity are set by auth middleware
 
-  // User comes online
-  socket.on('user_online', ({ userId, name, university }) => {
-    onlineUsers.set(socket.id, { userId, name, university });
-    // Join their university room automatically
-    socket.join(university);
-    // Join a private room for the user to receive targeted messages
-    socket.join(userId.toString());
+  socket.on('user_online', () => {
+    onlineUsers.set(socket.id, {
+      userId: socket.userId,
+      name: socket.userName,
+      university: socket.userUniversity,
+    });
+    socket.join(socket.userUniversity);
+    socket.join(socket.userId);
     io.emit('online_users', Array.from(onlineUsers.values()));
-    console.log(`[WS] ${name} joined private room: ${userId}`);
   });
 
-  // Join a specific chat room (university or DM)
   socket.on('join_room', (room) => {
     socket.join(room);
-    console.log(`[WS] ${socket.id} joined room: ${room}`);
   });
 
   socket.on('leave_room', (room) => {
     socket.leave(room);
-    console.log(`[WS] ${socket.id} left room: ${room}`);
   });
 
-  // Send a message to a room
   socket.on('send_message', async (data) => {
-    // data: { room, senderId, senderName, text, mediaUrl, mediaType }
     try {
-      console.log(`[WS] Message from ${data.senderName} in room ${data.room}`);
-      
       const message = await Message.create({
         room: data.room,
-        sender: data.senderId,
+        sender: socket.userId,          // use verified identity, not client-supplied
         text: data.text,
         mediaUrl: data.mediaUrl,
         mediaType: data.mediaType || 'none',
         isSystem: data.isSystem || false
       });
 
-      // Update room's last message, timestamps and unread counts
       const room = await ChatRoom.findById(data.room);
       if (room) {
         room.lastMessage = message._id;
         room.updatedAt = Date.now();
-        
-        // Prepare delivery data
+
         const deliveryData = {
           ...data,
+          senderId: socket.userId,      // override client-supplied senderId
           _id: message._id,
           createdAt: message.createdAt,
         };
 
-        // Emit to the room (for people actively viewing the chat)
         io.to(data.room).emit('receive_message', deliveryData);
 
-        // Also emit to each participant's private room (for notifications/unread updates)
         room.participants.forEach(pId => {
           const participantId = pId.toString();
-          // We send to everyone including sender (for confirmation) or just others?
-          // The frontend replaces tempId, so it needs the message back.
-          if (participantId !== data.senderId.toString()) {
+          if (participantId !== socket.userId) {
             const current = room.unreadCounts.get(participantId) || 0;
             room.unreadCounts.set(participantId, current + 1);
-            
-            // Deliver to the participant's individual room
-            console.log(`[WS] Delivering to participant room: ${participantId}`);
             io.to(participantId).emit('receive_message', deliveryData);
           }
         });
         await room.save();
-      } else {
-        console.error(`[WS] Room not found: ${data.room}`);
       }
     } catch (err) {
       console.error('[WS] Error saving message:', err);
     }
   });
 
-  // Forward an already-saved message to a room (used when messages are created via HTTP API)
   socket.on('forward_message', async (data) => {
     try {
-      console.log(`[WS] Forwarding message from ${data.senderName} in room ${data.room}`);
-      
-      // Emit to the room (for people actively viewing the chat)
-      io.to(data.room).emit('receive_message', data);
+      const safeData = { ...data, senderId: socket.userId };
+      io.to(data.room).emit('receive_message', safeData);
 
-      // Also emit to each participant's private room (for notifications/unread updates)
       const room = await ChatRoom.findById(data.room);
       if (room) {
         room.participants.forEach(pId => {
           const participantId = pId.toString();
-          if (participantId !== data.senderId.toString()) {
-            console.log(`[WS] Delivering forwarded message to participant room: ${participantId}`);
-            io.to(participantId).emit('receive_message', data);
+          if (participantId !== socket.userId) {
+            io.to(participantId).emit('receive_message', safeData);
           }
         });
       }
@@ -192,21 +226,19 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Seen status
-  socket.on('message_seen', async ({ roomId, userId, messageId }) => {
+  socket.on('message_seen', async ({ roomId, messageId }) => {
     try {
       await Message.findByIdAndUpdate(messageId, {
-        $addToSet: { seenBy: { user: userId, seenAt: Date.now() } }
+        $addToSet: { seenBy: { user: socket.userId, seenAt: Date.now() } }
       });
-      socket.to(roomId).emit('user_seen', { messageId, userId });
+      socket.to(roomId).emit('user_seen', { messageId, userId: socket.userId });
     } catch (err) {
       console.error('[WS] Error updating seen status:', err);
     }
   });
 
-  // Typing indicators
   socket.on('typing', ({ room, name }) => {
-    socket.to(room).emit('user_typing', { name });
+    socket.to(room).emit('user_typing', { name: socket.userName });
   });
 
   socket.on('stop_typing', ({ room }) => {
@@ -220,7 +252,6 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     const user = onlineUsers.get(socket.id);
     if (user) {
-      console.log(`[WS] ${user.name} disconnected`);
       onlineUsers.delete(socket.id);
       io.emit('online_users', Array.from(onlineUsers.values()));
     }
@@ -229,10 +260,9 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 5001;
 const server = httpServer.listen(PORT, () => {
-  console.log(`\n🚀 CollegeAdda server running on http://localhost:${PORT}`);
+  console.log(`\n CollegeAdda server running on http://localhost:${PORT}`);
   console.log(`   Mode: ${process.env.NODE_ENV || 'development'}\n`);
 });
 
-// Fix Next.js fetch Keep-Alive bug without dropping connections
 server.keepAliveTimeout = 61000;
 server.headersTimeout = 65000;
