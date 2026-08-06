@@ -18,7 +18,7 @@ import {
   Sparkles,
   Users
 } from "lucide-react";
-import { GoogleOAuthProvider, useGoogleOAuth } from "@react-oauth/google";
+import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { motion } from "framer-motion";
 import styles from "./login.module.css";
 
@@ -156,147 +156,29 @@ function CampusNetwork() {
 
 /** Fast Google sign-in: FedCM / One Tap first — avoids the blank about:blank popup delay. */
 function GoogleContinueButton({ onSuccess, onError, disabled }) {
-  const { clientId, scriptLoadedSuccessfully } = useGoogleOAuth();
-  const initializedRef = useRef(false);
-  const fallbackHostRef = useRef(null);
-  const onSuccessRef = useRef(onSuccess);
-  const onErrorRef = useRef(onError);
-
-  useEffect(() => {
-    onSuccessRef.current = onSuccess;
-    onErrorRef.current = onError;
-  }, [onSuccess, onError]);
-
-  useEffect(() => {
-    const links = [
-      ["preconnect", "https://accounts.google.com"],
-      ["preconnect", "https://www.gstatic.com"],
-      ["dns-prefetch", "https://accounts.google.com"],
-    ];
-    const created = links.map(([rel, href]) => {
-      if (document.querySelector(`link[rel="${rel}"][href="${href}"]`)) return null;
-      const el = document.createElement("link");
-      el.rel = rel;
-      el.href = href;
-      if (rel === "preconnect") el.crossOrigin = "anonymous";
-      document.head.appendChild(el);
-      return el;
-    });
-    return () => created.forEach((el) => el?.remove());
-  }, []);
-
-  useEffect(() => {
-    if (!scriptLoadedSuccessfully || !window.google?.accounts?.id || initializedRef.current) return;
-    if (!clientId || clientId === "YOUR_GOOGLE_CLIENT_ID") return;
-
-    window.google.accounts.id.initialize({
-      client_id: clientId,
-      callback: (response) => onSuccessRef.current?.(response),
-      auto_select: false,
-      cancel_on_tap_outside: true,
-      use_fedcm_for_prompt: true,
-      use_fedcm_for_button: true,
-      itp_support: true,
-    });
-    initializedRef.current = true;
-  }, [scriptLoadedSuccessfully, clientId]);
-
-  const triggerFallbackButton = useCallback(() => {
-    const googleId = window.google?.accounts?.id;
-    if (!googleId || !fallbackHostRef.current) {
-      onErrorRef.current?.("Google sign-in could not start. Try again or use email.");
-      return;
-    }
-
-    fallbackHostRef.current.innerHTML = "";
-    googleId.renderButton(fallbackHostRef.current, {
-      type: "standard",
-      theme: "outline",
-      size: "large",
-      text: "continue_with",
-      shape: "rectangular",
-      width: 365,
-      logo_alignment: "left",
-    });
-
-    // Try to click immediately to preserve the synchronous user gesture context
-    const clickButton = () => {
-      const btn =
-        fallbackHostRef.current?.querySelector('[role="button"]') ||
-        fallbackHostRef.current?.querySelector("div[tabindex]");
-      if (btn) {
-        btn.click();
-      } else {
-        onErrorRef.current?.("Google sign-in could not start. Try again or use email.");
-      }
-    };
-
-    // `renderButton` typically populates the DOM immediately.
-    // If it's there, click it synchronously. Otherwise fallback to next tick.
-    const btnImmediately =
-      fallbackHostRef.current?.querySelector('[role="button"]') ||
-      fallbackHostRef.current?.querySelector("div[tabindex]");
-
-    if (btnImmediately) {
-      btnImmediately.click();
-    } else {
-      setTimeout(clickButton, 10);
-    }
-  }, []);
-
-  const handleClick = useCallback(() => {
-    if (disabled) return;
-    if (!scriptLoadedSuccessfully || !window.google?.accounts?.id) {
-      onErrorRef.current?.("Google is still loading — try again in a moment.");
-      return;
-    }
-    if (!clientId || clientId === "YOUR_GOOGLE_CLIENT_ID") {
-      onErrorRef.current?.("Google sign-in is not configured.");
-      return;
-    }
-
-    if (!initializedRef.current) {
-      window.google.accounts.id.initialize({
-        client_id: clientId,
-        callback: (response) => onSuccessRef.current?.(response),
-        auto_select: false,
-        cancel_on_tap_outside: true,
-        use_fedcm_for_prompt: true,
-        use_fedcm_for_button: true,
-        itp_support: true,
-      });
-      initializedRef.current = true;
-    }
-
-    // Directly trigger the fallback button to avoid FedCM prompt collision on user click
-    triggerFallbackButton();
-  }, [disabled, scriptLoadedSuccessfully, clientId, triggerFallbackButton]);
-
-  const ready = scriptLoadedSuccessfully && clientId && clientId !== "YOUR_GOOGLE_CLIENT_ID";
-
   return (
-    <>
-      <button
-        type="button"
-        className={styles.googleWrap}
-        onClick={handleClick}
-        disabled={disabled || !ready}
-        aria-busy={!ready}
-      >
-        <span className={styles.googleButtonFace}>
-          <span className={styles.googleLogo}>
-            <svg viewBox="0 0 24 24" role="img" aria-hidden="true">
-              <path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.4-.18-2.07H12v3.92h5.38a4.6 4.6 0 0 1-2 3.02v2.54h3.24c1.9-1.75 2.98-4.33 2.98-7.41Z" />
-              <path fill="#34A853" d="M12 22c2.7 0 4.98-.9 6.64-2.36l-3.24-2.54c-.9.6-2.05.96-3.4.96-2.61 0-4.82-1.76-5.61-4.13H3.04v2.62A10 10 0 0 0 12 22Z" />
-              <path fill="#FBBC05" d="M6.39 13.93A6.02 6.02 0 0 1 6.07 12c0-.67.12-1.32.32-1.93V7.45H3.04A10 10 0 0 0 2 12c0 1.63.39 3.18 1.04 4.55l3.35-2.62Z" />
-              <path fill="#EA4335" d="M12 5.94c1.47 0 2.79.5 3.83 1.5l2.88-2.88A9.66 9.66 0 0 0 12 2a10 10 0 0 0-8.96 5.45l3.35 2.62C7.18 7.7 9.39 5.94 12 5.94Z" />
-            </svg>
-          </span>
-          <span>{ready ? "Continue with Google" : "Loading Google…"}</span>
-        </span>
-      </button>
-      <div ref={fallbackHostRef} className={styles.googleFallbackHost} aria-hidden="true" />
-    </>
+    <div 
+      style={{ 
+        width: '100%', 
+        display: 'flex', 
+        justifyContent: 'center', 
+        opacity: disabled ? 0.6 : 1,
+        pointerEvents: disabled ? 'none' : 'auto',
+        marginBottom: '1rem' // to match previous spacing
+      }}
+    >
+      <GoogleLogin
+        onSuccess={onSuccess}
+        onError={() => onError?.("Google sign-in failed or was cancelled.")}
+        type="standard"
+        theme="outline"
+        size="large"
+        text="continue_with"
+        shape="rectangular"
+        width="365"
+        logo_alignment="left"
+      />
+    </div>
   );
 }
 
