@@ -437,6 +437,16 @@ function MessagesContent() {
       return;
     }
 
+    if (userIdParam) {
+      // Fast path: check if we already have a private chat with this user
+      const existingRoom = chats.find(c => c.type === "private" && String(c.partnerId) === String(userIdParam));
+      if (existingRoom) {
+        deepLinkHandledRef.current = true;
+        openDirectRoom(existingRoom);
+        return;
+      }
+    }
+
     // Always getOrCreate so empty DMs get a one-shot inbox surface bump
     if (creatingDirectRoomRef.current === userIdParam) return;
     deepLinkHandledRef.current = true;
@@ -461,7 +471,7 @@ function MessagesContent() {
         }
         const room = await createRes.json();
         if (cancelled) return;
-        await queryClient.invalidateQueries({ queryKey: ["chat-rooms"] });
+        queryClient.invalidateQueries({ queryKey: ["chat-rooms"] });
         const formatted = formatRooms([room])[0];
         if (formatted) openDirectRoom(formatted);
       } catch (err) {
