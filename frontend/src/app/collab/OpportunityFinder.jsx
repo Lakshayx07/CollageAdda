@@ -180,9 +180,13 @@ export default function OpportunityFinder({ currentUser }) {
     setError("");
     setSearched(true);
     try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("collegeadda_token") : null;
       const res = await fetch("/api/find-opportunities", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           profile: {
             course:   normalizeProfileText(form.course),
