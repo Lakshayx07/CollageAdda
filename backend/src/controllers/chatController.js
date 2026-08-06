@@ -39,18 +39,23 @@ export const getMessages = async (req, res) => {
   const page = parseInt(req.query.page, 10) || 1;
   const limit = parseInt(req.query.limit, 10) || 50;
   try {
+    const room = await ChatRoom.findById(req.params.id).select('participants').lean();
+    if (!room) return res.status(404).json({ message: 'Room not found' });
+    if (!room.participants.some(p => p.toString() === req.user._id.toString())) {
+      return res.status(403).json({ message: 'Not a room participant' });
+    }
+
     const messages = await Message.find({ room: req.params.id })
       .populate('sender', 'name isVerified updatedAt')
       .sort({ createdAt: -1 })
       .limit(limit)
       .skip((page - 1) * limit)
       .lean();
-      
-    // Transform all profilePics to URLs to stop massive base64 payloads
+
     messages.forEach(m => {
       if (m.sender) transformUser(m.sender);
     });
-    
+
     res.json(messages.reverse());
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -64,17 +69,19 @@ export const getMessages = async (req, res) => {
  */
 export const markAsSeen = async (req, res) => {
   try {
+    const room = await ChatRoom.findById(req.params.id);
+    if (!room) return res.status(404).json({ message: 'Room not found' });
+    if (!room.participants.some(p => p.toString() === req.user._id.toString())) {
+      return res.status(403).json({ message: 'Not a room participant' });
+    }
+
     await Message.updateMany(
       { room: req.params.id, 'seenBy.user': { $ne: req.user._id } },
       { $push: { seenBy: { user: req.user._id } } }
     );
-    
-    // Reset unread count for this user in the room
-    const room = await ChatRoom.findById(req.params.id);
-    if (room) {
-      room.unreadCounts.set(req.user._id.toString(), 0);
-      await room.save();
-    }
+
+    room.unreadCounts.set(req.user._id.toString(), 0);
+    await room.save();
 
     res.json({ message: 'Messages marked as seen' });
   } catch (error) {
@@ -353,6 +360,11 @@ export const addMember = async (req, res) => {
   try {
     const room = await ChatRoom.findById(req.params.id);
     if (!room) return res.status(404).json({ message: 'Room not found' });
+
+    // Only existing participants can add new members
+    if (!room.participants.some(p => p.toString() === req.user._id.toString())) {
+      return res.status(403).json({ message: 'Not a room participant' });
+    }
 
     if (room.participants.includes(participantId)) {
       return res.status(400).json({ message: 'User already in room' });
