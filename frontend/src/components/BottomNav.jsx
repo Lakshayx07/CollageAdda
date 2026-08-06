@@ -9,10 +9,13 @@ import { Suspense } from "react";
 
 import { useSocket } from "@/context/SocketProvider";
 
+import { isUserUnverifiedOrIncomplete } from "@/utils/verificationCheck";
+
 function BottomNavContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [hasRequest, setHasRequest] = useState(false);
+  const [user, setUser] = useState(null);
   const { unreadCount } = useSocket();
 
   const navItems = [
@@ -21,6 +24,7 @@ function BottomNavContent() {
     { name: "Messages", path: "/messages", icon: MessageSquare },
     { name: "Network", path: "/friends", icon: Users },
     { name: "Community", path: "/community", icon: Users2 },
+    { name: "Profile", path: "/profile", icon: User },
   ];
 
   const [isVisible, setIsVisible] = useState(true);
@@ -77,6 +81,11 @@ function BottomNavContent() {
       const incoming = JSON.parse(localStorage.getItem("collegeadda_incoming") || "[]");
       const viewed = localStorage.getItem("collegeadda_friends_viewed") === "true";
       setHasRequest(incoming.length > 0 && !viewed);
+
+      const storedUser = localStorage.getItem("collegeadda_user");
+      if (storedUser) {
+        try { setUser(JSON.parse(storedUser)); } catch (e) {}
+      }
     };
     checkRequests();
     window.addEventListener("storage", checkRequests);
@@ -132,6 +141,15 @@ function BottomNavContent() {
                 <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-bold text-white shadow-sm">
                   {unreadCount}
                 </span>
+              )}
+              {item.name === "Profile" && isUserUnverifiedOrIncomplete(user) && (
+                <motion.span
+                  animate={{ scale: [1, 1.25, 1] }}
+                  transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[9px] font-black text-white shadow-md border border-white"
+                >
+                  1
+                </motion.span>
               )}
             </div>
             <span>{item.name}</span>

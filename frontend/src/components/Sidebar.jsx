@@ -9,6 +9,7 @@ import { getAuthenticatedSupabaseClient } from "@/utils/supabaseAuthUser";
 import { syncLoginStreakForUser, getDisplayStreak, LOGIN_STREAK_UPDATED_EVENT } from "@/utils/loginStreak";
 import { useSocket } from "@/context/SocketProvider";
 import { useSidebar } from "@/context/SidebarContext";
+import { isUserUnverifiedOrIncomplete } from "@/utils/verificationCheck";
 
 const SIDEBAR_EASE = [0.22, 1, 0.36, 1];
 const SIDEBAR_DURATION = 0.4;
@@ -50,11 +51,12 @@ export default function Sidebar() {
     };
     checkRequests();
     
-    // Initialize streak from cached user to match Profile exactly
+    // Initialize user and streak from cached user to match Profile exactly
     const stored = localStorage.getItem("collegeadda_user");
     if (stored) {
       try {
         const u = JSON.parse(stored);
+        setAuthUser(u);
         setStreak(getDisplayStreak(u));
       } catch (e) {}
     }
@@ -171,6 +173,15 @@ export default function Sidebar() {
                     <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-bold text-white shadow-sm border border-white">
                       {unreadCount}
                     </span>
+                  )}
+                  {item.name === "Profile" && isUserUnverifiedOrIncomplete(authUser) && (
+                    <motion.span
+                      animate={{ scale: [1, 1.25, 1] }}
+                      transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                      className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-black text-white shadow-md border border-white"
+                    >
+                      1
+                    </motion.span>
                   )}
                 </div>
 

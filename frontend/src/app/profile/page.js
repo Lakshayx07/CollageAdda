@@ -5,6 +5,7 @@ import { LogOut, Edit3, X, Check, Plus, Grid, Heart, MessageCircle, Send, Chevro
 import { formatDistanceToNow } from "date-fns";
 import { getAuthenticatedSupabaseClient } from "@/utils/supabaseAuthUser";
 import { renderTextWithLinks } from "@/utils/linkify";
+import { isUserUnverifiedOrIncomplete } from "@/utils/verificationCheck";
 
 const InstagramIcon = ({ size = 20 }) => (
   <svg
@@ -908,17 +909,24 @@ export default function ProfilePage() {
 
               {/* Action Buttons (top-right of card) */}
               <div className="flex items-center gap-2 self-start sm:self-auto pt-1">
-                <button
-                  onClick={() => setModal("edit")}
-                  className={clsx(
-                    "px-5 py-2 border rounded-xl text-xs font-bold transition-all shadow-sm",
-                    !user.isVerified
-                      ? "bg-green-500 border-green-600 text-white hover:bg-green-600"
-                      : "bg-white border-[#E8E6E0] text-[#1A1A1A] hover:bg-[#F9F8F5]"
-                  )}
-                >
-                  {!user.isVerified ? "Verify Now" : "Edit Profile"}
-                </button>
+                {isUserUnverifiedOrIncomplete(user) ? (
+                  <motion.button
+                    animate={{ scale: [1, 1.08, 1] }}
+                    transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                    onClick={() => setModal("edit")}
+                    className="px-5 py-2 border rounded-xl text-xs font-black transition-all shadow-md bg-emerald-500 border-emerald-600 text-white hover:bg-emerald-600 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <span>Verify Now</span>
+                    <Sparkles size={14} className="animate-pulse" />
+                  </motion.button>
+                ) : (
+                  <button
+                    onClick={() => setModal("edit")}
+                    className="px-5 py-2 border rounded-xl text-xs font-bold transition-all shadow-sm bg-white border-[#E8E6E0] text-[#1A1A1A] hover:bg-[#F9F8F5] cursor-pointer"
+                  >
+                    Edit Profile
+                  </button>
+                )}
                 <button
                   onClick={handleLogout}
                   className="p-2 bg-white border border-red-200 rounded-xl text-red-500 hover:bg-red-50 hover:border-red-300 transition-all shadow-sm"

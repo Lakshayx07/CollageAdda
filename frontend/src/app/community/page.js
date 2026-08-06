@@ -260,7 +260,15 @@ export default function CommunityPage() {
 
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
-    if (!communityName.trim() || !supabase || creatingCommunity) return;
+    if (!communityName.trim()) {
+      showToast('error', 'Please enter a community name!');
+      return;
+    }
+    if (!communityDescription.trim()) {
+      showToast('error', 'Please enter a community description!');
+      return;
+    }
+    if (!supabase || creatingCommunity) return;
 
     setCreatingCommunity(true);
     try {
