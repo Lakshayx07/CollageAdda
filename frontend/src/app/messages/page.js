@@ -610,8 +610,14 @@ function MessagesContent() {
     e.target.value = "";
   };
 
-  const handleInputChange = (value) => {
+  const handleInputChange = (e) => {
+    const value = e.target.value;
     setInput(value);
+    
+    // Auto-resize
+    e.target.style.height = 'auto';
+    e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+
     if (!socket || !activeChat) return;
     socket.emit('typing', { room: activeChat.id, name: user?.name });
     clearTimeout(outgoingTypingTimeoutRef.current);
@@ -743,6 +749,10 @@ function MessagesContent() {
     setMediaType('none');
     setReplyTo(null);
     setIsSending(false);
+
+    // Reset textarea height
+    const textarea = document.getElementById('chat-textarea');
+    if (textarea) textarea.style.height = 'auto';
   };
 
   const addEmoji = (emoji) => {
@@ -1904,13 +1914,20 @@ function MessagesContent() {
                   </div>
 
                   {/* Input Field */}
-                  <input
+                  <textarea
+                    id="chat-textarea"
                     value={input}
-                    onChange={e => handleInputChange(e.target.value)}
-                    onKeyDown={e => e.key === "Enter" && sendMessage()}
-                    type="text"
+                    onChange={handleInputChange}
+                    onKeyDown={e => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        sendMessage();
+                      }
+                    }}
+                    rows={1}
                     placeholder="Share a campus moment..."
-                    className="flex-1 bg-transparent py-1 px-2 text-[14px] text-[#1A1A1A] placeholder:text-[#6B6B6B] focus:outline-none font-medium min-w-0"
+                    className="flex-1 bg-transparent py-1.5 px-2 text-[14px] text-[#1A1A1A] placeholder:text-[#6B6B6B] focus:outline-none font-medium min-w-0 resize-none overflow-y-auto"
+                    style={{ maxHeight: '120px' }}
                   />
 
                   {/* Send Button */}
