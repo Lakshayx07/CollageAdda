@@ -794,6 +794,9 @@ export default function Home() {
 
         // Success: Reset UI states
         setNewPostContent("");
+        const textarea = document.getElementById('post-editor-textarea');
+        if (textarea) textarea.style.height = 'auto';
+        
         setSelectedMedia(null);
         setSelectedMediaFile(null);
         setMediaType('none');
@@ -1451,8 +1454,13 @@ export default function Home() {
                 </div>
                 <div className="flex-1 flex flex-col gap-2 min-w-0">
                   <textarea
+                    id="post-editor-textarea"
                     value={newPostContent}
-                    onChange={(e) => setNewPostContent(e.target.value)}
+                    onChange={(e) => {
+                      setNewPostContent(e.target.value);
+                      e.target.style.height = 'auto';
+                      e.target.style.height = `${Math.min(e.target.scrollHeight, 400)}px`;
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
@@ -1460,7 +1468,8 @@ export default function Home() {
                       }
                     }}
                     placeholder={placeholderText}
-                    className="post-editor-textarea ca-input w-full min-w-0 resize-none sm:text-base mt-2 min-h-[60px] p-3 placeholder-black placeholder-opacity-100"
+                    className="post-editor-textarea ca-input w-full min-w-0 resize-none sm:text-base mt-2 min-h-[60px] p-3 placeholder-black placeholder-opacity-100 overflow-y-auto"
+                    style={{ maxHeight: '400px' }}
                   />
                   {isTextTooShort && (
                     <div className="flex items-center space-x-2 text-orange-400 text-xs font-semibold animate-pulse">

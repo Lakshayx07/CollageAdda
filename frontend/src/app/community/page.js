@@ -497,7 +497,7 @@ export default function CommunityPage() {
                         </div>
 
                         <div className="mb-auto">
-                          <div className="flex items-start justify-between gap-2 mb-1">
+                          <div className="flex items-start justify-between gap-2 mb-3">
                             <h3 onClick={() => router.push(`/community/${comm.id}`)} className="text-base font-black text-[#1A1A1A] leading-tight cursor-pointer hover:text-amber-700 transition-colors line-clamp-1">
                               {comm.name}
                             </h3>
@@ -511,7 +511,7 @@ export default function CommunityPage() {
                             {comm.description || "A space for students to connect, collaborate and share ideas with peers."}
                           </p>
 
-                          <div className="flex flex-wrap gap-1.5 mt-3">
+                          <div className="flex flex-wrap gap-1.5 mt-5">
                             {(comm.tags || []).slice(0, 3).map(tag => (
                               <span key={tag} className={`text-[11px] ${theme.soft} ${theme.text} px-3 py-1 rounded-full font-black`}>
                                 #{tag}
@@ -521,7 +521,7 @@ export default function CommunityPage() {
                         </div>
 
                         <div className="mt-4 pt-3 border-t border-[#F0ECE5]">
-                          <div className="flex items-center gap-2 text-xs font-black text-[#555555] mb-3">
+                          <div className="flex items-center gap-2 text-xs font-black text-[#555555] mb-5">
                             <Users2 size={16} className="text-[#1A1A1A]" />
                             {comm.member_count} member{comm.member_count !== 1 ? 's' : ''}
                           </div>
@@ -699,7 +699,7 @@ export default function CommunityPage() {
                     {popularTags.map(tag => (
                       <button
                         key={tag} type="button" onClick={() => handleTagToggle(tag)}
-                        className={clsx("text-[10px] px-3 py-1 rounded-full font-bold border transition-colors cursor-pointer", communityTags.includes(tag) ? "bg-amber-50 border-amber-400 text-amber-600" : "bg-[#F9F8F5] border-[#E8E6E0] text-[#6B6B6B]")}
+                        className={clsx("text-[11px] px-3.5 py-1.5 rounded-full font-bold border transition-colors cursor-pointer", communityTags.includes(tag) ? "bg-[#1A1A1A] border-[#1A1A1A] !text-white shadow-sm" : "bg-[#F9F8F5] border-[#E8E6E0] text-[#1A1A1A] hover:bg-[#F3F2EE]")}
                       >
                         #{tag}
                       </button>
@@ -715,8 +715,8 @@ export default function CommunityPage() {
                   </div>
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {communityTags.filter(t => !popularTags.includes(t)).map(tag => (
-                      <span key={tag} onClick={() => handleTagToggle(tag)} className="text-[10px] bg-amber-50 border border-amber-400 px-3 py-1 rounded-full text-amber-600 font-bold flex items-center gap-1 cursor-pointer">
-                        #{tag} <X size={10} />
+                      <span key={tag} onClick={() => handleTagToggle(tag)} className="text-[11px] bg-[#1A1A1A] border border-[#1A1A1A] shadow-sm px-3.5 py-1.5 rounded-full !text-white font-bold flex items-center gap-1.5 cursor-pointer hover:bg-black/80 transition-colors">
+                        #{tag} <X size={12} />
                       </span>
                     ))}
                   </div>

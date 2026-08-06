@@ -170,7 +170,15 @@ router.post('/login', async (req, res) => {
       } else {
         const lastIST = toISTDateString(new Date(user.lastLoginDate));
         if (lastIST !== todayIST) {
-          user.streak = (user.streak || 0) + 1;
+          const lastDate = new Date(lastIST);
+          const todayDate = new Date(todayIST);
+          const diffDays = Math.round((todayDate - lastDate) / (1000 * 60 * 60 * 24));
+          
+          if (diffDays === 1) {
+            user.streak = (user.streak || 0) + 1;
+          } else if (diffDays > 1) {
+            user.streak = 1; // Reset streak if they missed a day
+          }
           user.lastLoginDate = now;
         }
       }
@@ -239,7 +247,15 @@ router.post('/google', async (req, res) => {
       } else {
         const lastIST = toISTDateString(new Date(user.lastLoginDate));
         if (lastIST !== todayIST) {
-          user.streak = (user.streak || 0) + 1;
+          const lastDate = new Date(lastIST);
+          const todayDate = new Date(todayIST);
+          const diffDays = Math.round((todayDate - lastDate) / (1000 * 60 * 60 * 24));
+          
+          if (diffDays === 1) {
+            user.streak = (user.streak || 0) + 1;
+          } else if (diffDays > 1) {
+            user.streak = 1; // Reset streak if they missed a day
+          }
           user.lastLoginDate = now;
         }
       }
