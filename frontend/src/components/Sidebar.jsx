@@ -19,7 +19,8 @@ export default function Sidebar() {
   const router = useRouter();
   const [hasRequest, setHasRequest] = useState(false);
   const [streak, setStreak] = useState(0);
-  const [authUser, setAuthUser] = useState(null);
+  const [authUser, setAuthUser] = useState(null);       // full profile user from localStorage
+  const [supabaseUid, setSupabaseUid] = useState(null); // only for streak sync
   const { unreadCount } = useSocket();
   const { isExpanded, handleMouseEnter, handleMouseLeave } = useSidebar();
 
@@ -51,7 +52,7 @@ export default function Sidebar() {
     };
     checkRequests();
     
-    // Initialize user and streak from cached user to match Profile exactly
+    // Load full profile user from localStorage for badge check
     const stored = localStorage.getItem("collegeadda_user");
     if (stored) {
       try {
@@ -66,16 +67,14 @@ export default function Sidebar() {
     };
     window.addEventListener(LOGIN_STREAK_UPDATED_EVENT, handleStreakUpdate);
 
+    // Only get Supabase UID for streak sync — do NOT overwrite authUser
     const token = localStorage.getItem("collegeadda_token");
     if (token) {
       getAuthenticatedSupabaseClient()
-        .then(({ user }) => setAuthUser(user))
-        .catch((error) => {
-          console.warn("Could not confirm Supabase session for streak:", error);
-          setAuthUser(null);
-        });
+        .then(({ user }) => setSupabaseUid(user?.id || null))
+        .catch(() => setSupabaseUid(null));
     } else {
-      setAuthUser(null);
+      setSupabaseUid(null);
     }
 
     window.addEventListener("storage", checkRequests);
@@ -88,12 +87,12 @@ export default function Sidebar() {
   }, [pathname]);
 
   useEffect(() => {
-    if (!authUser?.id) return;
+    if (!supabaseUid) return;
 
-    syncLoginStreakForUser(authUser.id).then((streakCount) => {
+    syncLoginStreakForUser(supabaseUid).then((streakCount) => {
       if (streakCount) setStreak(streakCount);
     });
-  }, [authUser?.id]);
+  }, [supabaseUid]);
 
 
 

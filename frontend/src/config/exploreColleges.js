@@ -1,5 +1,19 @@
+// Maps the actual DB/API college name → the display name shown on cards
+export const COLLEGE_DISPLAY_NAME_OVERRIDES = {
+  "Rishihood University": "Rishihood University (NST SONIPAT)",
+  "DY Patil University": "Ajeenkya DY Patil (NST PUNE)",
+  "Dr. D.Y. Patil University": "Ajeenkya DY Patil (NST PUNE)",
+  "Ajeenkya DY Patil University": "Ajeenkya DY Patil (NST PUNE)",
+};
+
+// Returns the overridden display name for a college, or the original name
+export function getCollegeDisplayName(college) {
+  if (!college?.name) return "";
+  return COLLEGE_DISPLAY_NAME_OVERRIDES[college.name] || college.name;
+}
+
 export const EXPLORE_PRIORITY_COLLEGES = [
-  "Rishihood University",
+  "Rishihood University (NST SONIPAT)",
   "School of Planning and Architecture (SPA)",
   "IIT Delhi",
   "Delhi Technological University (DTU)",
@@ -15,8 +29,9 @@ export const EXPLORE_PRIORITY_COLLEGES = [
   "O.P. Jindal Global University (JGU), Sonipat",
   "SRM University, Delhi-NCR (Sonepat)",
   "Ashoka University",
-  "DY Patil University",
+  "Ajeenkya DY Patil (NST PUNE)",
   "S-VYASA (NST Bangalore)",
+  "Vedam School of Technology",
   "St. Mary's University (NST Hyderabad)",
   "IIT Bombay",
   "IIT Kanpur",
@@ -46,10 +61,12 @@ const PRIORITY_ALIASES = {
     "srm sonepat",
   ],
   "Ashoka University": ["ashoka"],
-  "DY Patil University": [
+  "Ajeenkya DY Patil (NST PUNE)": [
     "d.y. patil",
     "dy patil",
     "dr. d.y. patil",
+    "ajeenkya dy patil",
+    "ajeenkya d.y. patil",
   ],
   "S-VYASA (NST Bangalore)": [
     "s-vyasa",
@@ -61,6 +78,16 @@ const PRIORITY_ALIASES = {
     "st marys university",
     "st. mary's",
     "nst hyderabad",
+  ],
+  "Vedam School of Technology": [
+    "vedam",
+    "vedam school",
+    "vedam school of technology",
+  ],
+  "Rishihood University (NST SONIPAT)": [
+    "rishihood university",
+    "rishihood",
+    "nst sonipat",
   ],
 };
 
@@ -124,6 +151,26 @@ function findCollegeForPriority(allColleges, priorityName, usedIds) {
   return exactMatch || candidates[0];
 }
 
+// Static stub entries for colleges not yet in the DB (keyed by display name)
+const STATIC_COLLEGE_STUBS = {
+  "Vedam School of Technology": {
+    _id: "static-vedam-school-of-technology",
+    name: "Vedam School of Technology",
+    location: "Telangana",
+    category: "Engineering",
+    banner: "https://d13loartjoc1yn.cloudfront.net/upload/institute/images/large/1741756766Campus%203.webp",
+    studentsData: [],
+    postsData: [],
+    realStudentCount: 0,
+    followersCount: 0,
+  },
+};
+
+// Same stubs keyed by _id — used for fast lookup by URL param
+export const STATIC_COLLEGE_STUBS_BY_ID = Object.fromEntries(
+  Object.values(STATIC_COLLEGE_STUBS).map((s) => [s._id, s])
+);
+
 function buildExplorePool(allColleges) {
   const pool = [];
   const usedIds = new Set();
@@ -133,6 +180,13 @@ function buildExplorePool(allColleges) {
     if (match) {
       pool.push(match);
       usedIds.add(match._id || match.id);
+    } else if (STATIC_COLLEGE_STUBS[priorityName]) {
+      // Inject static stub if not found in API data
+      const stub = STATIC_COLLEGE_STUBS[priorityName];
+      if (!usedIds.has(stub._id)) {
+        pool.push(stub);
+        usedIds.add(stub._id);
+      }
     }
   }
 

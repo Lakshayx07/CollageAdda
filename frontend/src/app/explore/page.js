@@ -52,7 +52,7 @@ import VerifiedBadge from "@/components/VerifiedBadge";
 import PlayerCard from "@/components/PlayerCard";
 import PlayerCardForm from "@/components/PlayerCardForm";
 import clsx from "clsx";
-import { getExploreColleges, getExploreCollegePool } from "@/config/exploreColleges";
+import { getExploreColleges, getExploreCollegePool, getCollegeDisplayName, STATIC_COLLEGE_STUBS_BY_ID } from "@/config/exploreColleges";
 import { supabase } from "@/utils/supabase";
 import { getAuthenticatedSupabaseClient } from "@/utils/supabaseAuthUser";
 
@@ -628,6 +628,7 @@ const [viewingPlayerCard, setViewingPlayerCard] = useState(null);
   }, []);
 
   const collegeIdParam = searchParams.get("collegeId");
+  const isStaticCollege = collegeIdParam?.startsWith("static-");
 
   // Always fetch fresh college detail so posts are never stale (staleTime: 0)
   const {
@@ -636,9 +637,9 @@ const [viewingPlayerCard, setViewingPlayerCard] = useState(null);
     isFetching: collegeDetailFetching,
   } = useApiQuery(
     ["college-detail", collegeIdParam],
-    collegeIdParam ? `/api/colleges/${collegeIdParam}?page=1&limit=20` : null,
+    collegeIdParam && !isStaticCollege ? `/api/colleges/${collegeIdParam}?page=1&limit=20` : null,
     {
-      enabled: isMounted && !!getToken() && !!collegeIdParam,
+      enabled: isMounted && !!getToken() && !!collegeIdParam && !isStaticCollege,
       staleTime: 0,  // always fetch fresh posts
     }
   );
@@ -686,6 +687,16 @@ const [viewingPlayerCard, setViewingPlayerCard] = useState(null);
     setPostsCurrentPage(1);
     setPostsHasMore(false);
 
+    // If this is a static stub, resolve it directly — no API call needed
+    if (isStaticCollege) {
+      const stub = STATIC_COLLEGE_STUBS_BY_ID[collegeIdParam];
+      if (stub) {
+        setSelectedCollege({ ...stub, studentsData: [], postsData: [] });
+        setLoadingCollegeId(null);
+      }
+      return;
+    }
+
     const listMatch =
       colleges.find((c) => String(c._id || c.id) === String(collegeIdParam)) || null;
 
@@ -704,7 +715,7 @@ const [viewingPlayerCard, setViewingPlayerCard] = useState(null);
         postsData: [], // intentionally empty — let API provide real posts
       };
     });
-  }, [collegeIdParam, colleges]);
+  }, [collegeIdParam, colleges, isStaticCollege]);
 
   // Merge fetched detail into selected college (preserve lazy-loaded students)
   // Also sync hasMore from the first-page response
@@ -1254,7 +1265,7 @@ const [viewingPlayerCard, setViewingPlayerCard] = useState(null);
                             className="font-black text-[1.05rem] leading-snug line-clamp-2 flex-1 tracking-tight"
                             style={{ color: "white", textShadow: "0 2px 10px rgba(0,0,0,0.55)" }}
                           >
-                            {college.name}
+                            {getCollegeDisplayName(college)}
                           </h3>
                           {(college.followersCount ?? 0) > 0 && (
                             <div className="flex items-center gap-1 shrink-0 rounded-full border border-[#FFFFFF]/15 bg-[#000000]/45 px-2.5 py-1 backdrop-blur-md mt-1">
