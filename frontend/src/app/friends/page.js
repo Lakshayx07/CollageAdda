@@ -451,8 +451,8 @@ export default function FriendsPage() {
 
       Object.values(usersByUni).forEach(uniGroup => {
         uniGroup.sort((a, b) => {
-          const scoreA = (a.followersCount ?? (a.followers?.length || 0)) + (a.followingCount ?? (a.following?.length || 0));
-          const scoreB = (b.followersCount ?? (b.followers?.length || 0)) + (b.followingCount ?? (b.following?.length || 0));
+          const scoreA = (a.followersCount ?? (a.followers?.length || 0)) + (a.followingCount ?? (a.following?.length || 0)) + (a.xp || 0) + (a.points || 0);
+          const scoreB = (b.followersCount ?? (b.followers?.length || 0)) + (b.followingCount ?? (b.following?.length || 0)) + (b.xp || 0) + (b.points || 0);
           return scoreB - scoreA;
         });
       });
@@ -462,9 +462,9 @@ export default function FriendsPage() {
         let localRank = 1;
 
         if (u.university && usersByUni[u.university]) {
-          const myScore = (u.followersCount ?? (u.followers?.length || 0)) + (u.followingCount ?? (u.following?.length || 0));
+          const myScore = (u.followersCount ?? (u.followers?.length || 0)) + (u.followingCount ?? (u.following?.length || 0)) + (u.xp || 0) + (u.points || 0);
           for (const su of usersByUni[u.university]) {
-            const suScore = (su.followersCount ?? (su.followers?.length || 0)) + (su.followingCount ?? (su.following?.length || 0));
+            const suScore = (su.followersCount ?? (su.followers?.length || 0)) + (su.followingCount ?? (su.following?.length || 0)) + (su.xp || 0) + (su.points || 0);
             if (suScore > myScore) localRank++;
             else break;
           }
@@ -713,8 +713,8 @@ export default function FriendsPage() {
 
       Object.values(usersByUni).forEach(uniGroup => {
         uniGroup.sort((a, b) => {
-          const scoreA = (a.followersCount ?? (a.followers?.length || 0)) + (a.followingCount ?? (a.following?.length || 0));
-          const scoreB = (b.followersCount ?? (b.followers?.length || 0)) + (b.followingCount ?? (b.following?.length || 0));
+          const scoreA = (a.followersCount ?? (a.followers?.length || 0)) + (a.followingCount ?? (a.following?.length || 0)) + (a.xp || 0) + (a.points || 0);
+          const scoreB = (b.followersCount ?? (b.followers?.length || 0)) + (b.followingCount ?? (b.following?.length || 0)) + (b.xp || 0) + (b.points || 0);
           return scoreB - scoreA;
         });
       });
@@ -722,9 +722,9 @@ export default function FriendsPage() {
       return updated.map(u => {
         if (!u.university || !usersByUni[u.university]) return u;
         let localRank = 1;
-        const myScore = (u.followersCount ?? (u.followers?.length || 0)) + (u.followingCount ?? (u.following?.length || 0));
+        const myScore = (u.followersCount ?? (u.followers?.length || 0)) + (u.followingCount ?? (u.following?.length || 0)) + (u.xp || 0) + (u.points || 0);
         for (const su of usersByUni[u.university]) {
-          const suScore = (su.followersCount ?? (su.followers?.length || 0)) + (su.followingCount ?? (su.following?.length || 0));
+          const suScore = (su.followersCount ?? (su.followers?.length || 0)) + (su.followingCount ?? (su.following?.length || 0)) + (su.xp || 0) + (su.points || 0);
           if (suScore > myScore) localRank++;
           else break;
         }
@@ -779,7 +779,7 @@ export default function FriendsPage() {
         ...person,
         followerCount: person.followersCount ?? 0,
         followingCount: person.followingCount ?? 0,
-        influenceScore: (person.followersCount ?? 0) + (person.followingCount ?? 0),
+        influenceScore: (person.followersCount ?? 0) + (person.followingCount ?? 0) + (person.xp || 0) + (person.points || 0),
       }))
       .sort((a, b) => b.influenceScore - a.influenceScore)
       .map((person, index) => ({ ...person, rank: index + 1 }));
@@ -1172,7 +1172,7 @@ export default function FriendsPage() {
                     {leaderboardTab === "global_pulse" ? "Top 10 Worldwide" : "Top 10 Students"}
                   </h3>
                   <span className="text-[10px] bg-[#F9F8F5] border border-[#E8E6E0] px-3 py-1 rounded-full text-yellow-300 font-bold border border-yellow-500/10">
-                    followers + following
+                    Network + XP
                   </span>
                 </div>
 

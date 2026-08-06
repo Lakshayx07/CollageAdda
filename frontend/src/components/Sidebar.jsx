@@ -251,7 +251,7 @@ export default function Sidebar() {
         <div className={clsx(
           "bg-[#FAFAF8] border border-[#E8E6E0] shadow-sm relative overflow-hidden transition-[width,height,border-radius,padding,margin] duration-[400ms] ease-[cubic-bezier(0.22,1,0.36,1)]",
           isExpanded
-            ? "rounded-[1.25rem] p-4 mx-4 h-auto w-auto"
+            ? "rounded-[1.25rem] px-4 pt-4 pb-1.5 mx-4 h-auto w-auto"
             : "rounded-full w-12 h-12 flex items-center justify-center p-0 ml-4"
         )}>
           <motion.div
@@ -261,16 +261,15 @@ export default function Sidebar() {
             className={clsx("flex flex-col w-full h-full", !isExpanded && "pointer-events-none absolute inset-0")}
             aria-hidden={!isExpanded}
           >
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-[12px] font-bold text-[#1A1A1A]">Your Streak</span>
-              <div className="w-4 h-4 rounded-full bg-[#E8E6E0] flex items-center justify-center text-[8px] text-[#888888] font-bold">?</div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-black uppercase tracking-[0.15em] text-[#1A1A1A]">Your Streak</span>
             </div>
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-xl font-extrabold text-[#1A1A1A]">{streak} Days</p>
-                <p className="text-[11px] font-semibold text-[#888888]">Keep going!</p>
+                <p className="text-3xl font-black text-[#1A1A1A] tracking-tight">{streak} Days</p>
+                <p className="text-[13px] font-bold text-[#888888] mt-1">Keep going!</p>
               </div>
-              <span className="text-2xl drop-shadow-md">🔥</span>
+              <span className="text-4xl drop-shadow-[0_4px_12px_rgba(255,165,0,0.5)]">🔥</span>
             </div>
           </motion.div>
           <motion.div

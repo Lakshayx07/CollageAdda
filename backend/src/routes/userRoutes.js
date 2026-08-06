@@ -852,7 +852,9 @@ router.get('/network/leaderboard', protect, async (req, res) => {
           score: {
             $add: [
               { $size: { $ifNull: ['$followers', []] } },
-              { $size: { $ifNull: ['$following', []] } }
+              { $size: { $ifNull: ['$following', []] } },
+              { $ifNull: ['$xp', 0] },
+              { $ifNull: ['$points', 0] }
             ]
           }
         }
