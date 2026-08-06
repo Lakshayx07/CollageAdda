@@ -175,7 +175,7 @@ function GoogleContinueButton({ onSuccess, onError, disabled }) {
         size="large"
         text="continue_with"
         shape="rectangular"
-        width="365"
+        width="340"
         logo_alignment="left"
       />
     </div>
