@@ -115,6 +115,7 @@ export default function FriendsPage() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [recentlyConnected, setRecentlyConnected] = useState(new Set());
   const queryClient = useQueryClient();
   const [activeNetworkTab, setActiveNetworkTab] = useState("find");
   const [leaderboardTab, setLeaderboardTab] = useState("my_campus");
@@ -476,8 +477,8 @@ export default function FriendsPage() {
       });
 
       users.sort((a, b) => {
-        const isConnectedA = followStatus[a._id] === "connected";
-        const isConnectedB = followStatus[b._id] === "connected";
+        const isConnectedA = followStatus[a._id] === "connected" && !recentlyConnected.has(a._id) && !recentlyConnected.has(a.id);
+        const isConnectedB = followStatus[b._id] === "connected" && !recentlyConnected.has(b._id) && !recentlyConnected.has(b.id);
         if (isConnectedA === isConnectedB) return 0;
         return isConnectedA ? 1 : -1;
       });
@@ -487,7 +488,7 @@ export default function FriendsPage() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setCampusUsers(users);
     }
-  }, [suggestedData, normalizeUserAvatar, followStatus]);
+  }, [suggestedData, normalizeUserAvatar, followStatus, recentlyConnected]);
 
 
   const fetchGlobalUsers = useCallback(async () => {
@@ -677,6 +678,16 @@ export default function FriendsPage() {
     if (isConnecting) {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 5000);
+      
+      // Keep the card from dropping for 15 seconds
+      setRecentlyConnected(prev => new Set(prev).add(targetId));
+      setTimeout(() => {
+        setRecentlyConnected(prev => {
+          const next = new Set(prev);
+          next.delete(targetId);
+          return next;
+        });
+      }, 15000);
     }
     setFollowStatus(prev => ({ ...prev, [targetId]: isConnecting ? "connected" : null }));
 
