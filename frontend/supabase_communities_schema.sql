@@ -1,6 +1,7 @@
 -- ====================================================
 -- CollageAdda — Communities Feature
 -- Run this entire script in your Supabase SQL Editor
+-- auth.uid() returns the backend-minted sub (Mongo→UUID user ID)
 -- ====================================================
 
 -- 1. COMMUNITIES TABLE
@@ -71,32 +72,82 @@ ALTER TABLE community_members   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE community_messages  ENABLE ROW LEVEL SECURITY;
 
 -- 6. RLS POLICIES
+-- Communities: authenticated users can read all; only owner can update/delete.
 DROP POLICY IF EXISTS "Allow public select communities"  ON communities;
 DROP POLICY IF EXISTS "Allow public insert communities"  ON communities;
 DROP POLICY IF EXISTS "Allow public update communities"  ON communities;
 DROP POLICY IF EXISTS "Allow public delete communities"  ON communities;
-CREATE POLICY "Allow public select communities"  ON communities FOR SELECT  USING (true);
-CREATE POLICY "Allow public insert communities"  ON communities FOR INSERT  WITH CHECK (true);
-CREATE POLICY "Allow public update communities"  ON communities FOR UPDATE  USING (true);
-CREATE POLICY "Allow public delete communities"  ON communities FOR DELETE  USING (true);
 
+CREATE POLICY "Authenticated select communities"
+  ON communities FOR SELECT TO authenticated USING (true);
+
+CREATE POLICY "Authenticated insert communities"
+  ON communities FOR INSERT TO authenticated
+  WITH CHECK (created_by = auth.uid()::text);
+
+CREATE POLICY "Owner update communities"
+  ON communities FOR UPDATE TO authenticated
+  USING (created_by = auth.uid()::text);
+
+CREATE POLICY "Owner delete communities"
+  ON communities FOR DELETE TO authenticated
+  USING (created_by = auth.uid()::text);
+
+-- Members: authenticated users can read; only the user themselves can join/leave.
 DROP POLICY IF EXISTS "Allow public select members"  ON community_members;
 DROP POLICY IF EXISTS "Allow public insert members"  ON community_members;
 DROP POLICY IF EXISTS "Allow public update members"  ON community_members;
 DROP POLICY IF EXISTS "Allow public delete members"  ON community_members;
-CREATE POLICY "Allow public select members"  ON community_members FOR SELECT  USING (true);
-CREATE POLICY "Allow public insert members"  ON community_members FOR INSERT  WITH CHECK (true);
-CREATE POLICY "Allow public update members"  ON community_members FOR UPDATE  USING (true);
-CREATE POLICY "Allow public delete members"  ON community_members FOR DELETE  USING (true);
 
+CREATE POLICY "Authenticated select members"
+  ON community_members FOR SELECT TO authenticated USING (true);
+
+CREATE POLICY "Self insert members"
+  ON community_members FOR INSERT TO authenticated
+  WITH CHECK (user_id = auth.uid()::text);
+
+CREATE POLICY "Self update members"
+  ON community_members FOR UPDATE TO authenticated
+  USING (user_id = auth.uid()::text);
+
+CREATE POLICY "Self delete members"
+  ON community_members FOR DELETE TO authenticated
+  USING (user_id = auth.uid()::text);
+
+-- Messages: members of the community can read and write; sender can update/delete.
 DROP POLICY IF EXISTS "Allow public select messages"  ON community_messages;
 DROP POLICY IF EXISTS "Allow public insert messages"  ON community_messages;
 DROP POLICY IF EXISTS "Allow public update messages"  ON community_messages;
 DROP POLICY IF EXISTS "Allow public delete messages"  ON community_messages;
-CREATE POLICY "Allow public select messages"  ON community_messages FOR SELECT  USING (true);
-CREATE POLICY "Allow public insert messages"  ON community_messages FOR INSERT  WITH CHECK (true);
-CREATE POLICY "Allow public update messages"  ON community_messages FOR UPDATE  USING (true);
-CREATE POLICY "Allow public delete messages"  ON community_messages FOR DELETE  USING (true);
+
+CREATE POLICY "Member select messages"
+  ON community_messages FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM community_members
+      WHERE community_id = community_messages.community_id
+        AND user_id = auth.uid()::text
+    )
+  );
+
+CREATE POLICY "Member insert messages"
+  ON community_messages FOR INSERT TO authenticated
+  WITH CHECK (
+    sender_id = auth.uid()::text
+    AND EXISTS (
+      SELECT 1 FROM community_members
+      WHERE community_id = community_messages.community_id
+        AND user_id = auth.uid()::text
+    )
+  );
+
+CREATE POLICY "Sender update messages"
+  ON community_messages FOR UPDATE TO authenticated
+  USING (sender_id = auth.uid()::text);
+
+CREATE POLICY "Sender delete messages"
+  ON community_messages FOR DELETE TO authenticated
+  USING (sender_id = auth.uid()::text);
 
 -- 7. CHAT MEDIA STORAGE
 INSERT INTO storage.buckets (id, name, public)
@@ -104,9 +155,9 @@ VALUES ('community-chat', 'community-chat', true)
 ON CONFLICT (id) DO UPDATE SET public = true;
 
 DROP POLICY IF EXISTS "Public community chat media uploads" ON storage.objects;
-CREATE POLICY "Public community chat media uploads"
+CREATE POLICY "Authenticated community chat media uploads"
 ON storage.objects FOR INSERT
-TO anon, authenticated
+TO authenticated
 WITH CHECK (bucket_id = 'community-chat');
 
 DROP POLICY IF EXISTS "Public community chat media reads" ON storage.objects;
@@ -116,10 +167,10 @@ TO anon, authenticated
 USING (bucket_id = 'community-chat');
 
 DROP POLICY IF EXISTS "Public community chat media cleanup" ON storage.objects;
-CREATE POLICY "Public community chat media cleanup"
+CREATE POLICY "Authenticated community chat media cleanup"
 ON storage.objects FOR DELETE
-TO anon, authenticated
-USING (bucket_id = 'community-chat');
+TO authenticated
+USING (bucket_id = 'community-chat' AND (storage.foldername(name))[1] = auth.uid()::text);
 
 -- 8. REALTIME
 ALTER PUBLICATION supabase_realtime ADD TABLE community_messages;
