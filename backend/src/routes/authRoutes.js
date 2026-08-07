@@ -157,7 +157,15 @@ router.post('/login', async (req, res) => {
     }
 
     const user = await User.findOne({ email: normalizedEmail });
-    if (user && (await user.matchPassword(password))) {
+    if (user) {
+      const isMatch = await user.matchPassword(password);
+      if (!isMatch) {
+        // Detect if this account was created via Google Auth
+        if (user.profilePic && user.profilePic.includes('googleusercontent.com')) {
+          return res.status(401).json({ message: 'This email is linked to a Google account. Please use "Continue with Google" to sign in.' });
+        }
+        return res.status(401).json({ message: 'Invalid email or password' });
+      }
 
       const reqUniversity = normalizeUniversityName(university);
       if (reqUniversity && reqUniversity !== 'Other' && user.university && user.university !== 'Other' && user.university !== reqUniversity) {
@@ -227,6 +235,7 @@ router.post('/google', async (req, res) => {
       return res.status(400).json({ message: 'Google credential missing' });
     }
 
+    email = email?.trim().toLowerCase();
     let user = await User.findOne({ email });
     let isNewUser = false;
 
