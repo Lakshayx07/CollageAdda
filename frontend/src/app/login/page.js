@@ -205,6 +205,9 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [university, setUniversity] = useState("");
   const [message, setMessage] = useState("");
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState("");
 
   useEffect(() => {
     const fetchColleges = async () => {
@@ -236,6 +239,60 @@ export default function LoginPage() {
   const handleAuth = async (event) => {
     event.preventDefault();
     setMessage("");
+
+    if (isForgotPassword) {
+      if (!email.trim()) {
+        setMessage("Enter your registered college email.");
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        if (!otpSent) {
+          // Request OTP
+          const response = await fetch(`${API_URL}/api/auth/forgot-password`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email })
+          });
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(data.message || "Failed to send reset email.");
+          setOtpSent(true);
+          setMessage("OTP sent to your email. It expires in 10 minutes.");
+        } else {
+          // Verify OTP and reset password
+          if (!otp.trim() || !password.trim()) {
+            setMessage("OTP and new password are required.");
+            setIsLoading(false);
+            return;
+          }
+          if (password.length < 8) {
+            setMessage("Password must be at least 8 characters.");
+            setIsLoading(false);
+            return;
+          }
+          
+          const response = await fetch(`${API_URL}/api/auth/reset-password`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, otp, newPassword: password })
+          });
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(data.message || "Failed to reset password.");
+          
+          setMessage("Password reset successfully. You can now log in.");
+          setIsForgotPassword(false);
+          setOtpSent(false);
+          setOtp("");
+          setPassword("");
+        }
+      } catch (error) {
+        setMessage(error.message);
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
 
     if (isSignUp) {
       if (!name.trim()) {
@@ -310,6 +367,16 @@ export default function LoginPage() {
   const switchMode = () => {
     setIsSignUp((current) => !current);
     setEmailOpen(true);
+    setIsForgotPassword(false);
+    setOtpSent(false);
+    setMessage("");
+  };
+
+  const switchForgotMode = () => {
+    setIsForgotPassword((current) => !current);
+    setEmailOpen(true);
+    setIsSignUp(false);
+    setOtpSent(false);
     setMessage("");
   };
 
@@ -433,53 +500,122 @@ export default function LoginPage() {
 
               {emailOpen && (
                 <form className={styles.emailForm} onSubmit={handleAuth}>
-                  {isSignUp && (
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(event) => setName(event.target.value)}
-                      placeholder="Full name"
-                      autoComplete="name"
-                      required
-                    />
+                  {isForgotPassword ? (
+                    <>
+                      <div className={styles.welcome} style={{ marginBottom: "1rem" }}>
+                        <h3>Reset Password</h3>
+                      </div>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(event) => setEmail(event.target.value)}
+                        placeholder="Registered college email"
+                        autoComplete="email"
+                        required
+                        disabled={otpSent}
+                      />
+                      {otpSent && (
+                        <>
+                          <input
+                            type="text"
+                            value={otp}
+                            onChange={(event) => setOtp(event.target.value)}
+                            placeholder="Enter 6-digit OTP"
+                            required
+                          />
+                          <div className={styles.passwordField}>
+                            <input
+                              type={showPassword ? "text" : "password"}
+                              value={password}
+                              onChange={(event) => setPassword(event.target.value)}
+                              placeholder="New Password (min 8 characters)"
+                              minLength={8}
+                              required
+                            />
+                            <button
+                              type="button"
+                              className={styles.passwordToggle}
+                              onClick={() => setShowPassword((visible) => !visible)}
+                              aria-label={showPassword ? "Hide password" : "Show password"}
+                              aria-pressed={showPassword}
+                            >
+                              {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+                            </button>
+                          </div>
+                        </>
+                      )}
+                      <button className={styles.submitButton} type="submit" disabled={isLoading}>
+                        {isLoading ? "Please wait..." : otpSent ? "Reset Password" : "Send Reset OTP"}
+                      </button>
+                      <p className={styles.switchMode}>
+                        <button type="button" onClick={switchForgotMode}>
+                          Back to Sign In
+                        </button>
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      {isSignUp && (
+                        <input
+                          type="text"
+                          value={name}
+                          onChange={(event) => setName(event.target.value)}
+                          placeholder="Full name"
+                          autoComplete="name"
+                          required
+                        />
+                      )}
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(event) => setEmail(event.target.value)}
+                        placeholder="College email (e.g. you@rishihood.edu.in)"
+                        autoComplete="email"
+                        required
+                      />
+                      <div className={styles.passwordField}>
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          value={password}
+                          onChange={(event) => setPassword(event.target.value)}
+                          placeholder={isSignUp ? "Password (min 8 characters)" : "Password"}
+                          autoComplete={isSignUp ? "new-password" : "current-password"}
+                          minLength={isSignUp ? 8 : 1}
+                          required
+                        />
+                        <button
+                          type="button"
+                          className={styles.passwordToggle}
+                          onClick={() => setShowPassword((visible) => !visible)}
+                          aria-label={showPassword ? "Hide password" : "Show password"}
+                          aria-pressed={showPassword}
+                        >
+                          {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+                        </button>
+                      </div>
+                      {!isSignUp && (
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
+                          <button 
+                            type="button" 
+                            className={styles.switchMode} 
+                            style={{ padding: 0, margin: '0 0 10px 0', fontSize: '0.85rem' }} 
+                            onClick={switchForgotMode}
+                          >
+                            Forgot Password?
+                          </button>
+                        </div>
+                      )}
+                      <button className={styles.submitButton} type="submit" disabled={isLoading}>
+                        {isLoading ? "Please wait..." : isSignUp ? "Create Account" : "Continue with Email"}
+                      </button>
+                      <p className={styles.switchMode}>
+                        {isSignUp ? "Already have an account?" : "New to CampusAdda?"}
+                        <button type="button" onClick={switchMode}>
+                          {isSignUp ? "Sign in" : "Create account"}
+                        </button>
+                      </p>
+                    </>
                   )}
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="College email (e.g. you@rishihood.edu.in)"
-                    autoComplete="email"
-                    required
-                  />
-                  <div className={styles.passwordField}>
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                      placeholder={isSignUp ? "Password (min 8 characters)" : "Password"}
-                      autoComplete={isSignUp ? "new-password" : "current-password"}
-                      minLength={isSignUp ? 8 : 1}
-                      required
-                    />
-                    <button
-                      type="button"
-                      className={styles.passwordToggle}
-                      onClick={() => setShowPassword((visible) => !visible)}
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                      aria-pressed={showPassword}
-                    >
-                      {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
-                    </button>
-                  </div>
-                  <button className={styles.submitButton} type="submit" disabled={isLoading}>
-                    {isLoading ? "Please wait..." : isSignUp ? "Create Account" : "Continue with Email"}
-                  </button>
-                  <p className={styles.switchMode}>
-                    {isSignUp ? "Already have an account?" : "New to CampusAdda?"}
-                    <button type="button" onClick={switchMode}>
-                      {isSignUp ? "Sign in" : "Create account"}
-                    </button>
-                  </p>
                 </form>
               )}
 

@@ -68,6 +68,10 @@ const userSchema = mongoose.Schema({
   streak: { type: Number, default: 0 },
   lastLoginDate: { type: Date },
 
+  // Password Reset Fields
+  resetPasswordOtp: { type: String },
+  resetPasswordExpires: { type: Date },
+
   isAdmin: { type: Boolean, default: false }
 }, { timestamps: true });
 

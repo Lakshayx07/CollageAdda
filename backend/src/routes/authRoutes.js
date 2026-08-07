@@ -6,7 +6,9 @@ import ChatRoom from '../models/ChatRoom.js';
 import { ensureUniversityGroup, normalizeUniversityName } from '../utils/universityUtils.js';
 import { publicUserPayload } from '../utils/verificationUtils.js';
 import { isEmailAllowedForUniversity } from '../utils/emailDomain.js';
+import { sendEmail } from '../utils/email.js';
 import { OAuth2Client } from 'google-auth-library';
+import bcrypt from 'bcryptjs';
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -328,6 +330,104 @@ router.post('/google', async (req, res) => {
   } catch (error) {
     console.error('Google Auth Error:', error);
     res.status(500).json({ message: 'Failed to authenticate with Google' });
+  }
+});
+
+// @route   POST /api/auth/forgot-password
+// @desc    Send OTP to user's email for password reset
+router.post('/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  try {
+    const normalizedEmail = email?.trim().toLowerCase();
+    if (!normalizedEmail) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.profilePic && user.profilePic.includes('googleusercontent.com')) {
+      return res.status(400).json({ message: 'This account is linked to Google. Please use Google login.' });
+    }
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Store OTP securely
+    const salt = await bcrypt.genSalt(10);
+    const hashedOtp = await bcrypt.hash(otp, salt);
+    
+    user.resetPasswordOtp = hashedOtp;
+    user.resetPasswordExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+    await user.save();
+
+    const emailSent = await sendEmail({
+      to: user.email,
+      subject: 'Campus Adda - Password Reset OTP',
+      text: `Your OTP for password reset is: ${otp}\n\nThis OTP is valid for 10 minutes. If you didn't request a password reset, please ignore this email.`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>Password Reset Request</h2>
+          <p>You requested to reset your password on Campus Adda.</p>
+          <p>Your One-Time Password (OTP) is:</p>
+          <h1 style="background: #f4f4f4; padding: 10px; text-align: center; letter-spacing: 5px;">${otp}</h1>
+          <p>This OTP is valid for <strong>10 minutes</strong>.</p>
+          <p>If you didn't request this, you can safely ignore this email.</p>
+        </div>
+      `
+    });
+
+    if (!emailSent) {
+      user.resetPasswordOtp = undefined;
+      user.resetPasswordExpires = undefined;
+      await user.save();
+      return res.status(500).json({ message: 'Email could not be sent' });
+    }
+
+    res.json({ message: 'OTP sent to your email' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @route   POST /api/auth/reset-password
+// @desc    Verify OTP and reset password
+router.post('/reset-password', async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+  try {
+    const normalizedEmail = email?.trim().toLowerCase();
+    if (!normalizedEmail || !otp || !newPassword) {
+      return res.status(400).json({ message: 'Email, OTP, and new password are required' });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters' });
+    }
+
+    const user = await User.findOne({ 
+      email: normalizedEmail,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (!user || !user.resetPasswordOtp) {
+      return res.status(400).json({ message: 'OTP is invalid or has expired' });
+    }
+
+    const isMatch = await bcrypt.compare(otp.trim(), user.resetPasswordOtp);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid OTP' });
+    }
+
+    user.password = newPassword;
+    user.resetPasswordOtp = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save(); // The pre('save') hook will hash the new password
+
+    res.json({ message: 'Password reset successful' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 
