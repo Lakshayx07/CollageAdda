@@ -3,15 +3,9 @@ const nextConfig = {
   // Allow images from external domains used in the app
   images: {
     remotePatterns: [
-      { protocol: 'https', hostname: 'i.pravatar.cc' },
-      { protocol: 'https', hostname: 'www.svgrepo.com' },
-      { protocol: 'https', hostname: 'images.unsplash.com' },
-      { protocol: 'https', hostname: 'media.collegedekho.com' },
+      { protocol: 'https', hostname: '**' },
       { protocol: 'http', hostname: 'localhost' },
       { protocol: 'http', hostname: '127.0.0.1' },
-      { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
-      { protocol: 'https', hostname: 'res.cloudinary.com' },
-      { protocol: 'https', hostname: 'tbenkkzohxwufwnxudeh.supabase.co' },
     ],
   },
   // Required for Google OAuth popup — without this the popup sticks on about:blank
