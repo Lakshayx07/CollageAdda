@@ -29,7 +29,16 @@ export const isEmailAllowedForUniversity = async (email, universityName) => {
   if (!college) return false;
 
   const allowed = (college.allowedEmailDomains || []).map((d) => d.toLowerCase().trim());
-  if (allowed.length === 0) return false;
+  
+  if (allowed.length === 0) {
+    // Fallback: If the university has no explicit domains configured in the database yet,
+    // we simply block common personal email providers to enforce "college emails only".
+    const personalDomains = [
+      'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 
+      'aol.com', 'protonmail.com', 'mail.com', 'zoho.com'
+    ];
+    return !personalDomains.includes(domain);
+  }
 
   return allowed.some((d) => domain === d || domain.endsWith(`.${d}`));
 };
