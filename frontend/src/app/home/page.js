@@ -1189,7 +1189,7 @@ export default function Home() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ target: targetUserId })
+        body: JSON.stringify({ targetUserId: targetUserId })
       });
 
       if (!roomRes.ok) throw new Error("Failed to access chat room");
