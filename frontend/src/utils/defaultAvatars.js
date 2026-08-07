@@ -67,7 +67,7 @@ const isInitialsAvatar = (src = "") => {
 
 const resolveProfilePicUrl = (src = "") => {
   const value = String(src || "").trim();
-  if (!value) return "";
+  if (!value || value === "null" || value === "undefined") return "";
   if (value.startsWith("/api/")) {
     const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001").trim();
     return `${apiUrl}${value}`;
@@ -76,5 +76,8 @@ const resolveProfilePicUrl = (src = "") => {
 };
 
 export const getAvatarSrc = (profilePic, name, id) => {
-  return profilePic && !isInitialsAvatar(profilePic) ? resolveProfilePicUrl(profilePic) : getDefaultAvatar(name, id);
+  if (!profilePic || profilePic === "null" || profilePic === "undefined") {
+    return getDefaultAvatar(name, id);
+  }
+  return !isInitialsAvatar(profilePic) ? resolveProfilePicUrl(profilePic) : getDefaultAvatar(name, id);
 };
