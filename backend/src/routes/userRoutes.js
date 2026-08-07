@@ -248,7 +248,7 @@ router.get('/:id/avatar', async (req, res) => {
     }
 
     if (user.profilePic.startsWith('http')) {
-      // Restrict redirects to trusted media hosts to prevent open-redirect abuse
+      // Restrict proxies to trusted media hosts to prevent open-proxy abuse
       const TRUSTED_HOSTS = [
         'lh3.googleusercontent.com',
         'avatars.githubusercontent.com',
@@ -264,8 +264,22 @@ router.get('/:id/avatar', async (req, res) => {
       if (!isTrusted) {
         return serveDefaultAvatar(res, user.name || 'Student', id);
       }
-      avatarCache.set(cacheKey, { redirect: user.profilePic, expiry });
-      return res.redirect(user.profilePic);
+      
+      try {
+        const response = await fetch(user.profilePic);
+        if (!response.ok) throw new Error('Image fetch failed');
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const mime = response.headers.get('content-type') || 'image/jpeg';
+        
+        avatarCache.set(cacheKey, { mime, buffer, expiry });
+        res.setHeader('Content-Type', mime);
+        res.setHeader('Cache-Control', 'public, max-age=86400, immutable');
+        res.setHeader('ETag', `"${cacheKey}"`);
+        return res.send(buffer);
+      } catch (err) {
+        return serveDefaultAvatar(res, user.name || 'Student', id);
+      }
     }
 
     if (user.profilePic.startsWith('data:image')) {

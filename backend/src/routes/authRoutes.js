@@ -5,6 +5,7 @@ import ChatRoom from '../models/ChatRoom.js';
 
 import { ensureUniversityGroup, normalizeUniversityName } from '../utils/universityUtils.js';
 import { publicUserPayload } from '../utils/verificationUtils.js';
+import { transformUser } from './userRoutes.js';
 import { isEmailAllowedForUniversity } from '../utils/emailDomain.js';
 import { sendEmail } from '../utils/email.js';
 import { OAuth2Client } from 'google-auth-library';
@@ -142,7 +143,7 @@ router.post('/register', async (req, res) => {
 
     await ensureUniversityGroup(user);
 
-    res.status(201).json(publicUserPayload(user, generateToken(user._id)));
+    res.status(201).json(publicUserPayload(transformUser(user.toObject()), generateToken(user._id)));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -201,7 +202,7 @@ router.post('/login', async (req, res) => {
       }
       await user.save();
       await ensureUniversityGroup(user);
-      res.json(publicUserPayload(user, generateToken(user._id)));
+      res.json(publicUserPayload(transformUser(user.toObject()), generateToken(user._id)));
     } else {
       res.status(401).json({ message: 'Invalid email or password' });
     }
@@ -326,7 +327,7 @@ router.post('/google', async (req, res) => {
       await ensureUniversityGroup(user);
     }
 
-    res.status(isNewUser ? 201 : 200).json(publicUserPayload(user, generateToken(user._id)));
+    res.status(isNewUser ? 201 : 200).json(publicUserPayload(transformUser(user.toObject()), generateToken(user._id)));
   } catch (error) {
     console.error('Google Auth Error:', error);
     res.status(500).json({ message: 'Failed to authenticate with Google' });

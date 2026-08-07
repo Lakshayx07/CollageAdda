@@ -9,29 +9,6 @@ export default function MainLayoutWrapper({ children }) {
   const pathname = usePathname();
   const { isExpanded } = useSidebar();
   
-  useEffect(() => {
-    const handleImgError = (e) => {
-      if (e.target && e.target.tagName && e.target.tagName.toLowerCase() === 'img') {
-        // Only apply fallback to likely avatars to avoid replacing broken post images with boy/girl avatars
-        const isLikelyAvatar = 
-          e.target.src.includes('googleusercontent') || 
-          e.target.className.includes('rounded-full') || 
-          e.target.alt === 'You' || 
-          e.target.alt === 'Me';
-
-        if (isLikelyAvatar && !e.target.dataset.fallbackApplied) {
-          e.target.dataset.fallbackApplied = "true";
-          const altName = e.target.alt || "Campus Student";
-          e.target.src = getDefaultAvatar(altName, "");
-        }
-      }
-    };
-    
-    // Use capture phase to catch resource loading errors
-    window.addEventListener('error', handleImgError, true);
-    return () => window.removeEventListener('error', handleImgError, true);
-  }, []);
-
   // Exclude login/onboarding pages from sidebar layout shifting completely if needed
 
   if (pathname === "/login" || pathname === "/onboarding" || pathname === "/") {
