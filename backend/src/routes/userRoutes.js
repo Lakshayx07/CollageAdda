@@ -16,7 +16,11 @@ import { publicUserPayload, syncVerificationStatus } from '../utils/verification
 const isDefaultAvatarAsset = (src = '') => String(src).toLowerCase().includes('/default-avatars/');
 
 const hasCustomProfilePic = (src = '') => {
-  return Boolean(src) && !isGeneratedInitialsAvatar(src) && !isDefaultAvatarAsset(src);
+  if (!src || typeof src !== 'string') return false;
+  const val = src.trim();
+  if (val.startsWith('/api/')) return false;
+  if (isGeneratedInitialsAvatar(val) || isDefaultAvatarAsset(val)) return false;
+  return val.startsWith('http://') || val.startsWith('https://') || val.startsWith('data:image/');
 };
 
 export const transformUser = (u) => {
