@@ -11,12 +11,13 @@ export const hasCompletedRequiredProfile = (user) => {
   return hasName && hasPhoto && hasBatch && hasCourse && hasBranch && hasStudyYear;
 };
 
+/**
+ * Computes and stores only the profile-completeness derived fields.
+ * isVerified / verificationStatus / verificationMethod are now controlled
+ * exclusively by explicit auth actions (campus email registration, OTP, admin).
+ */
 export const syncVerificationStatus = (user) => {
-  const verified = hasCompletedRequiredProfile(user);
-  user.isVerified = verified;
-  user.verificationStatus = verified ? 'verified' : 'unverified';
-  user.verificationMethod = verified ? 'profile' : 'none';
-  return verified;
+  return hasCompletedRequiredProfile(user);
 };
 
 export const publicUserPayload = (user, token) => {

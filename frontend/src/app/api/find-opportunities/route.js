@@ -201,6 +201,26 @@ async function findWithAnthropic(profile) {
 
 
 export async function POST(request) {
+  // Require a valid app JWT so anonymous traffic cannot exhaust API keys
+  const authHeader = request.headers.get("authorization") || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!token) {
+    return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+  }
+
+  const apiBase = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001").trim();
+  try {
+    const verifyRes = await fetch(`${apiBase}/api/users/profile`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (!verifyRes.ok) {
+      return NextResponse.json({ error: "Invalid or expired token." }, { status: 401 });
+    }
+  } catch {
+    return NextResponse.json({ error: "Could not verify authentication." }, { status: 503 });
+  }
+
   let body;
 
   try {

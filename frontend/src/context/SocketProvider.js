@@ -39,18 +39,22 @@ export function SocketProvider({ children }) {
 
     const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001").trim();
 
-    // Create socket connection
-    const newSocket = io(apiUrl, { transports: ["websocket"] });
+    // Pass token in handshake so the server can verify identity
+    const newSocket = io(apiUrl, {
+      transports: ["websocket"],
+      auth: { token },
+    });
     setSocket(newSocket);
 
     newSocket.on("connect", () => {
       setIsConnected(true);
-      // Register user
-      newSocket.emit("user_online", {
-        userId: user.id || user._id,
-        name: user.name,
-        university: user.university,
-      });
+      // Tell server we are online — identity is verified server-side via the token
+      newSocket.emit("user_online");
+    });
+
+    newSocket.on("connect_error", (err) => {
+      setIsConnected(false);
+      console.warn("[Socket] Connection failed:", err.message);
     });
 
     newSocket.on("disconnect", () => {

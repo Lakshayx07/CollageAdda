@@ -41,3 +41,12 @@ frontend/dist/
 backend/node_modules/
 backend/dist/
 .vercel
+
+# Debug / temporary scripts — never commit these
+backend/test-*.js
+backend/test-*.cjs
+backend/delete-*.cjs
+backend/check-*.js
+backend/*_tmp.mjs
+backend/diagnose*.js
+backend/count-all.cjs

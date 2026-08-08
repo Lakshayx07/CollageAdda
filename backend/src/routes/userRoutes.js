@@ -254,8 +254,38 @@ router.get('/:id/avatar', async (req, res) => {
     }
 
     if (user.profilePic.startsWith('http')) {
-      avatarCache.set(cacheKey, { redirect: user.profilePic, expiry });
-      return res.redirect(user.profilePic);
+      // Restrict proxies to trusted media hosts to prevent open-proxy abuse
+      const TRUSTED_HOSTS = [
+        'lh3.googleusercontent.com',
+        'avatars.githubusercontent.com',
+        'cdn.supabase.io',
+        'images.unsplash.com',
+      ];
+      let isTrusted = false;
+      try {
+        const picHost = new URL(user.profilePic).hostname;
+        isTrusted = TRUSTED_HOSTS.some((h) => picHost === h || picHost.endsWith(`.${h}`));
+      } catch { /* malformed URL — block it */ }
+
+      if (!isTrusted) {
+        return serveDefaultAvatar(res, user.name || 'Student', id);
+      }
+      
+      try {
+        const response = await fetch(user.profilePic);
+        if (!response.ok) throw new Error('Image fetch failed');
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const mime = response.headers.get('content-type') || 'image/jpeg';
+        
+        avatarCache.set(cacheKey, { mime, buffer, expiry });
+        res.setHeader('Content-Type', mime);
+        res.setHeader('Cache-Control', 'public, max-age=86400, immutable');
+        res.setHeader('ETag', `"${cacheKey}"`);
+        return res.send(buffer);
+      } catch (err) {
+        return serveDefaultAvatar(res, user.name || 'Student', id);
+      }
     }
 
     if (user.profilePic.startsWith('data:image')) {
@@ -348,7 +378,18 @@ router.put('/profile', protect, async (req, res) => {
     if (phone !== undefined) user.phone = phone;
     if (req.body.phonePrivacy !== undefined) user.phonePrivacy = req.body.phonePrivacy;
     if (snapchat !== undefined) user.snapchat = snapchat;
-    if (university) user.university = normalizeUniversityName(university);
+    if (university) {
+      const reqUniversity = normalizeUniversityName(university);
+      const hasUniversity = user.university && user.university !== 'Other';
+      if (hasUniversity && reqUniversity !== user.university) {
+        return res.status(403).json({
+          message: 'University cannot be changed after registration. Contact support if you transferred.'
+        });
+      }
+      if (!hasUniversity) {
+        user.university = reqUniversity;
+      }
+    }
     if (hometownState !== undefined) user.hometownState = hometownState;
     if (hometownDistrict !== undefined) user.hometownDistrict = hometownDistrict;
     if (interests !== undefined) user.interests = interests;

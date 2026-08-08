@@ -1,13 +1,6 @@
 import User from '../models/User.js';
 import crypto from 'crypto';
-
-// Whitelisted domains (examples)
-const TRUSTED_DOMAINS = ['rishihood.edu.in', 'jgu.edu.in', 'du.ac.in', 'iitd.ac.in'];
-
-const isTrustedDomain = (email) => {
-  const domain = email.split('@')[1];
-  return TRUSTED_DOMAINS.includes(domain) || domain.endsWith('.edu');
-};
+import { isEmailAllowedForUniversity } from '../utils/emailDomain.js';
 
 /**
  * @desc    Request Email Verification (Send OTP)
@@ -17,29 +10,34 @@ const isTrustedDomain = (email) => {
 export const requestEmailVerification = async (req, res) => {
   const { collegeEmail } = req.body;
 
-  if (!collegeEmail || !isTrustedDomain(collegeEmail)) {
-    return res.status(400).json({ message: 'Invalid or non-college email domain.' });
+  if (!collegeEmail) {
+    return res.status(400).json({ message: 'College email is required.' });
   }
 
   try {
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // Generate 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    
+    const domainAllowed = await isEmailAllowedForUniversity(collegeEmail.trim().toLowerCase(), user.university);
+    if (!domainAllowed) {
+      return res.status(400).json({ message: 'Invalid or unrecognised college email domain for your university.' });
+    }
+
+    // Cryptographically random 6-digit OTP
+    const otp = String(crypto.randomInt(100000, 999999));
+
     user.verificationToken = otp;
-    user.verificationTokenExpires = Date.now() + 10 * 60 * 1000; // 10 mins
-    user.collegeEmail = collegeEmail;
-    
+    user.verificationTokenExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+    user.collegeEmail = collegeEmail.trim().toLowerCase();
+
     await user.save();
 
-    // In a real app, send email here
-    console.log(`[VERIFICATION] OTP for ${collegeEmail}: ${otp}`);
+    // TODO: send OTP via email provider (Resend / SendGrid / Nodemailer)
+    // The OTP is intentionally NOT logged to stdout.
 
     res.json({ message: 'Verification OTP sent to your college email!' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'An error occurred. Please try again.' });
   }
 };
 
@@ -55,8 +53,12 @@ export const verifyOTP = async (req, res) => {
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    if (user.verificationToken !== otp || user.verificationTokenExpires < Date.now()) {
-      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    if (!user.verificationToken || user.verificationToken !== otp) {
+      return res.status(400).json({ message: 'Invalid OTP.' });
+    }
+
+    if (user.verificationTokenExpires < Date.now()) {
+      return res.status(400).json({ message: 'OTP has expired. Please request a new one.' });
     }
 
     user.isVerified = true;
@@ -67,9 +69,13 @@ export const verifyOTP = async (req, res) => {
 
     await user.save();
 
-    res.json({ message: 'Student identity verified successfully! 🎓', user });
+    res.json({
+      message: 'Student identity verified successfully!',
+      isVerified: true,
+      verificationStatus: 'verified'
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'An error occurred. Please try again.' });
   }
 };
 
@@ -87,6 +93,8 @@ export const requestManualVerification = async (req, res) => {
 
   try {
     const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
     user.verificationStatus = 'pending';
     user.verificationMethod = 'manual';
     user.idPhotoUrl = idPhotoUrl;
@@ -95,17 +103,21 @@ export const requestManualVerification = async (req, res) => {
 
     res.json({ message: 'Verification request submitted! Our team will review it shortly.' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'An error occurred. Please try again.' });
   }
 };
 
 /**
  * @desc    Admin: Approve/Reject Verification
  * @route   POST /api/verify/admin/decide
- * @access  Private (Admin only - simulated)
+ * @access  Admin only
  */
 export const adminDecision = async (req, res) => {
-  const { userId, decision, notes } = req.body; // decision: 'verified' or 'rejected'
+  const { userId, decision, notes } = req.body;
+
+  if (!['verified', 'rejected'].includes(decision)) {
+    return res.status(400).json({ message: 'Decision must be "verified" or "rejected".' });
+  }
 
   try {
     const user = await User.findById(userId);
@@ -117,8 +129,12 @@ export const adminDecision = async (req, res) => {
 
     await user.save();
 
-    res.json({ message: `User ${decision} successfully.`, user });
+    res.json({
+      message: `User ${decision} successfully.`,
+      userId: user._id,
+      verificationStatus: user.verificationStatus
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'An error occurred. Please try again.' });
   }
 };

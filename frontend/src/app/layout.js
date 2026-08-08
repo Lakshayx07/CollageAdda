@@ -132,6 +132,32 @@ export default function RootLayout({ children }) {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.addEventListener('error', function(e) {
+                if (e.target && e.target.tagName && e.target.tagName.toLowerCase() === 'img') {
+                  var srcString = e.target.src || '';
+                  var classString = typeof e.target.className === 'string' ? e.target.className : (e.target.getAttribute('class') || '');
+                  var isLikelyAvatar = srcString.includes('googleusercontent') || classString.includes('rounded-full') || e.target.alt === 'You' || e.target.alt === 'Me';
+                  if (isLikelyAvatar && !e.target.dataset.fallbackApplied) {
+                    e.target.dataset.fallbackApplied = 'true';
+                    var boys = ['/default-avatars/boy-1.png', '/default-avatars/boy-2.png', '/default-avatars/boy-3.png', '/default-avatars/boy-4.png', '/default-avatars/boy-5.png', '/default-avatars/boy-6.png'];
+                    var girls = ['/default-avatars/girl-1.png', '/default-avatars/girl-2.png', '/default-avatars/girl-3.png', '/default-avatars/girl-4.png'];
+                    var name = e.target.alt || 'Campus Student';
+                    var options = name.toLowerCase().match(/(anjali|priya|sneha|neha|puja|pooja|girl|shreya|rhea|rashi)/) ? girls : boys;
+                    var hash = 0;
+                    for (var i = 0; i < name.length; i++) {
+                      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+                    }
+                    var index = Math.abs(hash) % options.length;
+                    e.target.src = options[index];
+                  }
+                }
+              }, true);
+            `
+          }}
+        />
       </head>
       <body className="app-shell h-full bg-background text-foreground transition-colors duration-300">
         <ThemeProvider>

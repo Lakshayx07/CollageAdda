@@ -66,7 +66,13 @@ const userSchema = mongoose.Schema({
 
   // Streak & Login Fields
   streak: { type: Number, default: 0 },
-  lastLoginDate: { type: Date }
+  lastLoginDate: { type: Date },
+
+  // Password Reset Fields
+  resetPasswordOtp: { type: String },
+  resetPasswordExpires: { type: Date },
+
+  isAdmin: { type: Boolean, default: false }
 }, { timestamps: true });
 
 // Hash password before saving

@@ -70,6 +70,7 @@ export const resolveProfilePicUrl = (src = "") => {
   if (!value) return "";
   if (value.startsWith("data:") || value.startsWith("blob:")) return value;
   if (value.startsWith("http://") || value.startsWith("https://")) return value;
+  if (!value || value === "null" || value === "undefined") return "";
   if (value.startsWith("/api/")) {
     let apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001").trim();
     apiUrl = apiUrl.replace(/\/api\/?$/, "").replace(/\/$/, "");
@@ -79,5 +80,8 @@ export const resolveProfilePicUrl = (src = "") => {
 };
 
 export const getAvatarSrc = (profilePic, name, id) => {
-  return profilePic && !isInitialsAvatar(profilePic) ? resolveProfilePicUrl(profilePic) : getDefaultAvatar(name, id);
+  if (!profilePic || profilePic === "null" || profilePic === "undefined") {
+    return getDefaultAvatar(name, id);
+  }
+  return !isInitialsAvatar(profilePic) ? resolveProfilePicUrl(profilePic) : getDefaultAvatar(name, id);
 };
