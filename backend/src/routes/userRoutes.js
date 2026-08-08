@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import User from '../models/User.js';
 import College from '../models/College.js';
@@ -99,7 +100,12 @@ const isGeneratedInitialsAvatar = (src = '') => {
 const serveDefaultAvatar = (res, name, id) => {
   const filename = defaultAvatarFileFor(name, id);
   res.setHeader('Cache-Control', 'public, max-age=86400');
-  return res.sendFile(path.join(defaultAvatarDir, filename));
+  const filePath = path.join(defaultAvatarDir, filename);
+  if (fs.existsSync(filePath)) {
+    return res.sendFile(filePath);
+  }
+  const frontendUrl = (process.env.FRONTEND_URL || 'https://collageadda.com').replace(/\/$/, '');
+  return res.redirect(`${frontendUrl}/default-avatars/${filename}`);
 };
 
 // @route   GET /api/users/leaderboard
@@ -243,7 +249,7 @@ router.get('/:id/avatar', async (req, res) => {
     const ttl = 24 * 60 * 60 * 1000;
     const expiry = Date.now() + ttl;
 
-    if (!user || !hasCustomProfilePic(user.profilePic)) {
+    if (!user || !hasCustomProfilePic(user.profilePic) || user.profilePic.startsWith('/api/')) {
       return serveDefaultAvatar(res, user?.name || 'Student', id);
     }
 
@@ -362,7 +368,7 @@ router.put('/profile', protect, async (req, res) => {
 
     if (name !== undefined) user.name = name;
     if (bio !== undefined) user.bio = bio;
-    if (profilePic !== undefined) {
+    if (profilePic !== undefined && !profilePic.startsWith('/api/')) {
       user.profilePic = profilePic;
       clearAvatarCacheForUser(user._id);
     }

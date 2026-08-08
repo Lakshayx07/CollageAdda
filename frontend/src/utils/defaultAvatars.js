@@ -65,11 +65,15 @@ const isInitialsAvatar = (src = "") => {
   ].some(marker => value.includes(marker));
 };
 
-const resolveProfilePicUrl = (src = "") => {
+export const resolveProfilePicUrl = (src = "") => {
   const value = String(src || "").trim();
+  if (!value) return "";
+  if (value.startsWith("data:") || value.startsWith("blob:")) return value;
+  if (value.startsWith("http://") || value.startsWith("https://")) return value;
   if (!value || value === "null" || value === "undefined") return "";
   if (value.startsWith("/api/")) {
-    const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001").trim();
+    let apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001").trim();
+    apiUrl = apiUrl.replace(/\/api\/?$/, "").replace(/\/$/, "");
     return `${apiUrl}${value}`;
   }
   return value;

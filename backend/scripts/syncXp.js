@@ -8,9 +8,9 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 
-import User from './src/models/User.js';
-import Post from './src/models/Post.js';
-import Story from './src/models/Story.js';
+import User from '../src/models/User.js';
+import Post from '../src/models/Post.js';
+import Story from '../src/models/Story.js';
 
 const syncXp = async () => {
   try {
