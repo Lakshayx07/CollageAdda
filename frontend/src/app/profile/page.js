@@ -1887,7 +1887,7 @@ export default function ProfilePage() {
                 <div className="flex flex-col items-center justify-center space-y-4 mb-4 mt-2">
                   <div className="relative w-24 h-24 rounded-full border-4 border-white shadow-lg overflow-hidden bg-[#F9F8F5]">
                     {editData.profilePic ? (
-                      <img src={editData.profilePic} alt="Avatar" className="w-full h-full object-cover" />
+                      <img src={getAvatarSrc(editData.profilePic, editData.name || user?.name, user?._id || user?.id)} alt="Avatar" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-[#6B6B6B] bg-[#E8E6E0]/30">
                         <User size={32} />
@@ -2322,11 +2322,10 @@ export default function ProfilePage() {
                 <h3 className="text-lg font-black text-[#1A1A1A]">Update Profile Picture</h3>
                 <button onClick={() => setModal(null)} className="p-2 bg-[#F9F8F5] border border-[#E8E6E0] rounded-full text-[#6B6B6B]"><X size={18} /></button>
               </div>
-              {/* Preview */}
               {editData.profilePic && (
                 <div className="flex justify-center">
                   <div className="w-28 h-28 rounded-[2rem] overflow-hidden border-2 border-purple-500/50 shadow-xl">
-                    <img src={editData.profilePic} className="w-full h-full object-cover" />
+                    <img src={getAvatarSrc(editData.profilePic, editData.name || user?.name, user?._id || user?.id)} className="w-full h-full object-cover" alt="Preview" />
                   </div>
                 </div>
               )}

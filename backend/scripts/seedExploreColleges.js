@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
-import College from './src/models/College.js';
-import connectDB from './src/config/db.js';
+import College from '../src/models/College.js';
+import connectDB from '../src/config/db.js';
 
 dotenv.config();
 

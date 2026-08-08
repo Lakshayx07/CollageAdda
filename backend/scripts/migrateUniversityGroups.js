@@ -3,9 +3,9 @@
  * Run with: node migrateUniversityGroups.js
  */
 import mongoose from 'mongoose';
-import { connectDB } from './src/config/db.js';
-import ChatRoom from './src/models/ChatRoom.js';
-import User from './src/models/User.js';
+import { connectDB } from '../src/config/db.js';
+import ChatRoom from '../src/models/ChatRoom.js';
+import User from '../src/models/User.js';
 
 const migrate = async () => {
   await connectDB();

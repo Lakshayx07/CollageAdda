@@ -2008,7 +2008,7 @@ export default function CommunityChatPage() {
                   pendingRequests.map(req => (
                     <div key={req._id} className="flex items-center justify-between p-3 border border-[#E8E6E0] rounded-2xl bg-[#F9F8F5]">
                       <div className="flex items-center gap-3 min-w-0">
-                        <img src={req.profilePic || `/api/users/${req._id}/avatar`} alt={req.name} className="w-10 h-10 rounded-xl object-cover" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://avatar.iran.liara.run/public'; }} />
+                        <img src={getAvatarSrc(req.profilePic || `/api/users/${req._id}/avatar`, req.name, req._id)} alt={req.name} className="w-10 h-10 rounded-xl object-cover" />
                         <div className="min-w-0">
                           <p className="font-black text-[#1A1A1A] text-sm truncate">{req.name}</p>
                           <p className="text-[10px] font-bold text-[#888888] truncate">{req.university || 'Student'}</p>
