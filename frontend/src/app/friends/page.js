@@ -418,14 +418,11 @@ export default function FriendsPage() {
   const normalizeUserAvatar = useCallback((person) => {
     if (!person) return person;
     const userId = person._id || person.id;
-    const avatarUrl = userId
-      ? `${apiUrl}/api/users/${encodeURIComponent(userId)}/avatar?v=${NETWORK_PROFILE_PHOTO_VERSION}`
-      : person.profilePic;
     return {
       ...person,
-      profilePic: getAvatarSrc(avatarUrl, person.name, userId),
+      profilePic: getAvatarSrc(person.profilePic, person.name, userId),
     };
-  }, [apiUrl]);
+  }, []);
 
   useEffect(() => {
     if (profileData) {
@@ -602,6 +599,7 @@ export default function FriendsPage() {
     if (!u) { router.push("/login"); return; }
     setUser(u);
 
+    
     // Load communities and memberships
     fetchCommunities();
     fetchMemberships();
