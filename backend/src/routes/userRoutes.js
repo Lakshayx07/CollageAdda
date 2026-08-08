@@ -33,7 +33,9 @@ export const transformUser = (u) => {
   if (hasCustomProfilePic(originalProfilePic)) {
     u.profilePic = originalProfilePic;
   } else {
-    u.profilePic = `/default-avatars/${defaultAvatarFileFor(u.name, u._id)}`;
+    const filename = defaultAvatarFileFor(u.name, u._id);
+    const frontendUrl = (process.env.FRONTEND_URL || process.env.CLIENT_URL || '').replace(/\/$/, '');
+    u.profilePic = frontendUrl ? `${frontendUrl}/default-avatars/${filename}` : `/default-avatars/${filename}`;
   }
 
   return u;
@@ -457,7 +459,7 @@ router.get('/search/query', protect, async (req, res) => {
     }
 
     const users = await User.find(query)
-      .select('name university bio interests year studyYear passOutBatch course branch isVerified xp points currentTick streak createdAt updatedAt')
+      .select('name profilePic university bio interests year studyYear passOutBatch course branch isVerified xp points currentTick streak createdAt updatedAt')
       .sort({ createdAt: -1 })
       .limit(100)
       .lean();

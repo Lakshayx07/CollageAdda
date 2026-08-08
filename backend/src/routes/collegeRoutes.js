@@ -127,7 +127,7 @@ router.get('/:id/students', protect, async (req, res) => {
     // Do NOT select profilePic — base64 blobs make this query multi-second
     const [students, realStudentCount, allUsersForRank] = await Promise.all([
       User.find(universityFilter)
-        .select('name bio university interests year studyYear isVerified createdAt xp points unlockedBadges followers following')
+        .select('name profilePic bio university interests year studyYear isVerified createdAt xp points unlockedBadges followers following')
         .sort({ createdAt: -1 })
         .limit(40)
         .lean(),
@@ -177,8 +177,8 @@ router.get('/:id', protect, async (req, res) => {
     const [posts, realStudentCount, realPostCount] = await Promise.all([
       Post.find(universityFilter)
         .select('content mediaUrl mediaType likes comments hashtags createdAt author university isMemoryOnly')
-        .populate('author', 'name university isVerified xp points currentTick')
-        .populate('comments.user', 'name isVerified')
+        .populate('author', 'name profilePic university isVerified xp points currentTick')
+        .populate('comments.user', 'name profilePic isVerified')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
