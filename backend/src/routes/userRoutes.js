@@ -19,7 +19,6 @@ const hasCustomProfilePic = (src = '') => {
   return Boolean(src) && !isGeneratedInitialsAvatar(src) && !isDefaultAvatarAsset(src);
 };
 
-// Convert custom profilePic to avatar API URL to drastically reduce payload size
 export const transformUser = (u) => {
   if (!u) return u;
   if (u._transformed) return u;
@@ -27,12 +26,10 @@ export const transformUser = (u) => {
 
   const originalProfilePic = u.profilePic;
 
-  if (originalProfilePic === undefined) {
-    u.profilePic = `/api/users/${u._id}/avatar?v=${u.updatedAt ? new Date(u.updatedAt).getTime() : 'current'}`;
+  if (hasCustomProfilePic(originalProfilePic)) {
+    u.profilePic = originalProfilePic;
   } else {
-    u.profilePic = hasCustomProfilePic(originalProfilePic)
-      ? `/api/users/${u._id}/avatar?v=${hashText(`${originalProfilePic}-${u.updatedAt || ''}`)}`
-      : `/default-avatars/${defaultAvatarFileFor(u.name, u._id)}`;
+    u.profilePic = `/default-avatars/${defaultAvatarFileFor(u.name, u._id)}`;
   }
 
   return u;
@@ -368,8 +365,10 @@ router.put('/profile', protect, async (req, res) => {
 
     if (name !== undefined) user.name = name;
     if (bio !== undefined) user.bio = bio;
-    if (profilePic !== undefined && !profilePic.startsWith('/api/')) {
-      user.profilePic = profilePic;
+    if (profilePic !== undefined) {
+      if (!profilePic.startsWith('/api/')) {
+        user.profilePic = profilePic;
+      }
       clearAvatarCacheForUser(user._id);
     }
     if (instagram !== undefined) user.instagram = instagram;

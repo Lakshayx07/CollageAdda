@@ -109,14 +109,8 @@ router.get('/', protect, async (req, res) => {
   }
 });
 
-/** Use avatar API URL instead of embedding huge base64 profilePic blobs. */
 function withAvatarUrl(user) {
-  if (!user) return user;
-  const id = user._id || user.id;
-  return {
-    ...user,
-    profilePic: id ? `/api/users/${id}/avatar` : '',
-  };
+  return user;
 }
 
 // @route   GET /api/colleges/:id/students

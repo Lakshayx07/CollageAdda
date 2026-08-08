@@ -7,13 +7,12 @@ export const toIdString = (value) => {
 
 export const slimAuthor = (author) => {
   if (!author) return author;
-  const id = toIdString(author._id || author.id);
   return {
     _id: author._id || author.id,
     name: author.name,
     university: author.university,
     isVerified: Boolean(author.isVerified),
-    profilePic: id ? `/api/users/${id}/avatar` : undefined,
+    profilePic: author.profilePic,
     xp: author.xp,
     points: author.points,
     currentTick: author.currentTick,
