@@ -1424,7 +1424,7 @@ export default function FriendsPage() {
                             >
                               <img
                                 src={avatar}
-                                className="h-full w-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                                className="h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
                                 style={{ imageRendering: "auto" }}
                                 alt={person.name}
                                 onError={(e) => {
