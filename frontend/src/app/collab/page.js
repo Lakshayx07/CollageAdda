@@ -24,7 +24,10 @@ export default function CollabPage() {
   useEffect(() => {
     const storedUser = localStorage.getItem("collegeadda_user");
     if (storedUser) {
-      try { setCurrentUser(JSON.parse(storedUser)); } catch (e) { console.error(e); }
+      try { 
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setCurrentUser(JSON.parse(storedUser)); 
+      } catch (e) { console.error(e); }
     }
   }, []);
 

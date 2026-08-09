@@ -13,7 +13,7 @@ import { LOGIN_STREAK_UPDATED_EVENT, getDisplayStreak } from "../../utils/loginS
 import { useApiQuery } from "@/utils/useApiQuery";
 import { useQueryClient } from "@tanstack/react-query";
 import { getAvatarSrc, getDefaultAvatar } from "@/utils/defaultAvatars";
-
+import Image from "next/image";
 const LAST_SEEN_KEY = "collegeadda_followers_last_seen";
 const NETWORK_PROFILE_PHOTO_VERSION = "profile-pictures-v3";
 
@@ -109,8 +109,7 @@ export default function FriendsPage() {
   const [showConfetti, setShowConfetti] = useState(false);
   const router = useRouter();
   const [user, setUser] = useState(null);
-  const [suggestedUsers, setSuggestedUsers] = useState([]);
-  const [campusUsers, setCampusUsers] = useState([]);
+  const [optimisticUpdates, setOptimisticUpdates] = useState({});
   const [followStatus, setFollowStatus] = useState({});
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -399,7 +398,8 @@ export default function FriendsPage() {
     buildSearchUrl(debouncedSearch).replace(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001', ''),
     {
       enabled: !!user,
-      staleTime: 30 * 1000
+      staleTime: 30 * 1000,
+      keepPreviousData: true
     }
   );
 
@@ -435,57 +435,67 @@ export default function FriendsPage() {
     }
   }, [profileData]);
 
-  useEffect(() => {
-    if (suggestedData) {
-      const usersList = Array.isArray(suggestedData) ? suggestedData : (suggestedData.users || []);
+  const suggestedUsers = useMemo(() => {
+    if (!suggestedData) return [];
+    
+    let baseList = Array.isArray(suggestedData) ? suggestedData : (suggestedData.users || []);
 
-      const usersByUni = {};
-      usersList.forEach(u => {
-        if (!u.university) return;
-        if (!usersByUni[u.university]) usersByUni[u.university] = [];
-        usersByUni[u.university].push(u);
-      });
-
-      Object.values(usersByUni).forEach(uniGroup => {
-        uniGroup.sort((a, b) => {
-          const scoreA = (a.followersCount ?? (a.followers?.length || 0)) + (a.followingCount ?? (a.following?.length || 0)) + (a.xp || 0) + (a.points || 0);
-          const scoreB = (b.followersCount ?? (b.followers?.length || 0)) + (b.followingCount ?? (b.following?.length || 0)) + (b.xp || 0) + (b.points || 0);
-          return scoreB - scoreA;
-        });
-      });
-
-      const users = usersList.map(u => {
-        const normalized = normalizeUserAvatar(u);
-        let localRank = 1;
-
-        if (u.university && usersByUni[u.university]) {
-          const myScore = (u.followersCount ?? (u.followers?.length || 0)) + (u.followingCount ?? (u.following?.length || 0)) + (u.xp || 0) + (u.points || 0);
-          for (const su of usersByUni[u.university]) {
-            const suScore = (su.followersCount ?? (su.followers?.length || 0)) + (su.followingCount ?? (su.following?.length || 0)) + (su.xp || 0) + (su.points || 0);
-            if (suScore > myScore) localRank++;
-            else break;
-          }
-        }
-
-        return {
-          ...normalized,
-          localRank
+    // Apply optimistic updates
+    baseList = baseList.map(u => {
+      const opt = optimisticUpdates[u._id || u.id];
+      if (opt) {
+        const currentCount = u.followersCount ?? (Array.isArray(u.followers) ? u.followers.length : Number(u.followers || 0));
+        return { 
+          ...u, 
+          followersCount: opt.isConnecting ? currentCount + 1 : Math.max(0, currentCount - 1) 
         };
-      });
+      }
+      return u;
+    });
 
-      users.sort((a, b) => {
-        const isConnectedA = followStatus[a._id] === "connected" && !recentlyConnected.has(a._id) && !recentlyConnected.has(a.id);
-        const isConnectedB = followStatus[b._id] === "connected" && !recentlyConnected.has(b._id) && !recentlyConnected.has(b.id);
-        if (isConnectedA === isConnectedB) return 0;
-        return isConnectedA ? 1 : -1;
-      });
+    const usersByUni = {};
+    baseList.forEach(u => {
+      if (!u.university) return;
+      if (!usersByUni[u.university]) usersByUni[u.university] = [];
+      usersByUni[u.university].push(u);
+    });
 
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSuggestedUsers(users);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setCampusUsers(users);
-    }
-  }, [suggestedData, normalizeUserAvatar, followStatus, recentlyConnected]);
+    Object.values(usersByUni).forEach(uniGroup => {
+      uniGroup.sort((a, b) => {
+        const scoreA = (a.followersCount ?? (a.followers?.length || 0)) + (a.followingCount ?? (a.following?.length || 0)) + (a.xp || 0) + (a.points || 0);
+        const scoreB = (b.followersCount ?? (b.followers?.length || 0)) + (b.followingCount ?? (b.following?.length || 0)) + (b.xp || 0) + (b.points || 0);
+        return scoreB - scoreA;
+      });
+    });
+
+    const users = baseList.map(u => {
+      const normalized = normalizeUserAvatar(u);
+      let localRank = 1;
+
+      if (u.university && usersByUni[u.university]) {
+        const myScore = (u.followersCount ?? (u.followers?.length || 0)) + (u.followingCount ?? (u.following?.length || 0)) + (u.xp || 0) + (u.points || 0);
+        for (const su of usersByUni[u.university]) {
+          const suScore = (su.followersCount ?? (su.followers?.length || 0)) + (su.followingCount ?? (su.following?.length || 0)) + (su.xp || 0) + (su.points || 0);
+          if (suScore > myScore) localRank++;
+          else break;
+        }
+      }
+
+      return {
+        ...normalized,
+        localRank
+      };
+    });
+
+    users.sort((a, b) => {
+      const isConnectedA = followStatus[a._id] === "connected" && !recentlyConnected.has(a._id) && !recentlyConnected.has(a.id);
+      const isConnectedB = followStatus[b._id] === "connected" && !recentlyConnected.has(b._id) && !recentlyConnected.has(b.id);
+      if (isConnectedA === isConnectedB) return 0;
+      return isConnectedA ? 1 : -1;
+    });
+
+    return users;
+  }, [suggestedData, normalizeUserAvatar, followStatus, recentlyConnected, filter, optimisticUpdates]);
 
 
   const fetchGlobalUsers = useCallback(async () => {
@@ -688,50 +698,10 @@ export default function FriendsPage() {
       }, 15000);
     }
     setFollowStatus(prev => ({ ...prev, [targetId]: isConnecting ? "connected" : null }));
-
-    const updateUsersList = (users) => {
-      const updated = users.map(u => {
-        if (u._id === targetId || u.id === targetId) {
-          const currentCount = u.followersCount ?? (Array.isArray(u.followers) ? u.followers.length : Number(u.followers || 0));
-          return {
-            ...u,
-            followersCount: isConnecting ? currentCount + 1 : Math.max(0, currentCount - 1),
-            xp: isConnecting ? (u.xp || 0) + 5 : (u.xp || 0)
-          };
-        }
-        return u;
-      });
-
-      const usersByUni = {};
-      updated.forEach(u => {
-        if (!u.university) return;
-        if (!usersByUni[u.university]) usersByUni[u.university] = [];
-        usersByUni[u.university].push(u);
-      });
-
-      Object.values(usersByUni).forEach(uniGroup => {
-        uniGroup.sort((a, b) => {
-          const scoreA = (a.followersCount ?? (a.followers?.length || 0)) + (a.followingCount ?? (a.following?.length || 0)) + (a.xp || 0) + (a.points || 0);
-          const scoreB = (b.followersCount ?? (b.followers?.length || 0)) + (b.followingCount ?? (b.following?.length || 0)) + (b.xp || 0) + (b.points || 0);
-          return scoreB - scoreA;
-        });
-      });
-
-      return updated.map(u => {
-        if (!u.university || !usersByUni[u.university]) return u;
-        let localRank = 1;
-        const myScore = (u.followersCount ?? (u.followers?.length || 0)) + (u.followingCount ?? (u.following?.length || 0)) + (u.xp || 0) + (u.points || 0);
-        for (const su of usersByUni[u.university]) {
-          const suScore = (su.followersCount ?? (su.followers?.length || 0)) + (su.followingCount ?? (su.following?.length || 0)) + (su.xp || 0) + (su.points || 0);
-          if (suScore > myScore) localRank++;
-          else break;
-        }
-        return { ...u, localRank };
-      });
-    };
-
-    setCampusUsers(prev => updateUsersList(prev));
-    setSuggestedUsers(prev => updateUsersList(prev));
+      setOptimisticUpdates(prev => ({
+        ...prev,
+        [targetId]: { isConnecting }
+      }));
 
     try {
       const token = getToken();
@@ -752,15 +722,11 @@ export default function FriendsPage() {
       setFollowStatus(prev => ({ ...prev, [targetId]: currentStatus }));
 
       // Revert if error
-      const revertUsersList = (users) => users.map(u => {
-        if (u._id === targetId || u.id === targetId) {
-          const currentCount = u.followersCount ?? (Array.isArray(u.followers) ? u.followers.length : Number(u.followers || 0));
-          return { ...u, followersCount: !isConnecting ? currentCount + 1 : Math.max(0, currentCount - 1) };
-        }
-        return u;
+      setOptimisticUpdates(prev => {
+        const next = { ...prev };
+        delete next[targetId];
+        return next;
       });
-      setCampusUsers(prev => revertUsersList(prev));
-      setSuggestedUsers(prev => revertUsersList(prev));
     }
   };
 
@@ -1382,19 +1348,30 @@ export default function FriendsPage() {
                     className="grid grid-cols-1 sm:grid-cols-2 gap-6"
                   >
                     {suggestedUsers.length === 0 ? (
-                      <div className="text-center py-20 col-span-full flex flex-col items-center space-y-4">
-                        <div className="flex space-x-1.5">
-                          <div className="w-2.5 h-2.5 bg-[#C8922A] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                          <div className="w-2.5 h-2.5 bg-[#C8922A] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                          <div className="w-2.5 h-2.5 bg-[#C8922A] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      suggestedFetching ? (
+                        <div className="text-center py-20 col-span-full flex flex-col items-center space-y-4">
+                          <div className="flex space-x-1.5">
+                            <div className="w-2.5 h-2.5 bg-[#C8922A] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                            <div className="w-2.5 h-2.5 bg-[#C8922A] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                            <div className="w-2.5 h-2.5 bg-[#C8922A] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                          </div>
+                          <p className="text-lg font-black text-[#1A1A1A] tracking-tight">
+                            Finding the best peers for you...
+                          </p>
+                          <p className="text-sm text-[#888888] font-medium">
+                            Matching you with minds from your campus ✨
+                          </p>
                         </div>
-                        <p className="text-lg font-black text-[#1A1A1A] tracking-tight">
-                          Finding the best peers for you...
-                        </p>
-                        <p className="text-sm text-[#888888] font-medium">
-                          Matching you with minds from your campus ✨
-                        </p>
-                      </div>
+                      ) : (
+                        <div className="text-center py-20 col-span-full flex flex-col items-center space-y-4">
+                          <p className="text-lg font-black text-[#1A1A1A] tracking-tight">
+                            No peers found
+                          </p>
+                          <p className="text-sm text-[#888888] font-medium">
+                            Try adjusting your search or filters ✨
+                          </p>
+                        </div>
+                      )
                     ) : (
                       suggestedUsers.map(person => {
                         const status = followStatus[person._id];
@@ -1424,7 +1401,8 @@ export default function FriendsPage() {
                             >
                               <img
                                 src={avatar}
-                                className="h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+                                loading="lazy"
+                                className="relative w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
                                 style={{ imageRendering: "auto" }}
                                 alt={person.name}
                                 onError={(e) => {

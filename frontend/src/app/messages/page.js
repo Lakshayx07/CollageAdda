@@ -2099,7 +2099,7 @@ function MessagesContent() {
                             selectedMembers.includes(c._id) ? "bg-[#C8922A]/10 border-purple-500/50" : "bg-[#F3F2EE] border-transparent hover:bg-[#F3F2EE]"
                           )}
                         >
-                          <img src={getAvatarSrc(c.profilePic, c.name, c._id || c.id)} className="w-10 h-10 rounded-full object-cover" />
+                          <img src={getAvatarSrc(c.profilePic, c.name, c._id || c.id)} onError={(e) => { e.target.src = getAvatarSrc("", c.name, c._id || c.id); }} className="w-10 h-10 rounded-full object-cover" />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-bold text-[#1A1A1A] truncate">{c.name}</p>
                             <p className="text-[10px] text-[#6B6B6B] truncate">{c.university}</p>

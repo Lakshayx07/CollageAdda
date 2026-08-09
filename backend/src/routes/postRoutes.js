@@ -24,8 +24,8 @@ router.get('/', protect, async (req, res) => {
 
     const posts = await Post.find(filter)
       .select('content mediaType hashtags university createdAt updatedAt author likes comments poll isMemoryOnly')
-      .populate('author', 'name profilePic university isVerified xp points currentTick')
-      .populate('comments.user', 'name profilePic isVerified')
+      .populate('author', 'name university isVerified xp points currentTick')
+      .populate('comments.user', 'name isVerified')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
@@ -43,8 +43,8 @@ router.get('/:id', protect, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id)
       .select('content mediaType hashtags university createdAt updatedAt author likes comments poll isMemoryOnly')
-      .populate('author', 'name profilePic university isVerified xp points currentTick')
-      .populate('comments.user', 'name profilePic isVerified')
+      .populate('author', 'name university isVerified xp points currentTick')
+      .populate('comments.user', 'name isVerified')
       .lean();
 
     if (!post) return res.status(404).json({ message: 'Post not found' });
@@ -135,8 +135,8 @@ router.post('/', protect, verified, async (req, res) => {
 
     const populated = await Post.findById(post._id)
       .select('content mediaUrl mediaType hashtags university createdAt updatedAt author likes comments poll isMemoryOnly')
-      .populate('author', 'name profilePic university isVerified xp points currentTick')
-      .populate('comments.user', 'name profilePic')
+      .populate('author', 'name university isVerified xp points currentTick')
+      .populate('comments.user', 'name')
       .lean();
 
     res.status(201).json(slimPost(populated, req.user._id));
@@ -240,7 +240,7 @@ router.post('/:id/comment', protect, verified, async (req, res) => {
 
     await awardXP(req.user._id, 'COMMENT_POST', `comment_${post.comments[post.comments.length - 1]._id.toString()}`);
 
-    await post.populate('comments.user', 'name profilePic');
+    await post.populate('comments.user', 'name');
     res.status(201).json(slimComments(post.comments));
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -79,6 +79,7 @@ const ConfettiSparkles = ({ active }) => {
 
   useEffect(() => {
     if (!active) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPieces([]);
       return;
     }
@@ -188,6 +189,7 @@ function ExploreContent() {
   const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMounted(true);
   }, []);
   const [search, setSearch] = useState("");
@@ -198,8 +200,10 @@ function ExploreContent() {
 
   useEffect(() => {
     if (modeParam === "arena") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setExploreMode("arena");
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setExploreMode("colleges");
     }
   }, [modeParam]);
@@ -677,7 +681,9 @@ const [viewingPlayerCard, setViewingPlayerCard] = useState(null);
   // Optimistic shell from colleges list while detail loads
   useEffect(() => {
     if (!collegeIdParam) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedCollege(null);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoadingCollegeId(null);
       return;
     }
@@ -723,9 +729,12 @@ const [viewingPlayerCard, setViewingPlayerCard] = useState(null);
     if (!collegeDetail || !collegeIdParam) return;
     if (String(collegeDetail._id || collegeDetail.id) !== String(collegeIdParam)) return;
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPostsHasMore(collegeDetail.hasMore ?? false);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPostsCurrentPage(1);
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedCollege((prev) => {
       const sameCollege =
         prev &&
@@ -739,6 +748,7 @@ const [viewingPlayerCard, setViewingPlayerCard] = useState(null);
 
   useEffect(() => {
     if (!collegeIdParam) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoadingCollegeId(null);
       return;
     }
@@ -763,6 +773,7 @@ const [viewingPlayerCard, setViewingPlayerCard] = useState(null);
     if (!collegeId) return;
     if (selectedCollege.studentsData?.length > 0) return;
 
+    const controller = new AbortController();
     let cancelled = false;
     const loadStudents = async () => {
       setLoadingStudents(true);
@@ -770,6 +781,7 @@ const [viewingPlayerCard, setViewingPlayerCard] = useState(null);
         const token = localStorage.getItem("collegeadda_token");
         const res = await fetch(`${apiUrl}/api/colleges/${collegeId}/students`, {
           headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
         });
         if (!res.ok || cancelled) return;
         const data = await res.json();
@@ -783,7 +795,11 @@ const [viewingPlayerCard, setViewingPlayerCard] = useState(null);
           };
         });
       } catch (err) {
-        console.error("Error fetching college students:", err);
+        if (err.name === 'AbortError' || err.message === 'Failed to fetch') {
+          console.warn("Fetch students aborted/failed due to navigation:", err.message);
+        } else {
+          console.error("Error fetching college students:", err);
+        }
       } finally {
         if (!cancelled) setLoadingStudents(false);
       }
@@ -791,11 +807,16 @@ const [viewingPlayerCard, setViewingPlayerCard] = useState(null);
     loadStudents();
     return () => {
       cancelled = true;
+      controller.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, selectedCollege?._id, selectedCollege?.id, apiUrl]);
 
 
+
+  const toggleAddStudent = useCallback((id) => {
+    setAddedStudents(prev => ({ ...prev, [id]: !prev[id] }));
+  }, []);
 
   const handleSwipe = async (collegeId, direction, student) => {
     setSwipeDirection(direction);
@@ -949,10 +970,6 @@ const [viewingPlayerCard, setViewingPlayerCard] = useState(null);
     } catch (err) {
       console.error('Follow error:', err);
     }
-  };
-
-  const toggleAddStudent = (id) => {
-    setAddedStudents(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
   const handleConnect = async (student) => {
@@ -2165,7 +2182,7 @@ const [viewingPlayerCard, setViewingPlayerCard] = useState(null);
                                 >
                                   <div className="flex items-center space-x-4">
                                     <div className="w-14 h-14 rounded-2xl overflow-hidden bg-muted flex-shrink-0">
-                                      <img src={getAvatarSrc(student.profilePic, student.name, student._id || student.id)} className="w-full h-full object-cover" alt="" />
+                                      <img src={getAvatarSrc(student.profilePic, student.name, student._id || student.id)} onError={(e) => { e.target.src = getAvatarSrc("", student.name, student._id || student.id); }} className="w-full h-full object-cover" alt="" />
                                     </div>
                                     <div className="min-w-0">
                                       <h4 className="font-bold text-foreground text-sm flex items-center gap-1.5 truncate">

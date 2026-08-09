@@ -9,7 +9,7 @@ const router = express.Router();
 router.get('/', protect, async (req, res) => {
   try {
     const listings = await Listing.find({})
-      .populate('seller', 'name university profilePic isVerified')
+      .populate('seller', 'name university isVerified')
       .sort({ createdAt: -1 });
     res.json(listings);
   } catch (error) {
@@ -34,7 +34,7 @@ router.post('/', protect, async (req, res) => {
       image,
       seller: req.user._id
     });
-    const populated = await listing.populate('seller', 'name university profilePic isVerified');
+    const populated = await listing.populate('seller', 'name university isVerified');
     res.status(201).json(populated);
   } catch (error) {
     res.status(500).json({ message: error.message });

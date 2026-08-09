@@ -11,15 +11,6 @@ export default function ShareCollabModal({ isOpen, onClose, card, currentUser })
   const [selectedFriends, setSelectedFriends] = useState([]);
   const [isSending, setIsSending] = useState(false);
 
-  useEffect(() => {
-    if (isOpen && currentUser) {
-      fetchConnections();
-    } else {
-      setSelectedFriends([]);
-      setSearch("");
-    }
-  }, [isOpen, currentUser]);
-
   const fetchConnections = async () => {
     setLoading(true);
     try {
@@ -39,6 +30,17 @@ export default function ShareCollabModal({ isOpen, onClose, card, currentUser })
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (isOpen && currentUser) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      fetchConnections();
+    } else {
+      setSelectedFriends([]);
+      setSearch("");
+    }
+  }, [isOpen, currentUser]);
+
 
   const toggleFriend = (id) => {
     setSelectedFriends(prev => 

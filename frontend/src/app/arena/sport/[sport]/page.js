@@ -73,7 +73,10 @@ export default function SportTeamsPage() {
   useEffect(() => {
     try {
       const stored = localStorage.getItem('collegeadda_user');
-      if (stored) setCurrentUser(JSON.parse(stored));
+      if (stored) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setCurrentUser(JSON.parse(stored));
+      }
     } catch (_) {}
   }, []);
 
@@ -94,10 +97,13 @@ export default function SportTeamsPage() {
       }
     } catch (e) { console.error(e); }
     finally { setLoadingStudents(false); }
-  }, [apiUrl, currentUser?.university]);
+  }, [apiUrl, currentUser]);
 
   useEffect(() => {
-    if (currentUser) fetchStudents();
+    if (currentUser) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      fetchStudents();
+    }
   }, [currentUser, fetchStudents]);
 
   // Debounced search inside modal

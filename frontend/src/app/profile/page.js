@@ -1258,7 +1258,7 @@ export default function ProfilePage() {
                       {/* Header */}
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center space-x-3">
-                          <img src={getAvatarSrc(user.profilePic, user.name, user._id || user.id)} alt={user.name} className="w-10 h-10 rounded-full object-cover border border-[#E8E6E0]" />
+                          <img src={getAvatarSrc(user.profilePic, user.name, user._id || user.id)} onError={(e) => { e.target.src = getAvatarSrc("", user.name, user._id || user.id); }} alt={user.name} className="w-10 h-10 rounded-full object-cover border border-[#E8E6E0]" />
                           <div>
                             <p className="text-sm font-black text-[#1A1A1A]"><NameWithTick name={user.name} tick={user.currentTick} user={user} /></p>
                             <p className="text-[10px] font-bold text-[#888888] uppercase tracking-widest">MEMORIES • {post.createdAt ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: true }) : 'recently'}</p>
@@ -1887,7 +1887,7 @@ export default function ProfilePage() {
                 <div className="flex flex-col items-center justify-center space-y-4 mb-4 mt-2">
                   <div className="relative w-24 h-24 rounded-full border-4 border-white shadow-lg overflow-hidden bg-[#F9F8F5]">
                     {editData.profilePic ? (
-                      <img src={getAvatarSrc(editData.profilePic, editData.name || user?.name, user?._id || user?.id)} alt="Avatar" className="w-full h-full object-cover" />
+                      <img src={getAvatarSrc(editData.profilePic, editData.name || user?.name, user?._id || user?.id)} onError={(e) => { e.target.src = getAvatarSrc("", editData.name || user?.name, user?._id || user?.id); }} alt="Avatar" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-[#6B6B6B] bg-[#E8E6E0]/30">
                         <User size={32} />
@@ -2164,7 +2164,7 @@ export default function ProfilePage() {
               <div className="p-5 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 rounded-2xl p-[1.5px] gradient-bg">
-                    <img src={getAvatarSrc(user.profilePic, user.name, user._id || user.id)} className="w-full h-full rounded-[0.9rem] object-cover" />
+                    <img src={getAvatarSrc(user.profilePic, user.name, user._id || user.id)} onError={(e) => { e.target.src = getAvatarSrc("", user.name, user._id || user.id); }} className="w-full h-full rounded-[0.9rem] object-cover" />
                   </div>
                   <div>
                     <p className="text-sm font-black text-[#1A1A1A]"><NameWithTick name={user.name} tick={user.currentTick} user={user} /></p>
@@ -2227,7 +2227,7 @@ export default function ProfilePage() {
                   <div className="space-y-4">
                     {userPosts[activePostIndex].commentsList.map(c => (
                       <div key={c.id} className="flex items-start space-x-3">
-                        <img src={c.profilePic || getAvatarSrc(null, c.author, c.id)} className="w-8 h-8 rounded-full object-cover border border-[#E8E6E0]" alt="" />
+                        <img src={c.profilePic || getAvatarSrc(null, c.author, c.id)} onError={(e) => { e.target.src = getAvatarSrc("", c.author, c.id); }} className="w-8 h-8 rounded-full object-cover border border-[#E8E6E0]" alt="" />
                         <div className="flex-1">
                           <div className="flex justify-between items-start">
                             <div className="bg-[#F5F5F5] rounded-2xl rounded-tl-none px-4 py-3 relative max-w-[90%]">
@@ -2325,7 +2325,7 @@ export default function ProfilePage() {
               {editData.profilePic && (
                 <div className="flex justify-center">
                   <div className="w-28 h-28 rounded-[2rem] overflow-hidden border-2 border-purple-500/50 shadow-xl">
-                    <img src={getAvatarSrc(editData.profilePic, editData.name || user?.name, user?._id || user?.id)} className="w-full h-full object-cover" alt="Preview" />
+                    <img src={getAvatarSrc(editData.profilePic, editData.name || user?.name, user?._id || user?.id)} onError={(e) => { e.target.src = getAvatarSrc("", editData.name || user?.name, user?._id || user?.id); }} className="w-full h-full object-cover" alt="Preview" />
                   </div>
                 </div>
               )}
@@ -2464,7 +2464,7 @@ export default function ProfilePage() {
               <div className="absolute top-8 left-4 right-4 z-20 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-white">
-                    <img src={getAvatarSrc(user.profilePic, user.name, user._id || user.id)} className="w-full h-full object-cover" />
+                    <img src={getAvatarSrc(user.profilePic, user.name, user._id || user.id)} onError={(e) => { e.target.src = getAvatarSrc("", user.name, user._id || user.id); }} className="w-full h-full object-cover" />
                   </div>
                   <div>
                     <p className="text-[#1A1A1A] font-black text-sm"><NameWithTick name={user.name} tick={user.currentTick} user={user} /></p>
@@ -2515,7 +2515,7 @@ export default function ProfilePage() {
                   connections.map(conn => (
                     <div key={conn._id || conn.id} className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
-                        <img src={conn.profilePic || getAvatarSrc(conn)} className="w-10 h-10 rounded-full object-cover border border-[#E8E6E0]" />
+                        <img src={conn.profilePic || getAvatarSrc(null, conn.name, conn._id || conn.id)} onError={(e) => { e.target.src = getAvatarSrc("", conn.name, conn._id || conn.id); }} className="w-10 h-10 rounded-full object-cover border border-[#E8E6E0]" />
                         <span className="text-sm font-black text-[#1A1A1A]"><NameWithTick name={conn.name} tick={conn.currentTick} user={conn} /></span>
                       </div>
                       <button

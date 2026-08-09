@@ -13,7 +13,7 @@ router.get('/', protect, async (req, res) => {
       university: req.user.university,
       author: { $ne: me }
     })
-      .populate('author', 'name profilePic university year isVerified xp points currentTick')
+      .populate('author', 'name university year isVerified xp points currentTick')
       .sort({ createdAt: -1 })
       .limit(20);
     res.json(cards);
@@ -43,7 +43,7 @@ router.post('/', protect, async (req, res) => {
       description: description || ''
     });
 
-    const populated = await card.populate('author', 'name profilePic university year isVerified xp points currentTick');
+    const populated = await card.populate('author', 'name university year isVerified xp points currentTick');
     res.status(201).json(populated);
   } catch (error) {
     res.status(500).json({ message: error.message });

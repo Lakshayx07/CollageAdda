@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 
 /**
  * Thin wrapper around TanStack Query's useQuery for authenticated API calls.
@@ -11,11 +11,12 @@ import { useQuery } from "@tanstack/react-query";
  * @param {function} [options.select] — transform the raw response data
  * @param {boolean} [options.enabled] — conditionally enable/disable the query
  * @param {number} [options.staleTime] — override default staleTime
+ * @param {boolean} [options.keepPreviousData] — whether to keep old data visible while fetching new data
  * @param {object} [options.fetchOptions] — extra fetch init options (method, body, etc.)
  * @returns {{ data, isLoading, error, refetch, isFetching }}
  */
 export function useApiQuery(queryKey, endpoint, options = {}) {
-  const { select, enabled = true, staleTime, fetchOptions, ...rest } = options;
+  const { select, enabled = true, staleTime, keepPreviousData: keepPrev, fetchOptions, ...rest } = options;
 
   const apiUrl = (
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001"
@@ -50,6 +51,7 @@ export function useApiQuery(queryKey, endpoint, options = {}) {
     select,
     enabled,
     ...(staleTime !== undefined ? { staleTime } : {}),
+    ...(keepPrev ? { placeholderData: keepPreviousData } : {}),
     ...rest,
   });
 }

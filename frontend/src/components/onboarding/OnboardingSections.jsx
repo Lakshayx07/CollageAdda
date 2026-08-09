@@ -324,7 +324,7 @@ export const ExploreSection = () => {
           <motion.div whileHover={{ y: -5 }} className="lg:order-1 ca-card p-6 flex flex-col">
             <MapPin className="text-[#C8922A] mb-4 w-8 h-8" />
             <h3 className="text-xl font-black text-[#1A1A1A] mb-2">Explore Colleges</h3>
-            <p className="text-sm text-[#6B6B6B] mb-6">Discover campuses and see what's trending across the country.</p>
+            <p className="text-sm text-[#6B6B6B] mb-6">Discover campuses and see what&apos;s trending across the country.</p>
             <div className="mt-auto space-y-3">
               {[1, 2].map(i => (
                 <div key={i} className="flex items-center gap-3 bg-[#F3F2EE] p-3 rounded-xl">

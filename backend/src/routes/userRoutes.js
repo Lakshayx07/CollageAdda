@@ -28,15 +28,8 @@ export const transformUser = (u) => {
   if (u._transformed) return u;
   u._transformed = true;
 
-  const originalProfilePic = u.profilePic;
-
-  if (hasCustomProfilePic(originalProfilePic)) {
-    u.profilePic = originalProfilePic;
-  } else {
-    const filename = defaultAvatarFileFor(u.name, u._id);
-    const frontendUrl = (process.env.FRONTEND_URL || process.env.CLIENT_URL || '').replace(/\/$/, '');
-    u.profilePic = frontendUrl ? `${frontendUrl}/default-avatars/${filename}` : `/default-avatars/${filename}`;
-  }
+  // Always use the optimized avatar streaming endpoint instead of raw base64 data
+  u.profilePic = `/api/users/${u._id || u.id}/avatar`;
 
   return u;
 };
@@ -262,6 +255,8 @@ router.get('/:id/avatar', async (req, res) => {
         'lh3.googleusercontent.com',
         'avatars.githubusercontent.com',
         'cdn.supabase.io',
+        'supabase.co',
+        'res.cloudinary.com',
         'images.unsplash.com',
       ];
       let isTrusted = false;
@@ -431,11 +426,11 @@ router.put('/profile', protect, async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
 // @route   GET /api/users/search
 // @desc    Search users by name or university
 router.get('/search/query', protect, async (req, res) => {
   try {
+    console.log('[search/query] START');
     const { q, filter } = req.query;
     let query = { _id: { $ne: req.user._id } };
 
@@ -458,17 +453,21 @@ router.get('/search/query', protect, async (req, res) => {
       ];
     }
 
+    console.log('[search/query] User.find start');
     const users = await User.find(query)
-      .select('name profilePic university bio interests year studyYear passOutBatch course branch isVerified xp points currentTick streak createdAt updatedAt')
+      .select('name university bio interests year studyYear passOutBatch course branch isVerified xp points currentTick streak createdAt updatedAt')
       .sort({ createdAt: -1 })
       .limit(100)
       .lean();
+    console.log('[search/query] User.find done', users.length);
 
+    console.log('[search/query] countDocuments start');
     const totalCount = await User.countDocuments(query);
+    console.log('[search/query] countDocuments done', totalCount);
 
     const userIds = users.map(u => u._id);
 
-    // Batch post counts in a single aggregation instead of N queries
+    console.log('[search/query] Promise.all start');
     const [postCounts, followCounts] = await Promise.all([
       Post.aggregate([
         { $match: { author: { $in: userIds } } },
@@ -529,7 +528,7 @@ router.get('/daily-drop', protect, async (req, res) => {
   try {
     const me = await User.findById(req.user._id)
       .select('university interests following dailyDropUsers dailyDropDate')
-      .populate('dailyDropUsers', 'name university profilePic bio interests year studyYear passOutBatch course branch isVerified xp points currentTick streak createdAt updatedAt');
+      .populate('dailyDropUsers', 'name university bio interests year studyYear passOutBatch course branch isVerified xp points currentTick streak createdAt updatedAt');
 
     if (!me) return res.status(404).json({ message: 'User not found' });
 
@@ -580,7 +579,7 @@ router.get('/daily-drop', protect, async (req, res) => {
     const followingIds = (me.following || []).map(id => id.toString());
     const excludeIds = [me._id.toString(), ...followingIds];
 
-    const fields = 'name university profilePic bio interests year studyYear passOutBatch course branch isVerified xp points currentTick streak createdAt updatedAt';
+    const fields = 'name university bio interests year studyYear passOutBatch course branch isVerified xp points currentTick streak createdAt updatedAt';
     let suggested = [];
 
     const notAlreadyPicked = () => [...excludeIds, ...suggested.map(u => u._id.toString())];
@@ -628,7 +627,7 @@ router.get('/daily-drop', protect, async (req, res) => {
         { $addFields: { score: { $add: [{ $size: { $ifNull: ['$followers', []] } }, { $size: { $ifNull: ['$following', []] } }] } } },
         { $sort: { score: -1 } },
         { $limit: 5 - suggested.length },
-        { $project: { name: 1, university: 1, profilePic: 1, bio: 1, interests: 1, year: 1, studyYear: 1, passOutBatch: 1, course: 1, branch: 1, followers: 1, following: 1, isVerified: 1, xp: 1, points: 1, currentTick: 1, streak: 1, createdAt: 1, updatedAt: 1 } }
+        { $project: { name: 1, university: 1, bio: 1, interests: 1, year: 1, studyYear: 1, passOutBatch: 1, course: 1, branch: 1, followers: 1, following: 1, isVerified: 1, xp: 1, points: 1, currentTick: 1, streak: 1, createdAt: 1, updatedAt: 1 } }
       ]);
       console.log(`[DailyDrop] P3 popular found: ${popular.length}`);
       suggested = [...suggested, ...popular];
@@ -708,7 +707,7 @@ router.get('/daily-drop', protect, async (req, res) => {
 // @desc    Get logged-in user's followers
 router.get('/me/followers', protect, async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).populate('followers', 'name university profilePic _id isVerified xp points currentTick createdAt');
+    const user = await User.findById(req.user._id).populate('followers', 'name university _id isVerified xp points currentTick createdAt');
     res.json((user.followers || []).map(follower => transformUser(follower.toObject ? follower.toObject() : follower)));
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -721,7 +720,7 @@ router.get('/me/followers/new', protect, async (req, res) => {
   try {
     const since = req.query.since ? new Date(Number(req.query.since)) : new Date(0);
     // Populate followers with their joinedAt / updatedAt so we can filter
-    const user = await User.findById(req.user._id).populate('followers', 'name university profilePic _id createdAt isVerified xp points currentTick');
+    const user = await User.findById(req.user._id).populate('followers', 'name university _id createdAt isVerified xp points currentTick');
 
     // Return all followers if no since param, otherwise filter by createdAt after 'since'
     const allFollowers = user.followers || [];
@@ -739,7 +738,7 @@ router.get('/me/followers/new', protect, async (req, res) => {
 // @desc    Get logged-in user's following list
 router.get('/me/following', protect, async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).populate('following', 'name university profilePic _id isVerified xp points currentTick createdAt');
+    const user = await User.findById(req.user._id).populate('following', 'name university _id isVerified xp points currentTick createdAt');
     res.json((user.following || []).map(following => transformUser(following.toObject ? following.toObject() : following)));
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -751,7 +750,7 @@ router.get('/me/following', protect, async (req, res) => {
 router.get('/:id/followers', protect, async (req, res) => {
   try {
     const user = await User.findById(req.params.id)
-      .populate('followers', 'name university profilePic _id isVerified xp points currentTick createdAt updatedAt');
+      .populate('followers', 'name university _id isVerified xp points currentTick createdAt updatedAt');
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     res.json((user.followers || []).map(follower => transformUser(follower.toObject ? follower.toObject() : follower)));
@@ -765,7 +764,7 @@ router.get('/:id/followers', protect, async (req, res) => {
 router.get('/:id/following', protect, async (req, res) => {
   try {
     const user = await User.findById(req.params.id)
-      .populate('following', 'name university profilePic _id isVerified xp points currentTick createdAt updatedAt');
+      .populate('following', 'name university _id isVerified xp points currentTick createdAt updatedAt');
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     res.json((user.following || []).map(following => transformUser(following.toObject ? following.toObject() : following)));
@@ -944,7 +943,7 @@ router.get('/network/lookup', protect, async (req, res) => {
     if (ids.length === 0) return res.json([]);
 
     const users = await User.find({ _id: { $in: ids } })
-      .select('name profilePic university course branch isVerified currentTick xp points updatedAt')
+      .select('name university course branch isVerified currentTick xp points updatedAt')
       .lean();
 
     const order = new Map(ids.map((id, index) => [id, index]));

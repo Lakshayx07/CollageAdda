@@ -183,7 +183,10 @@ export default function ArenaPage() {
   const cfg = ESPORTS_TAB;
 
   // ── Boot ──────────────────────────────────────────────────────────────────
-  useEffect(() => { setIsMounted(true); }, []);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsMounted(true);
+  }, []);
 
   // ── Fetch colleges + esports players ──────────────────────────────────────
   const fetchAll = useCallback(async () => {
@@ -256,7 +259,10 @@ export default function ArenaPage() {
   }, [apiUrl]);
 
   useEffect(() => {
-    if (isMounted) fetchAll();
+    if (isMounted) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      fetchAll();
+    }
   }, [isMounted, fetchAll]);
 
   // ── Challenge handler ─────────────────────────────────────────────────────

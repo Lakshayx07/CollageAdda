@@ -81,6 +81,7 @@ io.use(async (socket, next) => {
 // Middleware
 app.use(helmet({
   crossOriginOpenerPolicy: false, // managed by Next.js for Google OAuth
+  crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 app.use(cors(corsOptions));
 app.use(compression());
@@ -93,7 +94,11 @@ app.use((req, res, next) => {
     res.setHeader('Cache-Control', 'public, max-age=300');
   } else if (req.path === '/api/users/leaderboard') {
     res.setHeader('Cache-Control', 'public, max-age=60');
+  } else if (req.method === 'GET') {
+    // Allow browsers to cache GET requests (useful for avatars/assets), requires revalidation for API data
+    res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
   } else {
+    // Prevent caching for state-mutating requests (POST, PUT, DELETE)
     res.setHeader('Cache-Control', 'private, no-cache, no-store, must-revalidate');
   }
   next();
@@ -129,7 +134,12 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK' });
 });
 
-app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/auth', (req, res, next) => {
+  if (req.path === '/supabase-token') {
+    return apiLimiter(req, res, next);
+  }
+  return authLimiter(req, res, next);
+}, authRoutes);
 app.use('/api/verify', otpLimiter, verifyRoutes);
 app.use('/api/posts', apiLimiter, postRoutes);
 app.use('/api/users', apiLimiter, userRoutes);

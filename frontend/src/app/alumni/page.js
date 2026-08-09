@@ -58,7 +58,7 @@ export default function AlumniAngelsPage() {
                   <h3 className="text-xl font-black text-[#1A1A1A] leading-tight flex items-center justify-center sm:justify-start">
                     {alumni.name} 
                   </h3>
-                  <p className="text-sm text-[#6B6B6B] font-bold mb-3">{alumni.college} ' {alumni.gradYear.slice(2)}</p>
+                  <p className="text-sm text-[#6B6B6B] font-bold mb-3">{alumni.college} &apos; {alumni.gradYear.slice(2)}</p>
                   
                   <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-2 sm:space-y-0 sm:space-x-3 mb-5">
                     <div className="flex items-center bg-[#F3F2EE] border border-[#E8E6E0] px-3 py-1.5 rounded-lg">

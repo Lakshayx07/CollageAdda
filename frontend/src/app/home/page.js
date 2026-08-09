@@ -1346,7 +1346,7 @@ export default function Home() {
               className="relative brand-mark h-10 w-10 cursor-pointer rounded-2xl p-[2px] transition-transform hover:scale-105"
             >
               <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-[0.95rem] bg-white border border-[#E8E6E0]">
-                <img src={getAvatarSrc(currentUser?.profilePic, currentUser?.name, currentUser?._id || currentUser?.id)} className="w-full h-full object-cover" alt="Me" />
+                <img src={getAvatarSrc(currentUser?.profilePic, currentUser?.name, currentUser?._id || currentUser?.id)} onError={(e) => { e.target.src = getAvatarSrc("", currentUser?.name, currentUser?._id || currentUser?.id); }} className="w-full h-full object-cover" alt="Me" />
               </div>
               {isUserUnverifiedOrIncomplete(currentUser) && (
                 <motion.span
@@ -1394,7 +1394,7 @@ export default function Home() {
                               <div className="h-4 w-4 border-2 border-[#C8922A] border-t-transparent rounded-full animate-spin"></div>
                             </div>
                           ) : (
-                            <img src={getAvatarSrc(currentUser?.profilePic, currentUser?.name, currentUser?._id || currentUser?.id)} className="w-full h-full object-cover" alt="You" />
+                            <img src={getAvatarSrc(currentUser?.profilePic, currentUser?.name, currentUser?._id || currentUser?.id)} onError={(e) => { e.target.src = getAvatarSrc("", currentUser?.name, currentUser?._id || currentUser?.id); }} className="w-full h-full object-cover" alt="You" />
                           )}
                         </div>
                       </div>
@@ -1449,7 +1449,7 @@ export default function Home() {
                   onClick={() => router.push('/profile')}
                 >
                   <div className="w-full h-full bg-background rounded-full flex items-center justify-center overflow-hidden">
-                    <img src={getAvatarSrc(currentUser?.profilePic, currentUser?.name, currentUser?._id || currentUser?.id)} className="w-full h-full object-cover" alt="You" />
+                    <img src={getAvatarSrc(currentUser?.profilePic, currentUser?.name, currentUser?._id || currentUser?.id)} onError={(e) => { e.target.src = getAvatarSrc("", currentUser?.name, currentUser?._id || currentUser?.id); }} className="w-full h-full object-cover" alt="You" />
                   </div>
                 </div>
                 <div className="flex-1 flex flex-col gap-2 min-w-0">
@@ -2090,7 +2090,7 @@ export default function Home() {
                             className="w-10 h-10 rounded-full overflow-hidden border border-[#E8E6E0] bg-[#F9F8F5] flex-shrink-0 cursor-pointer"
                             onClick={() => router.push(`/profile/${user._id}`)}
                           >
-                            <img src={getAvatarSrc(user.profilePic, user.name, user._id || user.id)} alt={user.name} className="w-full h-full object-cover" />
+                            <img src={getAvatarSrc(user.profilePic, user.name, user._id || user.id)} onError={(e) => { e.target.src = getAvatarSrc("", user.name, user._id || user.id); }} alt={user.name} className="w-full h-full object-cover" />
                           </div>
                           <div className="min-w-0 flex-1">
                             <p

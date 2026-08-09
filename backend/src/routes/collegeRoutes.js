@@ -110,7 +110,10 @@ router.get('/', protect, async (req, res) => {
 });
 
 function withAvatarUrl(user) {
-  return user;
+  return {
+    ...user,
+    profilePic: `/api/users/${user._id || user.id}/avatar`
+  };
 }
 
 // @route   GET /api/colleges/:id/students
@@ -127,7 +130,7 @@ router.get('/:id/students', protect, async (req, res) => {
     // Do NOT select profilePic — base64 blobs make this query multi-second
     const [students, realStudentCount, allUsersForRank] = await Promise.all([
       User.find(universityFilter)
-        .select('name profilePic bio university interests year studyYear isVerified createdAt xp points unlockedBadges followers following')
+        .select('name bio university interests year studyYear isVerified createdAt xp points unlockedBadges followers following')
         .sort({ createdAt: -1 })
         .limit(40)
         .lean(),

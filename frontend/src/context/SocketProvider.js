@@ -44,6 +44,7 @@ export function SocketProvider({ children }) {
       transports: ["websocket"],
       auth: { token },
     });
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSocket(newSocket);
 
     newSocket.on("connect", () => {

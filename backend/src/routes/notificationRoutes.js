@@ -9,7 +9,7 @@ const router = express.Router();
 router.get('/', protect, async (req, res) => {
   try {
     const notifications = await Notification.find({ recipient: req.user._id })
-      .populate('sender', 'name profilePic isVerified')
+      .populate('sender', 'name isVerified')
       .sort({ createdAt: -1 })
       .limit(20);
     res.json(notifications);

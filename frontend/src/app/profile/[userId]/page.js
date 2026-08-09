@@ -1307,7 +1307,7 @@ export default function UserProfilePage({ params }) {
                       {/* Header */}
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center space-x-3">
-                          <img src={getAvatarSrc(profileUser.profilePic, profileUser.name, profileUser._id || profileUser.id)} alt={profileUser.name} className="w-10 h-10 rounded-full object-cover border border-[#E8E6E0]" />
+                          <img src={getAvatarSrc(profileUser.profilePic, profileUser.name, profileUser._id || profileUser.id)} onError={(e) => { e.target.src = getAvatarSrc("", profileUser.name, profileUser._id || profileUser.id); }} alt={profileUser.name} className="w-10 h-10 rounded-full object-cover border border-[#E8E6E0]" />
                           <div>
                             <p className="text-sm font-black text-[#1A1A1A]"><NameWithTick name={profileUser.name} tick={profileUser.currentTick} user={profileUser} /></p>
                             <p className="text-[10px] font-bold text-[#888888] uppercase tracking-widest">POST • {post.createdAt ? timeAgo(post.createdAt) : 'recently'}</p>

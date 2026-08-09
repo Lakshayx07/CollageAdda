@@ -72,7 +72,7 @@ router.post('/', protect, async (req, res) => {
       await awardXP(req.user._id, 'FIRST_STORY', story._id.toString());
     }
 
-    const populatedStory = await Story.findById(story._id).populate('author', 'name profilePic isVerified xp points currentTick');
+    const populatedStory = await Story.findById(story._id).populate('author', 'name isVerified xp points currentTick');
     res.status(201).json(populatedStory);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -87,7 +87,7 @@ router.get('/', protect, async (req, res) => {
       university: req.user.university,
       expiresAt: { $gt: new Date() }
     })
-    .populate('author', 'name profilePic isVerified xp points currentTick')
+    .populate('author', 'name isVerified xp points currentTick')
     .sort({ createdAt: -1 })
     .lean();
 

@@ -93,7 +93,7 @@ export function CampusCTA() {
         onClick={() => window.open('https://campusadda.social/', '_blank', 'noopener,noreferrer')}
         className="block w-full max-w-sm mx-auto px-12 py-4 text-lg font-semibold rounded-full text-[#1A1A1A] bg-gradient-to-r from-[#C8922A] to-violet-500 hover:scale-105 hover:shadow-lg hover:shadow-[0_4px_14px_rgba(200,146,42,0.15)] transition-all duration-300"
       >
-        Let's Go to CampusAdda 🚀
+        Let&apos;s Go to CampusAdda 🚀
       </button>
     </div>
   );
@@ -234,7 +234,7 @@ export default function FeatureShowcase() {
                         rel="noopener noreferrer"
                         className="inline-block px-12 py-4 text-lg font-semibold rounded-full text-[#1A1A1A] bg-gradient-to-r from-[#C8922A] to-violet-500 hover:scale-105 hover:shadow-lg hover:shadow-[0_4px_14px_rgba(200,146,42,0.15)] transition-all duration-300"
                       >
-                        Let's Go to CampusAdda 🚀
+                        Let&apos;s Go to CampusAdda 🚀
                       </a>
                     </motion.div>
                   )}

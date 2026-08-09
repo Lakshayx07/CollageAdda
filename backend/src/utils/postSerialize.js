@@ -12,7 +12,7 @@ export const slimAuthor = (author) => {
     name: author.name,
     university: author.university,
     isVerified: Boolean(author.isVerified),
-    profilePic: author.profilePic,
+    profilePic: `/api/users/${author._id || author.id}/avatar`,
     xp: author.xp,
     points: author.points,
     currentTick: author.currentTick,
@@ -44,7 +44,8 @@ export const slimComments = (comments = []) => {
     user: comment.user
       ? {
           _id: comment.user._id || comment.user,
-          name: comment.user.name || 'Student'
+          name: comment.user.name || 'Student',
+          profilePic: `/api/users/${comment.user._id || comment.user}/avatar`
         }
       : null
   }));

@@ -7,6 +7,7 @@ export function ThemeProvider({ children }) {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsDark(false);
     localStorage.setItem("campus_adda_theme", "light");
     document.documentElement.setAttribute("data-theme", "light");
