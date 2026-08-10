@@ -1037,7 +1037,7 @@ export default function ProfilePage() {
         <div className="px-4 md:px-0 pt-6 pb-10 space-y-6">
           {/* Tab Navigation */}
           <div className="flex border-b border-[#F3F2EE] gap-8 text-sm font-semibold">
-            {["badges", "posts", "about"].map((tab) => (
+            {["badges", "posts", "memories", "about"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -1058,7 +1058,7 @@ export default function ProfilePage() {
 
           {/* Tab Contents */}
           {activeTab === "about" && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               className="flex flex-col gap-6 pt-4 pb-10"
@@ -1068,7 +1068,7 @@ export default function ProfilePage() {
                 {/* Decorative Elements */}
                 <div className="absolute top-0 right-0 -mr-10 -mt-10 w-64 h-64 rounded-full bg-[#C8922A]/10 blur-3xl pointer-events-none group-hover:scale-110 transition-transform duration-700"></div>
                 <div className="absolute bottom-0 left-0 -ml-10 -mb-10 w-64 h-64 rounded-full bg-[#4A7DFF]/10 blur-3xl pointer-events-none group-hover:scale-110 transition-transform duration-700"></div>
-                
+
                 <div className="relative z-10 flex flex-col items-center text-center">
                   <div className="w-20 h-20 rounded-[1.5rem] bg-white border border-[#F3F2EE] shadow-sm flex items-center justify-center shrink-0 mb-6 rotate-3 hover:rotate-0 transition-all duration-300">
                     <span className="text-4xl">👋</span>
@@ -1084,7 +1084,7 @@ export default function ProfilePage() {
 
               {/* Details Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                
+
                 {/* Academic Info */}
                 <div className="bg-white rounded-[2rem] p-6 border border-[#F3F2EE] shadow-sm hover:shadow-md transition-shadow group">
                   <div className="flex items-center gap-4 mb-5">
@@ -1231,22 +1231,18 @@ export default function ProfilePage() {
           )}
 
           {activeTab === "posts" && (
-            <div className="space-y-6 pb-10">
-              <motion.div
-                initial="hidden"
-                animate="visible"
-                variants={{
-                  visible: { transition: { staggerChildren: 0.05 } }
-                }}
-                className="grid grid-cols-1 md:grid-cols-2 gap-6"
-              >
-                {userPosts.length === 0 ? (
-                  <div className="col-span-1 md:col-span-2 py-20 bg-white border border-[#E8E6E0] shadow-sm rounded-[2.5rem] border-dashed text-center">
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {userPosts.filter(p => !p.isMemoryOnly).length === 0 ? (
+                  <div className="col-span-full py-16 flex flex-col items-center justify-center text-center bg-[#F8F9FA] rounded-[2rem] border-2 border-dashed border-[#E5E7EB]">
+                    <div className="w-20 h-20 bg-white rounded-[1.5rem] shadow-sm border border-[#F3F2EE] flex items-center justify-center mb-6">
+                      <ImageIcon className="text-[#A0AEC0]" size={32} />
+                    </div>
                     <p className="text-xl font-black text-[#888888]">No Posts Yet</p>
-                    <p className="text-[10px] text-[#888888] font-bold uppercase tracking-widest mt-2">Your story starts here</p>
+                    <p className="text-[#A0AEC0] font-medium mt-2 max-w-sm">Share your college experience with the community.</p>
                   </div>
                 ) : (
-                  userPosts.map((post, idx) => (
+                  userPosts.filter(p => !p.isMemoryOnly).map((post, idx) => (
                     <motion.div
                       key={post.id}
                       variants={{
@@ -1317,7 +1313,104 @@ export default function ProfilePage() {
                     </motion.div>
                   ))
                 )}
-              </motion.div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "memories" && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-2xl font-black text-[#1A1A1A]">Your Memories</h3>
+                <button
+                  onClick={() => router.push('/home?mode=memory&focusPost=true')}
+                  className="bg-gradient-to-r from-[#C8922A] to-[#E6A835] text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-full font-bold shadow-[0_4px_14px_0_rgba(200,146,42,0.39)] hover:shadow-[0_6px_20px_rgba(200,146,42,0.23)] hover:-translate-y-0.5 transition-all flex items-center gap-1.5 whitespace-nowrap text-xs sm:text-sm"
+                >
+                  <Plus size={16} />
+                  <span>Post to Memories</span>
+                </button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {userPosts.filter(p => p.mediaUrl || p.image).length === 0 ? (
+                  <div className="col-span-full py-16 flex flex-col items-center justify-center text-center bg-[#F8F9FA] rounded-[2rem] border-2 border-dashed border-[#E5E7EB]">
+                    <div className="w-20 h-20 bg-white rounded-[1.5rem] shadow-sm border border-[#F3F2EE] flex items-center justify-center mb-6">
+                      <ImageIcon className="text-[#A0AEC0]" size={32} />
+                    </div>
+                    <p className="text-xl font-black text-[#888888]">No Memories Yet</p>
+                    <p className="text-[#A0AEC0] font-medium mt-2 max-w-sm">Add photos or videos to your memories to see them here.</p>
+                  </div>
+                ) : (
+                  userPosts.filter(p => p.mediaUrl || p.image || p.mediaType !== 'none').map((post, idx) => (
+                    <motion.div
+                      key={post.id || idx}
+                      variants={{
+                        hidden: { scale: 0.95, opacity: 0 },
+                        visible: { scale: 1, opacity: 1 }
+                      }}
+                      className="bg-white border border-[#E8E6E0] rounded-[2rem] p-5 shadow-sm flex flex-col relative"
+                    >
+                      {/* Header */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-3">
+                          <img src={getAvatarSrc(user.profilePic, user.name, user._id || user.id)} onError={(e) => { e.target.src = getAvatarSrc("", user.name, user._id || user.id); }} alt={user.name} className="w-10 h-10 rounded-full object-cover border border-[#E8E6E0]" />
+                          <div>
+                            <p className="text-sm font-black text-[#1A1A1A]"><NameWithTick name={user.name} tick={user.currentTick} user={user} /></p>
+                            <p className="text-[10px] font-bold text-[#888888] uppercase tracking-widest">MEMORIES • {post.createdAt ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: true }) : 'recently'}</p>
+                          </div>
+                        </div>
+                        <div className="relative">
+                          <button onClick={(e) => { e.stopPropagation(); setActiveDropdown(activeDropdown === post.id ? null : post.id); }} className="p-2 text-[#888888] hover:text-[#1A1A1A] transition-colors">
+                            <MoreVertical size={16} />
+                          </button>
+                          <AnimatePresence>
+                            {activeDropdown === post.id && (
+                              <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="absolute right-0 top-10 w-40 bg-white rounded-xl shadow-lg border border-[#E8E6E0] z-10 overflow-hidden"
+                              >
+                                <button onClick={() => { setActiveDropdown(null); handleDeletePost(post.id); }} className="w-full text-left px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 transition-colors">
+                                  Delete Memory
+                                </button>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      </div>
+
+                      {/* Content */}
+                      <div onClick={() => { setActivePostIndex(idx); setModal("post"); }} className="cursor-pointer flex-1 flex flex-col">
+                        {post.content && (
+                          <p className="text-[#0F172A] font-medium text-[15px] sm:text-base mb-5 leading-relaxed whitespace-pre-wrap">
+                            {renderTextWithLinks(post.content)}
+                          </p>
+                        )}
+
+                        {(post.img || post.mediaUrl) && post.mediaType !== 'none' && (
+                          <div className="rounded-[1.5rem] overflow-hidden mb-4 bg-[#F9F8F5]">
+                            <img src={post.img || post.mediaUrl} className="w-full object-cover max-h-[300px]" alt="Memory" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Footer Actions */}
+                      <div className="flex items-center justify-between pt-4 border-t border-[#E8E6E0]/50 mt-auto">
+                        <div className="flex space-x-6">
+                          <div className="flex items-center space-x-2">
+                            <Heart size={20} onClick={() => { setActivePostIndex(idx); setTimeout(handlePostLike, 0); }} className={clsx("cursor-pointer transition-all", post.isLiked ? "text-red-500 fill-red-500" : "text-[#6B6B6B] hover:text-red-500")} />
+                            <span className="text-xs font-bold text-[#6B6B6B]">{post.likes}</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <MessageCircle size={20} onClick={() => { setActivePostIndex(idx); setModal("post"); }} className="cursor-pointer text-[#6B6B6B] hover:text-[#C8922A]" />
+                            <span className="text-xs font-bold text-[#6B6B6B]">{post.comments}</span>
+                          </div>
+                        </div>
+                        <Send size={20} onClick={() => { setActivePostIndex(idx); handlePostShare(); }} className="cursor-pointer text-[#6B6B6B] hover:text-[#C8922A]" />
+                      </div>
+                    </motion.div>
+                  ))
+                )}
+              </div>
             </div>
           )}
 
@@ -1718,9 +1811,9 @@ export default function ProfilePage() {
                         <div className="flex items-center gap-4 mb-6">
                           <div className={clsx(
                             "flex h-14 w-14 shrink-0 items-center justify-center rounded-[1.2rem] transition-all duration-500 overflow-hidden",
-                            reached ? `bg-[#0A1128] border-[3px] ${tierStyles.iconRing} group-hover:rotate-[10deg]` 
-                              : inProgress ? "bg-[#0A1128] border-[3px] border-amber-400/40 shadow-[0_0_15px_rgba(251,191,36,0.3)] group-hover:scale-110" 
-                              : "bg-[#0A1128] border-2 border-slate-700/50 grayscale opacity-60"
+                            reached ? `bg-[#0A1128] border-[3px] ${tierStyles.iconRing} group-hover:rotate-[10deg]`
+                              : inProgress ? "bg-[#0A1128] border-[3px] border-amber-400/40 shadow-[0_0_15px_rgba(251,191,36,0.3)] group-hover:scale-110"
+                                : "bg-[#0A1128] border-2 border-slate-700/50 grayscale opacity-60"
                           )}>
                             <img src={tier.icon} alt={tier.label} className={clsx("w-full h-full object-contain filter scale-[1.25]", reached && "drop-shadow-[0_0_15px_rgba(251,191,36,0.5)]")} />
                           </div>

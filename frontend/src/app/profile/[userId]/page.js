@@ -7,7 +7,7 @@ import {
   ChevronLeft, ChevronRight, Grid, Heart, MessageCircle, Share2, MapPin,
   Zap, Code, Trophy, Ghost, Briefcase, Loader2, Image as ImageIcon, X,
   Send, Building2, Crown, Users, CalendarDays, Check, TrendingUp, Award,
-  Globe, Star, Camera, Lock
+  Globe, Star, Camera, Lock, Plus
 } from "lucide-react";
 
 import VerifiedBadge from "@/components/VerifiedBadge";
@@ -856,7 +856,7 @@ export default function UserProfilePage({ params }) {
         <div className="px-4 md:px-0 pt-2 pb-10 space-y-6">
           {/* Tab Navigation */}
           <div className="flex border-b border-[#F3F2EE] gap-8 text-sm font-semibold">
-            {["badges", "posts", "about"].map((tab) => (
+            {["badges", "posts", "memories", "about"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -1293,13 +1293,13 @@ export default function UserProfilePage({ params }) {
           {activeTab === "posts" && (
             <div className="space-y-6 pb-10 pt-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {userPosts.length === 0 ? (
+                {userPosts.filter(p => !p.isMemoryOnly).length === 0 ? (
                   <div className="col-span-1 md:col-span-2 py-20 bg-white border border-[#E8E6E0] shadow-sm rounded-[2.5rem] border-dashed text-center">
                     <p className="text-xl font-black text-[#888888]">No Posts Yet</p>
                     <p className="text-[10px] text-[#888888] font-bold uppercase tracking-widest mt-2">Check back later</p>
                   </div>
                 ) : (
-                  userPosts.map((post, idx) => (
+                  userPosts.filter(p => !p.isMemoryOnly).map((post, idx) => (
                     <div
                       key={post.id}
                       className="bg-white border border-[#E8E6E0] rounded-[2rem] p-5 shadow-sm flex flex-col relative"
@@ -1349,9 +1349,78 @@ export default function UserProfilePage({ params }) {
             </div>
           )}
 
+          {activeTab === "memories" && (
+            <div className="space-y-6 pb-10 pt-4">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-2xl font-black text-[#1A1A1A]">{profileUser.name.split(' ')[0]}'s Memories</h3>
+                <button
+                  onClick={() => router.push('/home?mode=memory&focusPost=true')}
+                  className="bg-gradient-to-r from-[#C8922A] to-[#E6A835] text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-full font-bold shadow-[0_4px_14px_0_rgba(200,146,42,0.39)] hover:shadow-[0_6px_20px_rgba(200,146,42,0.23)] hover:-translate-y-0.5 transition-all flex items-center gap-1.5 whitespace-nowrap text-xs sm:text-sm"
+                >
+                  <Plus size={16} />
+                  <span>Post to Memories</span>
+                </button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {userPosts.filter(p => p.mediaUrl || p.img || p.mediaType !== 'none').length === 0 ? (
+                  <div className="col-span-1 md:col-span-2 py-20 bg-white border border-[#E8E6E0] shadow-sm rounded-[2.5rem] border-dashed text-center">
+                    <p className="text-xl font-black text-[#888888]">No Memories Yet</p>
+                    <p className="text-[10px] text-[#888888] font-bold uppercase tracking-widest mt-2">Check back later</p>
+                  </div>
+                ) : (
+                  userPosts.filter(p => p.mediaUrl || p.img || p.mediaType !== 'none').map((post, idx) => (
+                    <div
+                      key={post.id || idx}
+                      className="bg-white border border-[#E8E6E0] rounded-[2rem] p-5 shadow-sm flex flex-col relative"
+                    >
+                      {/* Header */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-3">
+                          <img src={getAvatarSrc(profileUser.profilePic, profileUser.name, profileUser._id || profileUser.id)} onError={(e) => { e.target.src = getAvatarSrc("", profileUser.name, profileUser._id || profileUser.id); }} alt={profileUser.name} className="w-10 h-10 rounded-full object-cover border border-[#E8E6E0]" />
+                          <div>
+                            <p className="text-sm font-black text-[#1A1A1A]"><NameWithTick name={profileUser.name} tick={profileUser.currentTick} user={profileUser} /></p>
+                            <p className="text-[10px] font-bold text-[#888888] uppercase tracking-widest">MEMORIES • {post.createdAt ? timeAgo(post.createdAt) : 'recently'}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Content */}
+                      <div onClick={() => { setSelectedPostId(post.id); setActivePostIndex(idx); setModal("post"); setCommentInput(""); }} className="cursor-pointer flex-1 flex flex-col">
+                        {post.content && (
+                          <p className="text-sm text-[#4A4A4A] mb-4 whitespace-pre-wrap leading-relaxed font-medium line-clamp-3">
+                            {renderTextWithLinks(post.content)}
+                          </p>
+                        )}
+                        {(post.img || post.mediaUrl) && (
+                          <div className="rounded-[1.5rem] overflow-hidden mb-4 bg-[#F9F8F5]">
+                            <img src={post.img || post.mediaUrl} className="w-full object-cover max-h-[300px]" alt="Memory" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Footer */}
+                      <div className="flex items-center justify-between pt-4 border-t border-[#E8E6E0]/50 mt-auto">
+                        <div className="flex space-x-6">
+                          <div className="flex items-center space-x-2">
+                            <Heart size={20} onClick={(e) => { e.stopPropagation(); toggleLike(post); }} className={clsx("cursor-pointer transition-all", post.isLiked ? "text-red-500 fill-red-500" : "text-[#6B6B6B] hover:text-red-500")} />
+                            <span className="text-xs font-bold text-[#6B6B6B]">{post.likes}</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <MessageCircle size={20} onClick={(e) => { e.stopPropagation(); setSelectedPostId(post.id); setActivePostIndex(idx); setModal("post"); setCommentInput(""); }} className="cursor-pointer text-[#6B6B6B] hover:text-[#C8922A]" />
+                            <span className="text-xs font-bold text-[#6B6B6B]">{post.comments?.length || 0}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
           {/* TAB 3: ABOUT */}
           {activeTab === "about" && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               className="flex flex-col gap-6 pt-4 pb-10"
@@ -1361,7 +1430,7 @@ export default function UserProfilePage({ params }) {
                 {/* Decorative Elements */}
                 <div className="absolute top-0 right-0 -mr-10 -mt-10 w-64 h-64 rounded-full bg-[#C8922A]/10 blur-3xl pointer-events-none group-hover:scale-110 transition-transform duration-700"></div>
                 <div className="absolute bottom-0 left-0 -ml-10 -mb-10 w-64 h-64 rounded-full bg-[#4A7DFF]/10 blur-3xl pointer-events-none group-hover:scale-110 transition-transform duration-700"></div>
-                
+
                 <div className="relative z-10 flex flex-col items-center text-center">
                   <div className="w-20 h-20 rounded-[1.5rem] bg-white border border-[#F3F2EE] shadow-sm flex items-center justify-center shrink-0 mb-6 rotate-3 hover:rotate-0 transition-all duration-300">
                     <span className="text-4xl">👋</span>
@@ -1377,7 +1446,7 @@ export default function UserProfilePage({ params }) {
 
               {/* Details Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                
+
                 {/* Academic Info */}
                 <div className="bg-white rounded-[2rem] p-6 border border-[#F3F2EE] shadow-sm hover:shadow-md transition-shadow group">
                   <div className="flex items-center gap-4 mb-5">

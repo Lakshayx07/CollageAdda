@@ -67,6 +67,9 @@ export default function Home() {
     setIsMounted(true);
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('mode') === 'memory') {
+        setIsExploreMode(true);
+      }
       if (urlParams.get('focusPost') === 'true') {
         setTimeout(() => {
           const editor = document.querySelector('.post-editor-textarea');

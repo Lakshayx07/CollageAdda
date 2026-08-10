@@ -278,6 +278,7 @@ function MessagesContent() {
   const [selectedFileName, setSelectedFileName] = useState("");
   const [mediaType, setMediaType] = useState('none');
   const [activeMessageMenu, setActiveMessageMenu] = useState(null);
+  const [activeMobileMessage, setActiveMobileMessage] = useState(null);
   const [replyTo, setReplyTo] = useState(null);
   const [editingMessage, setEditingMessage] = useState(null);
   const [typingName, setTypingName] = useState("");
@@ -411,6 +412,39 @@ function MessagesContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Handle browser back button (popstate)
+  useEffect(() => {
+    const handlePopState = (e) => {
+      if (typeof window === "undefined") return;
+      const url = new URL(window.location.href);
+      const chatParam = url.searchParams.get("chat");
+      
+      if (!chatParam) {
+        // Chat was removed from URL via back button
+        setActiveChat(null);
+        setShowAttachments(false);
+        setShowEmojiPicker(false);
+        setShowChatOptions(false);
+        setSelectedMedia(null);
+        setSelectedFileName("");
+        setMediaType('none');
+        setReplyTo(null);
+        setEditingMessage(null);
+        setActiveMessageMenu(null);
+        setTypingName("");
+        setPinnedJumpIndex(0);
+      } else {
+        // Chat was added or changed via history navigation
+        const found = chats.find((c) => String(c.id) === String(chatParam));
+        if (found) setActiveChat(found);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [chats]);
+
+
   // Deep-link: ?chat= / ?userId= — wait until user + rooms are ready
   useEffect(() => {
     if (!user || loadingChats || deepLinkHandledRef.current || activeChat) return;
@@ -424,10 +458,16 @@ function MessagesContent() {
       setActiveChat(room);
       if (typeof window !== "undefined") {
         const url = new URL(window.location.href);
+        const hasChatParam = url.searchParams.get("chat") === String(room.id);
         url.searchParams.set("chat", room.id);
         url.searchParams.delete("userId");
         url.searchParams.delete("interestProduct");
-        window.history.replaceState({}, document.title, `${url.pathname}${url.search}`);
+        
+        if (hasChatParam) {
+          window.history.replaceState({ isChatOpened: true }, document.title, `${url.pathname}${url.search}`);
+        } else {
+          window.history.pushState({ isChatOpened: true }, document.title, `${url.pathname}${url.search}`);
+        }
       }
       if (interestParam) sendAutoInterestMessage(room.id, interestParam);
     };
@@ -1037,6 +1077,11 @@ function MessagesContent() {
   };
 
   const closeChat = () => {
+    if (typeof window !== "undefined" && window.history.state?.isChatOpened) {
+      window.history.back();
+      return;
+    }
+    
     setActiveChat(null);
     setShowAttachments(false);
     setShowEmojiPicker(false);
@@ -1155,8 +1200,10 @@ function MessagesContent() {
 
   const renderMessageActions = (msg, isMe) => (
     <div className={clsx(
-      "absolute z-40 top-1/2 flex -translate-y-1/2 items-center gap-1 rounded-2xl border border-[#E8E6E0] bg-white p-1 shadow-xl",
-      isMe ? "right-full mr-2" : "left-full ml-2"
+      "absolute z-50 flex items-center gap-1 rounded-2xl border border-[#E8E6E0] bg-white p-1 shadow-xl",
+      isMe 
+        ? "left-0 top-full mt-2 sm:top-1/2 sm:-translate-y-1/2 sm:right-full sm:left-auto sm:mr-2 sm:mt-0" 
+        : "right-0 top-full mt-2 sm:top-1/2 sm:-translate-y-1/2 sm:left-full sm:right-auto sm:ml-2 sm:mt-0"
     )}>
       <button onClick={() => startReply(msg)} className="p-2 rounded-xl text-[#5F5F5F] hover:bg-amber-50 hover:text-amber-700" title="Reply" aria-label="Reply">
         <Reply size={15} />
@@ -1460,10 +1507,16 @@ function MessagesContent() {
                       ref={(node) => {
                         if (node) messageRefs.current[msg.id] = node;
                       }}
+                      onClick={(e) => {
+                        // Only trigger if clicking the row, not the button or menu
+                        if (window.innerWidth < 640) {
+                          setActiveMobileMessage(activeMobileMessage === msg.id ? null : msg.id);
+                        }
+                      }}
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       className={clsx(
-                        "flex w-full group mb-2",
+                        "flex w-full group mb-2 cursor-default sm:cursor-auto",
                         isMe ? "justify-end" : "justify-start"
                       )}
                     >
@@ -1492,8 +1545,16 @@ function MessagesContent() {
                           <div className="relative flex-shrink-0">
                             <button
                               type="button"
-                              onClick={() => setActiveMessageMenu(activeMessageMenu === msg.id ? null : msg.id)}
-                              className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 p-1.5 rounded-full bg-white border border-[#E8E6E0] text-[#6B6B6B] shadow-md hover:text-[#1A1A1A] transition-all"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveMessageMenu(activeMessageMenu === msg.id ? null : msg.id);
+                              }}
+                              className={clsx(
+                                "p-1.5 rounded-full bg-white border border-[#E8E6E0] text-[#6B6B6B] shadow-md hover:text-[#1A1A1A] transition-all",
+                                activeMobileMessage === msg.id || activeMessageMenu === msg.id
+                                  ? "opacity-100 pointer-events-auto"
+                                  : "opacity-0 pointer-events-none sm:pointer-events-auto sm:group-hover:opacity-100"
+                              )}
                               aria-label="Message options"
                               aria-expanded={activeMessageMenu === msg.id}
                             >
@@ -1525,7 +1586,7 @@ function MessagesContent() {
                               rotate: { duration: 3, repeat: Infinity, ease: "easeInOut" },
                               opacity: { duration: 0.3 }
                             }}
-                            className="text-5xl py-1 cursor-default select-none drop-shadow-2xl"
+                            className="text-5xl py-1 cursor-default select-none drop-shadow-2xl whitespace-pre-wrap"
                           >
                             {msg.text}
                           </motion.div>
@@ -1714,7 +1775,7 @@ function MessagesContent() {
                                   })}
                                 </div>
                               )}
-                              {!msg.poll?.question && <div className="relative z-10 font-medium">{msg.text}</div>}
+                              {!msg.poll?.question && <div className="relative z-10 font-medium whitespace-pre-wrap">{msg.text}</div>}
                               {msg.editedAt && !msg.deletedAt && <div className="mt-1 text-[10px] font-bold opacity-70">edited</div>}
                             </div>
                           );
@@ -1723,8 +1784,16 @@ function MessagesContent() {
                           <div className="relative flex-shrink-0">
                             <button
                               type="button"
-                              onClick={() => setActiveMessageMenu(activeMessageMenu === msg.id ? null : msg.id)}
-                              className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 p-1.5 rounded-full bg-white border border-[#E8E6E0] text-[#6B6B6B] shadow-md hover:text-[#1A1A1A] transition-all"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveMessageMenu(activeMessageMenu === msg.id ? null : msg.id);
+                              }}
+                              className={clsx(
+                                "p-1.5 rounded-full bg-white border border-[#E8E6E0] text-[#6B6B6B] shadow-md hover:text-[#1A1A1A] transition-all",
+                                activeMobileMessage === msg.id || activeMessageMenu === msg.id
+                                  ? "opacity-100 pointer-events-auto"
+                                  : "opacity-0 pointer-events-none sm:pointer-events-auto sm:group-hover:opacity-100"
+                              )}
                               aria-label="Message options"
                               aria-expanded={activeMessageMenu === msg.id}
                             >

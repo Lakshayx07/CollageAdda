@@ -17,9 +17,11 @@ router.get('/', protect, async (req, res) => {
     const limit = Math.min(Math.max(requestedLimit, 1), 100);
     const skip = (page - 1) * limit;
 
-    const filter = { isMemoryOnly: { $ne: true } };
+    const filter = {};
     if (req.query.author) {
       filter.author = req.query.author;
+    } else {
+      filter.isMemoryOnly = { $ne: true };
     }
 
     const posts = await Post.find(filter)

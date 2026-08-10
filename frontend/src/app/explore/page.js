@@ -194,7 +194,13 @@ function ExploreContent() {
   }, []);
   const [search, setSearch] = useState("");
   const [selectedCollege, setSelectedCollege] = useState(null);
-  const [activeTab, setActiveTab] = useState("posts");
+  
+  const tabParam = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState(tabParam || "posts");
+  
+  useEffect(() => {
+    setActiveTab(tabParam || "posts");
+  }, [tabParam]);
   const modeParam = searchParams.get('mode');
   const [exploreMode, setExploreMode] = useState(modeParam === "arena" ? "arena" : "colleges");
 
@@ -688,7 +694,9 @@ const [viewingPlayerCard, setViewingPlayerCard] = useState(null);
       return;
     }
 
-    setActiveTab("posts");
+    if (!tabParam) {
+      setActiveTab("posts");
+    }
     // Reset pagination whenever we switch to a different college
     setPostsCurrentPage(1);
     setPostsHasMore(false);
@@ -1541,7 +1549,13 @@ const [viewingPlayerCard, setViewingPlayerCard] = useState(null);
                 {/* Back Button — hardcoded white stroke (global CSS overrides lucide currentColor) */}
                 <button
                   type="button"
-                  onClick={() => router.push('/explore')}
+                  onClick={() => {
+                    if (window.history.length > 1) {
+                      router.back();
+                    } else {
+                      router.push('/explore');
+                    }
+                  }}
                   className="explore-college-banner__back absolute top-3 left-3 p-2.5 bg-[#000000]/45 backdrop-blur-md rounded-full hover:bg-[#000000]/65 transition-colors z-20 border border-[#FFFFFF]/10 cursor-pointer"
                   aria-label="Back to explore"
                   style={{ cursor: "pointer", color: "#ffffff" }}
@@ -1647,7 +1661,7 @@ const [viewingPlayerCard, setViewingPlayerCard] = useState(null);
               {["posts", "students", "memories"].map(tab => (
                 <button
                   key={tab}
-                  onClick={() => setActiveTab(tab)}
+                  onClick={() => router.push(`/explore?collegeId=${collegeIdParam}&tab=${tab}`)}
                   className={clsx(
                     "flex-1 py-3.5 text-sm font-bold capitalize tracking-wide transition-all relative",
                     activeTab === tab ? "text-[#1A1A1A]" : "text-[#888888] hover:text-[#4A4A4A]"
