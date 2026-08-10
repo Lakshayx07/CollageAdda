@@ -2,8 +2,16 @@
 import { motion } from "framer-motion";
 
 export default function VerifiedBadge({ user, size = 14, className = "" }) {
-  if (user && !user.isVerified) return null;
+  if (!user) return null;
 
+  const hasPassOutBatch = Boolean(user.passOutBatch?.trim());
+  const hasCourse = Boolean(user.course?.trim());
+  const hasBranch = Boolean(user.branch?.trim());
+  const hasStudyYear = Boolean((user.studyYear || user.year)?.trim());
+
+  const isActuallyVerified = hasPassOutBatch && hasCourse && hasBranch && hasStudyYear;
+
+  if (!isActuallyVerified) return null;
   return (
     <motion.span 
       initial={{ scale: 0.96, opacity: 0 }}

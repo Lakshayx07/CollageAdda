@@ -17,7 +17,8 @@ export const hasCompletedRequiredProfile = (user) => {
  * exclusively by explicit auth actions (campus email registration, OTP, admin).
  */
 export const syncVerificationStatus = (user) => {
-  return hasCompletedRequiredProfile(user);
+  user.isVerified = hasCompletedRequiredProfile(user);
+  return user.isVerified;
 };
 
 export const publicUserPayload = (user, token) => {

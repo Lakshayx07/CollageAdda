@@ -1939,7 +1939,7 @@ export default function ProfilePage() {
                     rows={3}
                     value={editData.bio}
                     onChange={e => setEditData({ ...editData, bio: e.target.value })}
-                    className="w-full rounded-2xl border border-[#E8E6E0] bg-black/30 px-4 py-3 text-sm font-semibold text-[#1A1A1A] outline-none focus:border-[#C8922A] resize-none"
+                    className={`w-full rounded-2xl border ${!editData.bio?.trim() ? 'border-red-500' : 'border-[#E8E6E0]'} bg-black/30 px-4 py-3 text-sm font-semibold text-[#1A1A1A] outline-none focus:border-[#C8922A] resize-none`}
                     placeholder="Final year CSE | Dev | CAT 2025 Aspirant"
                   />
                 </div>
@@ -1983,7 +1983,7 @@ export default function ProfilePage() {
                     <select
                       value={editData.passOutBatch}
                       onChange={e => setEditData({ ...editData, passOutBatch: e.target.value })}
-                      className="w-full rounded-2xl border border-[#E8E6E0] bg-black/30 px-4 py-3 text-sm font-semibold text-[#1A1A1A] outline-none focus:border-[#C8922A]"
+                      className={`w-full rounded-2xl border ${!editData.passOutBatch?.trim() ? 'border-red-500' : 'border-[#E8E6E0]'} bg-black/30 px-4 py-3 text-sm font-semibold text-[#1A1A1A] outline-none focus:border-[#C8922A]`}
                     >
                       <option value="" className="bg-[#0A0A0F]">Select batch</option>
                       {["2024", "2025", "2026", "2027", "2028", "2029", "2030"].map(year => <option key={year} value={year} className="bg-[#0A0A0F]">{year}</option>)}
@@ -1994,7 +1994,7 @@ export default function ProfilePage() {
                     <select
                       value={editData.studyYear}
                       onChange={e => setEditData({ ...editData, studyYear: e.target.value })}
-                      className="w-full rounded-2xl border border-[#E8E6E0] bg-black/30 px-4 py-3 text-sm font-semibold text-[#1A1A1A] outline-none focus:border-[#C8922A]"
+                      className={`w-full rounded-2xl border ${!editData.studyYear?.trim() ? 'border-red-500' : 'border-[#E8E6E0]'} bg-black/30 px-4 py-3 text-sm font-semibold text-[#1A1A1A] outline-none focus:border-[#C8922A]`}
                     >
                       <option value="" className="bg-[#0A0A0F]">Select year</option>
                       {["1st Year", "2nd Year", "3rd Year", "4th Year", "Alumni"].map(year => <option key={year} value={year} className="bg-[#0A0A0F]">{year}</option>)}
@@ -2008,7 +2008,7 @@ export default function ProfilePage() {
                     <select
                       value={editData.course}
                       onChange={e => setEditData({ ...editData, course: e.target.value })}
-                      className="w-full rounded-2xl border border-[#E8E6E0] bg-black/30 px-4 py-3 text-sm font-semibold text-[#1A1A1A] outline-none focus:border-[#C8922A]"
+                      className={`w-full rounded-2xl border ${!editData.course?.trim() ? 'border-red-500' : 'border-[#E8E6E0]'} bg-black/30 px-4 py-3 text-sm font-semibold text-[#1A1A1A] outline-none focus:border-[#C8922A]`}
                     >
                       <option value="" className="bg-[#0A0A0F]">Select course</option>
                       {["B.Tech", "BCA", "MCA", "MBA", "B.Sc", "M.Tech", "B.Com", "BA", "Other"].map(course => <option key={course} value={course} className="bg-[#0A0A0F]">{course}</option>)}
@@ -2027,7 +2027,7 @@ export default function ProfilePage() {
                     <input
                       value={editData.branch}
                       onChange={e => setEditData({ ...editData, branch: e.target.value })}
-                      className="w-full rounded-2xl border border-[#E8E6E0] bg-black/30 px-4 py-3 text-sm font-semibold text-[#1A1A1A] outline-none focus:border-[#C8922A]"
+                      className={`w-full rounded-2xl border ${!editData.branch?.trim() ? 'border-red-500' : 'border-[#E8E6E0]'} bg-black/30 px-4 py-3 text-sm font-semibold text-[#1A1A1A] outline-none focus:border-[#C8922A]`}
                       placeholder="Computer Science, ECE, Marketing"
                     />
                   </div>
