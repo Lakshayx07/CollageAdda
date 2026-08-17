@@ -21,23 +21,30 @@ import {
 import { GoogleOAuthProvider, useGoogleLogin } from "@react-oauth/google";
 import { motion } from "framer-motion";
 import styles from "./login.module.css";
+import { EXPLORE_PRIORITY_COLLEGES } from "@/config/exploreColleges";
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID";
 
-const fallbackColleges = [
-  { name: "Delhi Technological University (DTU)" },
-  { name: "Guru Gobind Singh Indraprastha University (IPU)" },
-  { name: "IIIT Delhi" },
-  { name: "IIT Delhi" },
-  { name: "Jamia Millia Islamia" },
-  { name: "Jawaharlal Nehru University (JNU)" },
-  { name: "Kurukshetra University" },
-  { name: "Netaji Subhas University of Technology (NSUT)" },
-  { name: "Rishihood University" },
-  { name: "School of Planning and Architecture (SPA)" },
-  { name: "University of Delhi (DU)" },
-  { name: "YMCA Faridabad" }
-].sort((a, b) => a.name.localeCompare(b.name));
+const defaultCollegesList = [
+  "Delhi Technological University (DTU)",
+  "Guru Gobind Singh Indraprastha University (IPU)",
+  "IIIT Delhi",
+  "IIT Delhi",
+  "Jamia Millia Islamia",
+  "Jawaharlal Nehru University (JNU)",
+  "Kurukshetra University",
+  "Netaji Subhas University of Technology (NSUT)",
+  "Rishihood University",
+  "School of Planning and Architecture (SPA)",
+  "University of Delhi (DU)",
+  "YMCA Faridabad"
+];
+
+const fallbackCollegesMap = new Map();
+defaultCollegesList.forEach(name => fallbackCollegesMap.set(name, { name }));
+EXPLORE_PRIORITY_COLLEGES.forEach(name => fallbackCollegesMap.set(name, { name }));
+
+const fallbackColleges = Array.from(fallbackCollegesMap.values()).sort((a, b) => a.name.localeCompare(b.name));
 
 const featureCards = [
   {
@@ -219,8 +226,18 @@ export default function LoginPage() {
         if (response.ok) {
           const data = await response.json();
           if (Array.isArray(data) && data.length) {
-            data.sort((a, b) => a.name.localeCompare(b.name));
-            setColleges(data);
+            const apiCollegeMap = new Map(data.map(c => [c.name, c]));
+            
+            // Ensure fallback and explore colleges are always available
+            fallbackColleges.forEach(fallback => {
+              if (!apiCollegeMap.has(fallback.name)) {
+                apiCollegeMap.set(fallback.name, fallback);
+              }
+            });
+
+            const mergedData = Array.from(apiCollegeMap.values());
+            mergedData.sort((a, b) => a.name.localeCompare(b.name));
+            setColleges(mergedData);
           }
         }
       } catch {
